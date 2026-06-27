@@ -1,0 +1,122 @@
+/* Shared styling for the popup / tasks / settings utility windows. */
+:root {
+  --bg: #1e1f26;
+  --panel: #272935;
+  --panel-2: #2f3240;
+  --border: #3a3d4d;
+  --text: #e7e9f0;
+  --muted: #9aa0b4;
+  --accent: #ff73ab;
+  --accent-2: #7c8cff;
+  --ok: #4ad991;
+  --danger: #ff6b6b;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13.5px;
+}
+
+body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+
+.selected-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  max-height: 90px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.tabs { display: flex; gap: 6px; }
+.tab {
+  flex: 1;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+}
+.tab.active { background: var(--accent); color: #1b1320; border-color: var(--accent); font-weight: 600; }
+
+.panel { display: none; flex-direction: column; gap: 8px; }
+.panel.active { display: flex; }
+
+label { font-size: 12px; color: var(--muted); }
+
+textarea, input[type="text"], input[type="password"], select {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  resize: vertical;
+}
+textarea { min-height: 56px; }
+
+.row { display: flex; gap: 8px; align-items: center; }
+.row > * { flex: 1; }
+.row.tight { gap: 6px; }
+
+button.action {
+  background: linear-gradient(180deg, var(--accent), #e85f99);
+  color: #1b1320;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.action:disabled { opacity: 0.55; cursor: default; }
+button.ghost {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.result {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 60px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.result.empty { color: var(--muted); }
+.status { font-size: 12px; color: var(--muted); min-height: 16px; }
+.status.err { color: var(--danger); }
+.status.ok { color: var(--ok); }
+
+/* Tasks */
+.task-list { display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.task {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px;
+}
+.task.done .task-text { text-decoration: line-through; color: var(--muted); }
+.task-text { flex: 1; white-space: pre-wrap; word-break: break-word; }
+.task-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; }
+.task-del:hover { color: var(--danger); }
+.empty-hint { color: var(--muted); text-align: center; padding: 16px; }

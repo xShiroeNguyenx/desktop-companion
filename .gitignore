@@ -1,0 +1,13 @@
+# Node
+node_modules/
+
+# Rust / Tauri build output
+src-tauri/target/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.log
+
+# Local runtime artifacts
+*.tmp

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!--
+  Standalone desktop pet entry page. Loads the bundled Live2D runtime
+  (media/webview/main.js) unchanged. The bridge + config scripts set up the
+  globals and transport the runtime expects, then we append the Live2D libs and
+  the module entry in order — mirroring the original webview bootstrap, minus
+  the VS Code / WebSocket plumbing.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desktop Companion</title>
+  <link rel="stylesheet" href="/media/companion.css" />
+  <style>
+    html, body { background: transparent; height: 100%; margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body class="desktop-pet-mode">
+  <div class="companion-container" data-tauri-drag-region>
+    <div class="chat-bubble" id="chatBubble" data-tauri-drag-region>
+      <span class="bubble-text" id="bubbleText" data-tauri-drag-region>Xin chào~</span>
+      <div class="bubble-tail" data-tauri-drag-region></div>
+    </div>
+
+    <div class="character-wrapper" id="characterWrapper">
+      <div class="drag-pad drag-pad-top" data-tauri-drag-region></div>
+      <div class="drag-pad drag-pad-left" data-tauri-drag-region></div>
+      <div class="drag-pad drag-pad-right" data-tauri-drag-region></div>
+      <div class="drag-pad drag-pad-bottom" data-tauri-drag-region></div>
+      <canvas id="live2dCanvas" style="display: none;"></canvas>
+      <img
+        id="fallbackImg"
+        src="/media/character.png"
+        alt="Desktop Companion"
+        class="character-img"
+        draggable="false"
+        style="display: none;"
+      />
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Đang tải Live2D...</span>
+      </div>
+      <div class="particles" id="particles"></div>
+    </div>
+
+    <div class="status-bar" data-tauri-drag-region>
+      <span class="status-dot" data-tauri-drag-region></span>
+      <span class="status-text" data-tauri-drag-region>Live2D</span>
+    </div>
+  </div>
+
+  <!-- Transport + runtime globals (classic scripts, run before the module). -->
+  <script src="js/pet-config.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/pet-lookat.js"></script>
+  <script src="js/pet-zoom.js"></script>
+  <script>
+    (function bootstrap() {
+      const scripts = [
+        '/media/lib/live2dcubismcore.min.js',
+        '/media/lib/pixi.min.js',
+        '/media/lib/cubism4.min.js',
+      ];
+      let i = 0;
+      function next() {
+        if (i >= scripts.length) {
+          const m = document.createElement('script');
+          m.type = 'module';
+          m.src = '/media/webview/main.js';
+          m.onerror = () => console.error('[bootstrap] main.js failed to load');
+          document.body.appendChild(m);
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = scripts[i++];
+        s.onload = next;
+        s.onerror = () => console.error('[bootstrap] Failed to load', s.src);
+        document.body.appendChild(s);
+      }
+      next();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="ui.css" />
+  <title>Công việc</title>
+</head>
+<body>
+  <h2>📝 Công việc cần làm</h2>
+  <div class="row tight">
+    <input type="text" id="newTask" placeholder="Thêm việc mới..." />
+    <button class="action" id="addBtn" style="flex: 0 0 auto;">Thêm</button>
+  </div>
+  <div class="task-list" id="list"></div>
+  <script src="js/tauri-api.js"></script>
+  <script src="js/tasks.js"></script>
+</body>
+</html>

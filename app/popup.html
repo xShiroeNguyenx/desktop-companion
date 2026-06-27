@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="ui.css" />
+  <title>Trợ lý văn bản</title>
+  <style>
+    /* Fallback inline styling so the window is never blank even if ui.css fails. */
+    html, body { background: #1e1f26; color: #e7e9f0; font-family: "Segoe UI", sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
+  <div class="box-label" id="selLabel" style="font-size:11px;color:#9aa0b4;margin-bottom:2px;">Văn bản đã chọn</div>
+  <div class="selected-box" id="selectedText">(chưa có văn bản được chọn)</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="translate">🌸 Dịch</div>
+    <div class="tab" data-tab="reply">💬 Trả lời</div>
+    <div class="tab" data-tab="task">📝 Lưu task</div>
+  </div>
+
+  <!-- Dịch -->
+  <div class="panel active" id="panel-translate">
+    <div>
+      <label>Dịch sang</label>
+      <select id="trTarget">
+        <option value="vi">Tiếng Việt</option>
+        <option value="en">Tiếng Anh</option>
+        <option value="ja">Tiếng Nhật</option>
+      </select>
+    </div>
+    <div>
+      <label>Ngữ cảnh</label>
+      <select id="trContext">
+        <option value="">(Mặc định)</option>
+      </select>
+    </div>
+    <button class="action" id="trGo">Dịch</button>
+    <div class="status" id="trStatus"></div>
+    <div class="result empty" id="trResult">Bản dịch sẽ hiện ở đây.</div>
+    <button class="ghost" id="trCopy">Sao chép bản dịch</button>
+  </div>
+
+  <!-- Trả lời -->
+  <div class="panel" id="panel-reply">
+    <div>
+      <label>Trả lời bằng</label>
+      <select id="rpTarget">
+        <option value="">Tự động (theo ngôn ngữ đoạn gốc)</option>
+        <option value="en">Tiếng Anh</option>
+        <option value="ja">Tiếng Nhật</option>
+        <option value="vi">Tiếng Việt</option>
+      </select>
+    </div>
+    <div>
+      <label>Câu trả lời của bạn (gõ tiếng Việt)</label>
+      <textarea id="rpInput" placeholder="Gõ câu trả lời bằng tiếng Việt..."></textarea>
+    </div>
+    <button class="action" id="rpGo">Tạo câu trả lời</button>
+    <div class="status" id="rpStatus"></div>
+    <div class="result empty" id="rpResult">Câu trả lời sẽ hiện ở đây.</div>
+    <button class="ghost" id="rpCopy">Sao chép câu trả lời</button>
+  </div>
+
+  <!-- Lưu task -->
+  <div class="panel" id="panel-task">
+    <div>
+      <label>Ghi chú (tuỳ chọn)</label>
+      <textarea id="tkNote" placeholder="Thêm chi tiết cho công việc..."></textarea>
+    </div>
+    <button class="action" id="tkGo">Lưu thành công việc</button>
+    <div class="status" id="tkStatus"></div>
+    <button class="ghost" id="tkOpen">Mở danh sách công việc</button>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/popup.js"></script>
+</body>
+</html>

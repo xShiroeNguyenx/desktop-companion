@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="ui.css" />
+  <title>Bản dịch</title>
+  <style>
+    html, body { background: #1e1f26; color: #e7e9f0; }
+    body { gap: 6px; }
+    .box-label { font-size: 11px; color: #9aa0b4; margin-bottom: 2px; }
+    .half {
+      flex: 1;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #272935;
+      border: 1px solid #3a3d4d;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    #source { color: #c7cad6; }
+    #result.empty { color: #9aa0b4; }
+  </style>
+</head>
+<body>
+  <div class="box-label">Nội dung gốc</div>
+  <div class="half" id="source">(chưa có văn bản)</div>
+
+  <div class="box-label">Bản dịch</div>
+  <div class="half empty" id="result">Đang dịch...</div>
+
+  <button class="action" id="copyBtn">Sao chép bản dịch</button>
+  <div class="status" id="status"></div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/quick.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+name: CI
+
+# Compile check on every push / PR to catch build breakage early.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-check:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check --locked

@@ -1,0 +1,39 @@
+[package]
+name = "desktop-companion"
+version = "0.1.0"
+edition = "2021"
+description = "Standalone Live2D desktop pet"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# System clipboard read/write for the save/restore selection capture.
+arboard = "3"
+# Server-side LLM calls (CORS-safe). rustls avoids an OpenSSL/native-tls dep.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Win32 access: click-through refresh, the WH_MOUSE_LL global hook, SendInput
+# (simulated Ctrl+C), and cursor position.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_Foundation",
+] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"
+codegen-units = 1
