@@ -3,6 +3,8 @@
 🌸 A standalone Live2D desktop pet for Windows with built-in **AI translation**,
 **quick reply**, and **task saving** — works over any app (Teams, browsers, Word…).
 
+🌐 **[Website / Landing page →](https://xshiroenguyenx.github.io/desktop-companion/)**
+
 **Languages:** **English** · [Tiếng Việt](README.vi.md) · [日本語](README.ja.md)
 
 ![Live2D pet](src-tauri/icons/128x128.png)

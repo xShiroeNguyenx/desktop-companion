@@ -4,6 +4,8 @@
 **trả lời nhanh** và **lưu công việc** — hoạt động trên mọi ứng dụng (Teams, trình
 duyệt, Word…).
 
+🌐 **[Trang giới thiệu (Website) →](https://xshiroenguyenx.github.io/desktop-companion/)**
+
 **Ngôn ngữ:** [English](README.md) · **Tiếng Việt** · [日本語](README.ja.md)
 
 ![Live2D pet](src-tauri/icons/128x128.png)

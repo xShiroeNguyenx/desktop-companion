@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="42%" r="65%">
+      <stop offset="0" stop-color="#ffe0ef"/>
+      <stop offset="0.55" stop-color="#ff9ccb"/>
+      <stop offset="1" stop-color="#ff73ab"/>
+    </radialGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#1b1320"/>
+  <text x="16" y="24" font-size="20" text-anchor="middle"
+        font-family="Segoe UI, Arial, sans-serif">🌸</text>
+</svg>

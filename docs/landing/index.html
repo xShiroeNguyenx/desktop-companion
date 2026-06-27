@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#140d18" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<title>Desktop Companion — a Live2D pet that translates, replies & remembers</title>
+<meta name="description" content="A standalone Live2D desktop pet for Windows with built-in AI translation, quick reply and task saving — works over any app. Powered by Claude or Gemini." />
+<style>
+  :root {
+    --app: #140d18; --panel: #1b1320; --elevated: #241726; --card: #1e1422;
+    --edge: #34243a; --edge-strong: #4a3252;
+    --text: #f1e9f2; --muted: #b9a7c2; --subtle: #7c6c86;
+    --accent: #ff73ab; --accent-2: #c084fc; --accent-soft: rgba(255,115,171,.14);
+    --success: #4ad991; --warning: #f5b14a; --danger: #ff6b6b; --blue: #7c8cff;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+    --maxw: 1120px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--app); color: var(--text);
+    font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .accent { color: var(--accent); }
+
+  body::before {
+    content: ""; position: fixed; inset: -20% -20% auto -20%; height: 72vh; z-index: 0;
+    background: radial-gradient(58% 60% at 50% 0%, rgba(255,115,171,.20), transparent 70%),
+                radial-gradient(42% 42% at 82% 8%, rgba(192,132,252,.16), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px);
+    background: rgba(20,13,24,.72); border-bottom: 1px solid var(--edge); }
+  nav .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; }
+  .brand .logo { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 40%, #ffe0ef, #ff9ccb 55%, #ff73ab); font-size: 17px;
+    box-shadow: 0 4px 14px rgba(255,115,171,.5); }
+  nav .links { margin-left: auto; display: flex; align-items: center; gap: 22px; }
+  nav .links a { color: var(--muted); font-size: 14px; }
+  nav .links a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 9px; padding: 10px 16px;
+    font-size: 14px; font-weight: 600; border: 1px solid var(--edge-strong); color: var(--text);
+    transition: .18s; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent;
+    color: #1b1320; box-shadow: 0 6px 20px rgba(255,115,171,.42); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  @media (max-width: 760px){ nav .links a.hide-sm { display:none; } }
+
+  /* hero */
+  header.hero { position: relative; z-index: 1; padding: 80px 0 30px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px;
+    color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(255,115,171,.3);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 22px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
+  h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.06; letter-spacing: -.025em; margin: 0 0 18px; font-weight: 800; }
+  h1 .grad { background: linear-gradient(120deg, #fff 10%, var(--accent) 55%, var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: clamp(16px, 2.2vw, 20px); color: var(--muted); max-width: 660px; margin: 0 0 28px; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+  .hero-note { font-size: 13px; color: var(--subtle); }
+  .hero-note code { font-family: var(--mono); color: var(--muted); background: var(--card); padding: 2px 7px; border-radius: 6px; border: 1px solid var(--edge); }
+
+  /* hero demo: desktop scene with pet + flower + popup */
+  .scene { margin-top: 46px; border: 1px solid var(--edge-strong); border-radius: 16px; overflow: hidden;
+    background: var(--panel); box-shadow: 0 30px 80px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.02); }
+  .scene-bar { display: flex; align-items: center; gap: 8px; padding: 11px 14px; background: var(--elevated); border-bottom: 1px solid var(--edge); }
+  .scene-bar .tdot { width: 12px; height: 12px; border-radius: 50%; }
+  .scene-bar .r{background:#ff5f57}.scene-bar .y{background:#febc2e}.scene-bar .g{background:#28c840}
+  .scene-bar .title { margin-left: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--subtle); }
+  .scene-bar .badge { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--accent);
+    border: 1px solid rgba(255,115,171,.35); border-radius: 6px; padding: 3px 8px; background: var(--accent-soft); }
+  .desk { position: relative; min-height: 320px; padding: 22px;
+    background:
+      radial-gradient(50% 60% at 20% 20%, rgba(192,132,252,.12), transparent 70%),
+      radial-gradient(50% 60% at 85% 75%, rgba(255,115,171,.12), transparent 70%),
+      #0e0a12; }
+  /* chat bubble being read */
+  .chatcard { max-width: 440px; border: 1px solid var(--edge); border-radius: 12px; background: var(--card); padding: 12px 14px; }
+  .chatcard .who { color: var(--blue); font-size: 12px; margin-bottom: 6px; }
+  .chatcard .msg { color: var(--text); font-size: 13.5px; }
+  .chatcard .hl { background: rgba(124,140,255,.32); border-radius: 3px; padding: 0 2px; }
+  /* flower marker */
+  .flower { position: absolute; left: 430px; top: 96px; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 16px;
+    background: radial-gradient(circle at 50% 42%, #ffe0ef, #ff9ccb 55%, #ff73ab);
+    box-shadow: 0 2px 10px rgba(0,0,0,.4); animation: pop .4s ease; }
+  @media (max-width: 620px){ .flower { display: none; } }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  /* translate popup */
+  .popup { position: absolute; right: 22px; top: 22px; width: 300px; border: 1px solid var(--edge-strong);
+    border-radius: 12px; background: var(--panel); box-shadow: 0 20px 50px -24px rgba(0,0,0,.9); overflow: hidden; }
+  @media (max-width: 620px){ .popup { position: static; width: auto; margin-top: 18px; } }
+  .popup .pbar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--elevated);
+    border-bottom: 1px solid var(--edge); font-size: 12px; color: var(--muted); }
+  .popup .pbody { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .ptabs { display: flex; gap: 6px; }
+  .ptab { flex: 1; text-align: center; font-size: 12px; padding: 6px; border-radius: 7px; border: 1px solid var(--edge); color: var(--muted); }
+  .ptab.on { background: var(--accent); color: #1b1320; border-color: var(--accent); font-weight: 600; }
+  .pbox { background: var(--card); border: 1px solid var(--edge); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; }
+  .pbox.src { color: var(--subtle); } .pbox.res { color: var(--text); min-height: 46px; }
+  .pet { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); text-align: center; }
+  .pet .ch { width: 130px; height: auto; display: block; margin: 0 auto;
+    filter: drop-shadow(0 10px 24px rgba(255,115,171,.45)); }
+  .pet .tag { font-family: var(--mono); font-size: 10px; color: var(--accent); border: 1px solid rgba(255,115,171,.35);
+    border-radius: 999px; padding: 2px 10px; background: var(--accent-soft); display: inline-flex; gap: 6px; align-items: center; margin-top: 4px; }
+  .pet .tag .d { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+  /* sections */
+  section { position: relative; z-index: 1; padding: 60px 0; }
+  .section-head { text-align: center; max-width: 680px; margin: 0 auto 44px; }
+  .kicker { font-family: var(--mono); font-size: 12.5px; color: var(--accent); text-transform: uppercase; letter-spacing: .14em; }
+  h2 { font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 10px 0 12px; font-weight: 800; }
+  .section-head p { color: var(--muted); margin: 0; font-size: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 900px){ .grid { grid-template-columns: repeat(2,1fr);} }
+  @media (max-width: 560px){ .grid { grid-template-columns: 1fr;} }
+  .card { background: linear-gradient(180deg, var(--card), var(--panel)); border: 1px solid var(--edge);
+    border-radius: 14px; padding: 22px; transition: .2s; position: relative; }
+  .card:hover { transform: translateY(-4px); border-color: var(--edge-strong); box-shadow: 0 18px 40px -22px rgba(0,0,0,.9); }
+  .card .ic { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; font-size: 20px;
+    background: var(--accent-soft); border: 1px solid rgba(255,115,171,.22); margin-bottom: 14px; }
+  .card h3 { margin: 0 0 6px; font-size: 16.5px; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
+  @media (max-width: 820px){ .steps { grid-template-columns: repeat(2,1fr);} }
+  @media (max-width: 480px){ .steps { grid-template-columns: 1fr;} }
+  .step { background: var(--card); border: 1px solid var(--edge); border-radius: 14px; padding: 22px 20px; position: relative; }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; top: 16px; right: 18px;
+    font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--edge-strong); }
+  .step .ic { font-size: 24px; margin-bottom: 10px; }
+  .step h3 { margin: 0 0 6px; font-size: 15.5px; } .step p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  /* spotlight */
+  .spot { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+  @media (max-width: 820px){ .spot { grid-template-columns: 1fr; gap: 24px; } .spot.rev .spot-art{ order: -1; } }
+  .spot h3 { font-size: clamp(22px, 3vw, 28px); margin: 12px 0 12px; letter-spacing: -.02em; }
+  .spot p { color: var(--muted); margin: 0 0 14px; }
+  .spot ul { margin: 0; padding-left: 18px; color: var(--muted); } .spot li { margin: 6px 0; } .spot li b { color: var(--text); font-weight: 600; }
+  .spot-art { background: var(--panel); border: 1px solid var(--edge-strong); border-radius: 14px; padding: 18px;
+    font-family: var(--mono); font-size: 13px; box-shadow: 0 20px 50px -30px rgba(0,0,0,.8); }
+  .codeline { white-space: pre-wrap; color: var(--muted); }
+  .codeline .k { color: var(--accent); } .codeline .ok { color: var(--success); } .codeline .c { color: var(--subtle); } .codeline .ja { color: var(--blue); }
+  .pillrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .pill { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--edge); border-radius: 999px; padding: 6px 12px; background: var(--card); }
+
+  .band { background: linear-gradient(180deg, rgba(192,132,252,.05), transparent); border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
+  .cta-box { text-align: center; background: linear-gradient(135deg, rgba(255,115,171,.12), rgba(192,132,252,.1));
+    border: 1px solid var(--edge-strong); border-radius: 20px; padding: 54px 24px; }
+
+  footer { border-top: 1px solid var(--edge); padding: 36px 0; color: var(--subtle); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  footer a { color: var(--muted); } footer a:hover { color: var(--text); }
+  footer .fl { display: flex; gap: 20px; flex-wrap: wrap; }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce){ .reveal { opacity:1; transform:none; } .flower{ animation:none; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="logo">🌸</span> Desktop Companion</a>
+    <div class="links">
+      <a class="hide-sm" href="#features">Features</a>
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#models">Models</a>
+      <a class="hide-sm" href="#privacy">Privacy</a>
+      <a class="btn" href="https://github.com/xShiroeNguyenx/desktop-companion" target="_blank" rel="noreferrer">★ GitHub</a>
+      <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span> Open-source · Local-first · Windows · Claude &amp; Gemini</span>
+    <h1>A desktop pet that<br><span class="grad">translates, replies &amp; remembers.</span></h1>
+    <p class="lead">Desktop Companion is a standalone Live2D buddy for Windows. Highlight text in <b>any</b> app — Teams, browsers, Word — and a 🌸 appears: <b>translate instantly</b>, <b>draft a reply</b>, or <b>save it as a task</b>. Powered by your own Claude or Gemini key.</p>
+    <div class="hero-cta">
+      <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download for Windows</a>
+      <a class="btn" href="#how">See how it works</a>
+    </div>
+    <p class="hero-note">Free &amp; open-source · <code>v0.1.0</code> · NSIS &amp; MSI installers on <a href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer" style="color:var(--accent)">Releases</a> — or build from source: <code>git clone … &amp;&amp; npm install &amp;&amp; npm run dev</code></p>
+
+    <!-- hero scene -->
+    <div class="scene">
+      <div class="scene-bar">
+        <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
+        <span class="title">your desktop — Teams + Companion</span>
+        <span class="badge">🌸 SELECT → TRANSLATE</span>
+      </div>
+      <div class="desk">
+        <div class="chatcard">
+          <div class="who">● Cam-san — 6:06 PM</div>
+          <div class="msg"><span class="hl">お疲れ様です。会議の資料を明日までに送っていただけますか？よろしくお願いします。</span></div>
+        </div>
+        <div class="flower">🌸</div>
+        <div class="popup">
+          <div class="pbar">🌸 Trợ lý văn bản</div>
+          <div class="pbody">
+            <div class="ptabs"><span class="ptab on">Dịch</span><span class="ptab">Trả lời</span><span class="ptab">Lưu task</span></div>
+            <div class="pbox src">お疲れ様です。会議の資料を明日までに…</div>
+            <div class="pbox res">Chào bạn. Bạn có thể gửi giúp mình tài liệu cuộc họp trước ngày mai được không ạ? Cảm ơn bạn nhiều.</div>
+          </div>
+        </div>
+        <div class="pet">
+          <img class="ch" src="hiyori.png" alt="Hiyori — Live2D companion" />
+          <div class="tag"><span class="d"></span> LIVE2D</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Everything in one pet</div>
+      <h2>Small buddy, big help</h2>
+      <p>A cute companion on your screen that quietly does the boring language work for you.</p>
+    </div>
+    <div class="grid">
+      <div class="card reveal"><div class="ic">🌸</div><h3>Translate anywhere</h3><p>Select text in any app → click the flower for an instant translation, or hold for the full panel.</p></div>
+      <div class="card reveal"><div class="ic">💬</div><h3>Quick reply</h3><p>Type your reply in Vietnamese; the AI writes a natural answer in the message's language (EN / JA / …).</p></div>
+      <div class="card reveal"><div class="ic">📝</div><h3>Save tasks</h3><p>Turn any selection into a TODO and manage it in the Tasks window — survives restarts.</p></div>
+      <div class="card reveal"><div class="ic">🎭</div><h3>Context presets</h3><p>Preset translation contexts (e.g. "formal work chat") so the tone always fits.</p></div>
+      <div class="card reveal"><div class="ic">👀</div><h3>Look-at cursor</h3><p>The model's eyes follow your mouse when it's nearby — a living desk companion.</p></div>
+      <div class="card reveal"><div class="ic">🔎</div><h3>Resize &amp; drag</h3><p>Drag anywhere; <span class="accent">Ctrl</span> + wheel to scale. Always-on-top, transparent, frameless.</p></div>
+      <div class="card reveal"><div class="ic">🎨</div><h3>Custom Live2D models</h3><p>Load your own <span class="accent">*.model3.json</span> models from any folder you downloaded.</p></div>
+      <div class="card reveal"><div class="ic">🔊</div><h3>Voices &amp; sounds</h3><p>Interaction SFX (poke / headpat) in Japanese, Vietnamese or English.</p></div>
+      <div class="card reveal"><div class="ic">⌨️</div><h3>Custom hotkey</h3><p>Rebind the capture shortcut to anything you like (default <span class="accent">Ctrl+Shift+Space</span>).</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="band">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Four small steps</div>
+      <h2>How it works</h2>
+      <p>From highlighted text to a polished translation or reply in seconds.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="ic">🖱️</div><h3>Select</h3><p>Highlight text in any app — chat, browser, document.</p></div>
+      <div class="step reveal"><div class="ic">🌸</div><h3>Flower appears</h3><p>A flower pops up next to your cursor automatically.</p></div>
+      <div class="step reveal"><div class="ic">👆</div><h3>Click or hold</h3><p>Click = instant translate. Hold = translate / reply / save task.</p></div>
+      <div class="step reveal"><div class="ic">📋</div><h3>Use it</h3><p>Copy the result, or send your AI-drafted reply. Done.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="reply">
+  <div class="wrap">
+    <div class="spot reveal">
+      <div>
+        <div class="kicker">Reply like a native</div>
+        <h3>Answer in their language, in your words</h3>
+        <p>Highlight the message you need to answer, type your point in Vietnamese, and Companion drafts a natural, work-appropriate reply in the message's language — not a word-for-word translation.</p>
+        <ul>
+          <li><b>Context-aware</b> — reads the original message to match tone &amp; formality.</li>
+          <li><b>Auto language</b> — detects Japanese / English from the selection.</li>
+          <li><b>One-click copy</b> — paste straight back into the chat.</li>
+        </ul>
+      </div>
+      <div class="spot-art">
+        <div class="codeline"><span class="c"># Original (you selected):</span>
+<span class="ja">会議の資料を送っていただけますか？</span>
+<span class="c"># Your reply (Vietnamese):</span>
+ok mình gửi trong chiều nay nhé
+<span class="c"># Companion drafts (Japanese):</span>
+<span class="ok">承知しました。本日中に資料を
+お送りします。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="models" class="band">
+  <div class="wrap">
+    <div class="spot rev reveal">
+      <div class="spot-art">
+        <div class="codeline"><span class="c">// Settings → "Model Live2D tự thêm"</span>
+📁 Choose folder…
+   └─ <span class="k">MyModel/</span>
+        ├─ MyModel.model3.json  <span class="ok">✓ found</span>
+        ├─ MyModel.moc3
+        └─ textures/
+
+<span class="c">// Now in right-click → Diện mạo</span>
+   Hiyori · Haru · Mao · Miara · <span class="ok">MyModel</span></div>
+      </div>
+      <div>
+        <div class="kicker">Make it yours</div>
+        <h3>Bring your own Live2D models</h3>
+        <p>Ships with four sample models — but you can load any Live2D Cubism 4 model you downloaded. Just point Companion at the folder and it appears in the Appearance menu.</p>
+        <ul>
+          <li><b>Any folder</b> — scans for <span class="accent">*.model3.json</span> automatically.</li>
+          <li><b>No copying</b> — served straight from where it lives on disk.</li>
+          <li><b>Switch instantly</b> — pick it from the right-click menu.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ai">
+  <div class="wrap">
+    <div class="spot reveal">
+      <div>
+        <div class="kicker">Your key, your choice</div>
+        <h3>Powered by Claude or Gemini</h3>
+        <p>Bring your own API key from Anthropic or Google. Companion fetches the live model list so you always pick the latest — and your key stays on your machine.</p>
+        <div class="pillrow">
+          <span class="pill"><span class="accent">●</span> Anthropic Claude</span>
+          <span class="pill"><span class="accent">●</span> Google Gemini</span>
+          <span class="pill"><span class="accent">●</span> Live model list</span>
+          <span class="pill"><span class="accent">●</span> BYO API key</span>
+        </div>
+      </div>
+      <div class="spot-art">
+        <div class="codeline"><span class="c"># Settings → Provider</span>
+Provider:  <span class="k">Gemini</span>
+API key:   ••••••••••••••••
+Model:     <span class="ok">gemini-2.5-flash</span>  <span class="c">[↻ fetch]</span>
+Dịch sang: Tiếng Việt</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy" class="band">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Local-first &amp; private</div>
+      <h2>Runs on your machine</h2>
+      <p>No account, no telemetry. Your settings, tasks and API key live locally.</p>
+    </div>
+    <div class="grid">
+      <div class="card reveal"><div class="ic">💾</div><h3>Local storage</h3><p>Settings &amp; tasks are plain JSON in your app config folder — yours to inspect or back up.</p></div>
+      <div class="card reveal"><div class="ic">🔑</div><h3>Your own key</h3><p>Calls go directly from your machine to Anthropic / Google with the key you provide. No middle server.</p></div>
+      <div class="card reveal"><div class="ic">🪶</div><h3>Tiny &amp; fast</h3><p>Built on Tauri 2 — a ~33 MB installer and ~45 MB RAM, starting with Windows.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <div class="kicker">Ready when you are</div>
+      <h2 style="margin-top:8px">Put a helpful companion on your desktop</h2>
+      <p style="color:var(--muted); max-width:560px; margin:0 auto 24px">Free and open-source. Download the installer, add your API key, and start translating in seconds.</p>
+      <div class="hero-cta" style="justify-content:center">
+        <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download</a>
+        <a class="btn" href="https://github.com/xShiroeNguyenx/desktop-companion" target="_blank" rel="noreferrer">★ Star on GitHub</a>
+        <a class="btn" href="https://github.com/xShiroeNguyenx/desktop-companion#readme">Read the docs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="logo">🌸</span> Desktop Companion</div>
+    <div class="fl">
+      <a href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">Download</a>
+      <a href="https://github.com/xShiroeNguyenx/desktop-companion#readme">English</a>
+      <a href="https://github.com/xShiroeNguyenx/desktop-companion/blob/main/README.vi.md">Tiếng Việt</a>
+      <a href="https://github.com/xShiroeNguyenx/desktop-companion/blob/main/README.ja.md">日本語</a>
+      <a href="https://github.com/xShiroeNguyenx/desktop-companion" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+    <div>Tauri 2 · Live2D Cubism 4 · PIXI.js</div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e){ e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+</body>
+</html>
