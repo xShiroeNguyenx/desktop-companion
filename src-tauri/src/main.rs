@@ -18,7 +18,7 @@ use std::{
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
+    AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 
 struct AppState {
@@ -70,6 +70,59 @@ fn apply_click_through(window: &tauri::WebviewWindow, ignore: bool) -> Result<()
 #[tauri::command]
 fn set_click_through(window: tauri::WebviewWindow, ignore: bool) -> Result<(), String> {
     apply_click_through(&window, ignore)
+}
+
+#[derive(Serialize)]
+struct UpdateInfo {
+    available: bool,
+    version: String,
+    current: String,
+    notes: String,
+}
+
+// Check GitHub Releases for a newer signed version. Returns availability + the
+// new version string (does not download).
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<UpdateInfo, String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    let current = app.package_info().version.to_string();
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    match updater.check().await {
+        Ok(Some(update)) => Ok(UpdateInfo {
+            available: true,
+            version: update.version.clone(),
+            current,
+            notes: update.body.clone().unwrap_or_default(),
+        }),
+        Ok(None) => Ok(UpdateInfo {
+            available: false,
+            version: current.clone(),
+            current,
+            notes: String::new(),
+        }),
+        Err(e) => Err(format!("Lỗi kiểm tra cập nhật: {e}")),
+    }
+}
+
+// Download + install the available update, then relaunch the app.
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("Không có bản cập nhật nào.")?;
+
+    update
+        .download_and_install(|_chunk, _total| {}, || {})
+        .await
+        .map_err(|e| format!("Lỗi tải/cài cập nhật: {e}"))?;
+
+    app.restart();
 }
 
 // Change the global capture hotkey and persist it. Returns Ok if registered.
@@ -219,6 +272,8 @@ fn main() {
     use tauri_plugin_global_shortcut::ShortcutState;
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -286,6 +341,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             set_click_through,
             set_hotkey,
+            check_update,
+            install_update,
             pet_command,
             commands::dc_log,
             commands::get_selection,
@@ -361,6 +418,24 @@ fn main() {
             // Global selection capture + look-at feed, and the hotkey fallback.
             selection::init(&app_handle);
             register_capture_hotkey(&app_handle, &settings.hotkey);
+
+            // Silent update check ~5s after launch; if a newer version exists,
+            // tell the pet so it can show a gentle bubble.
+            {
+                let app_for_update = app_handle.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(5));
+                    tauri::async_runtime::block_on(async {
+                        if let Ok(info) = check_update(app_for_update.clone()).await {
+                            if info.available {
+                                if let Some(w) = app_for_update.get_webview_window("main") {
+                                    let _ = w.emit("update-available", info.version);
+                                }
+                            }
+                        }
+                    });
+                });
+            }
 
             // Tray.
             let show_item = MenuItem::with_id(app, "toggle_show", "Hiện / Ẩn pet", true, None::<&str>)?;

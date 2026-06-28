@@ -1,6 +1,6 @@
 {
   "name": "desktop-companion",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Standalone Live2D desktop pet with translate / quick-reply / task features",
   "scripts": {

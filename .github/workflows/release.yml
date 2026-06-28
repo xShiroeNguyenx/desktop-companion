@@ -39,9 +39,13 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the update artifacts and generates latest.json for the updater.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Desktop Companion ${{ github.ref_name }}"
-          releaseBody: "See the assets below to download and install."
+          releaseBody: "See the assets below to download and install. The app auto-checks for updates on launch."
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true

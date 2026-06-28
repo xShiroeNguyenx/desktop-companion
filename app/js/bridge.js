@@ -60,6 +60,15 @@
       if (window.__onCursorPos__) window.__onCursorPos__(event.payload);
     });
 
+    // A newer version is available → nudge the user with a bubble.
+    TAURI.event.listen('update-available', (event) => {
+      try {
+        window.dispatchEvent(new MessageEvent('message', {
+          data: { command: 'showMessage', text: '✨ Có bản mới v' + event.payload + '! Mở Cài đặt → Kiểm tra cập nhật nha~' },
+        }));
+      } catch (_) { /* ignore */ }
+    });
+
     // Custom model list changed in Settings → refresh the cached list and reload
     // so the Appearance menu shows the new models.
     TAURI.event.listen('models-changed', async () => {

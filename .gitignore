@@ -11,3 +11,7 @@ Thumbs.db
 
 # Local runtime artifacts
 *.tmp
+
+# Updater signing private key — NEVER commit this
+updater-private.key
+*.key

@@ -288,6 +288,40 @@
     }
   });
 
+  // ── Updates ─────────────────────────────────────────────────────────────
+  $('checkUpdate').addEventListener('click', async () => {
+    const st = $('updateStatus');
+    st.className = 'status'; st.textContent = 'Đang kiểm tra...';
+    $('installUpdate').style.display = 'none';
+    try {
+      const info = await invoke('check_update');
+      if (info.available) {
+        st.className = 'status ok';
+        st.textContent = 'Có bản mới: v' + info.version + ' (đang dùng v' + info.current + ')';
+        $('installUpdate').style.display = '';
+      } else {
+        st.className = 'status';
+        st.textContent = 'Bạn đang dùng bản mới nhất (v' + info.current + ').';
+      }
+    } catch (e) {
+      st.className = 'status err';
+      st.textContent = String(e);
+    }
+  });
+
+  $('installUpdate').addEventListener('click', async () => {
+    const st = $('updateStatus');
+    st.className = 'status'; st.textContent = 'Đang tải & cài bản mới... App sẽ tự khởi động lại.';
+    $('installUpdate').disabled = true;
+    try {
+      await invoke('install_update');
+    } catch (e) {
+      st.className = 'status err';
+      st.textContent = String(e);
+      $('installUpdate').disabled = false;
+    }
+  });
+
   if (window.DC.listen) window.DC.listen('settings-refresh', load);
   load();
 })();
