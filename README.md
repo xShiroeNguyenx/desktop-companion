@@ -17,7 +17,8 @@
   starts with Windows. Right-click for the menu.
 - **Translate** — select text in **any** app → a 🌸 flower appears near the cursor
   → **click** for an instant translation, or **press-and-hold** for the full panel
-  (translate / reply / save task).
+  (translate / reply / save task). A 📋 icon shows above the flower — click it or
+  press **Ctrl+C** (while the flower is up) to copy the selected text.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Save tasks** — turn any selected text into a TODO; manage them in the Tasks window.

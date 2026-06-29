@@ -18,7 +18,8 @@ duyệt, Word…).
   được, khởi động cùng Windows. Chuột phải để mở menu.
 - **Dịch** — bôi đen văn bản ở **bất kỳ** ứng dụng nào → bông hoa 🌸 hiện cạnh con
   trỏ → **click** để dịch ngay, hoặc **nhấn giữ** để mở bảng đầy đủ (dịch / trả
-  lời / lưu task).
+  lời / lưu task). Phía trên có icon 📋 — bấm hoặc nhấn **Ctrl+C** (khi bông hoa
+  đang hiện) để sao chép đoạn vừa chọn.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO; quản lý trong cửa sổ Tasks.

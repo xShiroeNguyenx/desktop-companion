@@ -1,10 +1,13 @@
-// The selection "flower" overlay.
-//   - Short click  → dịch ngay (mở popup ở tab Dịch và tự chạy).
-//   - Nhấn giữ     → mở popup đầy đủ 3 tab để chọn (Dịch / Trả lời / Lưu task).
+// The selection "flower" overlay. The copy icon (📋) shows above the flower as
+// soon as text is captured.
+//   - 📋          → sao chép nội dung gốc (làm ở Rust, khỏi vướng focus webview).
+//   - Click 🌸    → dịch nhanh (cửa sổ dịch đơn giản).
+//   - Nhấn giữ 🌸 → mở popup đầy đủ 3 tab (Dịch / Trả lời / Lưu task).
 // Auto-hides after a short idle so a stale flower doesn't linger.
 (function () {
   const { invoke, listen, log } = window.DC;
   const btn = document.getElementById('flower');
+  const qaCopy = document.getElementById('qaCopy');
   let hideTimer = null;
   let pressTimer = null;
   let longPressed = false;
@@ -28,15 +31,39 @@
 
   btn.addEventListener('mouseup', () => {
     clearTimeout(pressTimer);
-    if (longPressed) return; // đã xử lý ở long-press
+    if (longPressed) return; // giữ lâu → đã mở popup
     log('flower click → translate');
     invoke('flower_action', { mode: 'translate' }).catch((e) => log('flower_action translate: ' + e));
   });
 
-  btn.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-  btn.addEventListener('mouseleave', () => scheduleHide(2500));
+  // 📋 Sao chép nội dung gốc.
+  qaCopy.addEventListener('click', async () => {
+    clearTimeout(hideTimer);
+    try {
+      await invoke('copy_selection');
+      qaCopy.textContent = '✓';
+      setTimeout(() => invoke('close_flower').catch((e) => log('close_flower: ' + e)), 650);
+    } catch (e) {
+      log('copy_selection: ' + e);
+      qaCopy.textContent = '✕';
+      setTimeout(() => invoke('close_flower').catch(() => {}), 900);
+    }
+  });
 
-  listen('flower-shown', () => scheduleHide(5000));
+  // Keep alive while the cursor is anywhere over the flower window.
+  document.body.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  document.body.addEventListener('mouseleave', () => scheduleHide(2500));
+
+  // Ctrl+C (handled in Rust while the flower is shown) copied the selection —
+  // flash the result on the copy icon, then close.
+  listen('flower-copied', (event) => {
+    clearTimeout(hideTimer);
+    qaCopy.textContent = (event && event.payload) ? '✓' : '✕';
+    setTimeout(() => invoke('close_flower').catch((e) => log('close_flower: ' + e)), 650);
+  });
+
+  // Reset the copy icon glyph on each fresh show.
+  listen('flower-shown', () => { qaCopy.textContent = '📋'; scheduleHide(5000); });
   scheduleHide(5000);
   log('flower.js ready');
 })();

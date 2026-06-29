@@ -4,6 +4,7 @@
   const { invoke, listen, log } = window.DC;
   const $ = (id) => document.getElementById(id);
   let lastResult = '';
+  let lastSource = '';
 
   function setStatus(msg, kind) {
     const el = $('status');
@@ -13,6 +14,7 @@
 
   async function run() {
     lastResult = '';
+    lastSource = '';
     $('source').textContent = '...';
     $('result').textContent = 'Đang dịch...';
     $('result').classList.add('empty');
@@ -30,6 +32,7 @@
       return;
     }
     $('source').textContent = sel.text;
+    lastSource = sel.text;
     try {
       // Empty context → Rust falls back to the default context from Settings.
       const out = await invoke('llm_translate', { text: sel.text, context: '', target: '' });
@@ -46,7 +49,17 @@
     if (!lastResult) return;
     try {
       await navigator.clipboard.writeText(lastResult);
-      setStatus('Đã sao chép! ✓', 'ok');
+      setStatus('Đã sao chép bản dịch! ✓', 'ok');
+    } catch (e) {
+      setStatus('Không sao chép được.', 'err');
+    }
+  });
+
+  $('copySrcBtn').addEventListener('click', async () => {
+    if (!lastSource) return;
+    try {
+      await navigator.clipboard.writeText(lastSource);
+      setStatus('Đã sao chép nội dung gốc! ✓', 'ok');
     } catch (e) {
       setStatus('Không sao chép được.', 'err');
     }

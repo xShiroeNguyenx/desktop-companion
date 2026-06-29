@@ -24,6 +24,13 @@ static FLOWER_X: AtomicI32 = AtomicI32::new(0);
 static FLOWER_Y: AtomicI32 = AtomicI32::new(0);
 static FLOWER_TOKEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
+// Flower window geometry (logical px). The window always shows the quick-copy
+// icon stacked above the flower; the flower sits at the bottom, anchored
+// FLOWER_ANCHOR_OFFSET px below the window top so it lands at the cursor spot.
+const FLOWER_W: f64 = 30.0;
+const FLOWER_H: f64 = 62.0;
+const FLOWER_ANCHOR_OFFSET: f64 = 32.0;
+
 // Keep the flower (a tiny no-activate button) from stealing focus from the app
 // the user just selected text in.
 #[cfg(windows)]
@@ -74,16 +81,22 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
     dbg_log(&format!("[windows] show_flower_inner ENTER ({x},{y})"));
     let pos = PhysicalPosition::new(x + 8, y + 8);
     if let Some(w) = app.get_webview_window("flower") {
-        let _ = w.set_position(pos);
+        // Shift the window up so the flower (bottom row) lands at the cursor and
+        // the copy icon sits just above it. DPI-aware via the scale factor.
+        let scale = w.scale_factor().unwrap_or(1.0);
+        let dy = (FLOWER_ANCHOR_OFFSET * scale).round() as i32;
+        let _ = w.set_size(tauri::LogicalSize::new(FLOWER_W, FLOWER_H));
+        let _ = w.set_position(PhysicalPosition::new(x + 8, y + 8 - dy));
         set_no_activate(&w);
         let _ = w.show();
         let _ = w.set_focus();
+        crate::set_copy_hotkey(app, true);
         let _ = w.emit("flower-shown", ());
         dbg_log("[windows] flower reused+shown");
         return;
     }
     match WebviewWindowBuilder::new(app, "flower", WebviewUrl::App("flower.html".into()))
-        .inner_size(48.0, 48.0)
+        .inner_size(FLOWER_W, FLOWER_H)
         .transparent(true)
         .decorations(false)
         .shadow(false)
@@ -98,6 +111,7 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
             let _ = w.set_position(pos);
             set_no_activate(&w);
             let _ = w.show();
+            crate::set_copy_hotkey(app, true);
             eprintln!("[windows] flower created at ({x},{y})");
         }
         Err(e) => eprintln!("[windows] flower build FAILED: {e}"),
@@ -110,7 +124,7 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
 // them here avoids that entirely (we only show/position them afterwards).
 pub fn precreate(app: &AppHandle) {
     let _ = WebviewWindowBuilder::new(app, "flower", WebviewUrl::App("flower.html".into()))
-        .inner_size(30.0, 30.0)
+        .inner_size(FLOWER_W, FLOWER_H)
         .transparent(true)
         .decorations(false)
         .shadow(false)
@@ -181,13 +195,16 @@ pub fn show_flower(app: &AppHandle, x: i32, y: i32) {
 }
 
 pub fn hide_flower(app: &AppHandle) {
+    // Release the transient Ctrl+C grab whenever the flower goes away.
+    crate::set_copy_hotkey(app, false);
     if let Some(w) = app.get_webview_window("flower") {
         let _ = w.hide();
     }
 }
 
 // Called from the flower webview (main thread).
-// mode = "translate" (short click → cửa sổ dịch đơn giản) | "menu" (giữ → 3 tab).
+//   mode = "translate" → cửa sổ dịch nhanh (click ngắn)
+//   mode = "menu"      → popup đầy đủ 3 tab (nhấn giữ, mặc định tab Dịch)
 pub fn flower_action(app: &AppHandle, mode: &str) {
     let x = FLOWER_X.load(Ordering::SeqCst);
     let y = FLOWER_Y.load(Ordering::SeqCst);
@@ -195,7 +212,7 @@ pub fn flower_action(app: &AppHandle, mode: &str) {
     if mode == "translate" {
         open_quick(app, x, y);
     } else {
-        open_popup(app, x, y);
+        open_popup_tab(app, x, y, "translate");
     }
 }
 
@@ -215,15 +232,16 @@ fn open_quick(app: &AppHandle, x: i32, y: i32) {
     }
 }
 
-pub fn open_popup(app: &AppHandle, x: i32, y: i32) {
-    dbg_log(&format!("[windows] open_popup ENTER ({x},{y})"));
+// `tab` ("translate" | "reply" | "task") tells the popup which tab to open on.
+fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
+    dbg_log(&format!("[windows] open_popup ENTER ({x},{y}) tab={tab}"));
     let pos = PhysicalPosition::new(x, y);
     if let Some(w) = app.get_webview_window("popup") {
         let _ = w.set_position(pos);
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
-        let _ = w.emit("popup-refresh", "menu".to_string());
+        let _ = w.emit("popup-refresh", tab.to_string());
         force_repaint(app, "popup");
         dbg_log("[windows] popup shown");
     } else {

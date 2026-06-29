@@ -111,6 +111,21 @@
   });
   $('tkOpen').addEventListener('click', () => invoke('open_tasks'));
 
+  // Copy the original captured selection (the auto-capture restores the user's
+  // old clipboard, so the selected text would otherwise be unreachable).
+  $('selCopy').addEventListener('click', async () => {
+    if (!selection.text) return;
+    const btn = $('selCopy');
+    try {
+      await navigator.clipboard.writeText(selection.text);
+      const old = btn.textContent;
+      btn.textContent = 'Đã chép ✓';
+      setTimeout(() => { btn.textContent = old; }, 1200);
+    } catch (e) {
+      log('selCopy: ' + e);
+    }
+  });
+
   function setStatus(id, msg, kind) {
     const el = $(id);
     el.className = 'status' + (kind ? ' ' + kind : '');

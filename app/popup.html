@@ -12,7 +12,10 @@
 </head>
 <body>
   <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
-  <div class="box-label" id="selLabel" style="font-size:11px;color:#9aa0b4;margin-bottom:2px;">Văn bản đã chọn</div>
+  <div class="row tight" style="align-items:center;margin-bottom:2px;">
+    <div class="box-label" id="selLabel" style="flex:1;font-size:11px;color:#9aa0b4;">Văn bản đã chọn</div>
+    <button class="ghost" id="selCopy" type="button" style="flex:0 0 auto;padding:4px 10px;font-size:12px;">Sao chép</button>
+  </div>
   <div class="selected-box" id="selectedText">(chưa có văn bản được chọn)</div>
 
   <div class="tabs">

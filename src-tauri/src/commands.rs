@@ -54,6 +54,16 @@ pub fn close_flower(app: AppHandle) {
     windows::hide_flower(&app);
 }
 
+// Quick-copy the captured selection back onto the clipboard (flower 📋 icon).
+#[tauri::command]
+pub fn copy_selection() -> Result<(), String> {
+    if selection::copy_last_selection() {
+        Ok(())
+    } else {
+        Err("Chưa có văn bản để sao chép.".to_string())
+    }
+}
+
 #[tauri::command]
 pub fn open_tasks(app: AppHandle) {
     windows::open_tasks(&app);
@@ -308,6 +318,24 @@ pub fn autostart_set(app: AppHandle, enabled: bool) -> Result<(), String> {
     if enabled {
         manager.enable().map_err(|e| e.to_string())
     } else {
-        manager.disable().map_err(|e| e.to_string())
+        // disable() xoá value trong registry. Máy mới cài chưa từng bật
+        // autostart nên value không tồn tại → winreg trả về
+        // "The system cannot find the file specified. (os error 2)".
+        // Chỉ disable khi đang thực sự bật, và coi lỗi "không tìm thấy" là OK.
+        if manager.is_enabled().unwrap_or(false) {
+            match manager.disable() {
+                Ok(()) => Ok(()),
+                Err(e) => {
+                    let msg = e.to_string();
+                    if msg.contains("os error 2") || msg.contains("cannot find") {
+                        Ok(())
+                    } else {
+                        Err(msg)
+                    }
+                }
+            }
+        } else {
+            Ok(())
+        }
     }
 }

@@ -117,6 +117,23 @@ pub fn last_selection_json() -> Option<Value> {
     serde_json::to_value(payload).ok()
 }
 
+// Put the most-recent captured selection back onto the clipboard. The auto-
+// capture restores the user's previous clipboard, so the selected text is
+// otherwise unreachable — this lets the flower's quick-copy icon recover it.
+pub fn copy_last_selection() -> bool {
+    let text = {
+        let Ok(guard) = LAST_SELECTION.lock() else {
+            return false;
+        };
+        match guard.as_ref() {
+            Some(p) if !p.text.trim().is_empty() => p.text.clone(),
+            _ => return false,
+        }
+    };
+    write_clipboard(&text);
+    true
+}
+
 fn lookat_emit_thread() {
     let mut last_seq = 0u64;
     loop {
@@ -153,8 +170,16 @@ pub fn request_capture_at_cursor() {
 
 fn worker(rx: mpsc::Receiver<CaptureReq>) {
     while let Ok(req) = rx.recv() {
+        // A still-visible flower has Ctrl+C grabbed as a global shortcut; hiding
+        // it first releases that grab so our own simulated Ctrl+C below actually
+        // reaches the source app instead of being intercepted.
+        if let Some(app) = APP.get() {
+            let app2 = app.clone();
+            let _ = app.run_on_main_thread(move || crate::windows::hide_flower(&app2));
+        }
+
         // Let the selection settle (the up event that triggered us may still be
-        // propagating in the source app).
+        // propagating in the source app) — also covers the unregister latency.
         std::thread::sleep(Duration::from_millis(40));
 
         log_sel("[selection] worker got request, reading clipboard...");

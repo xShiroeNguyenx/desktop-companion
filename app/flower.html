@@ -5,6 +5,11 @@
   <title>flower</title>
   <style>
     html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    /* Copy icon stacked above the flower; both visible as soon as text is selected. */
+    body {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; gap: 4px; padding: 0;
+    }
     #flower {
       width: 26px; height: 26px; margin: 2px; padding: 0;
       border: none; border-radius: 50%; cursor: pointer;
@@ -14,15 +19,30 @@
       font-size: 15px; line-height: 1;
       transition: transform 0.12s ease;
       animation: pop 0.18s ease;
-      user-select: none;
+      user-select: none; flex: 0 0 auto;
     }
     #flower:hover { transform: scale(1.14); }
     #flower:active { transform: scale(0.94); }
+
+    .qa {
+      width: 26px; height: 26px; padding: 0; flex: 0 0 auto;
+      border: none; border-radius: 50%; cursor: pointer;
+      background: rgba(40, 42, 54, 0.92);
+      color: #fff; font-size: 14px; line-height: 1;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+      display: flex; align-items: center; justify-content: center;
+      user-select: none;
+      animation: pop 0.16s ease;
+    }
+    .qa:hover { background: #3a3d4d; transform: scale(1.12); }
+    .qa:active { transform: scale(0.94); }
+
     @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
-  <button id="flower" title="Dịch / Trả lời / Lưu task">🌸</button>
+  <button id="qaCopy" class="qa" type="button" title="Sao chép nội dung gốc">📋</button>
+  <button id="flower" title="Click: dịch nhanh · Giữ: mở popup 3 tab">🌸</button>
   <script src="js/tauri-api.js"></script>
   <script src="js/flower.js"></script>
 </body>

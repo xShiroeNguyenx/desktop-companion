@@ -268,6 +268,22 @@ fn register_capture_hotkey(app: &AppHandle, spec: &str) -> bool {
     }
 }
 
+// Transient Ctrl+C: registered only while the flower is visible so pressing
+// Ctrl+C copies the captured selection (the 📋 icon) instead of the source
+// app's clipboard. Never left registered, so the system Ctrl+C is untouched
+// the rest of the time — and the selection capture's own simulated Ctrl+C is
+// only fired after this has been released (see selection::worker).
+pub(crate) fn set_copy_hotkey(app: &AppHandle, on: bool) {
+    use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+    let gs = app.global_shortcut();
+    let sc = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyC);
+    if on {
+        let _ = gs.register(sc);
+    } else {
+        let _ = gs.unregister(sc);
+    }
+}
+
 fn main() {
     use tauri_plugin_global_shortcut::ShortcutState;
 
@@ -281,8 +297,20 @@ fn main() {
         ))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|_app, _shortcut, event| {
-                    if event.state() == ShortcutState::Pressed {
+                .with_handler(|app, shortcut, event| {
+                    use tauri_plugin_global_shortcut::{Code, Modifiers};
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    // Transient Ctrl+C (only registered while the flower shows):
+                    // copy the captured selection, then dismiss the flower with a
+                    // ✓ / ✕ on the copy icon.
+                    if shortcut.matches(Modifiers::CONTROL, Code::KeyC) {
+                        let ok = selection::copy_last_selection();
+                        if let Some(w) = app.get_webview_window("flower") {
+                            let _ = w.emit("flower-copied", ok);
+                        }
+                    } else {
                         selection::request_capture_at_cursor();
                     }
                 })
@@ -349,6 +377,7 @@ fn main() {
             commands::flower_clicked,
             commands::flower_action,
             commands::close_flower,
+            commands::copy_selection,
             commands::open_tasks,
             commands::open_settings,
             commands::detect_lang,
