@@ -4,6 +4,18 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.3] - 2026-07-01
+
+### Fixed
+- **The selection flower no longer steals keyboard focus.** When you drag-select
+  text, the 🌸 flower now pops up _without_ pulling focus away from the app you
+  selected in — your caret and the highlighted text stay exactly where they were,
+  so you can keep typing or editing right away. Previously the (pre-created,
+  reused) flower window called `set_focus()` on every show, which activated the
+  overlay and moved focus off the highlighted paragraph. The flower stays fully
+  clickable thanks to its `WS_EX_NOACTIVATE` style and remains on top via
+  `always_on_top`.
+
 ## [0.2.2] - 2026-06-29
 
 ### Added
@@ -44,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.2.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.3
 [0.2.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.2
 [0.2.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.1
 [0.2.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.0

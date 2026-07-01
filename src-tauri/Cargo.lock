@@ -618,7 +618,7 @@ dependencies = [
 
 [[package]]
 name = "desktop-companion"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "arboard",
  "reqwest 0.12.28",

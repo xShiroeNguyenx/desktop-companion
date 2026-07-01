@@ -88,8 +88,11 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
         let _ = w.set_size(tauri::LogicalSize::new(FLOWER_W, FLOWER_H));
         let _ = w.set_position(PhysicalPosition::new(x + 8, y + 8 - dy));
         set_no_activate(&w);
+        // KHÔNG gọi set_focus(): bông hoa chỉ hiện lên chứ không được cướp focus
+        // khỏi đoạn văn người dùng vừa bôi đen. Cờ WS_EX_NOACTIVATE vẫn cho phép
+        // click vào bông hoa mà không cần kích hoạt cửa sổ, và always_on_top giữ
+        // nó luôn nổi trên cùng.
         let _ = w.show();
-        let _ = w.set_focus();
         crate::set_copy_hotkey(app, true);
         let _ = w.emit("flower-shown", ());
         dbg_log("[windows] flower reused+shown");
