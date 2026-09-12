@@ -19,6 +19,7 @@ import {
   recenterFollow,
   setDizzyHandler,
 } from './rotation.js';
+import { createRadialMenu } from './radial-menu.js';
 
 const HEART_CURSOR_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48">
@@ -794,6 +795,9 @@ function setupContextMenu() {
 
 function setupCompactContextMenu() {
   const isDesktop = !!window.__DESKTOP_PET_MODE__;
+  // Radial ring (mặc định, giống anime-companion-vscode). Đặt null để quay về
+  // menu danh sách cũ bằng `window.__MENU_STYLE__ = 'list'`.
+  let radialMenu = null;
 
   // Functional categories per roadmap v0.4.0 §4.1. Each category produces one
   // submenu; the main menu just lists categories + a couple of quick actions.
@@ -962,6 +966,7 @@ function setupCompactContextMenu() {
 
   const closeContextMenus = () => {
     for (const m of allMenus) m.classList.remove('show');
+    radialMenu?.close();
   };
 
   const positionMenu = (targetMenu, left, top) => {
@@ -1142,8 +1147,51 @@ function setupCompactContextMenu() {
     createSparkle();
   }, true);
 
+  // Ring là kiểu mặc định — cùng một handleMenuAction với menu danh sách, nên
+  // ring chỉ là lớp vỏ khác của đúng bộ entry đó. Danh sách cũ vẫn còn dùng
+  // được qua `window.__MENU_STYLE__ = 'list'`.
+  if (window.__MENU_STYLE__ !== 'list') {
+    radialMenu = createRadialMenu({
+      getItems: () => [
+        ...categories.map((cat) => ({
+          id: cat.id,
+          icon: cat.icon,
+          label: cat.label,
+          // Mute / look-at đọc trạng thái ngay lúc mở, giống cách menu danh
+          // sách làm qua syncMuteMenuLabel / syncFocusMenuLabel.
+          items: cat.items.map((item) => ({
+            icon: item.mute
+              ? (window.__AUDIO_MUTED__ ? '🔊' : '🔇')
+              : item.focus
+                ? (window.__FOCUS_FOLLOW__ ? '✅' : '👀')
+                : item.icon,
+            label: item.mute
+              ? (window.__AUDIO_MUTED__ ? t('menu.unmute', 'Unmute') : t('menu.mute', 'Mute'))
+              : item.label,
+            action: item.action,
+          })),
+        })),
+        { icon: '📝', label: 'Công việc', action: 'open-tasks' },
+        { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
+      ],
+      onAction: handleMenuAction,
+      labels: {
+        title: t('menu.radialTitle', 'Menu'),
+        back: t('menu.radialBack', 'Quay lại'),
+        close: t('panels.sideClose', 'Đóng'),
+      },
+    });
+  }
+
   window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+    if (radialMenu) {
+      // Chuột phải lần hai thì đóng ring; menu danh sách không dùng tới.
+      const wasOpen = radialMenu.isOpen();
+      closeContextMenus();
+      if (!wasOpen) radialMenu.openAt(e.clientX, e.clientY);
+      return;
+    }
     syncMuteMenuLabel(mainMenu);
     for (const id of Object.keys(submenus)) {
       syncMuteMenuLabel(submenus[id]);
@@ -1156,6 +1204,7 @@ function setupCompactContextMenu() {
 
   window.addEventListener('click', (e) => {
     if (allMenus.some((m) => m.contains(e.target))) return;
+    if (radialMenu?.contains(e.target)) return;
     closeContextMenus();
   }, true);
 

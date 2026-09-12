@@ -43,7 +43,7 @@ pub fn flower_clicked(app: AppHandle) {
     windows::flower_action(&app, "menu");
 }
 
-// mode = "translate" (short click → dịch ngay) | "menu" (giữ → hiện 3 tab)
+// mode = "translate" (click ngắn → dịch ngay) | "radial" (giữ → ring)
 #[tauri::command]
 pub fn flower_action(app: AppHandle, mode: String) {
     windows::flower_action(&app, &mode);
@@ -52,6 +52,17 @@ pub fn flower_action(app: AppHandle, mode: String) {
 #[tauri::command]
 pub fn close_flower(app: AppHandle) {
     windows::hide_flower(&app);
+}
+
+// Một mục trên ring: "translate" | "reply" | "task" | "full".
+#[tauri::command]
+pub fn flower_menu_action(app: AppHandle, action: String) {
+    windows::flower_menu_action(&app, &action);
+}
+
+#[tauri::command]
+pub fn close_flower_menu(app: AppHandle) {
+    windows::hide_flower_menu(&app);
 }
 
 // Quick-copy the captured selection back onto the clipboard (flower 📋 icon).

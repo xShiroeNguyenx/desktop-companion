@@ -377,6 +377,8 @@ fn main() {
             commands::flower_clicked,
             commands::flower_action,
             commands::close_flower,
+            commands::flower_menu_action,
+            commands::close_flower_menu,
             commands::copy_selection,
             commands::open_tasks,
             commands::open_settings,

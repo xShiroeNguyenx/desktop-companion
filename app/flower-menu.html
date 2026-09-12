@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!--
+  Menu xoay tròn cho đoạn văn vừa bôi đen (nhấn giữ 🌸).
+  Cửa sổ trong suốt, không viền: chỉ các nút trên vòng mới nhận chuột, phần nền
+  để `pointer-events: none` nên không tạo vùng chết trên màn hình.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>menu</title>
+  <link rel="stylesheet" href="/media/companion.css" />
+  <style>
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+    /* Nền trong suốt không được nuốt click — chỉ ring + nút giữa mới bắt chuột
+       (companion.css đã đặt pointer-events:auto cho .companion-radial-item và
+       .companion-radial-center). */
+    body { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <script src="js/tauri-api.js"></script>
+  <script type="module" src="js/flower-menu.js"></script>
+</body>
+</html>

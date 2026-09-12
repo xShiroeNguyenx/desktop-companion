@@ -150,10 +150,13 @@
   }
 
   // Re-fetch when the popup (full 3-tab menu) is reused for a fresh selection.
-  listen('popup-refresh', async () => {
+  // Payload là tab cần mở sẵn ("translate" | "reply" | "task") — ring gửi
+  // "reply"/"task" nên phải tôn trọng nó, không mặc định về tab Dịch.
+  listen('popup-refresh', async (event) => {
+    const tab = (event && typeof event.payload === 'string' && event.payload) || 'translate';
     resetResults();
     await Promise.all([loadSelection(), loadContexts()]);
-    switchTab('translate');
+    switchTab(tab);
   });
 
   loadContexts();

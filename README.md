@@ -14,11 +14,11 @@
 ## Features
 
 - **Live2D desktop pet** — a transparent, always-on-top, draggable companion that
-  starts with Windows. Right-click for the menu.
+  starts with Windows. Right-click for the **radial menu**.
 - **Translate** — select text in **any** app → a 🌸 flower appears near the cursor
-  → **click** for an instant translation, or **press-and-hold** for the full panel
-  (translate / reply / save task). A 📋 icon shows above the flower — click it or
-  press **Ctrl+C** (while the flower is up) to copy the selected text.
+  → **click** for an instant translation, or **press-and-hold** to fan out a
+  **radial menu**: 🌐 translate · 📋 copy · 💬 reply · 📝 save as task · 🗂️ full panel.
+  **Ctrl+C** (while the flower is up) still copies the selected text.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Save tasks** — turn any selected text into a TODO; manage them in the Tasks window.
@@ -51,15 +51,20 @@ Run it and the app launches automatically. It lives in the system tray.
 1. **Set your API key** — tray icon → **Cài đặt / Settings** → choose a provider
    (Anthropic or Gemini) → paste your key → **Save**.
 2. **Translate** — select text anywhere → click the 🌸 flower.
-3. **Reply** — select a message → press-and-hold the flower → **Reply** tab → type
-   in Vietnamese → **Generate**.
-4. **Tasks** — tray → **Tasks**, or save a selection via the flower's hold menu.
+3. **Reply** — select a message → press-and-hold the flower → pick 💬 **Reply** →
+   type in Vietnamese → **Generate**.
+4. **Tasks** — tray → **Tasks**, or pick 📝 **Save as task** on the flower's radial
+   menu.
 
 ### Tray menu
 
 Show/Hide pet · Tasks · Settings · Toggle click-through · Quit
 
 ### Right-click the pet
+
+A radial menu fans out around the cursor. Hovering an icon shows its name in the
+centre pill; clicking a category swaps the ring for its entries and turns the
+pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · AI Chat · Tasks · Settings

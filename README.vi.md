@@ -15,11 +15,11 @@ duyệt, Word…).
 ## Tính năng
 
 - **Pet Live2D trên desktop** — nhân vật trong suốt, luôn nổi trên cùng, kéo-thả
-  được, khởi động cùng Windows. Chuột phải để mở menu.
+  được, khởi động cùng Windows. Chuột phải để mở **menu xoay tròn**.
 - **Dịch** — bôi đen văn bản ở **bất kỳ** ứng dụng nào → bông hoa 🌸 hiện cạnh con
-  trỏ → **click** để dịch ngay, hoặc **nhấn giữ** để mở bảng đầy đủ (dịch / trả
-  lời / lưu task). Phía trên có icon 📋 — bấm hoặc nhấn **Ctrl+C** (khi bông hoa
-  đang hiện) để sao chép đoạn vừa chọn.
+  trỏ → **click** để dịch ngay, hoặc **nhấn giữ** để bung **menu xoay tròn**:
+  🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 📝 lưu vào task · 🗂️ mở bảng đầy đủ.
+  Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO; quản lý trong cửa sổ Tasks.
@@ -52,15 +52,20 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 1. **Nhập API key** — icon tray → **Cài đặt** → chọn nhà cung cấp (Anthropic hoặc
    Gemini) → dán key → **Lưu**.
 2. **Dịch** — bôi đen văn bản ở đâu cũng được → click bông hoa 🌸.
-3. **Trả lời** — bôi đen tin nhắn → nhấn giữ bông hoa → tab **Trả lời** → gõ tiếng
-   Việt → **Tạo câu trả lời**.
-4. **Công việc** — tray → **Tasks**, hoặc lưu đoạn bôi đen qua menu nhấn-giữ bông hoa.
+3. **Trả lời** — bôi đen tin nhắn → nhấn giữ bông hoa → chọn 💬 **Trả lời** → gõ
+   tiếng Việt → **Tạo câu trả lời**.
+4. **Công việc** — tray → **Tasks**, hoặc chọn 📝 **Lưu vào task** trên menu xoay
+   tròn của bông hoa.
 
 ### Menu tray
 
 Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · Thoát
 
 ### Chuột phải vào pet
+
+Menu bung thành vòng tròn quanh con trỏ. Rê chuột lên icon nào thì tên hiện ở
+viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nhóm đó và viên giữa
+thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat AI · Công việc · Cài đặt

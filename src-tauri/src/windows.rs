@@ -24,12 +24,14 @@ static FLOWER_X: AtomicI32 = AtomicI32::new(0);
 static FLOWER_Y: AtomicI32 = AtomicI32::new(0);
 static FLOWER_TOKEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-// Flower window geometry (logical px). The window always shows the quick-copy
-// icon stacked above the flower; the flower sits at the bottom, anchored
-// FLOWER_ANCHOR_OFFSET px below the window top so it lands at the cursor spot.
+// Flower window geometry (logical px). Chỉ còn mỗi bông hoa nên cửa sổ vuông và
+// không phải dời lên: bông hoa rơi đúng chỗ con trỏ.
 const FLOWER_W: f64 = 30.0;
-const FLOWER_H: f64 = 62.0;
-const FLOWER_ANCHOR_OFFSET: f64 = 32.0;
+const FLOWER_H: f64 = 30.0;
+
+// Ring cho đoạn văn bôi đen (nhấn giữ bông hoa). Vừa đủ cho bán kính 62 mà
+// flower-menu.js yêu cầu: 62 + nửa item (17) + lề (8) = 87 mỗi phía.
+const FLOWER_MENU_SIZE: f64 = 180.0;
 
 // Keep the flower (a tiny no-activate button) from stealing focus from the app
 // the user just selected text in.
@@ -81,12 +83,8 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
     dbg_log(&format!("[windows] show_flower_inner ENTER ({x},{y})"));
     let pos = PhysicalPosition::new(x + 8, y + 8);
     if let Some(w) = app.get_webview_window("flower") {
-        // Shift the window up so the flower (bottom row) lands at the cursor and
-        // the copy icon sits just above it. DPI-aware via the scale factor.
-        let scale = w.scale_factor().unwrap_or(1.0);
-        let dy = (FLOWER_ANCHOR_OFFSET * scale).round() as i32;
         let _ = w.set_size(tauri::LogicalSize::new(FLOWER_W, FLOWER_H));
-        let _ = w.set_position(PhysicalPosition::new(x + 8, y + 8 - dy));
+        let _ = w.set_position(pos);
         set_no_activate(&w);
         // KHÔNG gọi set_focus(): bông hoa chỉ hiện lên chứ không được cướp focus
         // khỏi đoạn văn người dùng vừa bôi đen. Cờ WS_EX_NOACTIVATE vẫn cho phép
@@ -138,6 +136,26 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
     if let Some(w) = app.get_webview_window("flower") {
+        set_no_activate(&w);
+    }
+
+    // Ring của đoạn văn bôi đen — trong suốt, không kích hoạt, giống bông hoa.
+    let _ = WebviewWindowBuilder::new(
+        app,
+        "flower_menu",
+        WebviewUrl::App("flower-menu.html".into()),
+    )
+    .inner_size(FLOWER_MENU_SIZE, FLOWER_MENU_SIZE)
+    .transparent(true)
+    .decorations(false)
+    .shadow(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .focused(false)
+    .visible(false)
+    .build();
+    if let Some(w) = app.get_webview_window("flower_menu") {
         set_no_activate(&w);
     }
 
@@ -207,15 +225,75 @@ pub fn hide_flower(app: &AppHandle) {
 
 // Called from the flower webview (main thread).
 //   mode = "translate" → cửa sổ dịch nhanh (click ngắn)
-//   mode = "menu"      → popup đầy đủ 3 tab (nhấn giữ, mặc định tab Dịch)
+//   mode = "radial"    → menu xoay tròn (nhấn giữ)
+//   mode = "menu"      → popup đầy đủ 3 tab (giữ tương thích lệnh cũ)
 pub fn flower_action(app: &AppHandle, mode: &str) {
     let x = FLOWER_X.load(Ordering::SeqCst);
     let y = FLOWER_Y.load(Ordering::SeqCst);
     hide_flower(app);
-    if mode == "translate" {
-        open_quick(app, x, y);
-    } else {
-        open_popup_tab(app, x, y, "translate");
+    match mode {
+        "translate" => open_quick(app, x, y),
+        "radial" => open_flower_menu(app, x, y),
+        "menu" => open_popup_tab(app, x, y, "translate"),
+        other => {
+            dbg_log(&format!("[windows] flower_action mode lạ: {other} → ring"));
+            open_flower_menu(app, x, y);
+        }
+    }
+}
+
+// Ring quanh vị trí bôi đen. Cửa sổ vuông FLOWER_MENU_SIZE, đặt sao cho tâm
+// ring trùng chỗ bông hoa vừa đứng, và luôn nằm gọn trong màn hình.
+fn open_flower_menu(app: &AppHandle, x: i32, y: i32) {
+    let Some(w) = app.get_webview_window("flower_menu") else {
+        dbg_log("[windows] flower_menu window missing (precreate failed?)");
+        return;
+    };
+    let scale = w.scale_factor().unwrap_or(1.0);
+    let half = ((FLOWER_MENU_SIZE * scale) / 2.0).round() as i32;
+    let size = (FLOWER_MENU_SIZE * scale).round() as i32;
+    let (mut left, mut top) = (x - half, y - half);
+    // Kẹp vào vùng nhìn thấy của màn hình đang chứa con trỏ, nếu biết được.
+    if let Ok(Some(monitor)) = w.monitor_from_point(x as f64, y as f64) {
+        let mpos = monitor.position();
+        let msize = monitor.size();
+        let max_left = mpos.x + msize.width as i32 - size;
+        let max_top = mpos.y + msize.height as i32 - size;
+        left = left.clamp(mpos.x.min(max_left), max_left.max(mpos.x));
+        top = top.clamp(mpos.y.min(max_top), max_top.max(mpos.y));
+    }
+    let _ = w.set_size(tauri::LogicalSize::new(FLOWER_MENU_SIZE, FLOWER_MENU_SIZE));
+    let _ = w.set_position(PhysicalPosition::new(left, top));
+    set_no_activate(&w);
+    let _ = w.show();
+    // emit_to nhắm đúng webview "flower_menu": w.emit() phát theo phạm vi mặc
+    // định và không tới được listener của chính cửa sổ này.
+    let _ = app.emit_to("flower_menu", "flower-menu-shown", ());
+    // Cửa sổ dựng ngoài setup() hay paint trắng cho tới lần resize đầu tiên —
+    // nhích 1px như các cửa sổ phụ khác để ép vẽ lại.
+    force_repaint(app, "flower_menu");
+    dbg_log(&format!("[windows] flower_menu shown at ({left},{top})"));
+}
+
+pub fn hide_flower_menu(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("flower_menu") {
+        let _ = w.hide();
+    }
+}
+
+// Một entry trên ring: mở đúng cửa sổ tương ứng rồi ẩn ring đi.
+//   "translate" → cửa sổ dịch nhanh
+//   "reply" / "task" / "full" → popup 3 tab, mở sẵn tab tương ứng
+pub fn flower_menu_action(app: &AppHandle, action: &str) {
+    let x = FLOWER_X.load(Ordering::SeqCst);
+    let y = FLOWER_Y.load(Ordering::SeqCst);
+    hide_flower_menu(app);
+    match action {
+        "translate" => open_quick(app, x, y),
+        "reply" => open_popup_tab(app, x, y, "reply"),
+        "task" => open_popup_tab(app, x, y, "task"),
+        "full" => open_popup_tab(app, x, y, "translate"),
+        other => dbg_log(&format!("[windows] flower_menu_action không rõ: {other}")),
     }
 }
 
