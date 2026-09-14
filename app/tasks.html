@@ -5,14 +5,216 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="ui.css" />
   <title>Công việc</title>
+  <style>
+    /* Bố cục giống bảng Cài đặt: 2 cột ôm lấy pet ở giữa (Rust dời cửa sổ pet
+       vào khe này khi mở — xem windows.rs → dock_pet_to). */
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 150, 190, 0.14), transparent 60%),
+        var(--bg);
+    }
+
+    .tk-head {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 14px 8px;
+    }
+    .tk-head h2 { font-size: 15px; }
+
+    .tk-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      --pet-gap: clamp(110px, 22%, 170px);
+      grid-template-columns: minmax(0, 1fr) var(--pet-gap) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+      padding: 0 10px 10px;
+    }
+
+    /* ─── Cột kính sakura ──────────────────────────────────────────────── */
+    .tk-col {
+      position: relative;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 150, 190, 0.32);
+      background: linear-gradient(165deg, rgba(255, 183, 213, 0.16), rgba(255, 218, 233, 0.06));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 22px rgba(255, 150, 190, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    }
+    /* Mép trong lấn vào khe để pet nép sau lớp kính. */
+    .tk-col--todo { grid-column: 1; margin-right: -20px; }
+    .tk-col--done { grid-column: 3; margin-left: -20px; }
+
+    @media (max-width: 620px) {
+      .tk-grid { --pet-gap: 8px; }
+      .tk-col--todo { margin-right: 0; }
+      .tk-col--done { margin-left: 0; }
+    }
+
+    .tk-col > h3 {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 5px;
+      border-bottom: 1px solid rgba(255, 150, 190, 0.2);
+    }
+    .tk-count {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 1px 7px;
+    }
+
+    /* Chỉ phần danh sách cuộn, tiêu đề cột đứng yên. */
+    .tk-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 150, 190, 0.4) transparent;
+    }
+    .tk-list::-webkit-scrollbar { width: 6px; }
+    .tk-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 150, 190, 0.35);
+      border-radius: 3px;
+    }
+
+    /* ─── Một công việc ────────────────────────────────────────────────── */
+    .tk-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 150, 190, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .tk-item:hover { border-color: rgba(255, 150, 190, 0.4); }
+    .tk-item input[type="checkbox"] {
+      flex: 0 0 auto;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .tk-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .tk-text {
+      font-size: 12.5px;
+      line-height: 1.35;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .tk-item.done .tk-text { text-decoration: line-through; color: var(--muted); }
+
+    /* Ghi chú: bấm vào là sửa ngay tại chỗ. */
+    .tk-note {
+      font-size: 11px;
+      line-height: 1.35;
+      color: #d9b6c6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: text;
+      border-radius: 5px;
+      padding: 2px 4px;
+      margin: -2px -4px;
+    }
+    .tk-note:hover { background: rgba(255, 255, 255, 0.05); }
+    .tk-note.empty { color: var(--muted); font-style: italic; opacity: 0.65; }
+    .tk-note-input {
+      width: 100%;
+      font: inherit;
+      font-size: 11px;
+      color: var(--text);
+      background: rgba(28, 30, 40, 0.7);
+      border: 1px solid rgba(255, 150, 190, 0.45);
+      border-radius: 6px;
+      padding: 4px 6px;
+      resize: vertical;
+      min-height: 34px;
+    }
+    .tk-note-input:focus { outline: none; border-color: rgba(255, 150, 190, 0.8); }
+
+    /* Mốc thời gian: tạo lúc nào, xong lúc nào. */
+    .tk-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+    .tk-meta .ok { color: var(--ok); }
+
+    .tk-del {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      line-height: 1.4;
+    }
+    .tk-del:hover { color: var(--danger); }
+
+    .tk-empty {
+      color: var(--muted);
+      text-align: center;
+      font-size: 11.5px;
+      line-height: 1.5;
+      padding: 18px 8px;
+    }
+  </style>
 </head>
 <body>
-  <h2>📝 Công việc cần làm</h2>
-  <div class="row tight">
-    <input type="text" id="newTask" placeholder="Thêm việc mới..." />
-    <button class="action" id="addBtn" style="flex: 0 0 auto;">Thêm</button>
+  <div class="tk-head">
+    <h2>📝 Công việc cần làm</h2>
+    <div class="row tight">
+      <input type="text" id="newTask" placeholder="Thêm việc mới..." />
+      <button class="action" id="addBtn" style="flex: 0 0 auto;">Thêm</button>
+    </div>
   </div>
-  <div class="task-list" id="list"></div>
+
+  <div class="tk-grid">
+    <div class="tk-col tk-col--todo">
+      <h3>📋 Chưa làm <span class="tk-count" id="todoCount">0</span></h3>
+      <div class="tk-list" id="todoList"></div>
+    </div>
+
+    <!-- Khe giữa để trống: cửa sổ pet Live2D được Rust dời vào đúng chỗ này. -->
+
+    <div class="tk-col tk-col--done">
+      <h3>✅ Đã làm <span class="tk-count" id="doneCount">0</span></h3>
+      <div class="tk-list" id="doneList"></div>
+    </div>
+  </div>
+
   <script src="js/tauri-api.js"></script>
   <script src="js/tasks.js"></script>
 </body>

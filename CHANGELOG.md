@@ -4,6 +4,49 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-09-14
+
+### Added
+- **The pet steps into the Settings and Tasks windows.** Opening either panel
+  moves the live Live2D pet into the gap left between their two columns and
+  makes it click-through, so it can't be grabbed or poked while you work. Close
+  the panel and the pet returns to its exact previous position and size, with
+  interaction restored. Dragging or resizing the panel carries the pet along.
+- **Tasks: separate "to do" and "done" lists.** Completing a task moves it to
+  the ✅ column, most recently finished first; each column shows a count.
+- **Tasks: timestamps.** Every task shows when it was created (`🕒 Tạo`) and,
+  once finished, when it was completed (`✓ Xong`). Same-day times show only the
+  clock; older ones include the date. Un-checking a task clears its completion
+  time and returns it to the to-do column.
+- **Tasks: editable notes.** Click a task's note line to edit it in place —
+  Enter saves, Shift+Enter adds a line, Escape cancels.
+- **Model and Motion pickers as two side columns**, ported from the VS Code
+  companion. The pickers used to be one card centred over the character, so
+  listing a dozen motions hid the very model you were dressing. They now sit in
+  two narrow columns either side, leaving the middle clear, and stay open across
+  choices — only × or Escape closes them.
+
+### Changed
+- **Settings is a two-column panel.** Provider / API key / model and the system
+  options sit on the left, translation and appearance on the right, with the pet
+  between them. The window grew to 880×600 and collapses to two even columns
+  below 620px wide.
+- **The quick-translate window is smaller and auto-sizing.** It now shows only
+  the translation by default and grows or shrinks to fit the text instead of
+  leaving a fixed empty box. The two "copy" buttons became 📋 icons inside each
+  box, and a 👁 icon reveals the original text — which, when shown, is labelled
+  so the two boxes can be told apart.
+
+### Fixed
+- **The Motion list reflects the model.** It was three hard-coded names
+  (`TapBody` / `TapHead` / `Idle`), so a model naming its groups `待机` or `摸头`
+  showed three buttons that did nothing. The list is now read from the loaded
+  model, with a note when a model declares no motions at all.
+- **Docking the pet no longer loses its position.** The window-moved handler
+  saves the pet's position on every move, which would have overwritten the
+  remembered spot with the temporary one inside a panel; it now skips saving
+  while the pet is docked, and quitting from the tray un-docks first.
+
 ## [0.3.0] - 2026-09-12
 
 ### Added

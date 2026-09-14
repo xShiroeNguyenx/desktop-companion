@@ -72,6 +72,26 @@ fn set_click_through(window: tauri::WebviewWindow, ignore: bool) -> Result<(), S
     apply_click_through(&window, ignore)
 }
 
+// ── Dùng bởi windows.rs khi ghép/tách pet khỏi cửa sổ Cài đặt ──────────────
+/// Trạng thái click-through do NGƯỜI DÙNG chọn (qua tray), tách bạch với việc
+/// tạm khoá lúc pet đang nằm giữa bảng Cài đặt.
+pub fn user_click_through(app: &AppHandle) -> bool {
+    app.state::<AppState>().click_through.load(Ordering::SeqCst)
+}
+
+/// Bật/tắt click-through cho pet kèm khắc phục frame trên Windows.
+pub fn set_pet_click_through(app: &AppHandle, ignore: bool) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = apply_click_through(&w, ignore);
+    }
+}
+
+/// Ghi thẳng vị trí pet ra file trạng thái (dùng khi undock, vì event Moved
+/// có thể không kịp chạy trước lúc thoát app).
+pub fn save_pet_position(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
+    save_window_position(app, SavedWindowPosition { x, y, w, h });
+}
+
 #[derive(Serialize)]
 struct UpdateInfo {
     available: bool,
@@ -388,6 +408,7 @@ fn main() {
             commands::tasks_list,
             commands::tasks_add,
             commands::tasks_set_done,
+            commands::tasks_set_note,
             commands::tasks_delete,
             commands::gemini_models,
             commands::anthropic_models,
@@ -515,7 +536,12 @@ fn main() {
                             let _ = apply_click_through(&w, new_value);
                         }
                     }
-                    "quit" => app.exit(0),
+                    // Trả pet về chỗ cũ trước khi thoát, nếu không lần mở sau
+                    // nó sẽ nằm lại giữa nơi bảng Cài đặt từng ở.
+                    "quit" => {
+                        windows::undock_pet(app);
+                        app.exit(0);
+                    }
                     _ => {}
                 })
                 .build(app)?;
@@ -528,20 +554,32 @@ fn main() {
                 // any of them just hides it. The user fully quits via the tray.
                 api.prevent_close();
                 let _ = window.hide();
+                // Đóng bảng đang giữ pet: trả pet về chỗ cũ, cho click vào lại.
+                windows::undock_pet_from(window.app_handle(), window.label());
             }
             WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
-                if window.label() == "main" {
-                    if let (Ok(pos), Ok(size)) = (window.outer_position(), window.inner_size()) {
-                        save_window_position(
-                            &window.app_handle(),
-                            SavedWindowPosition {
-                                x: pos.x,
-                                y: pos.y,
-                                w: size.width,
-                                h: size.height,
-                            },
-                        );
+                match window.label() {
+                    // Chỉ lưu vị trí pet khi nó đang ở chỗ của nó — lúc docked
+                    // vào bảng Cài đặt thì vị trí là tạm, ghi đè sẽ mất chỗ cũ.
+                    "main" if !windows::pet_is_docked() => {
+                        if let (Ok(pos), Ok(size)) = (window.outer_position(), window.inner_size())
+                        {
+                            save_window_position(
+                                &window.app_handle(),
+                                SavedWindowPosition {
+                                    x: pos.x,
+                                    y: pos.y,
+                                    w: size.width,
+                                    h: size.height,
+                                },
+                            );
+                        }
                     }
+                    // Kéo/đổi cỡ bảng đang giữ pet thì pet đi theo cho khớp giữa.
+                    label @ ("settings" | "tasks") => {
+                        windows::reposition_docked_pet(window.app_handle(), label)
+                    }
+                    _ => {}
                 }
             }
             _ => {}

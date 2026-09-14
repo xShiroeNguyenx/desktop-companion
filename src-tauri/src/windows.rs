@@ -6,7 +6,7 @@
 // show_flower / hide_flower are also reachable from the selection worker thread,
 // so those marshal onto the main thread via run_on_main_thread.
 
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
 
@@ -171,8 +171,10 @@ pub fn precreate(app: &AppHandle) {
     // Simple quick-translate window (short click on the flower).
     let _ = WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("quick.html".into()))
         .title("Bản dịch")
-        .inner_size(380.0, 380.0)
-        .min_inner_size(280.0, 260.0)
+        // Chiều cao chỉ là giá trị khởi tạo — quick.js tự co/giãn theo nội dung,
+        // nên min height phải thấp để không chặn lúc bản dịch ngắn.
+        .inner_size(360.0, 140.0)
+        .min_inner_size(260.0, 80.0)
         .always_on_top(true)
         .resizable(true)
         .visible(false)
@@ -180,14 +182,19 @@ pub fn precreate(app: &AppHandle) {
 
     let _ = WebviewWindowBuilder::new(app, "tasks", WebviewUrl::App("tasks.html".into()))
         .title("Công việc (Tasks)")
-        .inner_size(460.0, 560.0)
+        // Rộng để chứa 2 cột (chưa làm | đã làm) ôm lấy pet ở giữa.
+        .inner_size(820.0, 580.0)
+        .min_inner_size(420.0, 380.0)
         .resizable(true)
         .visible(false)
         .build();
 
     let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
         .title("Cài đặt")
-        .inner_size(500.0, 560.0)
+        // Rộng để chứa 2 cột ôm lấy nhân vật ở giữa; hẹp hơn 560px thì
+        // CSS tự bỏ nhân vật và cho 2 cột chia đôi.
+        .inner_size(880.0, 600.0)
+        .min_inner_size(420.0, 420.0)
         .resizable(true)
         .visible(false)
         .build();
@@ -331,11 +338,145 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
 }
 
 pub fn open_tasks(app: &AppHandle) {
-    open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 460.0, 560.0);
+    open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 820.0, 580.0);
+    dock_pet_to(app, "tasks");
+}
+
+// ─── Ghép pet vào giữa cửa sổ Cài đặt / Công việc ───────────────────────────
+// Khi mở một trong hai bảng đó, con pet được dời vào khoảng trống chừa sẵn ở
+// giữa và khoá click-through để bấm xuyên qua nó (không lỡ tay kéo/chọc pet
+// khi đang thao tác). Đóng bảng thì trả pet về đúng chỗ cũ và mở tương tác lại.
+
+// Vị trí + kích thước pet trước khi dock, để trả về nguyên trạng.
+static PET_DOCKED: AtomicBool = AtomicBool::new(false);
+static PET_SAVED: std::sync::Mutex<Option<(i32, i32, u32, u32)>> = std::sync::Mutex::new(None);
+/// Label cửa sổ đang giữ pet ("settings" | "tasks").
+static PET_HOST: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+/// True khi pet đang bị ghép vào một bảng. main.rs dùng cờ này để KHÔNG ghi đè
+/// vị trí đã lưu bằng vị trí tạm ở giữa bảng.
+pub fn pet_is_docked() -> bool {
+    PET_DOCKED.load(Ordering::SeqCst)
+}
+
+/// Label cửa sổ đang giữ pet, rỗng nếu không dock.
+fn pet_host() -> String {
+    PET_HOST.lock().unwrap().clone()
+}
+
+// Tỉ lệ cửa sổ pet (300x420 mặc định) — giữ nguyên khi thu nhỏ lúc dock.
+const PET_ASPECT: f64 = 300.0 / 420.0;
+
+/// Đặt pet vào khoảng chừa sẵn giữa bảng đang giữ nó (căn đáy, như đứng trên
+/// sàn bảng). Pet được thu cho vừa khe — cửa sổ pet mặc định rộng 300px, trong
+/// khi khe chỉ ~150px, để nguyên thì nó tràn ra che mất nội dung hai bên.
+fn position_pet_in_host(app: &AppHandle) {
+    let host = pet_host();
+    if host.is_empty() {
+        return;
+    }
+    let (Some(pet), Some(set)) = (
+        app.get_webview_window("main"),
+        app.get_webview_window(&host),
+    ) else {
+        return;
+    };
+    let (Ok(spos), Ok(ssize)) = (set.outer_position(), set.inner_size()) else {
+        return;
+    };
+    let scale = set.scale_factor().unwrap_or(1.0);
+
+    // Khe giữa theo logical px, khớp với CSS của từng bảng:
+    //   settings.html: clamp(120px, 20%, 190px), 2 cột lấn lên rìa 20px/bên
+    //   tasks.html:    clamp(110px, 22%, 170px), 2 cột lấn lên rìa 20px/bên
+    let win_w_logical = ssize.width as f64 / scale;
+    let gap_logical = if host == "tasks" {
+        (win_w_logical * 0.22).clamp(110.0, 170.0) + 40.0
+    } else {
+        (win_w_logical * 0.20).clamp(120.0, 190.0) + 40.0
+    };
+
+    // Cao: chừa phần đầu (tiêu đề) và chân của bảng.
+    let win_h_logical = ssize.height as f64 / scale;
+    let avail_h = (win_h_logical - 96.0).max(120.0);
+
+    // Vừa khe theo cả 2 chiều, giữ tỉ lệ.
+    let h = avail_h.min(gap_logical / PET_ASPECT);
+    let w = h * PET_ASPECT;
+    let _ = pet.set_size(tauri::LogicalSize::new(w, h));
+
+    let pw = (w * scale) as i32;
+    let ph = (h * scale) as i32;
+    // Giữa theo chiều ngang, đáy pet cách đáy bảng một khoảng cho nút Lưu.
+    let x = spos.x + (ssize.width as i32 - pw) / 2;
+    let y = spos.y + ssize.height as i32 - ph - (56.0 * scale) as i32;
+    dbg_log(&format!(
+        "[windows] dock pos: {host}=({},{}) {}x{} gap={gap_logical:.0} pet={w:.0}x{h:.0} -> ({x},{y})",
+        spos.x, spos.y, ssize.width, ssize.height
+    ));
+    let _ = pet.set_position(PhysicalPosition::new(x, y));
+}
+
+/// Ghép pet vào giữa bảng `host` ("settings" | "tasks").
+fn dock_pet_to(app: &AppHandle, host: &str) {
+    let Some(pet) = app.get_webview_window("main") else { return };
+    // Chỉ nhớ vị trí gốc ở lần dock đầu tiên (mở bảng khác khi đang dock thì
+    // giữ nguyên vị trí gốc đã nhớ, không lấy vị trí tạm làm gốc).
+    if !PET_DOCKED.swap(true, Ordering::SeqCst) {
+        if let (Ok(pos), Ok(size)) = (pet.outer_position(), pet.inner_size()) {
+            *PET_SAVED.lock().unwrap() = Some((pos.x, pos.y, size.width, size.height));
+        }
+    }
+    *PET_HOST.lock().unwrap() = host.to_string();
+    let _ = pet.show();
+    // Khoá tương tác: click xuyên qua pet xuống bảng phía dưới.
+    crate::set_pet_click_through(app, true);
+    // Pet nổi TRÊN bảng nhưng được thu vừa khe giữa 2 cột: nền pet trong suốt
+    // nên nhìn thấy trọn nhân vật, còn 2 cột kính vẫn lấn lên rìa nó. Xếp pet
+    // sau bảng thì chỉ thấy một lát cắt dọc hẹp — gần như mất tiêu.
+    let _ = pet.set_always_on_top(true);
+    position_pet_in_host(app);
+    dbg_log(&format!("[windows] pet docked into {host}"));
+}
+
+/// Trả pet về vị trí/kích thước trước khi dock và mở lại tương tác.
+pub fn undock_pet(app: &AppHandle) {
+    if !PET_DOCKED.swap(false, Ordering::SeqCst) {
+        return; // không dock thì không có gì để trả
+    }
+    PET_HOST.lock().unwrap().clear();
+    let Some(pet) = app.get_webview_window("main") else { return };
+    // Chỉ bỏ click-through nếu người dùng không tự bật nó từ tray.
+    crate::set_pet_click_through(app, crate::user_click_through(app));
+    let _ = pet.set_always_on_top(true);
+    if let Some((x, y, w, h)) = PET_SAVED.lock().unwrap().take() {
+        let _ = pet.set_size(tauri::PhysicalSize::new(w, h));
+        let _ = pet.set_position(PhysicalPosition::new(x, y));
+        // Ghi thẳng vị trí gốc: nếu undock xảy ra ngay trước khi thoát app,
+        // event Moved có thể không kịp chạy để lưu.
+        crate::save_pet_position(app, x, y, w, h);
+    }
+    dbg_log("[windows] pet undocked");
+}
+
+/// Bảng `label` vừa được dời/đổi cỡ — kéo pet đi theo cho khớp giữa. Bỏ qua
+/// nếu bảng đó không phải bảng đang giữ pet.
+pub fn reposition_docked_pet(app: &AppHandle, label: &str) {
+    if PET_DOCKED.load(Ordering::SeqCst) && pet_host() == label {
+        position_pet_in_host(app);
+    }
+}
+
+/// Đóng bảng `label`: chỉ nhả pet nếu chính bảng đó đang giữ nó.
+pub fn undock_pet_from(app: &AppHandle, label: &str) {
+    if pet_host() == label {
+        undock_pet(app);
+    }
 }
 
 pub fn open_settings(app: &AppHandle) {
-    open_simple(app, "settings", "settings.html", "Cài đặt", 500.0, 560.0);
+    open_simple(app, "settings", "settings.html", "Cài đặt", 880.0, 600.0);
+    dock_pet_to(app, "settings");
 }
 
 fn open_simple(app: &AppHandle, label: &str, _html: &str, _title: &str, _w: f64, _h: f64) {

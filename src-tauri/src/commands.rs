@@ -181,6 +181,7 @@ pub fn tasks_add(app: AppHandle, text: String, note: String, source: String) -> 
         source,
         done: false,
         created_at: format!("{}", now_millis()),
+        done_at: String::new(),
     };
     tasks.insert(0, task.clone());
     store::save_tasks(&app, &tasks)?;
@@ -192,6 +193,22 @@ pub fn tasks_set_done(app: AppHandle, id: String, done: bool) -> Result<(), Stri
     let mut tasks = store::load_tasks(&app);
     if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
         t.done = done;
+        // Ghi mốc hoàn thành; bỏ tick thì xoá đi để việc trở lại "chưa làm".
+        t.done_at = if done {
+            format!("{}", now_millis())
+        } else {
+            String::new()
+        };
+    }
+    store::save_tasks(&app, &tasks)
+}
+
+/// Sửa ghi chú của một công việc.
+#[tauri::command]
+pub fn tasks_set_note(app: AppHandle, id: String, note: String) -> Result<(), String> {
+    let mut tasks = store::load_tasks(&app);
+    if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+        t.note = note;
     }
     store::save_tasks(&app, &tasks)
 }

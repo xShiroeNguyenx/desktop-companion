@@ -5,9 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="ui.css" />
   <title>Cài đặt</title>
+  <style>
+    /* ─── Bố cục 2 cột ôm lấy nhân vật ở giữa ───────────────────────────────
+       Mượn cách của anime-companion (side columns): một lưới 3 track —
+       cột | khoảng giữa cho nhân vật | cột. Hai cột cùng track size và cùng
+       hàng nên luôn bằng nhau dù mỗi bên chứa gì. */
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      /* Nền hồng rất nhạt để lớp kính bên trên có gì đó ăn qua. */
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 150, 190, 0.14), transparent 60%),
+        var(--bg);
+    }
+
+    .set-head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px 6px;
+    }
+    .set-head h2 { font-size: 15px; }
+    .set-head .set-sub { font-size: 11px; color: var(--muted); }
+
+    /* Hai cột chồng lên nhau trên cùng một lưới với khoảng giữa, rồi TRÀN
+       vào giữa một chút — pet ở dưới chỉ cần ló ra là đủ, không phải chừa
+       nguyên một hành lang trống. */
+    .set-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      /* Khe giữa cho pet, hai cột chia đều phần còn lại. minmax(0,1fr)
+         cho phép cột co lại thay vì tràn ra ngoài cửa sổ. */
+      --pet-gap: clamp(120px, 20%, 190px);
+      grid-template-columns: minmax(0, 1fr) var(--pet-gap) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+      padding: 0 10px 6px;
+    }
+
+    /* ─── Cột kính sakura ──────────────────────────────────────────────── */
+    .set-col {
+      position: relative;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      overflow-y: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 150, 190, 0.32);
+      background: linear-gradient(165deg, rgba(255, 183, 213, 0.16), rgba(255, 218, 233, 0.06));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 22px rgba(255, 150, 190, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 150, 190, 0.4) transparent;
+    }
+    .set-col::-webkit-scrollbar { width: 6px; }
+    .set-col::-webkit-scrollbar-thumb {
+      background: rgba(255, 150, 190, 0.35);
+      border-radius: 3px;
+    }
+    /* Mỗi cột ở đúng track của nó; margin âm cho mép trong lấn vào khe giữa
+       một chút, nên pet đứng nép sau 2 tấm kính thay vì giữa sân trống.
+       (Không dùng span chồng track — grid sẽ đẩy cột thứ hai xuống hàng mới.) */
+    .set-col--left  { grid-column: 1; margin-right: -20px; }
+    .set-col--right { grid-column: 3; margin-left: -20px; }
+
+    /* Cửa sổ hẹp thì thu khe giữa lại, 2 cột chia đôi (pet bị che là chấp nhận). */
+    @media (max-width: 620px) {
+      .set-grid { --pet-gap: 8px; }
+      .set-col--left  { margin-right: 0; }
+      .set-col--right { margin-left: 0; }
+    }
+
+    /* ─── Nhóm trong cột ───────────────────────────────────────────────── */
+    .set-group { display: flex; flex-direction: column; gap: 7px; }
+    .set-group > h3 {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 150, 190, 0.2);
+    }
+    .set-field { display: flex; flex-direction: column; gap: 3px; }
+
+    /* Hàng có checkbox: nhãn trái, ô tick phải. */
+    .set-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 150, 190, 0.18);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .set-toggle label { flex: 1; font-size: 12px; color: var(--text); }
+    .set-toggle input { flex: 0 0 auto; accent-color: var(--accent); }
+
+    /* Ô nhập / select trong cột: viền hồng nhạt cho ăn với lớp kính. */
+    .set-col select,
+    .set-col input[type="text"],
+    .set-col input[type="password"] {
+      border-color: rgba(255, 150, 190, 0.22);
+      background: rgba(28, 30, 40, 0.66);
+      padding: 6px 9px;
+      font-size: 12.5px;
+    }
+    .set-col select:focus,
+    .set-col input:focus {
+      outline: none;
+      border-color: rgba(255, 150, 190, 0.6);
+    }
+    .set-col button.ghost {
+      background: rgba(255, 150, 190, 0.12);
+      border-color: rgba(255, 150, 190, 0.28);
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .set-col button.ghost:hover {
+      background: rgba(255, 150, 190, 0.24);
+      border-color: rgba(255, 150, 190, 0.5);
+    }
+    .set-col label { font-size: 11.5px; }
+    .set-col .status { font-size: 11px; }
+
+    /* Chân cửa sổ: nút Lưu luôn nhìn thấy, không bị cuộn mất. */
+    .set-foot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px 12px;
+      border-top: 1px solid rgba(255, 150, 190, 0.14);
+    }
+    .set-foot .status { flex: 1; margin: 0; }
+    .set-foot button.action { flex: 0 0 auto; padding: 9px 24px; }
+  </style>
 </head>
 <body>
-  <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
+  <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; margin:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
   <script>
     (function () {
       function show(m) {
@@ -22,120 +170,143 @@
       });
     })();
   </script>
-  <h2>⚙️ Cài đặt</h2>
 
-  <div>
-    <label>Nhà cung cấp AI</label>
-    <select id="provider">
-      <option value="anthropic">Anthropic (Claude)</option>
-      <option value="gemini">Google Gemini</option>
-    </select>
+  <div class="set-head">
+    <h2>⚙️ Cài đặt</h2>
   </div>
 
-  <div id="anthropicBlock">
-    <div>
-      <label>Anthropic API key</label>
-      <input type="password" id="apiKey" placeholder="sk-ant-..." />
-    </div>
-    <div style="margin-top:8px;">
-      <label>Claude model</label>
-      <div class="row tight">
-        <select id="model" style="flex:1;">
-          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (nhanh, rẻ)</option>
-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (cân bằng)</option>
-          <option value="claude-opus-4-8">Claude Opus 4.8 (mạnh nhất)</option>
-        </select>
-        <button class="ghost" id="loadClaudeModels" style="flex:0 0 auto;" type="button">↻ Tải model</button>
+  <div class="set-grid">
+    <!-- ─── Cột trái: AI + hệ thống ─────────────────────────────────── -->
+    <div class="set-col set-col--left">
+      <div class="set-group">
+        <h3>🤖 Trí tuệ nhân tạo</h3>
+        <div class="set-field">
+          <label for="provider">Nhà cung cấp AI</label>
+          <select id="provider">
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+        </div>
+
+        <div id="anthropicBlock" class="set-group">
+          <div class="set-field">
+            <label for="apiKey">Anthropic API key</label>
+            <input type="password" id="apiKey" placeholder="sk-ant-..." />
+          </div>
+          <div class="set-field">
+            <label for="model">Claude model</label>
+            <div class="row tight">
+              <select id="model" style="flex:1;">
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (nhanh, rẻ)</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (cân bằng)</option>
+                <option value="claude-opus-4-8">Claude Opus 4.8 (mạnh nhất)</option>
+              </select>
+              <button class="ghost" id="loadClaudeModels" style="flex:0 0 auto;" type="button">↻</button>
+            </div>
+            <div class="status" id="claudeModelStatus"></div>
+          </div>
+        </div>
+
+        <div id="geminiBlock" class="set-group">
+          <div class="set-field">
+            <label for="geminiKey">Gemini API key</label>
+            <input type="password" id="geminiKey" placeholder="AIza..." />
+          </div>
+          <div class="set-field">
+            <label for="geminiModel">Gemini model</label>
+            <div class="row tight">
+              <select id="geminiModel" style="flex:1;">
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (mạnh nhất)</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (cân bằng)</option>
+                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (nhanh/rẻ)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
+              </select>
+              <button class="ghost" id="loadGeminiModels" style="flex:0 0 auto;" type="button">↻</button>
+            </div>
+            <div class="status" id="geminiModelStatus"></div>
+          </div>
+        </div>
       </div>
-      <div class="status" id="claudeModelStatus"></div>
-    </div>
-  </div>
 
-  <div id="geminiBlock">
-    <div>
-      <label>Gemini API key</label>
-      <input type="password" id="geminiKey" placeholder="AIza..." />
-    </div>
-    <div style="margin-top:8px;">
-      <label>Gemini model</label>
-      <div class="row tight">
-        <select id="geminiModel" style="flex:1;">
-          <option value="gemini-2.5-pro">Gemini 2.5 Pro (mạnh nhất)</option>
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash (cân bằng)</option>
-          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (nhanh/rẻ)</option>
-          <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-          <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
-        </select>
-        <button class="ghost" id="loadGeminiModels" style="flex:0 0 auto;" type="button">↻ Tải model</button>
+      <div class="set-group">
+        <h3>⚙️ Hệ thống</h3>
+        <div class="set-toggle">
+          <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
+          <input type="checkbox" id="autoFlower" />
+        </div>
+        <div class="set-toggle">
+          <label for="autostart">Khởi động cùng Windows</label>
+          <input type="checkbox" id="autostart" />
+        </div>
+        <div class="set-field">
+          <label for="hotkey">Phím tắt bắt văn bản</label>
+          <div class="row tight">
+            <input type="text" id="hotkey" readonly placeholder="Bấm rồi nhấn tổ hợp phím..." style="flex:1; cursor:pointer;" />
+            <button class="ghost" id="hotkeyReset" style="flex:0 0 auto;" type="button">Mặc định</button>
+          </div>
+          <div class="status" id="hotkeyStatus">Bấm vào ô rồi nhấn tổ hợp (vd: Ctrl+Shift+D). Áp dụng khi Lưu.</div>
+        </div>
+        <div class="set-field">
+          <label for="checkUpdate">Cập nhật</label>
+          <div class="row tight">
+            <button class="ghost" id="checkUpdate" type="button" style="flex:1;">↻ Kiểm tra cập nhật</button>
+            <button class="action" id="installUpdate" type="button" style="flex:0 0 auto; display:none;">Cài bản mới</button>
+          </div>
+          <div class="status" id="updateStatus"></div>
+        </div>
       </div>
-      <div class="status" id="geminiModelStatus"></div>
+    </div>
+
+    <!-- Khe giữa để trống: cửa sổ pet Live2D thật được Rust dời vào đúng
+         chỗ này khi mở Cài đặt (xem windows.rs → dock_pet_to_settings). -->
+
+    <!-- ─── Cột phải: dịch + diện mạo ───────────────────────────────── -->
+    <div class="set-col set-col--right">
+      <div class="set-group">
+        <h3>🌐 Dịch thuật</h3>
+        <div class="set-field">
+          <label for="target">Ngôn ngữ dịch mặc định</label>
+          <select id="target">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">Tiếng Anh</option>
+            <option value="ja">Tiếng Nhật</option>
+          </select>
+        </div>
+        <div class="set-field">
+          <label for="defaultContext">Ngữ cảnh dịch mặc định</label>
+          <select id="defaultContext">
+            <option value="">(Không dùng ngữ cảnh)</option>
+          </select>
+          <div class="status">Dùng khi click nhanh bông hoa (dịch ngay).</div>
+        </div>
+        <div class="set-field">
+          <label for="newContext">Danh sách ngữ cảnh có sẵn</label>
+          <div id="contextList" style="display:flex; flex-direction:column; gap:4px;"></div>
+          <div class="row tight" style="margin-top:4px;">
+            <input type="text" id="newContext" placeholder="Thêm ngữ cảnh mới..." />
+            <button class="ghost" id="addContext" style="flex:0 0 auto;" type="button">+ Thêm</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>🎨 Diện mạo</h3>
+        <div class="set-field">
+          <label for="addModelFolder">Model Live2D tự thêm</label>
+          <div id="customModelList" style="display:flex; flex-direction:column; gap:4px;"></div>
+          <button class="ghost" id="addModelFolder" type="button" style="margin-top:4px;">📁 Chọn thư mục model...</button>
+          <div class="status" id="modelFolderStatus"></div>
+          <div class="status">Chọn thư mục chứa file <b>*.model3.json</b>. Sau khi thêm, chọn model trong menu chuột phải → Diện mạo.</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div>
-    <label>Ngôn ngữ dịch mặc định</label>
-    <select id="target">
-      <option value="vi">Tiếng Việt</option>
-      <option value="en">Tiếng Anh</option>
-      <option value="ja">Tiếng Nhật</option>
-    </select>
+  <div class="set-foot">
+    <div class="status" id="status"></div>
+    <button class="action" id="saveBtn">Lưu cài đặt</button>
   </div>
-
-  <div>
-    <label>Ngữ cảnh dịch mặc định</label>
-    <select id="defaultContext">
-      <option value="">(Không dùng ngữ cảnh)</option>
-    </select>
-    <div class="status" style="margin-top:2px;">Dùng khi click nhanh bông hoa (dịch ngay).</div>
-  </div>
-
-  <div>
-    <label>Danh sách ngữ cảnh có sẵn</label>
-    <div id="contextList" style="display:flex; flex-direction:column; gap:4px;"></div>
-    <div class="row tight" style="margin-top:4px;">
-      <input type="text" id="newContext" placeholder="Thêm ngữ cảnh mới..." />
-      <button class="ghost" id="addContext" style="flex:0 0 auto;" type="button">+ Thêm</button>
-    </div>
-  </div>
-
-  <div>
-    <label>Model Live2D tự thêm</label>
-    <div id="customModelList" style="display:flex; flex-direction:column; gap:4px;"></div>
-    <button class="ghost" id="addModelFolder" type="button" style="margin-top:4px;">📁 Chọn thư mục model...</button>
-    <div class="status" id="modelFolderStatus"></div>
-    <div class="status" style="margin-top:2px;">Chọn thư mục chứa file <b>*.model3.json</b> (tải từ mạng về). Sau khi thêm, chọn model trong menu chuột phải → Diện mạo.</div>
-  </div>
-
-  <div class="row" style="align-items:center;">
-    <label style="flex:1;">Tự hiện bông hoa khi bôi đen văn bản</label>
-    <input type="checkbox" id="autoFlower" style="flex:0 0 auto;" />
-  </div>
-
-  <div class="row" style="align-items:center;">
-    <label style="flex:1;">Khởi động cùng Windows</label>
-    <input type="checkbox" id="autostart" style="flex:0 0 auto;" />
-  </div>
-
-  <div>
-    <label>Phím tắt bắt văn bản</label>
-    <div class="row tight">
-      <input type="text" id="hotkey" readonly placeholder="Bấm vào đây rồi nhấn tổ hợp phím..." style="flex:1; cursor:pointer;" />
-      <button class="ghost" id="hotkeyReset" style="flex:0 0 auto;" type="button">Mặc định</button>
-    </div>
-    <div class="status" id="hotkeyStatus" style="margin-top:2px;">Bấm vào ô rồi nhấn tổ hợp (vd: Ctrl+Shift+D). Áp dụng khi Lưu.</div>
-  </div>
-
-  <div>
-    <label>Cập nhật</label>
-    <div class="row tight">
-      <button class="ghost" id="checkUpdate" type="button" style="flex:1;">↻ Kiểm tra cập nhật</button>
-      <button class="action" id="installUpdate" type="button" style="flex:0 0 auto; display:none;">Cài bản mới</button>
-    </div>
-    <div class="status" id="updateStatus" style="margin-top:2px;"></div>
-  </div>
-
-  <button class="action" id="saveBtn">Lưu cài đặt</button>
-  <div class="status" id="status"></div>
 
   <script src="js/tauri-api.js"></script>
   <script src="js/settings.js"></script>

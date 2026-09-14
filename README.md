@@ -21,9 +21,14 @@
   **Ctrl+C** (while the flower is up) still copies the selected text.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
-- **Save tasks** — turn any selected text into a TODO; manage them in the Tasks window.
+- **Save tasks** — turn any selected text into a TODO. The Tasks window keeps
+  "to do" and "done" in two columns, stamps each task with when it was created
+  and finished, and lets you edit a note on any of them.
 - **Translation contexts** — preset contexts in Settings (e.g. "formal work chat")
   so quick-translate matches the right tone. Pick a default or none.
+- **The pet joins your panels** — open Settings or Tasks and the pet steps into
+  the gap between their two columns (click-through, so it stays out of the way),
+  then returns to where it was when you close them.
 - **Look-at cursor** — the model's head/eyes follow the mouse when it's near the pet.
 - **Resize** — `Ctrl` + mouse wheel scales the pet; size is remembered.
 - **Custom Live2D models** — load your own `*.model3.json` models from any folder.
@@ -68,6 +73,10 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · AI Chat · Tasks · Settings
+
+**Model** and **Motion** open as two columns either side of the character, so it
+stays visible while you pick. They stay open across choices — close with × or
+`Escape`.
 
 ---
 

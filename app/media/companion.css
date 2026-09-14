@@ -2335,3 +2335,179 @@ body[data-message-language="vi"] .companion-radial-center {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 
+
+/* ─── Side panel: model / motion as two columns ───────────────────────────
+   Ported từ anime-companion. Hai cột hẹp hai bên nhân vật thay cho một tấm
+   thẻ đè lên giữa: chọn model/motion mà vẫn nhìn thấy nhân vật đang đổi.
+   Panel mở cho tới khi bấm × hoặc Esc, không tự đóng khi click ra ngoài. */
+.companion-side-panel {
+  /* Một lưới, ba track: cột | khoảng giữa cho nhân vật | cột. Hai cột dùng
+     chung track size và cùng hàng nên luôn bằng nhau dù mỗi bên chứa gì. */
+  --side-column-width: clamp(96px, 31%, 168px);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--side-column-width) minmax(0, 1fr) var(--side-column-width);
+  grid-template-rows: minmax(0, 1fr);
+  padding: 10px 8px 44px;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 36;
+}
+
+.companion-side-panel.show { opacity: 1; }
+
+.companion-side-column {
+  position: relative;
+  align-self: stretch;
+  min-height: 0; /* cho phép cột cuộn bên trong hàng lưới */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  overflow: hidden;
+  border-radius: 14px;
+  /* Cùng tông hồng với bong bóng thoại nhưng để xuyên qua được: cột nằm sát
+     nhân vật, một tấm thẻ đục ở đó trông như bức tường. */
+  border: 1px solid rgba(255, 150, 190, 0.32);
+  background: linear-gradient(165deg, rgba(255, 183, 213, 0.26), rgba(255, 218, 233, 0.12));
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 22px rgba(255, 150, 190, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  pointer-events: auto;
+  transform: translateX(-8px);
+  transition: transform 0.18s ease;
+}
+
+.companion-side-column--left { grid-column: 1; }
+.companion-side-column--right { grid-column: 3; transform: translateX(8px); }
+.companion-side-panel.show .companion-side-column { transform: none; }
+
+/* Đầu / thân cuộn / chân. Chỉ phần thân cuộn, nên nút đóng ở chân luôn nằm
+   đáy cột, không bao giờ bị cuộn khuất; chân cột trái giữ một khoảng trống
+   tương đương để hai cột thẳng hàng. */
+.companion-side-head { flex: 0 0 auto; min-height: 14px; text-align: center; }
+
+.companion-side-title {
+  display: block;
+  font-family: 'Mochiy Pop One', 'Segoe UI', sans-serif;
+  font-size: 11px;
+  line-height: 1.25;
+  color: rgba(255, 150, 190, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.companion-side-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  /* Cuộn được bằng con lăn nhưng không hiện thanh cuộn: cột quá hẹp, thanh
+     cuộn ở đó chỉ làm rối. */
+  scrollbar-width: none;
+}
+
+.companion-side-body::-webkit-scrollbar { width: 0; height: 0; }
+
+.companion-side-foot {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 18px;
+}
+
+.companion-side-spacer { width: 18px; height: 18px; }
+
+.companion-side-close {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 150, 190, 0.35);
+  border-radius: 50%;
+  background: rgba(255, 150, 190, 0.18);
+  color: #f3e6ee;
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.companion-side-close:hover { background: rgba(255, 150, 190, 0.42); }
+
+/* Hàng chọn: vẫn là nút như popup cũ nhưng xuyên thấu và viền hồng cho ăn
+   với cột, đủ nhỏ để một cột mười mục đọc như danh sách chứ không phải một
+   chồng thẻ. */
+.companion-side-column .companion-model-option,
+.companion-side-column .companion-motion-option {
+  padding: 5px 7px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 150, 190, 0.26);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+}
+
+.companion-side-column .companion-model-option:hover,
+.companion-side-column .companion-motion-option:hover {
+  transform: none;
+  border-color: rgba(255, 150, 190, 0.55);
+  background: rgba(255, 150, 190, 0.22);
+  box-shadow: none;
+}
+
+.companion-side-column .companion-model-option.active,
+.companion-side-column .companion-motion-option.active {
+  transform: none;
+  border-color: rgba(255, 150, 190, 0.8);
+  background: rgba(255, 150, 190, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Motion vừa bấm: không có trạng thái nào để phản ánh nên chính hàng đó phải
+   cho thấy cú bấm đã ăn — nó sáng lên và nhấp một cái. */
+@keyframes companion-side-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 150, 190, 0.55); }
+  100% { box-shadow: 0 0 0 10px rgba(255, 150, 190, 0); }
+}
+
+.companion-side-column .companion-motion-option.is-playing {
+  animation: companion-side-pulse 0.7s ease-out 2;
+}
+
+.companion-side-column .companion-model-label,
+.companion-side-column .companion-motion-label {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: #f3e6ee;
+  overflow-wrap: anywhere;
+}
+
+.companion-side-column .companion-model-desc,
+.companion-side-column .companion-motion-desc {
+  display: block;
+  margin-top: 1px;
+  font-size: 8.5px;
+  line-height: 1.25;
+  color: #d9b6c6;
+  overflow-wrap: anywhere;
+}
+
+.companion-side-column .companion-side-empty {
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: #d9b6c6;
+  text-align: center;
+  padding: 4px 2px;
+}

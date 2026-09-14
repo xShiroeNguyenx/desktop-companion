@@ -76,14 +76,21 @@ function tList(path, fallback) {
   return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : fallback;
 }
 
+// Đóng các popup dạng thẻ. KHÔNG đụng tới side-panel: showSidePanel() gọi hàm
+// này ngay trước khi tự vẽ lại mình, nên tắt ở đây là tự đóng chính nó.
+// Muốn đóng side-panel thì gọi hideSidePanel() (hoặc closeAllPanels()).
 function hideCompanionPanels() {
   document.querySelector('.companion-voice-panel')?.classList.remove('show');
   document.querySelector('.companion-message-panel')?.classList.remove('show');
   document.querySelector('.companion-ambient-panel')?.classList.remove('show');
-  document.querySelector('.companion-model-panel')?.classList.remove('show');
   document.querySelector('.companion-achievements-panel')?.classList.remove('show');
-  document.querySelector('.companion-motion-panel')?.classList.remove('show');
   document.querySelector('.companion-agent-panel')?.classList.remove('show');
+}
+
+/** Đóng mọi panel, kể cả side-panel 2 cột. */
+function closeAllPanels() {
+  hideCompanionPanels();
+  hideSidePanel();
 }
 
 const DBLCLICK_MESSAGES = tList('dblClickMessages', [
@@ -470,9 +477,9 @@ export function setupModel() {
   setupVoicePanel();
   setupMessagePanel();
   setupAmbientPanel();
-  setupModelPanel();
   setupAchievementsPanel();
-  setupMotionPanel();
+  // Model + Motion dùng chung panel 2 cột hai bên nhân vật.
+  setupSidePanel();
   setupAgentPanel();
 }
 
@@ -1316,7 +1323,7 @@ function setupVoicePanel() {
 function showVoicePanel() {
   const panel = document.querySelector('.companion-voice-panel');
   if (!panel) return;
-  hideCompanionPanels();
+  closeAllPanels();
 
   const current = window.__VOICE_LANGUAGE__ || 'ja';
   panel.querySelectorAll('.companion-voice-option').forEach((option) => {
@@ -1370,7 +1377,7 @@ function setupMessagePanel() {
 function showMessagePanel() {
   const panel = document.querySelector('.companion-message-panel');
   if (!panel) return;
-  hideCompanionPanels();
+  closeAllPanels();
 
   const current = window.__MESSAGE_LANGUAGE__ || 'vi';
   panel.querySelectorAll('.companion-message-option').forEach((option) => {
@@ -1419,7 +1426,7 @@ function setupAmbientPanel() {
 function showAmbientPanel() {
   const panel = document.querySelector('.companion-ambient-panel');
   if (!panel) return;
-  hideCompanionPanels();
+  closeAllPanels();
 
   const current = window.__AMBIENT_PRESET__ || 'off';
   panel.querySelectorAll('.companion-ambient-option').forEach((option) => {
@@ -1428,57 +1435,146 @@ function showAmbientPanel() {
   panel.classList.add('show');
 }
 
-function setupModelPanel() {
+// ─── Side panel: model / motion thành 2 cột hai bên nhân vật ──────────────
+//
+// Popup cũ nằm giữa đè lên model: liệt kê chục motion là nhân vật biến mất
+// sau chính cái menu dùng để điều khiển nó. Hai cột hẹp chừa khoảng giữa
+// trống, nên chọn xong thấy ngay kết quả. Cũng vì thế panel mở xuyên suốt
+// nhiều lựa chọn — chỉ nút × (hoặc Esc) mới đóng, click ra ngoài thì không.
+
+let sidePanelRenderer = null;
+let sidePanelKeysBound = false;
+
+function setupSidePanel() {
   const wrapper = document.getElementById('characterWrapper');
   if (!wrapper) return;
 
+  // setupModel chạy lại mỗi lần đổi model; một panel là đủ.
+  document.querySelector('.companion-side-panel')?.remove();
   const panel = document.createElement('div');
-  panel.className = 'companion-model-panel';
-  // Source of truth is `window.__VISIBLE_MODELS__` injected by companion-view.ts.
-  // The provider already merges built-in models with user-configured local
-  // models, so the UI only needs the final display list.
-  const models = Array.isArray(window.__VISIBLE_MODELS__) && window.__VISIBLE_MODELS__.length > 0
-    ? window.__VISIBLE_MODELS__
-    : [{ id: 'hiyori', name: 'Hiyori', description: 'Live2D Sample' }];
-  const buttons = models.map((m) =>
-    `<button class="companion-model-option" data-model="${escapeHtml(m.id)}">` +
-    `<span class="companion-model-label">${escapeHtml(m.name)}</span>` +
-    `<span class="companion-model-desc">${escapeHtml(m.description || '')}</span>` +
-    `</button>`
-  ).join('');
-  panel.innerHTML = `
-    <div class="companion-model-title">${t('panels.modelTitle', 'Model')}</div>
-    ${buttons}
-  `;
+  panel.className = 'companion-side-panel';
   wrapper.appendChild(panel);
 
   panel.addEventListener('click', (e) => {
-    const option = e.target.closest('.companion-model-option');
-    if (!option) return;
-    const modelId = option.getAttribute('data-model');
-    if (!modelId) return;
+    if (e.target.closest('.companion-side-close')) {
+      hideSidePanel();
+      return;
+    }
 
-    panel.classList.remove('show');
-    vscode.postMessage({ command: 'setModel', modelId });
+    const model = e.target.closest('.companion-model-option');
+    if (model) {
+      const modelId = model.getAttribute('data-model');
+      if (!modelId) return;
+      // Đổi model dựng lại toàn bộ runtime; đóng trước để danh sách cũ không
+      // còn nằm đè lên lúc đang tải.
+      hideSidePanel();
+      vscode.postMessage({ command: 'setModel', modelId });
+      return;
+    }
+
+    const motion = e.target.closest('.companion-motion-option');
+    if (motion) {
+      const motionId = motion.getAttribute('data-motion');
+      if (!motionId) return;
+      // Motion không có trạng thái nào để phản ánh, nên chính hàng đó phải cho
+      // thấy cú bấm đã ăn: sáng lên và nhấp, rồi giữ sáng như motion vừa chạy.
+      panel.querySelectorAll('.companion-motion-option.active').forEach((row) => {
+        row.classList.remove('active', 'is-playing');
+      });
+      motion.classList.add('active', 'is-playing');
+      setTimeout(() => motion.classList.remove('is-playing'), 1400);
+      if (state.model) {
+        try {
+          state.model.motion(motionId);
+        } catch (err) {
+          console.warn('[AnimeCompanion] motion failed:', err);
+        }
+      }
+      createSparkle();
+    }
   });
 
-  window.addEventListener('click', (e) => {
-    if (!panel.contains(e.target)) {
-      panel.classList.remove('show');
-    }
-  }, true);
+  if (!sidePanelKeysBound) {
+    sidePanelKeysBound = true;
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (document.querySelector('.companion-side-panel.show')) hideSidePanel();
+    });
+  }
+}
+
+function hideSidePanel() {
+  sidePanelRenderer = null;
+  document.querySelector('.companion-side-panel')?.classList.remove('show');
+}
+
+/**
+ * Vẽ panel từ một renderer trả về hai cột. Renderer được giữ lại để một lựa
+ * chọn có thể vẽ lại phần tô sáng mà không phải đóng gì cả.
+ */
+function showSidePanel(render) {
+  const panel = document.querySelector('.companion-side-panel');
+  if (!panel) return;
+  // Vẽ lại panel đang mở (đổi mục tô sáng) thì giữ nguyên chỗ đã cuộn của mỗi
+  // cột; mở một panel khác thì bắt đầu từ đầu.
+  const redraw = panel.classList.contains('show') && sidePanelRenderer === render;
+  const scrollTops = redraw
+    ? Array.from(panel.querySelectorAll('.companion-side-body'), (body) => body.scrollTop)
+    : [];
+  hideCompanionPanels();
+  sidePanelRenderer = render;
+  const { left, right } = render();
+  panel.innerHTML = sideColumnHtml('left', left) + sideColumnHtml('right', right, true);
+  panel.querySelectorAll('.companion-side-body').forEach((body, i) => {
+    if (scrollTops[i]) body.scrollTop = scrollTops[i];
+  });
+  panel.classList.add('show');
+}
+
+function sideColumnHtml(side, column, withClose = false) {
+  const closeLabel = escapeHtml(t('panels.sideClose', 'Đóng'));
+  // Đầu, thân cuộn, chân — ở cả hai bên, để hai cột thẳng hàng dù chỉ chân
+  // phải mang nút đóng. Nút đóng nằm ở chân: dưới đáy cột và ngoài phần cuộn,
+  // nên luôn trong tầm với dù danh sách dài bao nhiêu.
+  const foot = withClose
+    ? `<button class="companion-side-close" title="${closeLabel}" aria-label="${closeLabel}">×</button>`
+    : '<span class="companion-side-spacer"></span>';
+  return (
+    `<div class="companion-side-column companion-side-column--${side}">` +
+    `<div class="companion-side-head"><span class="companion-side-title">${escapeHtml(column.title ?? '')}</span></div>` +
+    `<div class="companion-side-body">${column.rows.join('')}</div>` +
+    `<div class="companion-side-foot">${foot}</div>` +
+    `</div>`
+  );
+}
+
+/** Chia danh sách hàng làm đôi cho 2 cột. */
+function splitRows(rows) {
+  const half = Math.ceil(rows.length / 2);
+  return { leftRows: rows.slice(0, half), rightRows: rows.slice(half) };
+}
+
+function modelRows() {
+  // Nguồn dữ liệu là `window.__VISIBLE_MODELS__` do host tiêm vào — đã gộp sẵn
+  // model dựng sẵn với model local người dùng thêm.
+  const models = Array.isArray(window.__VISIBLE_MODELS__) && window.__VISIBLE_MODELS__.length > 0
+    ? window.__VISIBLE_MODELS__
+    : [{ id: 'hiyori', name: 'Hiyori', description: 'Live2D Sample' }];
+  const current = window.__MODEL_ID__ || 'hiyori';
+  return models.map((m) =>
+    `<button class="companion-model-option${m.id === current ? ' active' : ''}" data-model="${escapeHtml(m.id)}" title="${escapeHtml(m.description || '')}">` +
+    `<span class="companion-model-label">${escapeHtml(m.name)}</span>` +
+    (m.description ? `<span class="companion-model-desc">${escapeHtml(m.description)}</span>` : '') +
+    `</button>`
+  );
 }
 
 function showModelPanel() {
-  const panel = document.querySelector('.companion-model-panel');
-  if (!panel) return;
-  hideCompanionPanels();
-
-  const current = window.__MODEL_ID__ || 'hiyori';
-  panel.querySelectorAll('.companion-model-option').forEach((option) => {
-    option.classList.toggle('active', option.getAttribute('data-model') === current);
+  showSidePanel(() => {
+    const { leftRows, rightRows } = splitRows(modelRows());
+    const title = t('panels.modelTitle', 'Model');
+    return { left: { title, rows: leftRows }, right: { title, rows: rightRows } };
   });
-  panel.classList.add('show');
 }
 
 // ─── Agent profile popup (Switch + Save) ─────────────────────────────────
@@ -1577,7 +1673,7 @@ function renderAgentSaveHtml(tools, selectedToolId) {
 function showAgentSwitchPanel() {
   const panel = document.querySelector('.companion-agent-panel');
   if (!panel) return;
-  hideCompanionPanels();
+  closeAllPanels();
   panel.innerHTML = `
     <div class="companion-agent-title">${t('panels.agentSwitchTitle', '🔁 Switch Account')}</div>
     <div class="companion-agent-loading">${t('panels.agentLoading', 'Loading…')}</div>
@@ -1642,7 +1738,7 @@ function bindAgentSavePanelHandlers(panel) {
 function showAgentSavePanel() {
   const panel = document.querySelector('.companion-agent-panel');
   if (!panel) return;
-  hideCompanionPanels();
+  closeAllPanels();
   agentSaveTools = [];
   agentSaveSelectedToolId = null;
   panel.innerHTML = `
@@ -1872,7 +1968,7 @@ export function showAchievementsPanel() {
   const panel = document.querySelector('.companion-achievements-panel');
   if (!panel) return;
   renderAchievementsPanel(panel);
-  hideCompanionPanels();
+  closeAllPanels();
   panel.classList.add('show');
 }
 
@@ -2319,47 +2415,51 @@ export function receiveShareCardSaveResult(payload) {
   }
 }
 
-function setupMotionPanel() {
-  const wrapper = document.getElementById('characterWrapper');
-  if (!wrapper) return;
+/**
+ * Đọc các nhóm motion model thực sự khai báo. Trước đây danh sách là ba tên
+ * cứng — model nào đặt nhóm là `待机` hay `摸头` thì hiện ba nút bấm không ra gì.
+ */
+function motionGroups() {
+  const definitions = state.model?.internalModel?.motionManager?.definitions;
+  if (!definitions || typeof definitions !== 'object') return [];
+  return Object.entries(definitions)
+    .filter(([name, list]) => name && Array.isArray(list) && list.length > 0)
+    .map(([name, list]) => ({ name, count: list.length }));
+}
 
-  const panel = document.createElement('div');
-  panel.className = 'companion-motion-panel';
-  panel.innerHTML = `
-    <div class="companion-motion-title">${t('panels.motionTitle', 'Motion')}</div>
-    <button class="companion-motion-option" data-motion="TapBody"><span class="companion-motion-label">TapBody</span><span class="companion-motion-desc">${t('panels.motionTapBodyDesc', 'Body tap')}</span></button>
-    <button class="companion-motion-option" data-motion="TapHead"><span class="companion-motion-label">TapHead</span><span class="companion-motion-desc">${t('panels.motionTapHeadDesc', 'Head pat')}</span></button>
-    <button class="companion-motion-option" data-motion="Idle"><span class="companion-motion-label">Idle</span><span class="companion-motion-desc">${t('panels.motionIdleDesc', 'Default idle')}</span></button>
-  `;
-  wrapper.appendChild(panel);
+function motionRows() {
+  const list = motionGroups();
+  if (list.length === 0) {
+    return [
+      `<div class="companion-side-empty">${escapeHtml(
+        t('panels.motionEmpty', 'Model này không khai báo motion nào.')
+      )}</div>`,
+    ];
+  }
 
-  panel.addEventListener('click', (e) => {
-    const option = e.target.closest('.companion-motion-option');
-    if (!option) return;
-    const motionId = option.getAttribute('data-motion');
-    if (!motionId) return;
-
-    panel.classList.remove('show');
-    if (state.model) {
-      try {
-        state.model.motion(motionId);
-      } catch (err) {
-        console.warn('[AnimeCompanion] motion failed:', err);
-      }
+  const STANDARD_DESC = {
+    TapBody: t('panels.motionTapBodyDesc', 'Body tap'),
+    TapHead: t('panels.motionTapHeadDesc', 'Head pat'),
+    Idle: t('panels.motionIdleDesc', 'Default idle'),
+  };
+  return list.map(({ name, count }) => {
+    let desc = STANDARD_DESC[name] ?? '';
+    if (!desc && count > 1) {
+      desc = t('panels.motionCount', '{count} motion').replace('{count}', String(count));
     }
-    createSparkle();
+    return (
+      `<button class="companion-motion-option" data-motion="${escapeHtml(name)}">` +
+      `<span class="companion-motion-label">${escapeHtml(name)}</span>` +
+      (desc ? `<span class="companion-motion-desc">${escapeHtml(desc)}</span>` : '') +
+      `</button>`
+    );
   });
-
-  window.addEventListener('click', (e) => {
-    if (!panel.contains(e.target)) {
-      panel.classList.remove('show');
-    }
-  }, true);
 }
 
 function showMotionPanel() {
-  const panel = document.querySelector('.companion-motion-panel');
-  if (!panel) return;
-  hideCompanionPanels();
-  panel.classList.add('show');
+  showSidePanel(() => {
+    const { leftRows, rightRows } = splitRows(motionRows());
+    const title = t('panels.motionTitle', 'Motion');
+    return { left: { title, rows: leftRows }, right: { title, rows: rightRows } };
+  });
 }

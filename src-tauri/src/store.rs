@@ -104,6 +104,9 @@ pub struct Task {
     pub done: bool,
     #[serde(default)]
     pub created_at: String,
+    /// Mốc hoàn thành (millis). Rỗng khi việc chưa xong — bỏ tick thì xoá đi.
+    #[serde(default)]
+    pub done_at: String,
 }
 
 fn config_dir(app: &AppHandle) -> Option<PathBuf> {

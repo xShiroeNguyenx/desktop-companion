@@ -22,9 +22,14 @@ duyệt, Word…).
   Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
-- **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO; quản lý trong cửa sổ Tasks.
+- **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO. Cửa sổ Tasks chia hai
+  cột "chưa làm" / "đã làm", ghi lại thời điểm tạo và thời điểm hoàn thành, và
+  cho sửa ghi chú của từng việc.
 - **Ngữ cảnh dịch** — danh sách ngữ cảnh có sẵn trong Cài đặt (vd: "chat công việc
   trang trọng") để dịch nhanh đúng giọng điệu. Chọn một cái mặc định hoặc không.
+- **Pet vào đứng giữa bảng** — mở Cài đặt hoặc Tasks thì pet tự dời vào khoảng
+  giữa hai cột (click xuyên qua được nên không vướng tay), đóng bảng thì pet
+  quay về đúng chỗ cũ.
 - **Nhìn theo con trỏ** — đầu/mắt nhân vật dõi theo chuột khi chuột ở gần pet.
 - **Phóng to / thu nhỏ** — `Ctrl` + lăn chuột để đổi kích thước; tự nhớ kích thước.
 - **Model Live2D tự thêm** — nạp model `*.model3.json` của bạn từ thư mục bất kỳ.
@@ -69,6 +74,9 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat AI · Công việc · Cài đặt
+
+**Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
+vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.
 
 ---
 

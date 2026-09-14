@@ -6,35 +6,101 @@
   <link rel="stylesheet" href="ui.css" />
   <title>Bản dịch</title>
   <style>
-    html, body { background: #1e1f26; color: #e7e9f0; }
-    body { gap: 6px; }
-    .box-label { font-size: 11px; color: #9aa0b4; margin-bottom: 2px; }
-    .half {
-      flex: 1;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
+    /* height:auto để chiều cao tài liệu bám sát nội dung — quick.js đo
+       #wrap rồi co/giãn cửa sổ theo. */
+    html, body { background: #1e1f26; color: #e7e9f0; height: auto; }
+    body { padding: 10px; display: block; }
+    #wrap { display: flex; flex-direction: column; gap: 6px; }
+
+    /* Khung nội dung: nút icon nổi ở góc trên-phải, trong lòng khung. */
+    .box {
+      position: relative;
+      display: flex;
+      flex-direction: column;
       background: #272935;
       border: 1px solid #3a3d4d;
       border-radius: 8px;
-      padding: 8px 10px;
     }
-    #source { color: #c7cad6; }
+    .box-body {
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      /* chừa chỗ bên phải cho hàng icon */
+      padding: 8px 66px 8px 10px;
+    }
+    /* Trần riêng cho bản dịch: dài quá thì cuộn thay vì kéo cửa sổ vô tận. */
+    #result { max-height: 420px; }
+    .box-tools {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      display: flex;
+      gap: 2px;
+    }
+    .icon-btn {
+      background: rgba(47, 50, 64, 0.85);
+      color: #9aa0b4;
+      border: 1px solid #3a3d4d;
+      border-radius: 6px;
+      width: 26px;
+      height: 24px;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover { color: #e7e9f0; border-color: #ff73ab; }
+    .icon-btn.on { color: #ff73ab; border-color: #ff73ab; }
+
+    /* Nhãn phân biệt 2 khung — chỉ hiện khi đang mở nội dung gốc, vì lúc
+       chỉ có bản dịch thì không cần phân biệt với gì cả. */
+    .box-label {
+      display: none;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #9aa0b4;
+      padding: 6px 66px 0 10px; /* chừa chỗ cho hàng icon ở góc phải */
+    }
+    body.dual .box-label { display: block; }
+    body.dual .box-body { padding-top: 4px; }
+
+    /* Khung nội dung gốc: ẩn mặc định, nhỏ hơn khung bản dịch. */
+    #srcBox { display: none; }
+    #srcBox.show { display: flex; }
+    #source { max-height: 160px; color: #c7cad6; font-size: 12.5px; }
     #result.empty { color: #9aa0b4; }
+    .status { min-height: 0; }
+    .status:empty { display: none; }
   </style>
 </head>
 <body>
-  <div class="box-label">Nội dung gốc</div>
-  <div class="half" id="source">(chưa có văn bản)</div>
+  <div id="wrap">
+    <!-- Nội dung gốc: ẩn mặc định, bật bằng nút 👁 ở khung bản dịch -->
+    <div class="box" id="srcBox">
+      <div class="box-label">Nội dung gốc</div>
+      <div class="box-body" id="source">(chưa có văn bản)</div>
+      <div class="box-tools">
+        <button class="icon-btn" id="copySrcBtn" type="button" title="Sao chép nội dung gốc">📋</button>
+      </div>
+    </div>
 
-  <div class="box-label">Bản dịch</div>
-  <div class="half empty" id="result">Đang dịch...</div>
+    <!-- Bản dịch -->
+    <div class="box">
+      <div class="box-label">Bản dịch</div>
+      <div class="box-body empty" id="result">Đang dịch...</div>
+      <div class="box-tools">
+        <button class="icon-btn" id="toggleSrcBtn" type="button" title="Hiện nội dung gốc">👁</button>
+        <button class="icon-btn" id="copyBtn" type="button" title="Sao chép bản dịch">📋</button>
+      </div>
+    </div>
 
-  <div class="row tight">
-    <button class="ghost" id="copySrcBtn">Sao chép nội dung gốc</button>
-    <button class="action" id="copyBtn">Sao chép bản dịch</button>
+    <div class="status" id="status"></div>
   </div>
-  <div class="status" id="status"></div>
 
   <script src="js/tauri-api.js"></script>
   <script src="js/quick.js"></script>
