@@ -199,7 +199,57 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    // Hộp thoại "có bản mới" — hiện tự động khi app khởi động và phát hiện
+    // bản mới, nên phải được warm sẵn ở đây như các cửa sổ phụ khác.
+    let _ = WebviewWindowBuilder::new(app, "update", WebviewUrl::App("update.html".into()))
+        .title("Có bản cập nhật mới")
+        .inner_size(UPDATE_W, UPDATE_H)
+        .min_inner_size(360.0, 240.0)
+        .always_on_top(true)
+        .skip_taskbar(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
     dbg_log("[windows] precreate done");
+}
+
+// Hộp thoại cập nhật (logical px).
+const UPDATE_W: f64 = 420.0;
+const UPDATE_H: f64 = 260.0;
+
+/// Hiện hộp thoại "có bản mới" và canh giữa màn hình. Chạy trên main thread
+/// (luồng kiểm tra cập nhật gọi qua run_on_main_thread).
+///
+/// `info` là kết quả check_update đã có sẵn — truyền thẳng vào webview để hộp
+/// thoại khỏi phải gọi lại qua mạng. `None` khi người dùng tự bấm mở: lúc đó
+/// hộp thoại tự kiểm tra.
+pub fn show_update(app: &AppHandle, info: Option<serde_json::Value>) {
+    let Some(w) = app.get_webview_window("update") else {
+        dbg_log("[windows] update window missing (precreate failed?)");
+        return;
+    };
+    // Canh giữa màn hình chính; center() của Tauri đã lo phần đa màn hình.
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    let _ = app.emit_to("update", "update-refresh", info.clone());
+    force_repaint(app, "update");
+    // Phát lại sau một nhịp: nếu cửa sổ vừa được dựng (precreate hụt) thì
+    // listener của update.js có thể chưa kịp đăng ký lúc emit đầu tiên.
+    let app_retry = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(400));
+        let _ = app_retry.emit_to("update", "update-refresh", info);
+    });
+    dbg_log("[windows] update dialog shown");
+}
+
+pub fn hide_update(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("update") {
+        let _ = w.hide();
+    }
 }
 
 pub fn show_flower(app: &AppHandle, x: i32, y: i32) {

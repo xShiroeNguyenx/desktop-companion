@@ -309,16 +309,15 @@
     }
   });
 
+  // Việc tải/cài diễn ra trong hộp thoại cập nhật (có ghi chú phát hành +
+  // thanh tiến trình), giống hệt hộp thoại tự bật lúc khởi động app.
   $('installUpdate').addEventListener('click', async () => {
     const st = $('updateStatus');
-    st.className = 'status'; st.textContent = 'Đang tải & cài bản mới... App sẽ tự khởi động lại.';
-    $('installUpdate').disabled = true;
     try {
-      await invoke('install_update');
+      await invoke('open_update_dialog');
     } catch (e) {
       st.className = 'status err';
       st.textContent = String(e);
-      $('installUpdate').disabled = false;
     }
   });
 

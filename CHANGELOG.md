@@ -4,6 +4,26 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] - 2026-09-15
+
+### Added
+- **An update dialog that opens itself on launch.** The app already checked for
+  a new version ~5s after start, but it only nudged you with a pet bubble saying
+  to go find the button in Settings — so unless you went looking, you never
+  updated. It now opens a centred dialog with the new version number, the one
+  you are on, the release notes, and a **Tải & cài ngay** button that downloads
+  and installs right there.
+- **A progress bar while the update downloads.** The download reports real
+  percentages (falling back to an indeterminate sweep when the server sends no
+  content length) instead of one line of text and then silence until the app
+  restarts itself.
+- **"Bỏ qua bản này".** The automatic dialog stays quiet about that exact
+  version on later launches; checking manually from Settings clears the skip.
+
+### Changed
+- **Kiểm tra cập nhật** in Settings now opens that same dialog — release notes
+  and progress bar included — instead of installing from within the panel.
+
 ## [0.3.1] - 2026-09-14
 
 ### Added
@@ -123,6 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.3.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.2
+[0.3.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.1
 [0.3.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.0
 [0.2.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.3
 [0.2.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.2.2

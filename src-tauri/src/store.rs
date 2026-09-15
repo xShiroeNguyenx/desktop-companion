@@ -31,6 +31,10 @@ pub struct Settings {
     pub pet_model: String,
     #[serde(default)]
     pub custom_models: Vec<CustomModel>,
+    /// Phiên bản người dùng đã bấm "Bỏ qua bản này" ở hộp thoại cập nhật.
+    /// Hộp thoại tự động lúc khởi động sẽ im lặng với đúng version này.
+    #[serde(default)]
+    pub skip_update_version: String,
 }
 
 fn default_hotkey() -> String {
@@ -88,6 +92,7 @@ impl Default for Settings {
             hotkey: default_hotkey(),
             pet_model: default_model_id(),
             custom_models: Vec::new(),
+            skip_update_version: String::new(),
         }
     }
 }

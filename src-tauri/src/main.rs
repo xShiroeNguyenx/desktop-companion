@@ -92,7 +92,7 @@ pub fn save_pet_position(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) {
     save_window_position(app, SavedWindowPosition { x, y, w, h });
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct UpdateInfo {
     available: bool,
     version: String,
@@ -125,7 +125,9 @@ async fn check_update(app: AppHandle) -> Result<UpdateInfo, String> {
     }
 }
 
-// Download + install the available update, then relaunch the app.
+// Download + install the available update, then relaunch the app. Phát event
+// "update-progress" (0..100, -1 khi không biết tổng dung lượng) để hộp thoại
+// cập nhật vẽ thanh tiến trình.
 #[tauri::command]
 async fn install_update(app: AppHandle) -> Result<(), String> {
     use tauri_plugin_updater::UpdaterExt;
@@ -137,12 +139,53 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?
         .ok_or("Không có bản cập nhật nào.")?;
 
+    let downloaded = std::sync::atomic::AtomicU64::new(0);
+    let app_for_progress = app.clone();
     update
-        .download_and_install(|_chunk, _total| {}, || {})
+        .download_and_install(
+            move |chunk, total| {
+                let got = downloaded
+                    .fetch_add(chunk as u64, std::sync::atomic::Ordering::SeqCst)
+                    + chunk as u64;
+                let percent = match total {
+                    Some(t) if t > 0 => ((got as f64 / t as f64) * 100.0).min(100.0) as i32,
+                    _ => -1,
+                };
+                let _ = app_for_progress.emit_to("update", "update-progress", percent);
+            },
+            || {},
+        )
         .await
         .map_err(|e| format!("Lỗi tải/cài cập nhật: {e}"))?;
 
     app.restart();
+}
+
+// "Bỏ qua bản này": nhớ version để lần khởi động sau không nhắc lại nữa.
+#[tauri::command]
+fn skip_update_version(app: AppHandle, version: String) -> Result<(), String> {
+    let mut settings = store::load_settings(&app);
+    settings.skip_update_version = version;
+    store::save_settings(&app, &settings)
+}
+
+// Đóng hộp thoại cập nhật (nút "Để sau" / "Bỏ qua bản này").
+#[tauri::command]
+fn close_update_dialog(app: AppHandle) {
+    windows::hide_update(&app);
+}
+
+// Mở hộp thoại cập nhật theo yêu cầu (nút "Kiểm tra cập nhật" trong Cài đặt).
+// Bấm tay thì bỏ luôn dấu "bỏ qua" cũ — người dùng đang chủ động hỏi.
+#[tauri::command]
+fn open_update_dialog(app: AppHandle) -> Result<(), String> {
+    let mut settings = store::load_settings(&app);
+    if !settings.skip_update_version.is_empty() {
+        settings.skip_update_version.clear();
+        let _ = store::save_settings(&app, &settings);
+    }
+    windows::show_update(&app, None);
+    Ok(())
 }
 
 // Change the global capture hotkey and persist it. Returns Ok if registered.
@@ -391,6 +434,9 @@ fn main() {
             set_hotkey,
             check_update,
             install_update,
+            skip_update_version,
+            close_update_dialog,
+            open_update_dialog,
             pet_command,
             commands::dc_log,
             commands::get_selection,
@@ -472,18 +518,31 @@ fn main() {
             register_capture_hotkey(&app_handle, &settings.hotkey);
 
             // Silent update check ~5s after launch; if a newer version exists,
-            // tell the pet so it can show a gentle bubble.
+            // mở hộp thoại cập nhật (kèm bong bóng nhắc từ pet). Version mà
+            // người dùng đã bấm "Bỏ qua bản này" thì im lặng.
             {
                 let app_for_update = app_handle.clone();
                 std::thread::spawn(move || {
                     std::thread::sleep(std::time::Duration::from_secs(5));
                     tauri::async_runtime::block_on(async {
                         if let Ok(info) = check_update(app_for_update.clone()).await {
-                            if info.available {
-                                if let Some(w) = app_for_update.get_webview_window("main") {
-                                    let _ = w.emit("update-available", info.version);
-                                }
+                            if !info.available {
+                                return;
                             }
+                            let skipped = store::load_settings(&app_for_update).skip_update_version;
+                            if skipped == info.version {
+                                return;
+                            }
+                            if let Some(w) = app_for_update.get_webview_window("main") {
+                                let _ = w.emit("update-available", info.version.clone());
+                            }
+                            // Truyền luôn kết quả vừa kiểm tra để hộp thoại
+                            // khỏi phải gọi lại qua mạng lần nữa.
+                            let payload = serde_json::to_value(&info).ok();
+                            let app_for_dialog = app_for_update.clone();
+                            let _ = app_for_update.run_on_main_thread(move || {
+                                windows::show_update(&app_for_dialog, payload);
+                            });
                         }
                     });
                 });

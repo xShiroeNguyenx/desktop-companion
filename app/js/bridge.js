@@ -64,7 +64,7 @@
     TAURI.event.listen('update-available', (event) => {
       try {
         window.dispatchEvent(new MessageEvent('message', {
-          data: { command: 'showMessage', text: '✨ Có bản mới v' + event.payload + '! Mở Cài đặt → Kiểm tra cập nhật nha~' },
+          data: { command: 'showMessage', text: '✨ Có bản mới v' + event.payload + '! Bấm "Tải & cài ngay" ở hộp thoại nha~' },
         }));
       } catch (_) { /* ignore */ }
     });
