@@ -32,6 +32,13 @@ Repo → **Settings** → **Secrets and variables** → **Actions** → **New re
 
 Repo → **Settings** → **Pages** → **Source** → **GitHub Actions**.
 
+The site is served at **https://desktop.techdecoded.net/** (custom domain):
+
+- **Settings** → **Pages** → **Custom domain** = `desktop.techdecoded.net`, with **Enforce HTTPS** on.
+- DNS: `CNAME desktop → xshiroenguyenx.github.io`.
+- Because Pages deploys via Actions, a `CNAME` file in the repo is ignored — the domain lives only in repo settings.
+- `docs/landing/robots.txt`, `sitemap.xml` and the canonical / Open Graph tags in `index.html` all point at this domain; update them together if it ever changes.
+
 ## Cutting a release
 
 1. **Bump the version** in three files (keep them identical):

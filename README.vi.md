@@ -4,7 +4,7 @@
 **trả lời nhanh** và **lưu công việc** — hoạt động trên mọi ứng dụng (Teams, trình
 duyệt, Word…).
 
-🌐 **[Trang giới thiệu (Website) →](https://xshiroenguyenx.github.io/desktop-companion/)**
+🌐 **[Trang giới thiệu (Website) →](https://desktop.techdecoded.net/)**
 
 **Ngôn ngữ:** [English](README.md) · **Tiếng Việt** · [日本語](README.ja.md)
 

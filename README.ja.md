@@ -3,7 +3,7 @@
 🌸 Windows 向けのスタンドアロン Live2D デスクトップペット。**AI翻訳**・**クイック返信**・
 **タスク保存**を内蔵し、あらゆるアプリ（Teams、ブラウザ、Word…）で動作します。
 
-🌐 **[ウェブサイト / 紹介ページ →](https://xshiroenguyenx.github.io/desktop-companion/)**
+🌐 **[ウェブサイト / 紹介ページ →](https://desktop.techdecoded.net/)**
 
 **言語:** [English](README.md) · [Tiếng Việt](README.vi.md) · **日本語**
 

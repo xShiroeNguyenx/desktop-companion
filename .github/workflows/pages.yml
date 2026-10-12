@@ -1,7 +1,7 @@
 name: Deploy landing page
 
 # Publish docs/landing to GitHub Pages on every push to main (or manually).
-# Site URL: https://xshiroenguyenx.github.io/desktop-companion/
+# Site URL: https://desktop.techdecoded.net/
 on:
   push:
     branches: [main, master]
