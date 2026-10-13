@@ -229,11 +229,43 @@
         </div>
       </div>
 
+      <!-- Tạm ẩn: giọng hiện có chưa khớp nhân vật (xem TTS_ENABLED trong tts.rs). -->
+      <div class="set-group" style="display:none">
+        <h3>🔊 Giọng nói</h3>
+        <div class="set-field">
+          <label for="ttsEngine">Em đọc thành tiếng</label>
+          <select id="ttsEngine">
+            <option value="off">Tắt</option>
+            <option value="windows">Giọng có sẵn của Windows (offline)</option>
+            <option value="edge">Giọng Edge Neural (trực tuyến)</option>
+          </select>
+          <div class="status" id="ttsEngineNote"></div>
+        </div>
+        <div class="set-field" id="ttsVoiceBlock">
+          <label for="ttsVoice">Giọng</label>
+          <div class="row tight">
+            <select id="ttsVoice" style="flex:1;"></select>
+            <button class="ghost" id="ttsPreview" type="button" style="flex:0 0 auto;">▶ Nghe thử</button>
+          </div>
+          <div class="status" id="ttsStatus"></div>
+        </div>
+      </div>
+
       <div class="set-group">
         <h3>⚙️ Hệ thống</h3>
         <div class="set-toggle">
           <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
           <input type="checkbox" id="autoFlower" />
+        </div>
+        <div class="set-field">
+          <label for="proactive">Em tự bắt chuyện</label>
+          <select id="proactive">
+            <option value="0">Tắt</option>
+            <option value="30">Sau 30 phút im lặng</option>
+            <option value="60">Sau 1 giờ im lặng</option>
+            <option value="120">Sau 2 giờ im lặng</option>
+          </select>
+          <div class="status">Nhắc việc chưa xong, nhắc nghỉ mắt… Mỗi lần là một lượt gọi AI.</div>
         </div>
         <div class="set-toggle">
           <label for="autostart">Khởi động cùng Windows</label>

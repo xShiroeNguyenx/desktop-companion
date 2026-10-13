@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
+use crate::chat::ChatMsg;
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
     #[serde(default = "default_provider")]
@@ -35,6 +37,28 @@ pub struct Settings {
     /// Hộp thoại tự động lúc khởi động sẽ im lặng với đúng version này.
     #[serde(default)]
     pub skip_update_version: String,
+    /// Pet tự lên tiếng sau ngần này phút không trò chuyện. 0 = tắt.
+    #[serde(default = "default_proactive_minutes")]
+    pub proactive_minutes: u32,
+    /// Đọc thành tiếng: "off" | "windows" | "edge".
+    #[serde(default = "default_tts_engine")]
+    pub tts_engine: String,
+    /// Id giọng WinRT; rỗng = giọng mặc định của Windows.
+    #[serde(default)]
+    pub tts_voice_windows: String,
+    #[serde(default = "default_tts_voice_edge")]
+    pub tts_voice_edge: String,
+}
+
+fn default_tts_engine() -> String {
+    "off".to_string()
+}
+fn default_tts_voice_edge() -> String {
+    "vi-VN-HoaiMyNeural".to_string()
+}
+
+fn default_proactive_minutes() -> u32 {
+    60
 }
 
 fn default_hotkey() -> String {
@@ -93,6 +117,10 @@ impl Default for Settings {
             pet_model: default_model_id(),
             custom_models: Vec::new(),
             skip_update_version: String::new(),
+            proactive_minutes: default_proactive_minutes(),
+            tts_engine: default_tts_engine(),
+            tts_voice_windows: String::new(),
+            tts_voice_edge: default_tts_voice_edge(),
         }
     }
 }
@@ -124,6 +152,10 @@ fn settings_path(app: &AppHandle) -> Option<PathBuf> {
     Some(config_dir(app)?.join("settings.json"))
 }
 
+fn chat_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("chat_history.json"))
+}
+
 fn tasks_path(app: &AppHandle) -> Option<PathBuf> {
     Some(config_dir(app)?.join("tasks.json"))
 }
@@ -151,5 +183,19 @@ pub fn load_tasks(app: &AppHandle) -> Vec<Task> {
 pub fn save_tasks(app: &AppHandle, tasks: &[Task]) -> Result<(), String> {
     let path = tasks_path(app).ok_or("no config dir")?;
     let json = serde_json::to_string_pretty(tasks).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+// Lịch sử Quick Chat (chỉ nằm trên máy, xoá được từ khung chat).
+pub fn load_chat(app: &AppHandle) -> Vec<ChatMsg> {
+    chat_path(app)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+pub fn save_chat(app: &AppHandle, msgs: &[ChatMsg]) -> Result<(), String> {
+    let path = chat_path(app).ok_or("no config dir")?;
+    let json = serde_json::to_string_pretty(msgs).map_err(|e| e.to_string())?;
     std::fs::write(path, json).map_err(|e| e.to_string())
 }

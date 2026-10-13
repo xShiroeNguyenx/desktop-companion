@@ -2,10 +2,12 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod chat;
 mod commands;
 mod llm;
 mod selection;
 mod store;
+mod tts;
 mod windows;
 
 use serde::{Deserialize, Serialize};
@@ -208,6 +210,17 @@ fn pet_command(app: AppHandle, payload: Value) {
         "runtimeDebug" => {
             let msg = payload.get("message").and_then(|m| m.as_str()).unwrap_or("");
             eprintln!("[pet] {msg}");
+        }
+        "pet:chat:request" => chat::handle_request(&app, &payload),
+        "chat:snapshot" => chat::handle_snapshot(&app),
+        "chat:clear" => chat::handle_clear(&app),
+        "pet:chat:cancel" => chat::handle_cancel(&app),
+        // Khung Quick Chat đóng mà không gửi → trả click-through lại ngay; có gửi
+        // thì đợi trả lời xong (handle_request tự trả).
+        "quickChat:closed" => {
+            if payload.get("submitted").and_then(|v| v.as_bool()) != Some(true) {
+                chat::restore_click_through(&app);
+            }
         }
         "openSettings" => windows::open_settings(&app),
         "openTasks" => windows::open_tasks(&app),
@@ -426,6 +439,7 @@ fn main() {
                 });
             resp
         })
+        .manage(chat::ChatState::default())
         .manage(AppState {
             click_through: AtomicBool::new(false),
         })
@@ -439,6 +453,8 @@ fn main() {
             open_update_dialog,
             pet_command,
             commands::dc_log,
+            commands::tts_voices,
+            commands::tts_preview,
             commands::get_selection,
             commands::flower_clicked,
             commands::flower_action,
@@ -512,6 +528,8 @@ fn main() {
             // Pre-create aux windows (hidden) in this context so they render
             // reliably when later shown.
             windows::precreate(&app_handle);
+            tts::start(app_handle.clone());
+            chat::start_proactive_loop(app_handle.clone());
 
             // Global selection capture + look-at feed, and the hotkey fallback.
             selection::init(&app_handle);

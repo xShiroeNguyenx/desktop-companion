@@ -65,6 +65,8 @@ export function showBubble(text) {
 }
 
 let streamAccumulated = '';
+// startBubbleStream shows a 'thinking…' placeholder; the first real chunk replaces it.
+let streamHasContent = false;
 let streamWatchdog = null;
 const STREAM_WATCHDOG_MS = 30000;
 
@@ -75,7 +77,19 @@ function clearStreamWatchdog() {
   }
 }
 
+// Nút ⏹ trên bong bóng: huỷ câu trả lời đang stream (Rust báo lại "Đã hủy.").
+function ensureStopButton() {
+  const btn = document.getElementById('bubbleStop');
+  if (!btn || btn.dataset.wired) return;
+  btn.dataset.wired = '1';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    vscode.postMessage({ command: 'pet:chat:cancel' });
+  });
+}
+
 export function startBubbleStream(initialText) {
+  ensureStopButton();
   const bubble = $bubble();
   const txt = $bubbleText();
   if (!bubble || !txt) return;
@@ -87,6 +101,7 @@ export function startBubbleStream(initialText) {
   bubble.style.cursor = 'default';
   bubbleStreaming = true;
   streamAccumulated = initialText || '';
+  streamHasContent = false;
   txt.textContent = streamAccumulated;
   bubble.classList.add('visible');
   bubble.classList.add('streaming');
@@ -98,11 +113,17 @@ export function startBubbleStream(initialText) {
   }, STREAM_WATCHDOG_MS);
 }
 
+export function isBubbleStreaming() {
+  return bubbleStreaming;
+}
+
 export function appendBubbleStream(chunk) {
   const txt = $bubbleText();
   if (!txt || !bubbleStreaming) return;
   clearStreamWatchdog();
-  streamAccumulated += chunk || '';
+  if (!chunk) return;
+  streamAccumulated = streamHasContent ? streamAccumulated + chunk : chunk;
+  streamHasContent = true;
   const display =
     streamAccumulated.length > STREAM_BUBBLE_MAX_CHARS
       ? '...' + streamAccumulated.slice(-(STREAM_BUBBLE_MAX_CHARS - 3))
@@ -248,6 +269,7 @@ function ensureQuickChatPanel() {
   quickChatPanel.className = 'companion-quickchat-panel';
   quickChatPanel.innerHTML = `
     <div class="companion-quickchat-title">💬 Quick Chat</div>
+    <div class="companion-quickchat-context" hidden></div>
     <div class="companion-quickchat-history-wrap">
       <div class="companion-quickchat-history"></div>
       <div class="companion-quickchat-empty">Chưa có history nào cả. Hỏi em một câu trước nha~</div>
@@ -255,6 +277,7 @@ function ensureQuickChatPanel() {
     <textarea class="companion-quickchat-field" rows="2" maxlength="400"
       placeholder="Hỏi gì đó nhanh nha~ (Enter để gửi, Shift+Enter xuống dòng)"></textarea>
     <div class="companion-quickchat-actions">
+      <button class="companion-confirm-btn secondary companion-quickchat-clear" data-choice="clear" title="Xoá lịch sử trò chuyện">🗑</button>
       <button class="companion-confirm-btn secondary" data-choice="cancel">Cancel</button>
       <button class="companion-confirm-btn primary" data-choice="send">Send</button>
     </div>
@@ -272,6 +295,14 @@ function ensureQuickChatPanel() {
       quickChatHandlers.onSubmit(value);
     }
     if (field) field.value = '';
+    // Rust giữ click-through tắt tới khi trả lời xong (mở từ "Hỏi em").
+    vscode.postMessage({ command: 'quickChat:closed', submitted: true });
+  };
+
+  const clearHistory = () => {
+    quickChatSessionHistory = quickChatSessionHistory.filter((m) => m.pending);
+    renderQuickChatHistory();
+    if (quickChatHandlers && quickChatHandlers.onClear) quickChatHandlers.onClear();
   };
 
   const cancel = () => {
@@ -281,6 +312,7 @@ function ensureQuickChatPanel() {
       quickChatHandlers.onCancel();
     }
     if (field) field.value = '';
+    vscode.postMessage({ command: 'quickChat:closed', submitted: false });
   };
 
   quickChatPanel.addEventListener('click', (e) => {
@@ -288,6 +320,7 @@ function ensureQuickChatPanel() {
     if (!button) return;
     const choice = button.getAttribute('data-choice');
     if (choice === 'send') submit();
+    else if (choice === 'clear') clearHistory();
     else cancel();
   });
 
@@ -314,6 +347,14 @@ export function showQuickChatPanel(handlers) {
   // user sees a clean quick-chat surface.
   forceDismissBubble();
   quickChatHandlers = handlers || {};
+  // Đoạn bôi đen đi kèm câu hỏi (mục "Hỏi em" của bông hoa): hiện vài dòng đầu.
+  const ctx = panel.querySelector('.companion-quickchat-context');
+  const context = (quickChatHandlers.context || '').trim();
+  if (ctx) {
+    ctx.hidden = !context;
+    ctx.textContent = context ? '📎 ' + (context.length > 160 ? context.slice(0, 157) + '...' : context) : '';
+    ctx.title = context;
+  }
   panel.classList.add('show');
   syncQuickChatOverlayState(true);
   renderQuickChatHistory();
@@ -337,6 +378,12 @@ export function syncQuickChatConversationHistory(messages) {
         content: item.content.trim(),
       }))
     : [];
+  // The snapshot already contains every finished turn; keep only the ones still
+  // streaming so they aren't listed twice.
+  const pendingIds = new Set(
+    quickChatSessionHistory.filter((m) => m.pending).map((m) => m.requestId)
+  );
+  quickChatSessionHistory = quickChatSessionHistory.filter((m) => pendingIds.has(m.requestId));
   renderQuickChatHistory();
 }
 

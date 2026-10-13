@@ -16,6 +16,7 @@ import {
   updatePomodoroRing,
   hidePomodoroRing,
   appendBubbleStream,
+  isBubbleStreaming,
   finishBubbleStream,
   errorBubbleStream,
   syncQuickChatConversationHistory,
@@ -23,7 +24,8 @@ import {
   finishQuickChatHistoryTurn,
   failQuickChatHistoryTurn,
 } from './ui.js';
-import { applyShowcaseBanner, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
+import { handleTtsAudio, stopTts } from './tts-player.js';
+import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
 
 function disposeCurrentModel() {
   state.isLive2DReady = false;
@@ -154,6 +156,7 @@ window.addEventListener('message', (event) => {
       break;
     case 'setMutedState':
       setGlobalAudioMuted(event.data.muted);
+      if (event.data.muted) stopTts();
       break;
     case 'playMotion':
       playMotion(event.data.group, event.data.index);
@@ -236,6 +239,22 @@ window.addEventListener('message', (event) => {
       break;
     case 'agentProfile:availableTools:state':
       renderAgentAvailableTools(event.data.tools || []);
+      break;
+    case 'pet:tts:audio':
+      handleTtsAudio(event.data);
+      break;
+    case 'pet:tts:stop':
+      stopTts(event.data.gen);
+      break;
+    case 'pet:tts:error': {
+      // Lỗi giọng nói phải nói ra được nguyên nhân, đừng im lặng.
+      const msg = '🔇 Em không đọc thành tiếng được: ' + (event.data.message || 'lỗi không rõ');
+      if (isBubbleStreaming()) appendBubbleStream('\n' + msg);
+      else showBubble(msg);
+      break;
+    }
+    case 'pet:askAbout':
+      openQuickChatOverlay(event.data.text || '');
       break;
     case 'pet:chat:delta':
       appendQuickChatHistoryDelta(event.data.requestId, event.data.delta || '');

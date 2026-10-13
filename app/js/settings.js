@@ -13,6 +13,50 @@
   let petModel = 'hiyori';
   let contexts = [];
   let customModels = [];
+  // Giọng đã chọn cho từng engine — đổi engine qua lại không mất lựa chọn.
+  const ttsVoices = { windows: '', edge: 'vi-VN-HoaiMyNeural' };
+
+  const TTS_NOTES = {
+    off: '',
+    windows: 'Chạy ngay trên máy, không gửi gì ra ngoài. Giọng hơi máy móc.',
+    edge: 'Giọng tự nhiên, có tiếng Việt. Đây là dịch vụ không chính thức của Microsoft: câu em nói được gửi lên máy chủ Microsoft, và dịch vụ có thể ngừng bất cứ lúc nào.',
+  };
+
+  async function syncTtsBlock() {
+    const engine = $('ttsEngine').value;
+    $('ttsEngineNote').textContent = TTS_NOTES[engine] || '';
+    $('ttsVoiceBlock').style.display = engine === 'off' ? 'none' : '';
+    if (engine === 'off') return;
+    const sel = $('ttsVoice');
+    const st = $('ttsStatus');
+    st.className = 'status';
+    st.textContent = '';
+    sel.innerHTML = '';
+    let voices = [];
+    try {
+      voices = await invoke('tts_voices', { engine });
+    } catch (e) {
+      st.className = 'status err';
+      st.textContent = String(e);
+    }
+    if (engine !== $('ttsEngine').value) return; // đã đổi engine trong lúc chờ
+    if (engine === 'windows') {
+      const def = document.createElement('option');
+      def.value = ''; def.textContent = 'Mặc định của Windows';
+      sel.appendChild(def);
+    }
+    for (const [id, name] of voices) {
+      const opt = document.createElement('option');
+      opt.value = id; opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    const wanted = ttsVoices[engine] || '';
+    sel.value = [...sel.options].some((o) => o.value === wanted) ? wanted : (sel.options[0]?.value ?? '');
+    ttsVoices[engine] = sel.value;
+    if (engine === 'windows' && !voices.some(([, name]) => /vi-VN/i.test(name))) {
+      st.textContent = 'Máy chưa có giọng tiếng Việt. Thêm ở: Cài đặt Windows → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói.';
+    }
+  }
 
   function renderCustomModels() {
     const list = $('customModelList');
@@ -187,12 +231,60 @@
       renderCustomModels();
       setHotkeyDisplay(s.hotkey || 'Ctrl+Shift+Space');
       $('autoFlower').checked = s.auto_flower !== false;
+      $('proactive').value = String(s.proactive_minutes ?? 60);
+      // Giá trị lạ (sửa tay settings.json) → vẫn hiện được thay vì ô trống.
+      if ($('proactive').value === '') $('proactive').value = '60';
+      $('ttsEngine').value = s.tts_engine || 'off';
+      if (!$('ttsEngine').value) $('ttsEngine').value = 'off';
+      ttsVoices.windows = s.tts_voice_windows || '';
+      ttsVoices.edge = s.tts_voice_edge || 'vi-VN-HoaiMyNeural';
     } catch (e) { log('settings_get: ' + e); }
     try {
       $('autostart').checked = await invoke('autostart_status');
     } catch (e) { log('autostart_status: ' + e); }
     syncProviderBlocks();
+    void syncTtsBlock();
   }
+
+  $('ttsEngine').addEventListener('change', () => void syncTtsBlock());
+  $('ttsVoice').addEventListener('change', () => {
+    ttsVoices[$('ttsEngine').value] = $('ttsVoice').value;
+  });
+
+  // Nghe thử: tổng hợp một câu mẫu bằng engine + giọng đang chọn (chưa cần Lưu).
+  let previewAudio = null;
+  $('ttsPreview').addEventListener('click', async () => {
+    const st = $('ttsStatus');
+    const btn = $('ttsPreview');
+    const engine = $('ttsEngine').value;
+    const voice = $('ttsVoice').value;
+    const lang = (voice.match(/[a-z]{2}-[A-Z]{2}/) || ['vi-VN'])[0].slice(0, 2);
+    const samples = {
+      vi: 'Chào anh, em là bạn nhỏ ở góc màn hình nè.',
+      ja: 'こんにちは、今日も一緒に頑張ろうね。',
+      zh: '你好，今天也一起加油吧。',
+      ko: '안녕하세요, 오늘도 같이 힘내요.',
+    };
+    const text = samples[lang] || 'Hi there, I am right here in the corner of your screen.';
+    btn.disabled = true;
+    st.className = 'status'; st.textContent = 'Đang tạo giọng...';
+    try {
+      const res = await invoke('tts_preview', { engine, voice, text });
+      const bin = atob(res.data);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: res.mime }));
+      if (previewAudio) previewAudio.pause();
+      previewAudio = new Audio(url);
+      previewAudio.addEventListener('ended', () => URL.revokeObjectURL(url));
+      await previewAudio.play();
+      st.className = 'status ok'; st.textContent = 'Đang phát ✓';
+    } catch (e) {
+      st.className = 'status err'; st.textContent = String(e);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   $('provider').addEventListener('change', syncProviderBlocks);
 
@@ -262,6 +354,10 @@
       contexts: contexts,
       default_context: $('defaultContext').value,
       auto_flower: $('autoFlower').checked,
+      proactive_minutes: Number($('proactive').value) || 0,
+      tts_engine: $('ttsEngine').value,
+      tts_voice_windows: ttsVoices.windows,
+      tts_voice_edge: ttsVoices.edge,
       hotkey: hotkeyValue,
       pet_model: petModel,
       custom_models: customModels,

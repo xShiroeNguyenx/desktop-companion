@@ -323,3 +323,62 @@ Tái dùng phần nhìn-theo-con-trỏ có sẵn trong frontend (`media/webview/
 4. **Phase 4** — nối Phase 0 vào UI: bông hoa + popup khung.
 5. **Phase 5 → 7** — Dịch → Trả lời nhanh → Lưu task.
 6. **Phase 8** — Settings, API key, autostart, đóng gói (`tauri build`).
+
+---
+
+## 11. Việc để sau (Backlog)
+
+### 11.1 Giọng nói khớp nhân vật (nhân bản giọng)
+
+**Hiện trạng.** Khung TTS đã có nhưng đang **tắt**: `TTS_ENABLED = false` trong
+`src-tauri/src/tts.rs`, nhóm "🔊 Giọng nói" trong `app/settings.html` đang ẩn
+(`style="display:none"`). Hai engine sẵn có là giọng Windows (WinRT) và Edge Neural.
+Lý do tắt: các giọng này không khớp giọng của nhân vật. Phần dùng lại được nguyên:
+cắt câu khi stream, lọc chữ trước khi đọc, hàng đợi phát theo thứ tự, mấp máy miệng
+theo âm lượng (`app/media/webview/tts-player.js`).
+
+**Hướng làm.** Thêm một engine thứ ba gọi tới server nhân bản giọng (model quá nặng để
+nhúng vào app, app chỉ gọi HTTP):
+
+| | Server chạy trên máy (GPT-SoVITS, CosyVoice, F5-TTS…) | Dịch vụ trực tuyến (ElevenLabs, Fish Audio…) |
+|---|---|---|
+| Chi phí | Miễn phí | Trả theo lượng ký tự |
+| Phần cứng | Nên có GPU NVIDIA; CPU thì chậm | Không cần |
+| Cài đặt | Python + PyTorch, vài GB, tự chạy server | Chỉ cần API key |
+| Riêng tư | Không gửi gì ra ngoài | Gửi giọng mẫu + câu nói lên máy chủ |
+
+**Cần quyết trước khi làm:**
+1. **Quyền dùng giọng.** Kiểm nguồn gốc các file trong `app/media/audio/{ja,vi,en}`. Nếu là
+   giọng diễn viên thật, nhân bản rồi phát hành trong app public là rủi ro pháp lý và đạo đức.
+   Giấy phép model mẫu Live2D không bao gồm quyền nhân bản giọng. Chỉ dùng cá nhân thì nhẹ hơn;
+   muốn phát hành thì dùng giọng có giấy phép rõ hoặc giọng của người đồng ý.
+2. **Tiếng Việt.** GPT-SoVITS, XTTS mạnh ja/zh/en/ko nhưng không có tiếng Việt chính thức;
+   F5-TTS có bản cộng đồng cho tiếng Việt; dịch vụ trả phí như ElevenLabs hỗ trợ tiếng Việt.
+   (Kiểm lại lúc làm — các model này thay đổi nhanh.) Giọng mẫu tiếng Nhật mà nói tiếng Việt
+   là trường hợp khó đoán chất lượng nhất.
+3. **Audio mẫu.** Cần ít nhất vài giây giọng sạch: không nhạc nền, không hiệu ứng, tốt nhất có
+   lời thoại chép lại. Các clip SFX hiện có có thể quá ngắn hoặc lẫn tiếng cười/hiệu ứng.
+4. **Máy có GPU NVIDIA không**, quyết định chạy server tại máy hay dùng dịch vụ.
+
+**Các bước:**
+1. Kiểm các file audio sẵn có: độ dài, độ sạch, nguồn gốc.
+2. Chốt phương án (server trên máy / dịch vụ) theo mục "Cần quyết" ở trên.
+3. Nếu chạy trên máy: viết hướng dẫn dựng server từng bước cho Windows; người dùng tự chạy và
+   tự nghe đánh giá giọng.
+4. Thêm engine vào `tts.rs` + Cài đặt: địa chỉ server (hoặc API key), file giọng mẫu, nút
+   Nghe thử. Báo lỗi rõ khi server không chạy (đừng im lặng).
+5. Bật lại `TTS_ENABLED`, hiện lại nhóm Giọng nói, thêm mục CHANGELOG.
+
+**Việc liên quan nên làm cùng:** tự chọn giọng theo ngôn ngữ của câu trả lời (hiện một giọng
+đọc mọi ngôn ngữ, nghe rất lạ); tinh chỉnh `MOUTH_GAIN` trong `tts-player.js` khi đã nghe thật;
+câu pet tự bắt chuyện ngay sau khởi động có thể bị chặn autoplay nếu chưa bấm vào pet lần nào.
+
+### 11.2 Việc nhỏ còn tồn
+
+Đã làm xong (2026-10-13): nút ⏹ huỷ trả lời, "Hỏi em" khi bật Click-through, key Gemini
+chuyển sang header, chat tạo task bằng thẻ `[task: ...]`.
+
+Còn mở:
+- Chat mới **tạo** được task; chưa đánh dấu xong / xoá task qua chat.
+- Bộ đếm 30 giây "Không nhận được phản hồi" của bong bóng chỉ báo lỗi trên giao diện, không
+  huỷ request phía Rust.

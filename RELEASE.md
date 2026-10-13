@@ -16,7 +16,7 @@ Repo → **Settings** → **Secrets and variables** → **Actions** → **New re
 | Secret name | Value |
 |-------------|-------|
 | `TAURI_SIGNING_PRIVATE_KEY` | the full contents of `updater-private.key` (the file in the project root, NOT committed) |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | `companion` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | the key's password — take it from your private password store (never write it in the repo) |
 
 > Get the private key contents on Windows:
 > ```powershell

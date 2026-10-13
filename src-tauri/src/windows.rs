@@ -341,6 +341,7 @@ pub fn hide_flower_menu(app: &AppHandle) {
 // Một entry trên ring: mở đúng cửa sổ tương ứng rồi ẩn ring đi.
 //   "translate" → cửa sổ dịch nhanh
 //   "reply" / "task" / "full" → popup 3 tab, mở sẵn tab tương ứng
+//   "ask" → Quick Chat của pet, kèm đoạn vừa bôi đen
 pub fn flower_menu_action(app: &AppHandle, action: &str) {
     let x = FLOWER_X.load(Ordering::SeqCst);
     let y = FLOWER_Y.load(Ordering::SeqCst);
@@ -350,6 +351,12 @@ pub fn flower_menu_action(app: &AppHandle, action: &str) {
         "reply" => open_popup_tab(app, x, y, "reply"),
         "task" => open_popup_tab(app, x, y, "task"),
         "full" => open_popup_tab(app, x, y, "translate"),
+        "ask" => {
+            let text = crate::selection::last_selection_json()
+                .and_then(|v| v.get("text").and_then(|t| t.as_str()).map(str::to_string))
+                .unwrap_or_default();
+            crate::chat::ask_about(app, &text);
+        }
         other => dbg_log(&format!("[windows] flower_menu_action không rõ: {other}")),
     }
 }

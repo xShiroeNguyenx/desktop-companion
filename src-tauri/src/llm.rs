@@ -3,6 +3,7 @@
 
 use serde_json::{json, Value};
 
+use crate::chat::{parse_anthropic_event, parse_gemini_chunk, ChatMsg, SseLines};
 use crate::store::Settings;
 
 const API_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -40,13 +41,12 @@ pub async fn gemini_list_models(api_key: &str) -> Result<Vec<(String, String)>, 
     if api_key.trim().is_empty() {
         return Err("Chưa nhập Gemini API key.".to_string());
     }
-    let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models?key={}&pageSize=200",
-        api_key
-    );
+    // Key đi qua header, không nằm trong URL: lỗi kết nối của reqwest in cả URL ra
+    // và lỗi đó được hiện lên giao diện.
     let client = reqwest::Client::new();
     let resp = client
-        .get(&url)
+        .get("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200")
+        .header("x-goog-api-key", api_key)
         .send()
         .await
         .map_err(|e| format!("Lỗi kết nối: {e}"))?;
@@ -157,8 +157,8 @@ pub async fn gemini_complete(
     }
 
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-        model, api_key
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+        model
     );
 
     let body = json!({
@@ -170,6 +170,7 @@ pub async fn gemini_complete(
     let client = reqwest::Client::new();
     let resp = client
         .post(&url)
+        .header("x-goog-api-key", api_key)
         .header("content-type", "application/json")
         .json(&body)
         .send()
@@ -275,6 +276,103 @@ pub async fn anthropic_complete(
         return Err("Phản hồi rỗng từ model.".to_string());
     }
     Ok(text)
+}
+
+// Multi-turn streaming chat (pet Quick Chat). `on_delta` gets each raw text
+// chunk as it arrives and returns false to stop early. Returns the full raw text.
+pub async fn stream_chat<F: FnMut(&str) -> bool>(
+    settings: &Settings,
+    system: &str,
+    messages: &[ChatMsg],
+    max_tokens: u32,
+    mut on_delta: F,
+) -> Result<String, String> {
+    let gemini = settings.provider == "gemini";
+    let client = reqwest::Client::new();
+    let req = if gemini {
+        if settings.gemini_key.trim().is_empty() {
+            return Err("Chưa cấu hình Gemini API key. Mở Cài đặt để nhập key.".to_string());
+        }
+        let contents: Vec<Value> = messages
+            .iter()
+            .map(|m| {
+                let role = if m.role == "assistant" { "model" } else { "user" };
+                json!({ "role": role, "parts": [{ "text": m.content }] })
+            })
+            .collect();
+        // Key đi qua header chứ không nằm trong URL: lỗi kết nối của reqwest
+        // in cả URL ra, và lỗi đó được hiện lên bong bóng chat.
+        client
+            .post(format!(
+                "https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse",
+                settings.gemini_model
+            ))
+            .header("x-goog-api-key", &settings.gemini_key)
+            .json(&json!({
+                "systemInstruction": { "parts": [{ "text": system }] },
+                "contents": contents,
+                "generationConfig": { "maxOutputTokens": max_tokens }
+            }))
+    } else {
+        if settings.api_key.trim().is_empty() {
+            return Err("Chưa cấu hình API key. Mở Cài đặt để nhập Anthropic API key.".to_string());
+        }
+        let msgs: Vec<Value> = messages
+            .iter()
+            .map(|m| json!({ "role": m.role, "content": m.content }))
+            .collect();
+        client
+            .post(API_URL)
+            .header("x-api-key", &settings.api_key)
+            .header("anthropic-version", API_VERSION)
+            .json(&json!({
+                "model": settings.model,
+                "max_tokens": max_tokens,
+                "system": system,
+                "messages": msgs,
+                "stream": true,
+            }))
+    };
+
+    let mut resp = req.send().await.map_err(|e| format!("Lỗi kết nối: {e}"))?;
+    let status = resp.status();
+    if !status.is_success() {
+        let val: Value = resp.json().await.unwrap_or(Value::Null);
+        let msg = val
+            .get("error")
+            .and_then(|e| e.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or("unknown error");
+        let who = if gemini { "Gemini" } else { "API" };
+        return Err(format!("{who} {status}: {msg}"));
+    }
+
+    let mut lines = SseLines::default();
+    let mut full = String::new();
+    while let Some(chunk) = resp
+        .chunk()
+        .await
+        .map_err(|e| format!("Lỗi đọc phản hồi: {e}"))?
+    {
+        for data in lines.push(&chunk) {
+            let Ok(val) = serde_json::from_str::<Value>(&data) else {
+                continue; // e.g. "[DONE]" sentinels
+            };
+            let delta = if gemini {
+                parse_gemini_chunk(&val)?
+            } else {
+                parse_anthropic_event(&val)?.unwrap_or_default()
+            };
+            if delta.is_empty() {
+                continue;
+            }
+            full.push_str(&delta);
+            if !on_delta(&delta) {
+                return Ok(full);
+            }
+        }
+    }
+    Ok(full)
 }
 
 // Cheap script heuristic so quick-reply can default its target language to the

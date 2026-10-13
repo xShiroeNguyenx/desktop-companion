@@ -26,6 +26,7 @@ const menu = createRadialMenu({
     { icon: '🌐', label: 'Dịch nhanh', action: 'translate' },
     { icon: '📋', label: 'Sao chép', action: 'copy' },
     { icon: '💬', label: 'Trả lời', action: 'reply' },
+    { icon: '💭', label: 'Hỏi em', action: 'ask' },
     { icon: '📝', label: 'Lưu vào task', action: 'task' },
     { icon: '🗂️', label: 'Mở đầy đủ', action: 'full' },
   ],
@@ -38,11 +39,11 @@ const menu = createRadialMenu({
         .finally(() => close());
       return;
     }
-    // translate / reply / task / full đều do Rust mở cửa sổ tương ứng rồi ẩn ring.
+    // translate / reply / ask / task / full đều do Rust mở cửa sổ tương ứng rồi ẩn ring.
     invoke('flower_menu_action', { action }).catch((e) => log('flower_menu_action: ' + e));
   },
   labels: { title: 'Văn bản', back: 'Quay lại', close: 'Đóng' },
-  // Ring này chỉ có 5 mục và luôn bung ngay cạnh con trỏ nên để gọn hơn ring
+  // Ring này chỉ có 6 mục và luôn bung ngay cạnh con trỏ nên để gọn hơn ring
   // của menu chuột phải (92px); 62px vẫn đủ chỗ cho pill "Văn bản" ở giữa.
   radius: 62,
 });

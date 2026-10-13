@@ -6,7 +6,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::{llm, selection, store, windows};
+use crate::{llm, selection, store, tts, windows};
 
 fn lang_name(code: &str) -> &'static str {
     match code {
@@ -54,7 +54,7 @@ pub fn close_flower(app: AppHandle) {
     windows::hide_flower(&app);
 }
 
-// Một mục trên ring: "translate" | "reply" | "task" | "full".
+// Một mục trên ring: "translate" | "reply" | "ask" | "task" | "full".
 #[tauri::command]
 pub fn flower_menu_action(app: AppHandle, action: String) {
     windows::flower_menu_action(&app, &action);
@@ -174,8 +174,13 @@ pub fn tasks_list(app: AppHandle) -> Vec<store::Task> {
 #[tauri::command]
 pub fn tasks_add(app: AppHandle, text: String, note: String, source: String) -> Result<store::Task, String> {
     let mut tasks = store::load_tasks(&app);
+    // Id theo mili-giây; chat có thể thêm vài task cùng lúc nên nhích lên tới khi không trùng.
+    let mut id = now_millis();
+    while tasks.iter().any(|t| t.id == id.to_string()) {
+        id += 1;
+    }
     let task = store::Task {
-        id: format!("{}", now_millis()),
+        id: id.to_string(),
         text,
         note,
         source,
@@ -322,7 +327,9 @@ pub fn settings_get(app: AppHandle) -> store::Settings {
 }
 
 #[tauri::command]
-pub fn settings_set(app: AppHandle, settings: store::Settings) -> Result<(), String> {
+pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(), String> {
+    // Form Cài đặt không có trường này; giữ giá trị cũ thay vì để serde xoá về rỗng.
+    settings.skip_update_version = store::load_settings(&app).skip_update_version;
     selection::set_auto_enabled(settings.auto_flower);
     store::save_settings(&app, &settings)
 }
@@ -366,4 +373,22 @@ pub fn autostart_set(app: AppHandle, enabled: bool) -> Result<(), String> {
             Ok(())
         }
     }
+}
+
+// Danh sách giọng cho ô chọn trong Cài đặt: [(id, nhãn)].
+#[tauri::command]
+pub async fn tts_voices(engine: String) -> Result<Vec<(String, String)>, String> {
+    tauri::async_runtime::spawn_blocking(move || tts::list_voices(&engine))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+// Nút "Nghe thử": tổng hợp một câu mẫu, trả { mime, data(base64) }.
+#[tauri::command]
+pub async fn tts_preview(engine: String, voice: String, text: String) -> Result<Value, String> {
+    let (audio, mime) =
+        tauri::async_runtime::spawn_blocking(move || tts::synthesize(&engine, &voice, &text))
+            .await
+            .map_err(|e| e.to_string())??;
+    Ok(serde_json::json!({ "mime": mime, "data": tts::encode_audio(&audio) }))
 }

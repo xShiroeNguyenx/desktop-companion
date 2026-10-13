@@ -18,8 +18,18 @@ duyệt, Word…).
   được, khởi động cùng Windows. Chuột phải để mở **menu xoay tròn**.
 - **Dịch** — bôi đen văn bản ở **bất kỳ** ứng dụng nào → bông hoa 🌸 hiện cạnh con
   trỏ → **click** để dịch ngay, hoặc **nhấn giữ** để bung **menu xoay tròn**:
-  🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 📝 lưu vào task · 🗂️ mở bảng đầy đủ.
+  🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 💭 hỏi em · 📝 lưu vào task · 🗂️ mở bảng đầy đủ.
   Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
+- **Trò chuyện với pet** — chuột phải → 💬 **Chat nhanh**. Câu trả lời hiện dần
+  từng chữ trong bong bóng, nét mặt pet đổi theo cảm xúc của câu nói. Pet biết giờ
+  và các việc anh chưa làm xong, nhớ 10 lượt gần nhất (chỉ lưu trên máy; 🗑 để xoá),
+  và bấm ⏹ để dừng giữa chừng.
+- **Hỏi về đoạn đang bôi đen** — chọn 💭 trên menu xoay của bông hoa để mở chat kèm
+  sẵn đoạn văn ("giải thích giúp anh", "câu này lịch sự chưa?"…).
+- **Tạo task bằng lời** — "nhắc anh gửi báo cáo cho sếp" là task được thêm vào danh
+  sách; bong bóng chỉ báo đã lưu khi lưu thật sự thành công.
+- **Pet tự bắt chuyện** — sau một lúc im lặng (Cài đặt: tắt / 30 phút / 1 giờ / 2 giờ)
+  pet nói một câu: nhắc việc tồn lâu nhất, hoặc nhắc nghỉ mắt.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO. Cửa sổ Tasks chia hai
@@ -61,6 +71,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
    tiếng Việt → **Tạo câu trả lời**.
 4. **Công việc** — tray → **Tasks**, hoặc chọn 📝 **Lưu vào task** trên menu xoay
    tròn của bông hoa.
+5. **Trò chuyện** — chuột phải vào pet → 💬 **Chat nhanh** → gõ → `Enter`.
 
 ### Menu tray
 
@@ -73,7 +84,7 @@ viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nh�
 thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
-nhạc nền, tắt tiếng) · Chat AI · Công việc · Cài đặt
+nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.

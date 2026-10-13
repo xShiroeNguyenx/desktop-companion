@@ -908,10 +908,11 @@ function setupCompactContextMenu() {
     },
   ];
 
-  // --- Standalone trim: chỉ giữ 3 nhóm Diện mạo / Âm thanh / Chat AI ---
+  // --- Standalone trim: chỉ giữ 2 nhóm Diện mạo / Âm thanh. Nhóm Chat AI chỉ
+  // còn mỗi Chat nhanh nên đưa thẳng ra menu đầu (xem mainMenu / radialMenu).
   {
-    const KEEP_ORDER = ['appearance', 'voice', 'chat'];
-    const KEEP_LABEL = { appearance: 'Diện mạo', voice: 'Âm thanh', chat: 'Chat AI' };
+    const KEEP_ORDER = ['appearance', 'voice'];
+    const KEEP_LABEL = { appearance: 'Diện mạo', voice: 'Âm thanh' };
     const kept = KEEP_ORDER
       .map((id) => categories.find((c) => c.id === id))
       .filter(Boolean)
@@ -937,6 +938,9 @@ function setupCompactContextMenu() {
 
   mainMenu.innerHTML = `
     ${categoryRowsHtml}
+    <div class="companion-menu-item" data-action="chat-quick">
+      <span style="font-size: 11px;">💬</span> Chat nhanh
+    </div>
     <div class="companion-menu-separator"></div>
     <div class="companion-menu-item" data-action="open-tasks">
       <span style="font-size: 11px;">📝</span> Công việc (Tasks)
@@ -1178,6 +1182,7 @@ function setupCompactContextMenu() {
             action: item.action,
           })),
         })),
+        { icon: '💬', label: 'Chat nhanh', action: 'chat-quick' },
         { icon: '📝', label: 'Công việc', action: 'open-tasks' },
         { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
       ],
@@ -1259,9 +1264,12 @@ function syncFocusMenuLabel(menu) {
   icon.textContent = window.__FOCUS_FOLLOW__ ? '✅' : '👀';
 }
 
-function openQuickChatOverlay() {
+// context: đoạn văn bôi đen khi mở từ mục "Hỏi em" của bông hoa (rỗng nếu mở từ menu pet).
+export function openQuickChatOverlay(context = '') {
   vscode.postMessage({ command: 'chat:snapshot' });
   showQuickChatPanel({
+    context,
+    onClear: () => vscode.postMessage({ command: 'chat:clear' }),
     onSubmit: (prompt) => {
       const requestId = 'qc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
       startQuickChatHistoryTurn(requestId, prompt);
@@ -1270,6 +1278,7 @@ function openQuickChatOverlay() {
         command: 'pet:chat:request',
         requestId,
         prompt,
+        context,
         maxTokens: 200,
       });
     },

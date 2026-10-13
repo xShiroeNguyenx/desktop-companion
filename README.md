@@ -17,8 +17,18 @@
   starts with Windows. Right-click for the **radial menu**.
 - **Translate** — select text in **any** app → a 🌸 flower appears near the cursor
   → **click** for an instant translation, or **press-and-hold** to fan out a
-  **radial menu**: 🌐 translate · 📋 copy · 💬 reply · 📝 save as task · 🗂️ full panel.
-  **Ctrl+C** (while the flower is up) still copies the selected text.
+  **radial menu**: 🌐 translate · 📋 copy · 💬 reply · 💭 ask the pet · 📝 save as task ·
+  🗂️ full panel. **Ctrl+C** (while the flower is up) still copies the selected text.
+- **Chat with the pet** — right-click → 💬 **Quick Chat**. The reply streams into
+  the bubble word by word and the pet's face changes with the mood of what it
+  says. It knows the time and your unfinished tasks, remembers the last 10 turns
+  (stored only on your machine; 🗑 clears them), and ⏹ stops it mid-reply.
+- **Ask about a selection** — pick 💭 on the flower's radial menu to open the chat
+  with the selected text attached ("explain this", "is this polite?"…).
+- **Tasks by chat** — "nhắc anh gửi báo cáo cho sếp" adds the task to your list;
+  the bubble confirms only once it is really saved.
+- **The pet speaks up** — after a quiet stretch (Settings: off / 30 min / 1 h / 2 h)
+  it says one line: nudges your oldest unfinished task or reminds you to rest.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Save tasks** — turn any selected text into a TODO. The Tasks window keeps
@@ -60,6 +70,7 @@ Run it and the app launches automatically. It lives in the system tray.
    type in Vietnamese → **Generate**.
 4. **Tasks** — tray → **Tasks**, or pick 📝 **Save as task** on the flower's radial
    menu.
+5. **Chat** — right-click the pet → 💬 **Quick Chat** → type → `Enter`.
 
 ### Tray menu
 
@@ -72,7 +83,7 @@ centre pill; clicking a category swaps the ring for its entries and turns the
 pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
-ambient, mute) · AI Chat · Tasks · Settings
+ambient, mute) · Quick Chat · Tasks · Settings
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or

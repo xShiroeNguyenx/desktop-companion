@@ -4,6 +4,49 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-13
+
+### Added
+- **The pet changes its face while it talks.** The model tags its reply with
+  emotions (`[happy]`, `[shy]`, `[surprised]`…); the tags are hidden from the
+  bubble and switch the Live2D expression as the reply streams in.
+- **Quick Chat remembers the conversation** (last 10 turns), also across
+  restarts. It is saved only on this machine, and the 🗑 button in the chat
+  panel clears it.
+- **"Hỏi em" on the selection flower.** Hold the 🌸 and pick 💭 to ask the pet
+  about the text you just selected; the panel shows the attached snippet.
+- **The pet knows the time and your unfinished tasks**, so "hôm nay còn việc gì
+  không em?" gets a real answer.
+- **The pet starts the conversation now and then.** After a quiet stretch
+  (Settings → *Em tự bắt chuyện*: off / 30 min / 1 h / 2 h, default 1 h) it says
+  one line: nudges a task that has been sitting longest, or reminds you to rest
+  your eyes. It stays quiet while hidden, docked in a panel, or mid-reply.
+- **Ask the pet to remember a task.** Say "nhắc anh gửi báo cáo cho sếp" and it
+  adds the task to your list. The bubble confirms with "📝 Đã lưu task: …" only
+  once the task is really saved, or says why it could not be saved. Nothing is
+  saved if you stop the reply halfway.
+- **A ⏹ button on the bubble stops the pet mid-reply.**
+
+### Changed
+- **Quick Chat is one click away.** The right-click menu used to open a "Chat AI"
+  ring that held nothing but Quick Chat; **💬 Chat nhanh** now sits directly on
+  the first ring.
+
+### Fixed
+- **"Hỏi em" works with click-through on.** The chat panel used to ignore your
+  clicks and typing. Click-through is now paused while you ask, and turned back
+  on once the pet has answered. If the pet is sitting in the Settings or Tasks
+  panel, it steps out first so the chat panel has room.
+- **Your Gemini API key no longer shows in error messages.** Translate, Quick
+  Reply and the model list put the key in the request address, and a
+  connection error printed that address on screen. The key now travels in a
+  header.
+- **Saving Settings no longer forgets "Bỏ qua bản này"**, so a skipped update
+  stays skipped.
+- **Quick Chat (right-click → Chat AI) now answers.** The question was sent but
+  nothing handled it, so the bubble sat on "Em đang suy nghĩ…" until it timed
+  out. Replies now stream in word by word from Anthropic or Gemini.
+
 ## [0.3.2] - 2026-09-15
 
 ### Added
@@ -143,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.4.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.4.0
 [0.3.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.2
 [0.3.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.1
 [0.3.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.0

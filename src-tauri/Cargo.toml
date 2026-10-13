@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -25,6 +25,11 @@ serde_json = "1"
 arboard = "3"
 # Server-side LLM calls (CORS-safe). rustls avoids an OpenSSL/native-tls dep.
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# Edge TTS: WebSocket (blocking, chạy trên luồng TTS riêng) + chữ ký Sec-MS-GEC.
+tungstenite = { version = "0.30.0", features = ["rustls-tls-webpki-roots"] }
+sha2 = "0.10"
+# Audio TTS gửi sang webview dạng base64.
+base64 = "0.22"
 
 # Win32 access: click-through refresh, the WH_MOUSE_LL global hook, SendInput
 # (simulated Ctrl+C), and cursor position.
@@ -35,6 +40,15 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_LibraryLoader",
     "Win32_System_Threading",
     "Win32_Foundation",
+    "Win32_System_SystemInformation",
+] }
+# WinRT SpeechSynthesizer (giọng có sẵn của Windows, kể cả giọng OneCore).
+windows = { version = "0.61", features = [
+    "Foundation",
+    "Foundation_Collections",
+    "Media_Core",
+    "Media_SpeechSynthesis",
+    "Storage_Streams",
 ] }
 
 [profile.release]
