@@ -4,6 +4,25 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-10-14
+
+### Changed
+- **A new app icon** — a pink-haired, cat-eared girl with headphones and a
+  lilac laptop, the same art as the VS Code extension's new icon. Every size
+  in `src-tauri/icons/` (Windows `.ico`, macOS `.icns`, the PNG sizes, the
+  Store logos, Android and iOS) is regenerated with `tauri icon` from one
+  1024 × 1024 transparent source; the tray icon reads `icons/icon.png`, so it
+  changes too.
+- **New fallback art in the pet window** — `app/media/icon.png` and
+  `app/media/character.png` (shown while no Live2D model is loaded, and as the
+  chat avatar before a chibi is captured) match the new look.
+
+### Fixed
+- **A chat reply that never arrives is now really cancelled** — after 30
+  seconds without a first word, the bubble still says no reply came, and the
+  request is now also stopped in the app, so a late answer no longer slips
+  into the chat history behind your back.
+
 ## [0.4.0] - 2026-10-13
 
 ### Added

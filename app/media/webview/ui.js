@@ -69,6 +69,17 @@ let streamAccumulated = '';
 let streamHasContent = false;
 let streamWatchdog = null;
 const STREAM_WATCHDOG_MS = 30000;
+export const STREAM_TIMEOUT_TEXT = 'Không nhận được phản hồi. Thử lại nha~ ⏳';
+// Bộ đếm hết giờ đã tự huỷ request: lỗi "aborted" Rust gửi lại sau đó là do
+// hết giờ, không phải do người dùng bấm ⏹.
+let watchdogCancelled = false;
+
+/** Lỗi "aborted" vừa nhận có phải do bộ đếm hết giờ không (đọc một lần). */
+export function takeWatchdogCancel() {
+  const fired = watchdogCancelled;
+  watchdogCancelled = false;
+  return fired;
+}
 
 function clearStreamWatchdog() {
   if (streamWatchdog) {
@@ -107,9 +118,13 @@ export function startBubbleStream(initialText) {
   bubble.classList.add('streaming');
   if (state.isLive2DReady) playMotion('Idle');
   clearStreamWatchdog();
+  watchdogCancelled = false;
   streamWatchdog = setTimeout(() => {
     streamWatchdog = null;
-    errorBubbleStream('Không nhận được phản hồi. Thử lại nha~ ⏳');
+    errorBubbleStream(STREAM_TIMEOUT_TEXT);
+    // Huỷ luôn request phía Rust, kẻo câu trả lời tới muộn vẫn ghi vào lịch sử.
+    watchdogCancelled = true;
+    vscode.postMessage({ command: 'pet:chat:cancel' });
   }, STREAM_WATCHDOG_MS);
 }
 

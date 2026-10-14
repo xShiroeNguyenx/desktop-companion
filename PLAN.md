@@ -377,8 +377,7 @@ câu pet tự bắt chuyện ngay sau khởi động có thể bị chặn autop
 
 Đã làm xong (2026-10-13): nút ⏹ huỷ trả lời, "Hỏi em" khi bật Click-through, key Gemini
 chuyển sang header, chat tạo task bằng thẻ `[task: ...]`.
+Đã làm xong (2026-10-14): bộ đếm 30 giây "Không nhận được phản hồi" huỷ luôn request phía Rust.
 
 Còn mở:
 - Chat mới **tạo** được task; chưa đánh dấu xong / xoá task qua chat.
-- Bộ đếm 30 giây "Không nhận được phản hồi" của bong bóng chỉ báo lỗi trên giao diện, không
-  huỷ request phía Rust.

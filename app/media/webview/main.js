@@ -23,6 +23,8 @@ import {
   appendQuickChatHistoryDelta,
   finishQuickChatHistoryTurn,
   failQuickChatHistoryTurn,
+  takeWatchdogCancel,
+  STREAM_TIMEOUT_TEXT,
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
@@ -265,6 +267,11 @@ window.addEventListener('message', (event) => {
       finishBubbleStream({ autoDismissMs: 12000 });
       break;
     case 'pet:chat:error':
+      // Bộ đếm hết giờ tự huỷ: bong bóng đã báo hết giờ rồi, giữ nguyên câu đó.
+      if (event.data.aborted && takeWatchdogCancel()) {
+        failQuickChatHistoryTurn(event.data.requestId, STREAM_TIMEOUT_TEXT);
+        break;
+      }
       failQuickChatHistoryTurn(
         event.data.requestId,
         event.data.aborted
