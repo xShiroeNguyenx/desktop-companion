@@ -55,8 +55,28 @@
   by a pushpin with your companion's face. Drag it anywhere; ✓ stamps it done,
   ✕ unpins it, 📍 keeps it above other windows. Links in tasks and notes are
   clickable.
+- **🍅 Focus sessions** — 25 minutes of focus, then a 5-minute break (both
+  adjustable). A ring on the pet counts down, she wears her focused face, and
+  only a deadline may interrupt you.
+- **She notices when you step away** — after 10 minutes without mouse or
+  keyboard (or with the screen locked) she dozes off, and greets you when you
+  come back. An optional warning (off by default) tells you when CPU or RAM
+  stays high. Only on/off states and percentages are read — never window
+  titles, app names or screen content.
+- **💗 A bond that grows** — days together, finished tasks and focus sessions,
+  chats, head-pats and games slowly raise your bond through five levels
+  (capped per day, never taken away). She says hello each morning with what is
+  due today, celebrates milestones (7 / 30 / 100 / 365 days, anniversaries,
+  streaks, new levels) and your birthday, and talks more casually as you get
+  closer.
+- **🎮 Mini games** — rock paper scissors (first to 3) and guess the number
+  (1–100 in 7 tries). Her move, your guess and finally her secret number pop
+  up above her head.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
+- **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
+  the assistant next to the pet with an empty box: type or paste text, then
+  translate, reply or save it as a task.
 - **Save tasks** — turn any selected text into a TODO. The Tasks window keeps
   "to do" and "done" in two columns, stamps each task with when it was created
   and finished, and lets you edit a note on any of them.
@@ -103,7 +123,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · Settings · Toggle click-through · 🔕 Do not disturb (1 hour) · Quit
+Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · Quit
 
 ### Right-click the pet
 
@@ -112,7 +132,8 @@ centre pill; clicking a category swaps the ring for its entries and turns the
 pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
-ambient, mute) · Quick Chat · Tasks · 🔕 Do not disturb · Settings
+ambient, mute) · Quick Chat · Tasks · 🗂️ Mở đầy đủ (text assistant) · 💞 Đồng hành
+(🍅 focus, 💗 bond, 🎮 games) · 🔕 Do not disturb · Settings
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or

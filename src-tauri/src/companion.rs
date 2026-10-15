@@ -4,7 +4,8 @@
 // năng cùng lúc không biến pet thành máy spam (PLAN.md 12.3).
 //
 // Nguồn hiện có: hạn chót, nhắc sức khoẻ (reminders.rs), xin đặt tên
-// (naming.rs), tự bắt chuyện (chat.rs). Hạn chót còn có đường thứ hai: khi pet
+// (naming.rs), tự bắt chuyện (chat.rs), chào khi quay lại + cảnh báo CPU/RAM
+// (awareness.rs), hết pha Tập trung (focus.rs). Hạn chót còn có đường thứ hai: khi pet
 // không nói được thì gửi thông báo Windows (notify.rs).
 
 use std::collections::HashSet;
@@ -15,6 +16,8 @@ use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::lines::{self, Key};
+use crate::awareness::{CpuTimes, Presence, PresenceEvent, Sustain};
+use crate::focus::{FocusEvent, Phase, Session};
 use crate::reminders::{self, Health, HealthClock, Stage};
 use crate::{awareness, chat, naming, notify, persona, store, tts};
 
@@ -27,7 +30,6 @@ const EXPRESSION_MS: u64 = 8000;
 // ─── Trọng tài (thuần) ───────────────────────────────────────────────────────
 
 /// Loại câu, xếp theo ưu tiên: đứng trước = quan trọng hơn.
-#[allow(dead_code)] // FocusEnd, Welcome, Milestone, SysWarn có nguồn ở Phase 11–12
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Kind {
     Deadline,
@@ -194,6 +196,18 @@ pub fn health_key(kinds: &[Health]) -> Option<Key> {
     }
 }
 
+/// Câu chào khi quay lại: qua đêm / sang ngày mới mà trước 11 giờ trưa → chào
+/// buổi sáng; vắng hơn 1 giờ → câu "đi lâu ghê"; còn lại → câu ngắn.
+pub fn welcome_key(away_secs: u64, local_hour: u32, new_day: bool) -> Key {
+    if (new_day || away_secs >= 6 * 3600) && local_hour < 11 {
+        Key::WelcomeMorning
+    } else if away_secs >= 3600 {
+        Key::WelcomeLong
+    } else {
+        Key::WelcomeShort
+    }
+}
+
 /// Bật DND lúc `now` → mốc hết hạn; tắt → 0.
 pub fn dnd_until_after_toggle(on: bool, now: u64) -> u64 {
     if on { now + DND_SECS } else { 0 }
@@ -211,6 +225,14 @@ pub struct CompanionState {
     toast_failed: Mutex<HashSet<String>>,
     /// Mục tray "Đừng làm phiền", để đổi chữ theo trạng thái.
     tray_item: Mutex<Option<tauri::menu::MenuItem<tauri::Wry>>>,
+    /// Mục tray "Tập trung".
+    focus_item: Mutex<Option<tauri::menu::MenuItem<tauri::Wry>>>,
+    presence: Mutex<Presence>,
+    focus: Mutex<Session>,
+    /// Lần đọc CPU trước (None khi tắt theo dõi hoặc mới bật).
+    cpu_prev: Mutex<Option<CpuTimes>>,
+    cpu_high: Mutex<Sustain>,
+    ram_high: Mutex<Sustain>,
 }
 
 fn now_secs() -> u64 {
@@ -260,6 +282,344 @@ pub fn sync_dnd(app: &AppHandle) {
     );
 }
 
+// ─── Phiên Tập trung (focus.rs) ──────────────────────────────────────────────
+
+fn pet(app: &AppHandle, payload: serde_json::Value) {
+    let _ = app.emit_to("main", "pet-message", payload);
+}
+
+/// Nét mặt giữ nguyên tới khi có lệnh khác (duration null).
+fn hold_expression(app: &AppHandle, expression: &str) {
+    pet(app, json!({ "command": "setExpression", "expression": expression, "duration": null }));
+}
+
+/// Câu trả lời trực tiếp cho thao tác của người dùng (bấm Tập trung / Dừng):
+/// không qua trọng tài vì người dùng vừa bấm, đang chờ phản hồi.
+fn say_now(app: &AppHandle, key: Key, vars: &[(&str, &str)]) {
+    let a = persona::address(&store::load_settings(app));
+    pet(app, json!({ "command": "showMessage", "text": lines::line(key, &a, vars) }));
+}
+
+pub fn set_focus_tray_item(app: &AppHandle, item: tauri::menu::MenuItem<tauri::Wry>) {
+    if let Ok(mut t) = app.state::<CompanionState>().focus_item.lock() {
+        *t = Some(item);
+    }
+}
+
+pub fn focus_active(app: &AppHandle) -> bool {
+    app.state::<CompanionState>().focus.lock().map(|f| f.active()).unwrap_or(false)
+}
+
+/// Báo pet (menu tròn đọc cờ này) + đổi chữ trên tray theo trạng thái phiên.
+pub fn sync_focus(app: &AppHandle) {
+    let on = focus_active(app);
+    if let Ok(t) = app.state::<CompanionState>().focus_item.lock() {
+        if let Some(item) = t.as_ref() {
+            let _ = item.set_text(if on { "⏹ Dừng tập trung" } else { "🍅 Bắt đầu tập trung" });
+        }
+    }
+    pet(app, json!({ "command": "focusState", "on": on }));
+    if !on {
+        pet(app, json!({ "command": "pomodoroTick", "state": "idle", "secondsLeft": 0, "totalSeconds": 0 }));
+    }
+}
+
+/// Menu tròn 🍅 / tray: đang chạy thì dừng, không thì bắt đầu.
+pub fn toggle_focus(app: &AppHandle) {
+    let settings = store::load_settings(app);
+    let state = app.state::<CompanionState>();
+    let started = {
+        let Ok(mut f) = state.focus.lock() else { return };
+        if f.active() {
+            *f = Session::default();
+            false
+        } else {
+            *f = Session::start(now_secs(), settings.focus_min, settings.break_min);
+            true
+        }
+    };
+    if started {
+        hold_expression(app, "focus");
+        let min = settings.focus_min.max(1).to_string();
+        say_now(app, Key::FocusStart, &[("min", min.as_str())]);
+    } else {
+        hold_expression(app, "neutral");
+        say_now(app, Key::FocusStopped, &[]);
+    }
+    sync_focus(app);
+}
+
+/// Vòng 1 giây: vẽ vòng đếm trên pet và chuyển pha đúng giờ. Hết pha thì đẩy
+/// câu FocusEnd cho trọng tài và gọi trọng tài ngay (không đợi lượt 30 giây).
+fn focus_loop(app: AppHandle) {
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let now = now_secs();
+        let state = app.state::<CompanionState>();
+        let (event, session) = {
+            let Ok(mut f) = state.focus.lock() else { continue };
+            if !f.active() {
+                continue;
+            }
+            (f.tick(now), *f)
+        };
+        if session.active() {
+            let phase = if session.phase == Phase::Break { "break" } else { "focus" };
+            pet(
+                &app,
+                json!({
+                    "command": "pomodoroTick",
+                    "state": phase,
+                    "secondsLeft": session.remaining(now),
+                    "totalSeconds": session.length,
+                }),
+            );
+        }
+        let Some(event) = event else {
+            if !session.active() {
+                // Máy ngủ qua cả phiên: im lặng về trạng thái nghỉ.
+                hold_expression(&app, "neutral");
+                sync_focus(&app);
+            }
+            continue;
+        };
+        let tag = match event {
+            FocusEvent::FocusDone => {
+                bond_award(&app, crate::bond::Event::FocusDone);
+                // Hết phiên thay luôn cho lượt nhắc nghỉ mắt / đứng dậy của chu kỳ này.
+                if let Ok(mut clock) = state.health.lock() {
+                    clock.reset(&[Health::Eyes, Health::Stand]);
+                }
+                hold_expression(&app, "happy");
+                "focus:done"
+            }
+            FocusEvent::BreakDone => {
+                hold_expression(&app, "neutral");
+                sync_focus(&app);
+                "focus:break"
+            }
+        };
+        if let Ok(mut pending) = state.pending.lock() {
+            pending.retain(|c| c.kind != Kind::FocusEnd);
+            pending.push(Candidate { kind: Kind::FocusEnd, since: now, ttl: Some(10 * 60), tag: tag.into() });
+        }
+        kick(&app);
+    }
+}
+
+/// Chạy một lượt trọng tài ngay (trên luồng riêng), thay vì đợi lượt 30 giây.
+pub fn kick(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || tick(&app));
+}
+
+// ─── Thân thiết (bond.rs) ────────────────────────────────────────────────────
+
+fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
+    let offset = reminders::local_offset_min();
+    let now_ms = now as i64 * 1000;
+    let local = now_ms + offset as i64 * reminders::MIN_MS;
+    (reminders::local_day(now_ms, offset), (local.rem_euclid(reminders::DAY_MS) / reminders::HOUR_MS) as u32)
+}
+
+/// Cộng điểm thân thiết cho một sự kiện (xong việc, chat, vuốt đầu…). Lỗi ghi
+/// file chỉ ghi log: điểm thân thiết không đáng làm hỏng việc đang làm.
+pub fn bond_award(app: &AppHandle, ev: crate::bond::Event) {
+    let (today, _) = today_and_hour(now_secs());
+    if let Err(e) = store::update_bond(app, |b| crate::bond::award(b, ev, today)) {
+        eprintln!("[bond] lưu điểm lỗi: {e}");
+    }
+}
+
+/// Câu chào đầu ngày + cột mốc tới hạn (đọc bond.json). Chỉ khi người dùng
+/// đang ngồi máy — vắng thì cộng "có mặt" cũng chưa tính.
+fn bond_sync(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, away: bool, settings: &store::Settings) {
+    let (today, hour) = today_and_hour(now);
+    if !away {
+        bond_award(app, crate::bond::Event::Present);
+    }
+    let b = store::load_bond(app);
+    let greet = !away && crate::bond::daily_greeting_due(&b, today, hour);
+    if greet {
+        // Chào đầu ngày thay cho câu "chào buổi sáng / chào lại" cùng lúc.
+        pending.retain(|c| c.kind != Kind::Welcome);
+        pending.push(Candidate { kind: Kind::Welcome, since: now, ttl: None, tag: "daily".into() });
+    }
+    let birthday = crate::bond::parse_birthday(&settings.birthday);
+    let live: Vec<String> = crate::bond::milestones_due(&b, today, birthday)
+        .into_iter()
+        .map(|(_, tag)| format!("ms:{tag}"))
+        .collect();
+    sync_kind(pending, Kind::Milestone, &live, now);
+}
+
+/// Menu tròn 💗: gửi số liệu cho bảng "Thân thiết" trên pet (bond.js).
+pub fn show_bond_card(app: &AppHandle) {
+    let a = persona::address(&store::load_settings(app));
+    let b = store::load_bond(app);
+    let (today, _) = today_and_hour(now_secs());
+    let lvl = crate::bond::level(b.points);
+    let (have, need) = crate::bond::progress(b.points).unwrap_or((0, 0));
+    let days = if b.first_seen == 0 { 1 } else { (today - b.first_seen + 1).max(1) };
+    pet(
+        app,
+        json!({
+            "command": "bond:card",
+            "lang": a.lang.code(),
+            "pet": a.pet,
+            "level": lvl,
+            "levelName": crate::bond::level_name(lvl, a.lang),
+            "nextName": crate::bond::progress(b.points).map(|_| crate::bond::level_name(lvl + 1, a.lang)),
+            "have": have,
+            "need": need,
+            "points": b.points,
+            "days": days,
+            "streak": b.streak,
+            "milestones": b.milestones_shown.len(),
+        }),
+    );
+}
+
+/// Menu tròn 🎮: mở bảng mini game trên pet (games.js), kèm ngôn ngữ và tên pet.
+pub fn show_games(app: &AppHandle) {
+    let a = persona::address(&store::load_settings(app));
+    pet(app, json!({ "command": "games:open", "lang": a.lang.code(), "pet": a.pet }));
+}
+
+/// Một dòng cho khối ngữ cảnh gửi model: mức thân thiết hiện tại.
+pub fn bond_context(app: &AppHandle) -> String {
+    let b = store::load_bond(app);
+    if b.first_seen == 0 {
+        return String::new();
+    }
+    let (today, _) = today_and_hour(now_secs());
+    let lvl = crate::bond::level(b.points);
+    format!(
+        "\n- Mức thân thiết với người dùng: \"{}\" (cấp {}/4, quen nhau {} ngày, chuỗi {} ngày liên tiếp). \
+         Thân càng cao thì nói chuyện càng tự nhiên, thân mật hơn; cấp thấp thì lễ phép, dễ thương.",
+        crate::bond::level_name(lvl, persona::Lang::Vi),
+        lvl,
+        (today - b.first_seen + 1).max(1),
+        b.streak
+    )
+}
+
+/// Câu chào đầu ngày: đếm việc chưa xong có hạn trong hôm nay. Ghi lại là đã chào.
+fn daily_greeting_line(app: &AppHandle, a: &persona::Address, now: u64) -> String {
+    let (today, _) = today_and_hour(now);
+    let offset = reminders::local_offset_min();
+    let due = store::load_tasks(app)
+        .iter()
+        .filter(|t| !t.done)
+        .filter_map(|t| t.due_at.parse::<i64>().ok())
+        .filter(|&d| reminders::local_day(d, offset) == today)
+        .count();
+    let _ = store::update_bond(app, |b| b.last_greeting_day = today);
+    if due == 0 {
+        lines::line(Key::DailyGreetingFree, a, &[])
+    } else {
+        let n = due.to_string();
+        lines::line(Key::DailyGreeting, a, &[("due", n.as_str())])
+    }
+}
+
+/// Câu cho một cột mốc ("ms:<tag>") và ghi lại là đã nói.
+fn milestone_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<String> {
+    let inner = tag.strip_prefix("ms:")?;
+    let mut parts = inner.split(':');
+    let kind = parts.next()?;
+    let n = parts.next().unwrap_or("");
+    let line = match kind {
+        "days" => lines::line(Key::MilestoneDays, a, &[("days", n)]),
+        "anniv" => lines::line(Key::Anniversary, a, &[("years", n)]),
+        "streak" => lines::line(Key::StreakMilestone, a, &[("days", n)]),
+        "bday" => lines::line(Key::Birthday, a, &[]),
+        "level" => {
+            let name = crate::bond::level_name(n.parse().ok()?, a.lang);
+            lines::line(Key::LevelUp, a, &[("level", name)])
+        }
+        _ => return None,
+    };
+    let shown = inner.to_string();
+    let _ = store::update_bond(app, |b| {
+        if !b.milestones_shown.contains(&shown) {
+            b.milestones_shown.push(shown);
+        }
+    });
+    Some(line)
+}
+
+// ─── Có mặt / CPU / RAM (awareness.rs) ───────────────────────────────────────
+
+/// Câu muốn nói phát sinh từ trạng thái máy trong lượt này (chào lại, cảnh báo).
+fn awareness_candidates(app: &AppHandle, now: u64, snap: &awareness::Snapshot, settings: &store::Settings) -> Vec<Candidate> {
+    let state = app.state::<CompanionState>();
+    let mut out = Vec::new();
+
+    let events = state
+        .presence
+        .lock()
+        .map(|mut p| p.update(now, snap, settings.sleepy_idle_min as u64 * 60))
+        .unwrap_or_default();
+    let visible = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    for ev in events {
+        match ev {
+            // Ngủ gật / tỉnh chỉ đổi nét mặt, không nói (không ai nghe).
+            PresenceEvent::Sleepy if visible => hold_expression(app, "sleepy"),
+            PresenceEvent::Sleepy => {}
+            PresenceEvent::Wake => hold_expression(app, if focus_active(app) { "focus" } else { "neutral" }),
+            PresenceEvent::Back { away_secs } if settings.welcome_back => {
+                let offset = reminders::local_offset_min();
+                let now_ms = now as i64 * 1000;
+                let left_ms = now_ms - away_secs as i64 * 1000;
+                let new_day = reminders::local_day(left_ms, offset) != reminders::local_day(now_ms, offset);
+                let local = now_ms + offset as i64 * reminders::MIN_MS;
+                let hour = (local.rem_euclid(reminders::DAY_MS) / reminders::HOUR_MS) as u32;
+                let tag = match welcome_key(away_secs, hour, new_day) {
+                    Key::WelcomeMorning => "welcome:morning",
+                    Key::WelcomeLong => "welcome:long",
+                    _ => "welcome:short",
+                };
+                // Quá 5 phút mà chưa chào được thì thôi — chào muộn nghe lạc lõng.
+                out.push(Candidate { kind: Kind::Welcome, since: now, ttl: Some(5 * 60), tag: tag.into() });
+            }
+            PresenceEvent::Back { .. } => {}
+        }
+    }
+
+    // CPU / RAM: tắt thì không lấy mẫu gì cả, và quên mọi mốc cũ.
+    if !settings.sysmon_enabled {
+        if let Ok(mut p) = state.cpu_prev.lock() {
+            *p = None;
+        }
+        for s in [&state.cpu_high, &state.ram_high] {
+            if let Ok(mut s) = s.lock() {
+                s.reset();
+            }
+        }
+        return out;
+    }
+    if let Some(cur) = awareness::cpu_times() {
+        let prev = state.cpu_prev.lock().ok().and_then(|mut p| p.replace(cur));
+        if let Some(pct) = prev.and_then(|p| awareness::cpu_percent(p, cur)) {
+            let warn = state.cpu_high.lock().map(|mut s| s.update(now, pct >= settings.cpu_warn_pct)).unwrap_or(false);
+            if warn {
+                out.push(Candidate { kind: Kind::SysWarn, since: now, ttl: Some(10 * 60), tag: format!("sys:cpu:{pct}") });
+            }
+        }
+    }
+    if let Some(pct) = awareness::ram_percent() {
+        let warn = state.ram_high.lock().map(|mut s| s.update(now, pct >= settings.ram_warn_pct)).unwrap_or(false);
+        if warn {
+            out.push(Candidate { kind: Kind::SysWarn, since: now, ttl: Some(10 * 60), tag: format!("sys:ram:{pct}") });
+        }
+    }
+    out
+}
+
 fn current_ctx(app: &AppHandle, snap: awareness::Snapshot, settings: &store::Settings) -> Ctx {
     let state = app.state::<CompanionState>();
     Ctx {
@@ -271,9 +631,10 @@ fn current_ctx(app: &AppHandle, snap: awareness::Snapshot, settings: &store::Set
         docked: crate::windows::pet_is_docked(),
         replying: chat::is_replying(app),
         dnd_until: state.dnd_until.load(Ordering::SeqCst),
-        fullscreen: snap.fullscreen,
+        // Tắt "im khi toàn màn hình" thì coi như không toàn màn hình.
+        fullscreen: snap.fullscreen && settings.quiet_fullscreen,
         away: snap.away(),
-        focus: false, // phiên Tập trung: Phase 11
+        focus: state.focus.lock().map(|f| f.phase == Phase::Focus).unwrap_or(false),
         last_spoke: state.last_spoke.load(Ordering::SeqCst),
         gap_secs: settings.quiet_gap_min as u64 * 60,
     }
@@ -363,6 +724,38 @@ fn mark_reminded(app: &AppHandle, tag: &str) {
 
 /// Câu (và biểu cảm) cho một ý muốn nói. None = cuối cùng không có gì để nói.
 fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> {
+    let settings = store::load_settings(app);
+    let a = persona::address(&settings);
+    match c.kind {
+        Kind::Welcome if c.tag == "daily" => {
+            return Some((daily_greeting_line(app, &a, now_secs()), Some("happy".into())));
+        }
+        Kind::Milestone => {
+            return milestone_line(app, &a, &c.tag).map(|l| (l, Some("love".into())));
+        }
+        Kind::Welcome => {
+            let key = match c.tag.as_str() {
+                "welcome:morning" => Key::WelcomeMorning,
+                "welcome:long" => Key::WelcomeLong,
+                _ => Key::WelcomeShort,
+            };
+            return Some((lines::line(key, &a, &[]), Some("happy".into())));
+        }
+        Kind::SysWarn => {
+            let rest = c.tag.strip_prefix("sys:")?;
+            let (what, pct) = rest.split_once(':')?;
+            let key = if what == "cpu" { Key::CpuHigh } else { Key::RamHigh };
+            return Some((lines::line(key, &a, &[("pct", pct)]), Some("surprised".into())));
+        }
+        Kind::FocusEnd => {
+            let brk = settings.break_min.to_string();
+            let key = if c.tag == "focus:done" { Key::FocusDone } else { Key::BreakDone };
+            // Không gửi biểu cảm ở đây: focus_loop đã đặt nét mặt giữ nguyên
+            // cho pha mới (biểu cảm có hạn sẽ tự về neutral, làm mất nét đó).
+            return Some((lines::line(key, &a, &[("brk", brk.as_str())]), None));
+        }
+        _ => {}
+    }
     match c.kind {
         Kind::Deadline => {
             let text = deadline_line(app, &c.tag)?;
@@ -443,6 +836,7 @@ fn tick(app: &AppHandle) {
     if let Ok(mut clock) = state.health.lock() {
         clock.tick(now, snap.away());
     }
+    let extra = awareness_candidates(app, now, &snap, &settings);
     let ctx = current_ctx(app, snap, &settings);
     let failed = state.toast_failed.lock().map(|f| f.clone()).unwrap_or_default();
 
@@ -450,6 +844,14 @@ fn tick(app: &AppHandle) {
         let Ok(mut pending) = state.pending.lock() else { return };
         prune(&mut pending, now);
         collect(app, &mut pending, now, &settings);
+        // Chào lại / cảnh báo máy: câu mới thay câu cùng loại đang chờ.
+        for c in extra {
+            let prefix = c.tag.rsplit_once(':').map_or(c.tag.as_str(), |(p, _)| p).to_string();
+            pending.retain(|p| !(p.kind == c.kind && (c.kind == Kind::Welcome || p.tag.starts_with(&prefix))));
+            pending.push(c);
+        }
+        // Sau câu chào lại: chào đầu ngày (nếu tới) thay cho nó, rồi cột mốc.
+        bond_sync(app, &mut pending, now, snap.away(), &settings);
         // Hạn chót không chờ pet: nói không được thì đi đường thông báo Windows.
         let mut toasts = Vec::new();
         pending.retain(|c| {
@@ -485,6 +887,8 @@ fn tick(app: &AppHandle) {
 /// Luồng nền của trọng tài. Gọi một lần lúc setup.
 pub fn start(app: AppHandle) {
     chat::touch_activity(&app);
+    let focus_app = app.clone();
+    std::thread::spawn(move || focus_loop(focus_app));
     std::thread::spawn(move || loop {
         std::thread::sleep(std::time::Duration::from_secs(TICK_SECS));
         tick(&app);
@@ -631,6 +1035,18 @@ mod tests {
         // Câu cũ giữ nguyên mốc "since" (để xếp thứ tự theo độ cũ).
         assert_eq!(p[0].since, 1);
         assert_eq!(p[2].since, 9);
+    }
+
+    #[test]
+    fn welcome_line_choice() {
+        assert_eq!(welcome_key(15 * 60, 14, false), Key::WelcomeShort);
+        assert_eq!(welcome_key(2 * 3600, 14, false), Key::WelcomeLong);
+        // Sang ngày mới, buổi sáng → chào buổi sáng (kể cả vắng chưa tới 6 giờ).
+        assert_eq!(welcome_key(5 * 3600, 8, true), Key::WelcomeMorning);
+        // Vắng cả đêm nhưng quay lại buổi chiều → "đi lâu ghê".
+        assert_eq!(welcome_key(20 * 3600, 15, true), Key::WelcomeLong);
+        // Ngủ trưa 30 phút buổi sáng không phải "chào buổi sáng".
+        assert_eq!(welcome_key(30 * 60, 9, false), Key::WelcomeShort);
     }
 
     #[test]

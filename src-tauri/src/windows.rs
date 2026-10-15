@@ -398,6 +398,29 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
     }
 }
 
+/// Menu chuột phải của pet → "Mở đầy đủ": Trợ lý văn bản ở chế độ tự gõ, đặt
+/// cạnh pet (bên phải nếu đủ chỗ, không thì bên trái), nằm gọn trong màn hình.
+pub fn open_assistant(app: &AppHandle) {
+    let (Some(pet), Some(popup)) = (app.get_webview_window("main"), app.get_webview_window("popup")) else {
+        dbg_log("[windows] open_assistant: thiếu cửa sổ main/popup");
+        return;
+    };
+    let (Ok(pp), Ok(ps)) = (pet.outer_position(), pet.outer_size()) else { return };
+    let size = popup.outer_size().map(|s| (s.width as i32, s.height as i32)).unwrap_or((400, 520));
+    let mut x = pp.x + ps.width as i32 + 8;
+    let mut y = pp.y + ps.height as i32 - size.1;
+    if let Ok(Some(m)) = pet.current_monitor() {
+        let a = m.work_area();
+        let (ax, ay, aw, ah) = (a.position.x, a.position.y, a.size.width as i32, a.size.height as i32);
+        if x + size.0 > ax + aw {
+            x = pp.x - size.0 - 8; // không đủ chỗ bên phải → sang trái pet
+        }
+        x = x.clamp(ax, (ax + aw - size.0).max(ax));
+        y = y.clamp(ay, (ay + ah - size.1).max(ay));
+    }
+    open_popup_tab(app, x, y, "manual");
+}
+
 pub fn open_tasks(app: &AppHandle) {
     open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 820.0, 580.0);
     dock_pet_to(app, "tasks");

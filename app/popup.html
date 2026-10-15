@@ -81,6 +81,8 @@
     }
 
     /* Tab dạng viên thuốc hồng. */
+    .pp-card textarea.pp-input { min-height: 70px; max-height: 160px; border-radius: 10px; }
+
     .pp-card .tabs { gap: 6px; }
     .pp-card .tab {
       border-radius: 10px;
@@ -156,6 +158,9 @@
       <button class="ghost" id="selCopy" type="button">Sao chép</button>
     </div>
     <div class="selected-box" id="selectedText">(chưa có văn bản được chọn)</div>
+    <!-- Mở từ menu chuột phải của pet: người dùng tự gõ văn bản thay cho đoạn bôi đen. -->
+    <textarea id="selInput" class="pp-input" style="display:none;"
+              placeholder="Gõ hoặc dán văn bản vào đây..." aria-label="Văn bản"></textarea>
 
     <div class="tabs">
       <div class="tab active" data-tab="translate">🌸 Dịch</div>

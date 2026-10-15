@@ -500,7 +500,9 @@ fn full_system_prompt(app: &AppHandle) -> String {
         .collect();
     let (y, m, d) = reminders::civil_from_days(reminders::local_day(now_ms, offset));
     let date = format!("{y:04}-{m:02}-{d:02}");
-    system_prompt(&store::load_settings(app)) + &context_block(local_time(), Some(&date), &tasks)
+    system_prompt(&store::load_settings(app))
+        + &context_block(local_time(), Some(&date), &tasks)
+        + &crate::companion::bond_context(app)
 }
 
 fn send(app: &AppHandle, payload: Value) {
@@ -619,6 +621,7 @@ pub fn handle_request(app: &AppHandle, payload: &Value) {
     tauri::async_runtime::spawn(async move {
         let state = app.state::<ChatState>();
         state.last_activity.store(now_secs(), Ordering::SeqCst);
+        crate::companion::bond_award(&app, crate::bond::Event::Chat);
         let messages = with_history(&app, |h| h.with_prompt(&user)).unwrap_or_default();
         let settings = store::load_settings(&app);
         let system = full_system_prompt(&app);

@@ -725,6 +725,20 @@ có **cây ghim** ở trên, đầu ghim là **mặt nhân vật**.
 pha, dừng giữa chừng, máy ngủ rồi thức dậy làm nhảy giờ), cửa sổ "liên tục ≥ 2 phút" của CPU,
 phép tính % CPU từ hai mẫu `GetSystemTimes`.
 
+**Đã code (2026-10-15, chưa phát hành, dự kiến v0.6.0):**
+- `awareness.rs` thêm `Presence` (sự kiện Sleepy / Wake / Back{away_secs}), `cpu_percent` +
+  `cpu_times` (GetSystemTimes), `ram_percent` (GlobalMemoryStatusEx), `Sustain` (vượt ngưỡng liên
+  tục ≥ 2 phút, nguội 30 phút). `focus.rs` (Session Focus → Break → Idle; máy ngủ qua cả phiên thì
+  về Idle im lặng). `companion.rs`: vòng 1 giây cho phiên Tập trung (vẽ vòng đếm bằng lệnh
+  `pomodoroTick` có sẵn trong `ui.js`), `awareness_candidates` (chào lại, cảnh báo máy),
+  `welcome_key`, `kick` (chạy trọng tài ngay khi hết pha). Ctx.focus chặn mọi câu trừ hạn chót.
+- Không dùng 3 lệnh cũ `pomodoroStart/Break/Stop` trong `main.js` (câu viết cứng "Onii-chan");
+  câu nói đi qua `lines.rs`, nét mặt giữ bằng `setExpression` không thời hạn.
+- Phiên Tập trung chỉ giữ trong RAM (thoát app là mất phiên).
+- **Khác plan:** hết giờ nghỉ thì phiên kết thúc, không tự chạy phiên mới (người dùng tự bấm 🍅).
+- **Còn hạn chế:** câu trả lời chat có biểu cảm tạm (8 giây) sẽ đưa nét mặt về neutral sau đó, làm
+  mất nét "focus" / "sleepy" đang giữ cho tới lần đổi pha kế tiếp.
+
 ### 12.7 Phase 12: Daily Life & Relationship
 
 - **`bond.json`** (trong `app_config_dir`, cạnh `tasks.json`):
@@ -754,6 +768,23 @@ phép tính % CPU từ hai mẫu `GetSystemTimes`.
 **Test:** `award` (trần/ngày, qua ngày mới, chuỗi đứt rồi nối lại, đồng hồ lùi), tính cấp, chọn
 cột mốc chưa nói, đọc `bond.json` hỏng → mặc định.
 
+**Đã code (2026-10-15, chưa phát hành, dự kiến cùng v0.6.0 với Phase 11):**
+- `bond.rs` (thuần): `Bond`, `award` (trần/ngày, chuỗi ngày, không trừ điểm), `level` / `progress`
+  / `level_name` (vi/ja/en), `milestones_due`, `daily_greeting_due`, `parse_birthday`.
+  `store.rs`: `load_bond` / `update_bond` (khoá; chỉ ghi file khi dữ liệu đổi).
+- Nguồn điểm đã nối: có mặt (lượt 30 giây của trọng tài, khi không vắng), xong việc
+  (`rewards::complete`), xong phiên Tập trung, mỗi câu hỏi chat, vuốt đầu (lệnh `headpat` pet đã
+  gửi sẵn), được đặt tên lần đầu. `Event::Game` chờ Phase 13.
+- `companion.rs`: `bond_sync` (chào đầu ngày `Kind::Welcome` tag "daily" thay cho câu chào lại
+  cùng lúc, cột mốc `Kind::Milestone` tag "ms:<tag>"), `show_bond_card`, `bond_context` (một dòng
+  gửi model: cấp, số ngày quen nhau, chuỗi ngày — prompt dặn cấp càng cao nói càng thân mật).
+- Bảng 💗 trên pet: `app/media/webview/bond.js`. Sinh nhật: hai ô ngày / tháng trong Cài đặt →
+  *Bạn đồng hành*, lưu "MM-DD", `settings_set` kiểm hợp lệ.
+- **Khác plan:** câu chào đầu ngày không đổi giọng theo cấp, và chưa có bộ câu khen "mở khoá" theo
+  cấp (mục 12.5c) — cấp mới chỉ ảnh hưởng prompt chat và câu chúc mừng lên cấp. Thêm sau nếu cần.
+- **Cần xem:** vòng menu chuột phải giờ có 8 mục ở vòng đầu (2 nhóm + Chat, Công việc, Tập trung,
+  Thân thiết, Đừng làm phiền, Cài đặt); nếu chật quá thì gom bớt vào một nhóm.
+
 ### 12.8 Phase 13: Mini Games
 
 - Radial menu thêm mục **🎮 Chơi**, mở một panel nhỏ cạnh pet (cùng kiểu panel chat).
@@ -767,6 +798,17 @@ cột mốc chưa nói, đọc `bond.json` hỏng → mặc định.
   bằng `node --test` (có sẵn trong Node, không thêm dependency). Thêm script `"test"` vào
   `package.json`. Đây sẽ là test JS đầu tiên của repo.
 - Để sau (không làm bây giờ): trò "bắt chuột" cần cửa sổ phủ màn hình, trò dùng LLM (đố chữ).
+
+**Đã code (2026-10-15, chưa phát hành, dự kiến cùng v0.6.0):**
+- `app/js/games-core.js` (thuần, `window.GamesCore`): `randInt`, `rpsPick` / `rpsRound` /
+  `rpsScore` (ai đủ 3 trận thắng trước), `guessNew` / `guess` (1–100, 7 lượt, nhập sai không mất
+  lượt), `warmth`. Test: `games-core.test.js` (`npm test`).
+- `app/media/webview/games.js`: bảng chơi trên pet, chữ vi/ja/en, nét mặt pet đổi theo từng lượt,
+  ngẫu nhiên bằng `crypto.getRandomValues`. Hết ván → `game:result` → `bond::Event::Game`.
+- Vòng menu: 🍅 Tập trung, 💗 Thân thiết, 🎮 Chơi gom vào nhóm **💞 Đồng hành** (vòng đầu còn 7 mục).
+- **Chưa làm:** câu pet nói trong game là chữ trên bảng (không qua bubble / kho câu Rust), nên chưa
+  theo cặp xưng hô tiếng Việt — dùng tên pet (hoặc "Em") và "Bạn". Trò "bắt chuột" và trò dùng AI
+  vẫn để sau như plan.
 
 ### 12.9 Settings mới (tổng hợp)
 
@@ -800,9 +842,10 @@ Settings.
 | Bản | Nội dung | Người dùng thấy gì |
 |---|---|---|
 | **v0.5.0** ✅ (chuẩn bị phát hành 2026-10-15) | Ghim task (12.4c) + Phase 9 + 9B + Phase 10, cộng các việc phát sinh: link bấm được trong task, Bunny Lounge (nhân vật bám mép bảng Cài đặt / Công việc / Trợ lý văn bản, mặc định tắt), giao diện Trợ lý văn bản theo phong cách Cài đặt, sửa lỗi thu nhỏ bảng để pet nằm trơ | Xem CHANGELOG [0.5.0] |
-| **v0.6.0** | Phase 11 | Pet buồn ngủ khi vắng, chào khi quay lại, phiên Tập trung, cảnh báo CPU/RAM (tuỳ chọn). (Im khi trình chiếu đã có từ v0.5.0.) |
-| **v0.7.0** | Phase 12 | Mức thân thiết, chào buổi sáng, sinh nhật, kỷ niệm |
-| **v0.8.0** | Phase 13 | Oẳn tù tì, đoán số |
+| **v0.6.0** ✅ (chuẩn bị phát hành 2026-10-15) | Phase 11 + 12 + 13 gộp một bản, cộng: "🗂️ Mở đầy đủ" trên menu chuột phải (trợ lý văn bản ở chế độ tự gõ), biểu tượng game trên đầu pet, nhóm menu 💞 Đồng hành | Xem CHANGELOG [0.6.0] |
+
+Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
+/ "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).
 
 Mỗi bản: `cargo test` + `npm test` + `cargo build` xanh (CI chạy `cargo check`, `cargo test`,
 `npm test`), thêm mục CHANGELOG ở đúng version sẽ ship, bump version ở `package.json`,

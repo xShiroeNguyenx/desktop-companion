@@ -4,6 +4,49 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-10-15
+
+### Added
+- **Focus sessions (Pomodoro).** Pick 🍅 (right-click → 💞 *Đồng hành*) or use
+  the tray: 25 minutes of focus, then a 5-minute break (both adjustable in
+  Settings → *Tập trung*). A ring on the pet counts down, the pet wears its
+  focused face, and nothing interrupts you except a deadline. When the session
+  ends she cheers you on and sends you to rest; pick ⏹ to stop early.
+- **The pet notices when you step away.** After 10 minutes without mouse or
+  keyboard (or with the screen locked) she dozes off, without a word. When you
+  come back she wakes up and greets you — differently after a short break, a
+  long absence, or the next morning.
+- **Optional CPU / RAM warning** (off by default). When CPU or memory stays
+  above your threshold for 2 minutes, the pet tells you, at most once every 30
+  minutes for each. With it off, nothing is measured at all.
+- **A bond that grows over time.** Being at the computer each day, finishing
+  tasks and focus sessions, chatting and head-pats slowly raise your bond with
+  your companion, through five levels from *Mới quen* to *Không thể thiếu*.
+  Each kind of activity counts only up to a small amount per day, and nothing
+  is ever taken away when you skip a day. Pick 💗 (right-click → 💞) to
+  see the level, progress to the next one, days together and your streak. The
+  closer you are, the more casually she talks in chat.
+- **💞 Đồng hành** on the right-click ring gathers 🍅 focus, 💗 bond and 🎮
+  games, so the first ring stays tidy.
+- **Mini games.** Right-click → 💞 *Đồng hành* → 🎮 *Chơi*: rock paper scissors
+  (first to 3 wins) or guess the number (1–100 in 7 tries, with higher /
+  lower hints). The pet reacts to every round with her face and shows her
+  move (✊ ✌️ ✋), your latest guess, and finally her secret number in a
+  bubble above her head. Games take a minute or two, and each finished game
+  adds a little to your bond.
+- **🗂️ Mở đầy đủ on the right-click ring** opens the text assistant next to the
+  pet with an empty box to type or paste your own text — translate, reply or
+  save it as a task without selecting anything first.
+- **A hello to start the day**, with how many tasks are due today.
+- **Milestones and birthdays.** She celebrates 7, 30, 100 and 365 days
+  together, each yearly anniversary, every new bond level, 7- and 30-day
+  streaks — each one once — and your birthday, if you add it in Settings →
+  *Bạn đồng hành* (day and month only).
+- Settings → *Nhận biết máy tính*: doze-off delay (or off), greet on return,
+  stay quiet while presenting or full screen, and the CPU / RAM warning. The
+  app reads only on/off states and percentages — never window titles, app
+  names or screen content.
+
 ## [0.5.0] - 2026-10-15
 
 ### Added

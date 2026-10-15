@@ -4,6 +4,24 @@
   const $ = (id) => document.getElementById(id);
 
   let selection = { text: '', source: '' };
+  // Mở từ menu chuột phải của pet: không có đoạn bôi đen, người dùng tự gõ.
+  let manual = false;
+
+  /** Văn bản nguồn cho cả 3 tab: ô tự gõ (chế độ tự nhập) hoặc đoạn đã bôi đen. */
+  function sourceText() {
+    return manual ? $('selInput').value.trim() : selection.text;
+  }
+
+  // Bật / tắt chế độ tự nhập: đổi khung đoạn bôi đen thành ô gõ được.
+  function setManual(on) {
+    manual = on;
+    $('selectedText').style.display = on ? 'none' : '';
+    $('selInput').style.display = on ? '' : 'none';
+    if (on) {
+      $('selInput').value = '';
+      setTimeout(() => $('selInput').focus(), 60);
+    }
+  }
 
   // Populate the context dropdown from the saved Settings list.
   async function loadContexts() {
@@ -44,10 +62,11 @@
     // Clarify what the selected text represents per tab.
     const lbl = $('selLabel');
     if (lbl) {
-      lbl.textContent =
+      const what =
         name === 'reply' ? 'Tin nhắn cần trả lời (ngữ cảnh)'
         : name === 'task' ? 'Nội dung lưu thành task'
         : 'Văn bản cần dịch';
+      lbl.textContent = manual ? 'Nhập ' + what.charAt(0).toLowerCase() + what.slice(1) : what;
     }
   }
   document.querySelectorAll('.tab').forEach((t) => {
@@ -56,12 +75,12 @@
 
   // Translate
   async function runTranslate() {
-    if (!selection.text) { setStatus('trStatus', 'Chưa có văn bản.', 'err'); return; }
+    if (!sourceText()) { setStatus('trStatus', manual ? 'Gõ văn bản cần dịch trước nha.' : 'Chưa có văn bản.', 'err'); return; }
     const btn = $('trGo'); btn.disabled = true;
     setStatus('trStatus', 'Đang dịch...');
     try {
       const out = await invoke('llm_translate', {
-        text: selection.text,
+        text: sourceText(),
         context: $('trContext').value,
         target: $('trTarget').value,
       });
@@ -78,13 +97,13 @@
 
   // Reply
   $('rpGo').addEventListener('click', async () => {
-    if (!selection.text) { setStatus('rpStatus', 'Chưa có văn bản gốc.', 'err'); return; }
+    if (!sourceText()) { setStatus('rpStatus', manual ? 'Gõ tin nhắn cần trả lời trước nha.' : 'Chưa có văn bản gốc.', 'err'); return; }
     if (!$('rpInput').value.trim()) { setStatus('rpStatus', 'Nhập câu trả lời tiếng Việt.', 'err'); return; }
     const btn = $('rpGo'); btn.disabled = true;
     setStatus('rpStatus', 'Đang tạo câu trả lời...');
     try {
       const out = await invoke('llm_quick_reply', {
-        source: selection.text,
+        source: sourceText(),
         reply: $('rpInput').value,
         target: $('rpTarget').value,
       });
@@ -100,9 +119,9 @@
 
   // Save task
   $('tkGo').addEventListener('click', async () => {
-    if (!selection.text) { setStatus('tkStatus', 'Chưa có văn bản.', 'err'); return; }
+    if (!sourceText()) { setStatus('tkStatus', manual ? 'Gõ nội dung công việc trước nha.' : 'Chưa có văn bản.', 'err'); return; }
     try {
-      await invoke('tasks_add', { text: selection.text, note: $('tkNote').value, source: selection.source || '' });
+      await invoke('tasks_add', { text: sourceText(), note: $('tkNote').value, source: manual ? 'manual' : selection.source || '' });
       setStatus('tkStatus', 'Đã lưu công việc! ✓', 'ok');
       $('tkNote').value = '';
     } catch (e) {
@@ -114,10 +133,10 @@
   // Copy the original captured selection (the auto-capture restores the user's
   // old clipboard, so the selected text would otherwise be unreachable).
   $('selCopy').addEventListener('click', async () => {
-    if (!selection.text) return;
+    if (!sourceText()) return;
     const btn = $('selCopy');
     try {
-      await navigator.clipboard.writeText(selection.text);
+      await navigator.clipboard.writeText(sourceText());
       const old = btn.textContent;
       btn.textContent = 'Đã chép ✓';
       setTimeout(() => { btn.textContent = old; }, 1200);
@@ -152,11 +171,14 @@
   // Re-fetch when the popup (full 3-tab menu) is reused for a fresh selection.
   // Payload là tab cần mở sẵn ("translate" | "reply" | "task") — ring gửi
   // "reply"/"task" nên phải tôn trọng nó, không mặc định về tab Dịch.
+  // "manual" = mở từ menu chuột phải của pet: tab Dịch + ô tự gõ văn bản.
   listen('popup-refresh', async (event) => {
-    const tab = (event && typeof event.payload === 'string' && event.payload) || 'translate';
+    const payload = (event && typeof event.payload === 'string' && event.payload) || 'translate';
+    const isManual = payload === 'manual';
     resetResults();
-    await Promise.all([loadSelection(), loadContexts()]);
-    switchTab(tab);
+    setManual(isManual);
+    await Promise.all([isManual ? Promise.resolve() : loadSelection(), loadContexts()]);
+    switchTab(isManual ? 'translate' : payload);
   });
 
   loadContexts();

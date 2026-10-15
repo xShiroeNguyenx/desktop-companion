@@ -28,6 +28,8 @@ import {
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
+import { handleBondMessage } from './bond.js';
+import { handleGamesMessage } from './games.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
 
 function disposeCurrentModel() {
@@ -246,6 +248,18 @@ window.addEventListener('message', (event) => {
     // "Đừng làm phiền" (companion.rs): menu tròn đọc cờ này lúc mở.
     case 'dndState':
       window.__DND__ = !!event.data.on;
+      break;
+    // Bảng "💗 Thân thiết" (companion.rs → show_bond_card).
+    case 'bond:card':
+      handleBondMessage(event.data);
+      break;
+    // Bảng mini game (companion.rs → show_games).
+    case 'games:open':
+      handleGamesMessage(event.data);
+      break;
+    // Phiên Tập trung (companion.rs): menu tròn đọc cờ này lúc mở.
+    case 'focusState':
+      window.__FOCUS_ACTIVE__ = !!event.data.on;
       break;
     // Thẻ đặt tên / chọn xưng hô (naming.rs).
     case 'naming:askName':
@@ -490,5 +504,6 @@ function capturePinAvatar(force) {
 debugLog('Webview script loaded');
 // Trang pet nạp lại mỗi lần đổi model: hỏi lại trạng thái "Đừng làm phiền".
 vscode.postMessage({ command: 'dnd:sync' });
+vscode.postMessage({ command: 'focus:sync' });
 initAmbientAudio();
 initLive2D();

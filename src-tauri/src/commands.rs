@@ -436,6 +436,12 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.vi_self = clean(&settings.vi_self, persona::PRONOUN_MAX).map_err(|e| format!("Xưng hô: {e}"))?;
     settings.vi_user = clean(&settings.vi_user, persona::PRONOUN_MAX).map_err(|e| format!("Xưng hô: {e}"))?;
     settings.message_language = persona::Lang::from_code(&settings.message_language).code().to_string();
+    // Ngày sinh "MM-DD": rỗng = không nhập; sai thì báo, không lưu ngầm giá trị hỏng.
+    settings.birthday = settings.birthday.trim().to_string();
+    if !settings.birthday.is_empty() {
+        let (m, d) = crate::bond::parse_birthday(&settings.birthday).ok_or("Ngày sinh không hợp lệ.")?;
+        settings.birthday = format!("{m:02}-{d:02}");
+    }
     if !persona::JA_HONORIFICS.contains(&settings.ja_honorific.as_str()) {
         settings.ja_honorific = old.ja_honorific.clone();
     }

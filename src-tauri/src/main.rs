@@ -3,9 +3,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod awareness;
+mod bond;
 mod chat;
 mod commands;
 mod companion;
+mod focus;
 mod lines;
 mod links;
 mod llm;
@@ -269,8 +271,20 @@ fn pet_command(app: AppHandle, payload: Value) {
         }
         // Pet vừa nạp (lại) trang: hỏi trạng thái DND để menu tròn hiện đúng.
         "dnd:sync" => companion::sync_dnd(&app),
+        // Vuốt đầu pet: cộng điểm thân thiết (có trần mỗi ngày).
+        "headpat" => companion::bond_award(&app, bond::Event::Headpat),
+        // Menu tròn 💗: bảng mức thân thiết.
+        "bond:show" => companion::show_bond_card(&app),
+        // Menu tròn 🎮: mở bảng mini game; chơi xong một ván thì cộng điểm thân thiết.
+        "games:show" => companion::show_games(&app),
+        "game:result" => companion::bond_award(&app, bond::Event::Game),
+        // Menu tròn 🍅: bắt đầu / dừng phiên Tập trung; pet nạp lại trang thì hỏi trạng thái.
+        "focus:toggle" => companion::toggle_focus(&app),
+        "focus:sync" => companion::sync_focus(&app),
         "openSettings" => windows::open_settings(&app),
         "openTasks" => windows::open_tasks(&app),
+        // Menu chuột phải → 🗂️ Mở đầy đủ: Trợ lý văn bản, người dùng tự gõ văn bản.
+        "openAssistant" => windows::open_assistant(&app),
         "setClickThrough" => {
             let v = payload.get("value").and_then(|b| b.as_bool()).unwrap_or(false);
             if let Some(w) = app.get_webview_window("main") {
@@ -644,6 +658,9 @@ fn main() {
             let dnd_item =
                 MenuItem::with_id(app, "dnd", "🔕 Đừng làm phiền (1 giờ)", true, None::<&str>)?;
             companion::set_tray_item(&app_handle, dnd_item.clone());
+            let focus_item =
+                MenuItem::with_id(app, "focus", "🍅 Bắt đầu tập trung", true, None::<&str>)?;
+            companion::set_focus_tray_item(&app_handle, focus_item.clone());
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -653,6 +670,7 @@ fn main() {
                     &tasks_item,
                     &settings_item,
                     &click_through_item,
+                    &focus_item,
                     &dnd_item,
                     &sep,
                     &quit_item,
@@ -679,6 +697,7 @@ fn main() {
                     }
                     "open_tasks" => windows::open_tasks(app),
                     "open_settings" => windows::open_settings(app),
+                    "focus" => companion::toggle_focus(app),
                     "dnd" => {
                         let on = !companion::dnd_active(app);
                         companion::set_dnd(app, on, true);

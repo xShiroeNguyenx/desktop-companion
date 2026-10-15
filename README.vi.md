@@ -50,8 +50,23 @@ duyệt, Word…).
 - **Ghim task lên desktop** — bấm 📌 để biến việc thành tờ note hồng, cây ghim mang
   mặt nhân vật. Kéo đi đâu cũng được; ✓ đóng dấu xong, ✕ gỡ ghim, 📍 giữ luôn nổi
   trên các cửa sổ khác. Link trong nội dung và ghi chú bấm được.
+- **🍅 Phiên Tập trung** — 25 phút tập trung rồi nghỉ 5 phút (chỉnh được). Vòng đếm
+  ngược hiện trên pet, pet giữ nét mặt tập trung, và chỉ hạn chót mới được chen ngang.
+- **Pet biết khi bạn rời máy** — 10 phút không đụng chuột/phím (hoặc khoá màn hình)
+  thì pet ngủ gật, quay lại thì pet chào. Có thêm cảnh báo CPU / RAM cao (mặc định
+  tắt). App chỉ đọc trạng thái bật/tắt và phần trăm — không đọc tên cửa sổ, tên ứng
+  dụng hay nội dung màn hình.
+- **💗 Thân thiết** — ngày có mặt, việc xong, phiên tập trung, chat, vuốt đầu và
+  chơi game làm mức thân thiết tăng dần qua 5 cấp (có trần mỗi ngày, không bao giờ
+  bị trừ). Mỗi sáng pet chào kèm số việc tới hạn hôm nay, chúc mừng các cột mốc
+  (7 / 30 / 100 / 365 ngày, kỷ niệm, chuỗi ngày, lên cấp) và sinh nhật bạn, càng thân
+  thì nói chuyện càng tự nhiên.
+- **🎮 Mini game** — oẳn tù tì (ai thắng 3 trận trước) và đoán số (1–100, 7 lượt).
+  Tay pet ra, số bạn đoán và cuối cùng là số pet đã nghĩ hiện ngay trên đầu pet.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
+- **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
+  ngay cạnh pet với ô trống: gõ hoặc dán văn bản rồi dịch, trả lời hay lưu thành task.
 - **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO. Cửa sổ Tasks chia hai
   cột "chưa làm" / "đã làm", ghi lại thời điểm tạo và thời điểm hoàn thành, và
   cho sửa ghi chú của từng việc.
@@ -97,7 +112,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🔕 Đừng làm phiền (1 giờ) · Thoát
+Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · Thoát
 
 ### Chuột phải vào pet
 
@@ -106,7 +121,8 @@ viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nh�
 thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
-nhạc nền, tắt tiếng) · Chat nhanh · Công việc · 🔕 Đừng làm phiền · Cài đặt
+nhạc nền, tắt tiếng) · Chat nhanh · Công việc · 🗂️ Mở đầy đủ (trợ lý văn bản) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 chơi) · 🔕 Đừng làm phiền · Cài đặt
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.

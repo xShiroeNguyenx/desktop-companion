@@ -71,6 +71,7 @@ pub fn react(app: &AppHandle, change: NameChange) {
         NameChange::Same => {}
         NameChange::Renamed => say(app, Key::Renamed, &[], Some("happy")),
         NameChange::First => {
+            crate::companion::bond_award(app, crate::bond::Event::Named);
             say(app, Key::ThanksName, &[], Some("love"));
             if !store::load_settings(app).address_asked {
                 let app = app.clone();

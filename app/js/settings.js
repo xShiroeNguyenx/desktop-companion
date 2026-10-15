@@ -230,6 +230,64 @@
     sel.value = String(value);
   }
 
+  // Ô chọn ngưỡng CPU / RAM (%). Giá trị lạ (sửa tay settings.json) được thêm
+  // vào danh sách để không bị đổi ngầm khi Lưu.
+  const WARN_CHOICES = [70, 80, 90, 95];
+  function fillWarn(id, value) {
+    const sel = $(id);
+    const values = WARN_CHOICES.includes(value) ? WARN_CHOICES : [...WARN_CHOICES, value].sort((a, b) => a - b);
+    sel.innerHTML = '';
+    for (const v of values) {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = `Từ ${v}%`;
+      sel.appendChild(opt);
+    }
+    sel.value = String(value);
+  }
+
+  // Ô chọn có sẵn danh sách: giá trị lạ thì thêm một dòng để vẫn hiện đúng.
+  function selectValue(id, value, label) {
+    const sel = $(id);
+    const v = String(value);
+    if (![...sel.options].some((o) => o.value === v)) {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = label(value);
+      sel.appendChild(opt);
+    }
+    sel.value = v;
+  }
+
+  // Sinh nhật: hai ô ngày / tháng, "—" = không nhập. Lưu dạng "MM-DD".
+  (function fillBirthday() {
+    const day = $('bdayDay');
+    const month = $('bdayMonth');
+    day.add(new Option('Ngày —', ''));
+    month.add(new Option('Tháng —', ''));
+    for (let d = 1; d <= 31; d++) day.add(new Option(`Ngày ${d}`, String(d).padStart(2, '0')));
+    for (let m = 1; m <= 12; m++) month.add(new Option(`Tháng ${m}`, String(m).padStart(2, '0')));
+  })();
+  function setBirthday(value) {
+    const m = /^(\d{2})-(\d{2})$/.exec(value || '');
+    $('bdayMonth').value = m ? m[1] : '';
+    $('bdayDay').value = m ? m[2] : '';
+  }
+  /** "MM-DD", "" nếu không nhập, hoặc null nếu chỉ chọn một ô. */
+  function getBirthday() {
+    const m = $('bdayMonth').value;
+    const d = $('bdayDay').value;
+    if (!m && !d) return '';
+    if (!m || !d) return null;
+    return `${m}-${d}`;
+  }
+
+  // Ngưỡng CPU / RAM chỉ hiện khi bật cảnh báo.
+  function syncSysmon() {
+    $('sysmonBlock').style.display = $('sysmonEnabled').checked ? '' : 'none';
+  }
+  $('sysmonEnabled').addEventListener('change', syncSysmon);
+
   $('toastTest').addEventListener('click', async () => {
     const st = $('toastStatus');
     try {
@@ -315,6 +373,18 @@
       $('quietGap').value = String(s.quiet_gap_min ?? 10);
       if ($('quietGap').value === '') $('quietGap').value = '10';
       $('dueToast').checked = s.due_toast !== false;
+      // Tập trung
+      selectValue('focusMin', s.focus_min ?? 25, (v) => `${v} phút`);
+      selectValue('breakMin', s.break_min ?? 5, (v) => (v ? `${v} phút` : 'Không nghỉ'));
+      // Nhận biết máy tính
+      selectValue('sleepyIdle', s.sleepy_idle_min ?? 10, (v) => (v ? `Sau ${v} phút` : 'Tắt'));
+      $('welcomeBack').checked = s.welcome_back !== false;
+      $('quietFullscreen').checked = s.quiet_fullscreen !== false;
+      $('sysmonEnabled').checked = s.sysmon_enabled === true;
+      fillWarn('cpuWarn', s.cpu_warn_pct ?? 90);
+      fillWarn('ramWarn', s.ram_warn_pct ?? 90);
+      syncSysmon();
+      setBirthday(s.birthday || '');
     } catch (e) { log('settings_get: ' + e); }
     try {
       $('autostart').checked = await invoke('autostart_status');
@@ -421,7 +491,15 @@
   });
 
   $('saveBtn').addEventListener('click', async () => {
+    const birthday = getBirthday();
+    if (birthday === null) {
+      const st = $('status');
+      st.className = 'status err';
+      st.textContent = 'Sinh nhật: chọn cả ngày và tháng, hoặc để trống cả hai.';
+      return;
+    }
     const settings = {
+      birthday,
       provider: $('provider').value,
       api_key: $('apiKey').value.trim(),
       model: $('model').value,
@@ -450,6 +528,14 @@
       remind_stand_min: Number($('remindStand').value) || 0,
       quiet_gap_min: Number($('quietGap').value) || 10,
       due_toast: $('dueToast').checked,
+      focus_min: Number($('focusMin').value) || 25,
+      break_min: Number($('breakMin').value) || 0,
+      sleepy_idle_min: Number($('sleepyIdle').value) || 0,
+      welcome_back: $('welcomeBack').checked,
+      quiet_fullscreen: $('quietFullscreen').checked,
+      sysmon_enabled: $('sysmonEnabled').checked,
+      cpu_warn_pct: Number($('cpuWarn').value) || 90,
+      ram_warn_pct: Number($('ramWarn').value) || 90,
     };
 
     const status = $('status');

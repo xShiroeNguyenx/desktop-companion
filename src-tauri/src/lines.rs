@@ -57,6 +57,35 @@ pub enum Key {
     TaskAmbiguous,
     /// Thông báo Windows gửi thử từ Cài đặt.
     ToastTest,
+    // ── Nhận biết máy tính (Phase 11).
+    /// Quay lại sau 10–60 phút vắng.
+    WelcomeShort,
+    /// Quay lại sau hơn 1 giờ.
+    WelcomeLong,
+    /// Quay lại sau một đêm / buổi sáng.
+    WelcomeMorning,
+    /// Phiên Tập trung. Biến: {min} (phút tập trung), {brk} (phút nghỉ).
+    FocusStart,
+    FocusDone,
+    BreakDone,
+    FocusStopped,
+    /// CPU / RAM cao kéo dài. Biến: {pct}.
+    CpuHigh,
+    RamHigh,
+    // ── Thân thiết (bond.rs, Phase 12).
+    /// Câu chào đầu ngày khi có việc tới hạn hôm nay. Biến: {due}.
+    DailyGreeting,
+    /// Câu chào đầu ngày khi không có việc nào tới hạn.
+    DailyGreetingFree,
+    /// Quen nhau được N ngày. Biến: {days}.
+    MilestoneDays,
+    /// Kỷ niệm N năm. Biến: {years}.
+    Anniversary,
+    /// Lên cấp thân thiết. Biến: {level} (tên cấp).
+    LevelUp,
+    /// Chuỗi N ngày liên tiếp. Biến: {days}.
+    StreakMilestone,
+    Birthday,
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -95,6 +124,22 @@ impl Key {
         Key::TaskNotFound,
         Key::TaskAmbiguous,
         Key::ToastTest,
+        Key::WelcomeShort,
+        Key::WelcomeLong,
+        Key::WelcomeMorning,
+        Key::FocusStart,
+        Key::FocusDone,
+        Key::BreakDone,
+        Key::FocusStopped,
+        Key::CpuHigh,
+        Key::RamHigh,
+        Key::DailyGreeting,
+        Key::DailyGreetingFree,
+        Key::MilestoneDays,
+        Key::Anniversary,
+        Key::LevelUp,
+        Key::StreakMilestone,
+        Key::Birthday,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -104,6 +149,9 @@ impl Key {
             Key::HealthEyes | Key::HealthWater | Key::HealthStand | Key::HealthMulti | Key::TaskDone => 6,
             Key::PinDone => 4,
             Key::DueToday | Key::DueSoon | Key::DueNow | Key::Overdue => 3,
+            Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
+            Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
+            Key::DailyGreeting | Key::DailyGreetingFree => 4,
             Key::TaskSaved
             | Key::TaskFailed
             | Key::NameSaved
@@ -139,6 +187,13 @@ impl Key {
             Key::Overdue => &["task", "days"],
             Key::DoneMilestone => &["count"],
             Key::TaskNotFound | Key::TaskAmbiguous => &["query"],
+            Key::FocusStart => &["min"],
+            Key::FocusDone => &["brk"],
+            Key::CpuHigh | Key::RamHigh => &["pct"],
+            Key::DailyGreeting => &["due"],
+            Key::MilestoneDays | Key::StreakMilestone => &["days"],
+            Key::Anniversary => &["years"],
+            Key::LevelUp => &["level"],
             _ => &[],
         }
     }
@@ -537,6 +592,266 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (ToastTest, Vi) => &["Thông báo thử nè! Thấy dòng này là {me} nhắc hạn chót được rồi~ 🔔"],
         (ToastTest, Ja) => &["テスト通知だよ！これが見えたら締め切りのお知らせはOK～🔔"],
         (ToastTest, En) => &["Test notification! If you can see this, deadline alerts work~ 🔔"],
+
+        // ── Chào khi quay lại ───────────────────────────────────────────────
+        (WelcomeShort, Vi) => &[
+            "{You} về rồi nè~ {Me} chờ nãy giờ á! 😊",
+            "A, {you} quay lại rồi! Nghỉ ngơi xíu có khoẻ hơn không?",
+            "Mừng {you} trở lại~ mình làm tiếp nha!",
+            "{You} đi đâu đó? {Me} ngồi canh máy giùm rồi nè~",
+        ],
+        (WelcomeShort, Ja) => &[
+            "おかえり、{you}～待ってたよ！😊",
+            "あ、{you}戻ってきた！少し休めた？",
+            "おかえりなさい～続きもがんばろ！",
+            "どこ行ってたの？ちゃんと見張ってたよ～",
+        ],
+        (WelcomeShort, En) => &[
+            "You're back, {you}~ I was waiting! 😊",
+            "Oh, welcome back! Feeling a bit refreshed?",
+            "Welcome back~ let's keep going!",
+            "Where'd you go? I kept an eye on things for you~",
+        ],
+
+        (WelcomeLong, Vi) => &[
+            "{You} đi lâu ghê á… {me} nhớ {you} quá trời luôn! 🥺",
+            "Cuối cùng {you} cũng về! {Me} ngồi đợi muốn ngủ gật luôn~",
+            "{You} về rồi! Để {me} nhắc xem còn việc gì dang dở nha~",
+            "Lâu lắm mới thấy {you} đó nha! Chào mừng trở lại~ 💕",
+        ],
+        (WelcomeLong, Ja) => &[
+            "ずいぶん長かったね…さみしかったよ🥺",
+            "やっと帰ってきた！待ちくたびれて寝ちゃいそうだった～",
+            "おかえり！やりかけのこと、一緒に確認しよっか～",
+            "久しぶり！おかえりなさい～💕",
+        ],
+        (WelcomeLong, En) => &[
+            "You were gone a while… I missed you! 🥺",
+            "Finally back! I almost fell asleep waiting~",
+            "Welcome back! Let's see what's still on your plate~",
+            "Long time no see! Welcome back~ 💕",
+        ],
+
+        (WelcomeMorning, Vi) => &[
+            "Chào buổi sáng {you}~ hôm nay mình cùng cố gắng nha! ☀️",
+            "{You} dậy rồi hả? Chúc {you} một ngày thật suôn sẻ~ ☀️",
+            "Ngày mới rồi nè! Uống ly nước rồi bắt đầu thôi {you}~",
+            "{Me} chờ {you} cả đêm đó~ hôm nay làm gì trước đây?",
+        ],
+        (WelcomeMorning, Ja) => &[
+            "おはよう、{you}～今日も一緒にがんばろうね！☀️",
+            "起きた？今日がいい一日になりますように～☀️",
+            "新しい一日だよ！お水を飲んでからスタートしよ～",
+            "一晩中待ってたよ～今日は何から始める？",
+        ],
+        (WelcomeMorning, En) => &[
+            "Good morning, {you}~ let's do our best today! ☀️",
+            "You're up! Wishing you a smooth day~ ☀️",
+            "A brand new day! Grab some water and let's start~",
+            "I waited all night~ what's first today?",
+        ],
+
+        // ── Phiên Tập trung ─────────────────────────────────────────────────
+        (FocusStart, Vi) => &[
+            "🍅 Bắt đầu tập trung {min} phút nha! {Me} sẽ im lặng ngồi cổ vũ {you}~",
+            "🍅 {min} phút tập trung, cố lên {you}! {Me} không làm phiền đâu~",
+            "🍅 Vào guồng thôi! {min} phút nữa {me} gọi {you} nghỉ nha~",
+        ],
+        (FocusStart, Ja) => &[
+            "🍅 {min}分集中スタート！静かに応援してるね～",
+            "🍅 {min}分がんばろう、{you}！じゃましないからね～",
+            "🍅 集中モード！{min}分たったら休憩に呼ぶね～",
+        ],
+        (FocusStart, En) => &[
+            "🍅 {min} minutes of focus, starting now! I'll cheer quietly~",
+            "🍅 {min}-minute focus, go {you}! I won't interrupt~",
+            "🍅 In the zone! I'll call you for a break in {min} minutes~",
+        ],
+
+        (FocusDone, Vi) => &[
+            "🍅 Xong một phiên rồi! {You} giỏi quá~ Nghỉ {brk} phút, đứng dậy vươn vai nha ☕",
+            "🍅 Hết giờ tập trung! Uống ngụm nước, cho mắt nghỉ {brk} phút đi {you}~",
+            "🍅 Tuyệt vời! Giờ nghỉ {brk} phút nè, đừng nhìn màn hình nha~ ☕",
+            "🍅 Phiên này {you} làm tốt lắm! Nghỉ ngơi {brk} phút thôi~",
+        ],
+        (FocusDone, Ja) => &[
+            "🍅 1セット終わり！すごい～{brk}分休憩して、伸びをしよう☕",
+            "🍅 集中タイム終了！お水を飲んで、{brk}分目を休めてね～",
+            "🍅 よくできました！{brk}分の休憩だよ、画面は見ないでね～☕",
+            "🍅 今回もがんばったね！{brk}分ゆっくりしよ～",
+        ],
+        (FocusDone, En) => &[
+            "🍅 One session done! Amazing~ Take {brk} minutes and stretch ☕",
+            "🍅 Focus time's up! Sip some water and rest your eyes for {brk} minutes~",
+            "🍅 Great work! {brk}-minute break now, eyes off the screen~ ☕",
+            "🍅 You did so well! Time for {brk} minutes of rest~",
+        ],
+
+        (BreakDone, Vi) => &[
+            "☕ Hết giờ nghỉ rồi nè~ muốn tập trung thêm phiên nữa thì gọi {me} nha!",
+            "☕ Nghỉ xong rồi! Sẵn sàng thì mình làm tiếp nha {you}~",
+            "☕ Nạp năng lượng xong! Bấm 🍅 là {me} canh giờ tiếp cho {you}~",
+        ],
+        (BreakDone, Ja) => &[
+            "☕ 休憩おわり～もう1セットやるなら声かけてね！",
+            "☕ 休めた？準備ができたら続きをやろう～",
+            "☕ 充電完了！🍅 を押せばまた時間をはかるよ～",
+        ],
+        (BreakDone, En) => &[
+            "☕ Break's over~ call me if you want another round!",
+            "☕ Rested? Let's continue whenever you're ready~",
+            "☕ Recharged! Press 🍅 and I'll time the next one~",
+        ],
+
+        (FocusStopped, Vi) => &[
+            "🍅 Dừng phiên tập trung rồi nha~ cần thì gọi {me}!",
+            "🍅 Ok, nghỉ phiên này. {Me} vẫn ở đây nè~",
+        ],
+        (FocusStopped, Ja) => &[
+            "🍅 集中モードをやめたよ～また必要なら呼んでね！",
+            "🍅 了解、今回はここまで。そばにいるよ～",
+        ],
+        (FocusStopped, En) => &[
+            "🍅 Focus session stopped~ call me when you need it!",
+            "🍅 Okay, we'll stop here. I'm still around~",
+        ],
+
+        // ── CPU / RAM ───────────────────────────────────────────────────────
+        (CpuHigh, Vi) => &[
+            "Máy đang thở dốc đó {you}… CPU {pct}% mấy phút rồi á 😵",
+            "CPU cao {pct}% lâu rồi nè, có app nào chạy quá sức không {you}?",
+            "{Me} thấy máy nóng lên rồi (CPU {pct}%)… kiểm tra xíu nha~",
+        ],
+        (CpuHigh, Ja) => &[
+            "パソコンが息切れしてるよ…CPU {pct}% が続いてる😵",
+            "CPU {pct}% がしばらく続いてるよ、重いアプリない？",
+            "マシンが熱くなってきたみたい（CPU {pct}%）…ちょっと確認してみて～",
+        ],
+        (CpuHigh, En) => &[
+            "Your computer is panting… CPU has been at {pct}% for a while 😵",
+            "CPU's been at {pct}% for minutes — is some app working too hard?",
+            "Things are heating up (CPU {pct}%)… maybe take a quick look~",
+        ],
+
+        (RamHigh, Vi) => &[
+            "RAM đầy {pct}% rồi {you} ơi, đóng bớt tab hay app không dùng nha~",
+            "Bộ nhớ máy đang {pct}%, chậm là tại nó đó… dọn bớt xíu nha!",
+            "{Me} thấy RAM {pct}% lâu rồi á, máy sắp ì ạch rồi 😵",
+        ],
+        (RamHigh, Ja) => &[
+            "メモリが {pct}% だよ、使ってないタブやアプリを閉じてみて～",
+            "メモリ {pct}%…重いのはそのせいかも、少し片付けよ！",
+            "メモリ {pct}% がずっと続いてる…もうすぐ重くなりそう😵",
+        ],
+        (RamHigh, En) => &[
+            "RAM is at {pct}%, {you} — maybe close some tabs or apps~",
+            "Memory's at {pct}%, that's probably why things feel slow… tidy up a bit!",
+            "RAM has been at {pct}% for a while, things might start lagging 😵",
+        ],
+
+        // ── Thân thiết ──────────────────────────────────────────────────────
+        (DailyGreeting, Vi) => &[
+            "Ngày mới rồi {you}~ Hôm nay có {due} việc tới hạn đó, mình cùng làm nha! ☀️",
+            "{You} ơi, {me} xem rồi: hôm nay {due} việc phải xong. Cố lên nè~ 💪",
+            "Chào ngày mới! {Me} nhắc trước: {due} việc hạn hôm nay á~",
+            "Hôm nay {you} có {due} việc tới hạn. Làm từng cái một, {me} ở đây nè~",
+        ],
+        (DailyGreeting, Ja) => &[
+            "新しい一日だよ～今日は締め切りが{due}件あるよ、一緒にがんばろ！☀️",
+            "{you}、確認したよ：今日中に終わらせることが{due}件！ファイト～💪",
+            "おはよう！先に言っておくね、今日が締め切りのが{due}件だよ～",
+            "今日は{due}件の締め切り。ひとつずつね、そばにいるよ～",
+        ],
+        (DailyGreeting, En) => &[
+            "A new day, {you}~ {due} thing(s) are due today, let's do them together! ☀️",
+            "I checked: {due} task(s) need to be done today. You've got this~ 💪",
+            "Hello, new day! Heads up: {due} deadline(s) today~",
+            "You have {due} thing(s) due today. One at a time, I'm right here~",
+        ],
+
+        (DailyGreetingFree, Vi) => &[
+            "Ngày mới vui vẻ nha {you}~ Hôm nay không có việc nào tới hạn, thong thả nè! ☀️",
+            "Chào {you}! Hôm nay lịch nhẹ nhàng ghê, không có hạn chót nào á~",
+            "{Me} chúc {you} một ngày thật suôn sẻ~ hôm nay không bị hạn nào đuổi đâu!",
+            "Ngày mới tới rồi! Không có việc gấp, mình làm chậm mà chắc nha {you}~",
+        ],
+        (DailyGreetingFree, Ja) => &[
+            "新しい一日、楽しくいこうね～今日は締め切りなし、のんびりいこ！☀️",
+            "やっほー！今日は予定がゆるめ、締め切りはないよ～",
+            "今日がいい一日になりますように～締め切りに追われない日だよ！",
+            "新しい一日！急ぎはないから、ゆっくり確実にね～",
+        ],
+        (DailyGreetingFree, En) => &[
+            "Have a lovely day, {you}~ Nothing is due today, so take it easy! ☀️",
+            "Hi! A light day today — no deadlines at all~",
+            "Wishing you a smooth day~ no deadlines chasing you today!",
+            "New day! Nothing urgent, so slow and steady~",
+        ],
+
+        (MilestoneDays, Vi) => &[
+            "Hôm nay là ngày thứ {days} mình ở bên nhau đó {you}! Cảm ơn {you} nhiều nha 💕",
+            "Đã {days} ngày rồi á! {Me} vui lắm khi được ngồi cạnh {you} mỗi ngày~ 🎉",
+        ],
+        (MilestoneDays, Ja) => &[
+            "今日で一緒に{days}日目だよ！いつもありがとう💕",
+            "もう{days}日！毎日そばにいられてうれしいな～🎉",
+        ],
+        (MilestoneDays, En) => &[
+            "Today is our day {days} together, {you}! Thank you so much 💕",
+            "{days} days already! I love sitting next to you every day~ 🎉",
+        ],
+
+        (Anniversary, Vi) => &[
+            "Hôm nay là kỷ niệm {years} năm mình quen nhau đó {you}! 🎂💕",
+            "Đã {years} năm rồi á… cảm ơn {you} đã luôn ở đây với {me} 🎉",
+        ],
+        (Anniversary, Ja) => &[
+            "今日は出会って{years}年の記念日だよ！🎂💕",
+            "もう{years}年…いつもそばにいてくれてありがとう🎉",
+        ],
+        (Anniversary, En) => &[
+            "Today is our {years}-year anniversary, {you}! 🎂💕",
+            "{years} year(s) already… thank you for always being here 🎉",
+        ],
+
+        (LevelUp, Vi) => &[
+            "{Me} với {you} giờ là \"{level}\" rồi đó! Hihi~ 💗",
+            "Mình thân hơn rồi nè: \"{level}\"! {Me} vui quá trời~ 💗",
+        ],
+        (LevelUp, Ja) => &[
+            "わたしたち、「{level}」になったよ！えへへ～💗",
+            "もっと仲良くなったね：「{level}」！すっごくうれしい～💗",
+        ],
+        (LevelUp, En) => &[
+            "We're now \"{level}\"! Hehe~ 💗",
+            "We got closer: \"{level}\"! I'm so happy~ 💗",
+        ],
+
+        (StreakMilestone, Vi) => &[
+            "Đã {days} ngày liên tiếp {you} đều ghé {me} đó! Giỏi ghê~ 🔥",
+            "Chuỗi {days} ngày không nghỉ nè! {Me} cảm động quá à~ 🔥",
+        ],
+        (StreakMilestone, Ja) => &[
+            "{days}日連続で会いに来てくれたね！すごい～🔥",
+            "{days}日連続だよ！感動しちゃう～🔥",
+        ],
+        (StreakMilestone, En) => &[
+            "{days} days in a row with me! Amazing~ 🔥",
+            "A {days}-day streak! I'm so touched~ 🔥",
+        ],
+
+        (Birthday, Vi) => &[
+            "Chúc mừng sinh nhật {you}! 🎂 {Me} chúc {you} tuổi mới thật vui và thật nhiều điều tốt đẹp nha~ 💕",
+            "Hôm nay là ngày đặc biệt của {you} nè! Happy birthday~ 🎉🎂",
+        ],
+        (Birthday, Ja) => &[
+            "お誕生日おめでとう、{you}！🎂 素敵な一年になりますように💕",
+            "今日は{you}の特別な日！ハッピーバースデー～🎉🎂",
+        ],
+        (Birthday, En) => &[
+            "Happy birthday, {you}! 🎂 Wishing you a wonderful year ahead 💕",
+            "Today is your special day! Happy birthday~ 🎉🎂",
+        ],
     }
 }
 

@@ -93,6 +93,48 @@ pub struct Settings {
     /// Mặc định tắt, người dùng tự bật.
     #[serde(default)]
     pub side_girls: bool,
+
+    // ── Nhận biết máy tính (awareness.rs, Phase 11) ──
+    /// Rời máy ngần này phút thì pet ngủ gật. 0 = tắt.
+    #[serde(default = "default_sleepy_idle")]
+    pub sleepy_idle_min: u32,
+    /// Chào khi quay lại sau ≥ 10 phút vắng.
+    #[serde(default = "default_true")]
+    pub welcome_back: bool,
+    /// Im lặng khi đang trình chiếu / toàn màn hình.
+    #[serde(default = "default_true")]
+    pub quiet_fullscreen: bool,
+    /// Cảnh báo CPU / RAM cao. Mặc định TẮT; tắt thì không lấy mẫu gì cả.
+    #[serde(default)]
+    pub sysmon_enabled: bool,
+    #[serde(default = "default_warn_pct")]
+    pub cpu_warn_pct: u32,
+    #[serde(default = "default_warn_pct")]
+    pub ram_warn_pct: u32,
+
+    // ── Phiên Tập trung (focus.rs) ──
+    #[serde(default = "default_focus_min")]
+    pub focus_min: u32,
+    #[serde(default = "default_break_min")]
+    pub break_min: u32,
+
+    // ── Thân thiết (bond.rs, Phase 12) ──
+    /// Ngày sinh người dùng dạng "MM-DD" (không có năm). Rỗng = không nhập.
+    #[serde(default)]
+    pub birthday: String,
+}
+
+fn default_sleepy_idle() -> u32 {
+    10
+}
+fn default_warn_pct() -> u32 {
+    90
+}
+fn default_focus_min() -> u32 {
+    25
+}
+fn default_break_min() -> u32 {
+    5
 }
 
 fn default_remind_eyes() -> u32 {
@@ -204,6 +246,15 @@ impl Default for Settings {
             quiet_gap_min: default_quiet_gap(),
             due_toast: true,
             side_girls: false,
+            sleepy_idle_min: default_sleepy_idle(),
+            welcome_back: true,
+            quiet_fullscreen: true,
+            sysmon_enabled: false,
+            cpu_warn_pct: default_warn_pct(),
+            ram_warn_pct: default_warn_pct(),
+            focus_min: default_focus_min(),
+            break_min: default_break_min(),
+            birthday: String::new(),
         }
     }
 }
@@ -294,6 +345,36 @@ pub fn update_tasks<R>(app: &AppHandle, f: impl FnOnce(&mut Vec<Task>) -> R) -> 
     let mut tasks = load_tasks(app);
     let out = f(&mut tasks);
     save_tasks(app, &tasks)?;
+    Ok(out)
+}
+
+fn bond_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("bond.json"))
+}
+
+static BOND_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Mức thân thiết (bond.rs). File thiếu hoặc hỏng → bắt đầu lại từ đầu, không lỗi.
+pub fn load_bond(app: &AppHandle) -> crate::bond::Bond {
+    bond_path(app)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Đọc bond.json, cho `f` sửa, ghi lại — trong một khoá (nhiều luồng cùng cộng điểm).
+pub fn update_bond<R>(app: &AppHandle, f: impl FnOnce(&mut crate::bond::Bond) -> R) -> Result<R, String> {
+    let _guard = BOND_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut b = load_bond(app);
+    let before = b.clone();
+    let out = f(&mut b);
+    // Lượt 30 giây nào cũng cộng "có mặt" (thường là 0 điểm): không đổi thì khỏi ghi file.
+    if b == before {
+        return Ok(out);
+    }
+    let path = bond_path(app).ok_or("no config dir")?;
+    let json = serde_json::to_string_pretty(&b).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())?;
     Ok(out)
 }
 

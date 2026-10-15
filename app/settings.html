@@ -305,6 +305,69 @@
       </div>
 
       <div class="set-group">
+        <h3>🍅 Tập trung</h3>
+        <div class="set-field">
+          <label for="focusMin">Mỗi phiên tập trung</label>
+          <select id="focusMin">
+            <option value="15">15 phút</option>
+            <option value="25">25 phút</option>
+            <option value="30">30 phút</option>
+            <option value="45">45 phút</option>
+            <option value="50">50 phút</option>
+            <option value="60">60 phút</option>
+          </select>
+        </div>
+        <div class="set-field">
+          <label for="breakMin">Nghỉ sau mỗi phiên</label>
+          <select id="breakMin">
+            <option value="0">Không nghỉ</option>
+            <option value="3">3 phút</option>
+            <option value="5">5 phút</option>
+            <option value="10">10 phút</option>
+            <option value="15">15 phút</option>
+          </select>
+          <div class="status">Bắt đầu / dừng bằng 🍅 trên menu chuột phải của em hoặc trên tray. Trong lúc tập trung em chỉ lên tiếng khi tới hạn chót.</div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3>🖥️ Nhận biết máy tính</h3>
+        <div class="set-field">
+          <label for="sleepyIdle">Em ngủ gật khi bạn rời máy</label>
+          <select id="sleepyIdle">
+            <option value="0">Tắt</option>
+            <option value="5">Sau 5 phút</option>
+            <option value="10">Sau 10 phút</option>
+            <option value="15">Sau 15 phút</option>
+            <option value="30">Sau 30 phút</option>
+          </select>
+        </div>
+        <div class="set-toggle">
+          <label for="welcomeBack">Chào khi bạn quay lại (vắng từ 10 phút)</label>
+          <input type="checkbox" id="welcomeBack" />
+        </div>
+        <div class="set-toggle">
+          <label for="quietFullscreen">Im lặng khi đang trình chiếu / toàn màn hình</label>
+          <input type="checkbox" id="quietFullscreen" />
+        </div>
+        <div class="set-toggle">
+          <label for="sysmonEnabled">Cảnh báo khi CPU / RAM cao kéo dài</label>
+          <input type="checkbox" id="sysmonEnabled" />
+        </div>
+        <div class="row tight" id="sysmonBlock">
+          <div class="set-field">
+            <label for="cpuWarn">Ngưỡng CPU</label>
+            <select id="cpuWarn" class="warn-select"></select>
+          </div>
+          <div class="set-field">
+            <label for="ramWarn">Ngưỡng RAM</label>
+            <select id="ramWarn" class="warn-select"></select>
+          </div>
+        </div>
+        <div class="status">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM. Em không đọc tên cửa sổ, tên ứng dụng hay nội dung màn hình. Tắt cảnh báo CPU / RAM thì em không đo gì cả.</div>
+      </div>
+
+      <div class="set-group">
         <h3>⚙️ Hệ thống</h3>
         <div class="set-toggle">
           <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
@@ -381,6 +444,14 @@
         <div class="set-field">
           <label for="userName">Tên của bạn</label>
           <input type="text" id="userName" maxlength="20" placeholder="Không bắt buộc" />
+        </div>
+        <div class="set-field">
+          <label for="bdayMonth">Sinh nhật của bạn</label>
+          <div class="row tight">
+            <select id="bdayDay" aria-label="Ngày sinh"></select>
+            <select id="bdayMonth" aria-label="Tháng sinh"></select>
+          </div>
+          <div class="status">Không bắt buộc, chỉ ngày và tháng. Hôm đó em sẽ chúc mừng bạn 🎂</div>
         </div>
         <div class="set-field" id="jaHonorificBlock">
           <label for="jaHonorific">Gọi tên bằng tiếng Nhật</label>

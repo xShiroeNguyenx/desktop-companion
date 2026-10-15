@@ -65,6 +65,7 @@ pub fn complete(app: &AppHandle, id: &str, source: Source) -> Result<String, Str
 
     pins::close(app, id);
     let _ = app.emit_to("tasks", "tasks-refresh", ());
+    companion::bond_award(app, crate::bond::Event::TaskDone);
 
     let reward = reminders::reward_kind(remaining, done_today, early);
     react(app, reward, source, &text, done_today);

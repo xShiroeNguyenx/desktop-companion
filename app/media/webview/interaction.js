@@ -1089,6 +1089,18 @@ function setupCompactContextMenu() {
       vscode.postMessage({ command: 'openSettings' });
     } else if (action === 'open-tasks') {
       vscode.postMessage({ command: 'openTasks' });
+    } else if (action === 'open-assistant') {
+      // Trợ lý văn bản ở chế độ tự gõ (windows.rs → open_assistant).
+      vscode.postMessage({ command: 'openAssistant' });
+    } else if (action === 'show-games') {
+      // Rust trả games:open kèm ngôn ngữ + tên pet (games.js vẽ bảng).
+      vscode.postMessage({ command: 'games:show' });
+    } else if (action === 'show-bond') {
+      // Rust gửi lại số liệu bằng bond:card (bond.js vẽ bảng).
+      vscode.postMessage({ command: 'bond:show' });
+    } else if (action === 'toggle-focus') {
+      // Rust bắt đầu / dừng phiên, báo lại bằng focusState + vòng đếm trên pet.
+      vscode.postMessage({ command: 'focus:toggle' });
     } else if (action === 'toggle-dnd') {
       // Rust đổi trạng thái, báo lại bằng dndState + một câu xác nhận.
       vscode.postMessage({ command: 'setDnd', value: !window.__DND__ });
@@ -1187,6 +1199,20 @@ function setupCompactContextMenu() {
         })),
         { icon: '💬', label: 'Chat nhanh', action: 'chat-quick' },
         { icon: '📝', label: 'Công việc', action: 'open-tasks' },
+        { icon: '🗂️', label: 'Mở đầy đủ', action: 'open-assistant' },
+        // Gom Tập trung / Thân thiết / Chơi vào một nhóm cho vòng đầu đỡ chật.
+        {
+          id: 'together',
+          icon: '💞',
+          label: 'Đồng hành',
+          items: [
+            window.__FOCUS_ACTIVE__
+              ? { icon: '⏹', label: 'Dừng tập trung', action: 'toggle-focus' }
+              : { icon: '🍅', label: 'Tập trung', action: 'toggle-focus' },
+            { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
+            { icon: '🎮', label: 'Chơi', action: 'show-games' },
+          ],
+        },
         window.__DND__
           ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
           : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
