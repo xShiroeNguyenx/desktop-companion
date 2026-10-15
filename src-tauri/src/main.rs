@@ -2,11 +2,23 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod awareness;
 mod chat;
 mod commands;
+mod companion;
+mod lines;
+mod links;
 mod llm;
+mod naming;
+mod persona;
+mod notify;
+mod pins;
+mod reminders;
+mod rewards;
 mod selection;
+mod sidegirl;
 mod store;
+mod taskref;
 mod tts;
 mod windows;
 
@@ -222,6 +234,41 @@ fn pet_command(app: AppHandle, payload: Value) {
                 chat::restore_click_through(&app);
             }
         }
+        // Pet vừa chụp mặt nhân vật cho đầu cây ghim của các tờ note.
+        "pinAvatar" => {
+            let url = payload.get("dataUrl").and_then(|u| u.as_str()).unwrap_or("");
+            let model = payload.get("modelId").and_then(|m| m.as_str()).unwrap_or("");
+            let force = payload.get("force").and_then(|f| f.as_bool()).unwrap_or(false);
+            let has = store::load_pin_avatar(&app).is_some();
+            if pins::should_save_avatar(force, has, &store::load_pin_avatar_model(&app), model) {
+                match pins::decode_avatar(url) {
+                    Ok(png) => match store::save_pin_avatar(&app, &png, model) {
+                        Ok(()) => {
+                            let _ = app.emit("pin-avatar", url);
+                        }
+                        Err(e) => eprintln!("[pins] lưu ảnh ghim lỗi: {e}"),
+                    },
+                    Err(e) => eprintln!("[pins] ảnh ghim không hợp lệ: {e}"),
+                }
+            }
+        }
+        // Thẻ đặt tên / chọn xưng hô trên bubble của pet.
+        "naming:setName" | "naming:later" | "naming:setAddress" => naming::handle(&app, cmd, &payload),
+        // Menu Âm thanh → 💬 Ngôn ngữ chữ: lưu lại để câu nói + chat theo nó.
+        "setMessageLanguage" => {
+            let code = payload.get("messageLanguage").and_then(|l| l.as_str()).unwrap_or("vi");
+            let mut s = store::load_settings(&app);
+            s.message_language = persona::Lang::from_code(code).code().to_string();
+            if let Err(e) = store::save_settings(&app, &s) {
+                eprintln!("[persona] lưu ngôn ngữ chữ lỗi: {e}");
+            }
+        }
+        "setDnd" => {
+            let on = payload.get("value").and_then(|b| b.as_bool()).unwrap_or(false);
+            companion::set_dnd(&app, on, true);
+        }
+        // Pet vừa nạp (lại) trang: hỏi trạng thái DND để menu tròn hiện đúng.
+        "dnd:sync" => companion::sync_dnd(&app),
         "openSettings" => windows::open_settings(&app),
         "openTasks" => windows::open_tasks(&app),
         "setClickThrough" => {
@@ -367,6 +414,10 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        // Thông báo Windows cho hạn chót (notify.rs). Chỉ gọi từ Rust.
+        .plugin(tauri_plugin_notification::init())
+        // Mở link trong task bằng trình duyệt (commands::open_url, chỉ http/https).
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
@@ -440,6 +491,7 @@ fn main() {
             resp
         })
         .manage(chat::ChatState::default())
+        .manage(companion::CompanionState::default())
         .manage(AppState {
             click_through: AtomicBool::new(false),
         })
@@ -472,6 +524,15 @@ fn main() {
             commands::tasks_set_done,
             commands::tasks_set_note,
             commands::tasks_delete,
+            commands::tasks_set_pinned,
+            commands::tasks_set_due,
+            commands::notify_test,
+            commands::open_url,
+            commands::pin_get,
+            commands::pin_done,
+            commands::pin_set_top,
+            commands::pin_resize,
+            commands::pin_avatar,
             commands::gemini_models,
             commands::anthropic_models,
             commands::add_model_folder,
@@ -479,6 +540,7 @@ fn main() {
             commands::settings_get,
             commands::settings_set,
             commands::set_auto_flower,
+            commands::set_side_girls,
             commands::autostart_status,
             commands::autostart_set,
         ])
@@ -493,8 +555,11 @@ fn main() {
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("pet.html".into()))
                 .title("Desktop Companion")
                 .initialization_script(&format!(
-                    "window.__INIT_MODEL__ = {:?}; window.__CUSTOM_MODELS__ = {};",
-                    settings.pet_model, custom_json
+                    "window.__INIT_MODEL__ = {:?}; window.__CUSTOM_MODELS__ = {}; \
+                     window.__INIT_MESSAGE_LANGUAGE__ = {:?};",
+                    settings.pet_model,
+                    custom_json,
+                    persona::Lang::from_code(&settings.message_language).code()
                 ))
                 .inner_size(300.0, 420.0)
                 .min_inner_size(220.0, 300.0)
@@ -528,8 +593,12 @@ fn main() {
             // Pre-create aux windows (hidden) in this context so they render
             // reliably when later shown.
             windows::precreate(&app_handle);
+            // Các task đang ghim hiện lại trên desktop như lúc tắt app.
+            pins::restore_all(&app_handle);
             tts::start(app_handle.clone());
-            chat::start_proactive_loop(app_handle.clone());
+            // Trọng tài lời nói: mọi câu pet tự nói (tự bắt chuyện, sau này là
+            // nhắc nghỉ, hạn chót…) đều qua đây.
+            companion::start(app_handle.clone());
 
             // Global selection capture + look-at feed, and the hotkey fallback.
             selection::init(&app_handle);
@@ -572,6 +641,9 @@ fn main() {
             let settings_item = MenuItem::with_id(app, "open_settings", "Cài đặt", true, None::<&str>)?;
             let click_through_item =
                 MenuItem::with_id(app, "click_through", "Bật / Tắt click-through", true, None::<&str>)?;
+            let dnd_item =
+                MenuItem::with_id(app, "dnd", "🔕 Đừng làm phiền (1 giờ)", true, None::<&str>)?;
+            companion::set_tray_item(&app_handle, dnd_item.clone());
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -581,6 +653,7 @@ fn main() {
                     &tasks_item,
                     &settings_item,
                     &click_through_item,
+                    &dnd_item,
                     &sep,
                     &quit_item,
                 ],
@@ -606,6 +679,10 @@ fn main() {
                     }
                     "open_tasks" => windows::open_tasks(app),
                     "open_settings" => windows::open_settings(app),
+                    "dnd" => {
+                        let on = !companion::dnd_active(app);
+                        companion::set_dnd(app, on, true);
+                    }
                     "click_through" => {
                         let new_value = !app.state::<AppState>().click_through.load(Ordering::SeqCst);
                         app.state::<AppState>().click_through.store(new_value, Ordering::SeqCst);
@@ -626,6 +703,11 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| match event {
+            // Tờ note ghim không phải cửa sổ dựng sẵn: Alt+F4 đóng hẳn nó, và
+            // coi như gỡ ghim.
+            WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
+                pins::on_closed(window.app_handle(), window.label());
+            }
             WindowEvent::CloseRequested { api, .. } => {
                 // All windows are persistent (pre-created and reused), so closing
                 // any of them just hides it. The user fully quits via the tray.
@@ -633,6 +715,8 @@ fn main() {
                 let _ = window.hide();
                 // Đóng bảng đang giữ pet: trả pet về chỗ cũ, cho click vào lại.
                 windows::undock_pet_from(window.app_handle(), window.label());
+                // Nhân vật bám ngoài mép bảng ẩn theo bảng.
+                sidegirl::hide(window.app_handle(), window.label());
             }
             WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
                 match window.label() {
@@ -654,7 +738,20 @@ fn main() {
                     }
                     // Kéo/đổi cỡ bảng đang giữ pet thì pet đi theo cho khớp giữa.
                     label @ ("settings" | "tasks") => {
-                        windows::reposition_docked_pet(window.app_handle(), label)
+                        // Thu nhỏ / mở lại bảng: nhả pet ra / ghép lại (trước khi dời pet).
+                        windows::host_minimize_changed(window.app_handle(), label);
+                        windows::reposition_docked_pet(window.app_handle(), label);
+                        // Nhân vật bám ngoài mép đi theo bảng (thu nhỏ thì ẩn theo).
+                        sidegirl::sync(window.app_handle(), label, false);
+                    }
+                    // Cô mèo bám mép cửa sổ Trợ lý văn bản đi theo nó.
+                    "popup" => sidegirl::sync(window.app_handle(), "popup", false),
+                    label if label.starts_with("pin-") => {
+                        if let (WindowEvent::Moved(pos), true) =
+                            (event, window.is_visible().unwrap_or(false))
+                        {
+                            pins::remember_pos(window.app_handle(), label, pos.x, pos.y);
+                        }
                     }
                     _ => {}
                 }

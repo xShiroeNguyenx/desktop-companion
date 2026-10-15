@@ -36,7 +36,7 @@ const FLOWER_MENU_SIZE: f64 = 180.0;
 // Keep the flower (a tiny no-activate button) from stealing focus from the app
 // the user just selected text in.
 #[cfg(windows)]
-fn set_no_activate(window: &tauri::WebviewWindow) {
+pub(crate) fn set_no_activate(window: &tauri::WebviewWindow) {
     use windows_sys::Win32::Foundation::HWND;
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
@@ -55,12 +55,12 @@ fn set_no_activate(window: &tauri::WebviewWindow) {
 }
 
 #[cfg(not(windows))]
-fn set_no_activate(_window: &tauri::WebviewWindow) {}
+pub(crate) fn set_no_activate(_window: &tauri::WebviewWindow) {}
 
 // WebView2 workaround: windows created at runtime (outside setup()) often paint
 // blank until the first resize event. Nudge the size by 1px shortly after show
 // to force a repaint. Runs the nudge on the main thread after a short delay.
-fn force_repaint(app: &AppHandle, label: &str) {
+pub(crate) fn force_repaint(app: &AppHandle, label: &str) {
     let app = app.clone();
     let label = label.to_string();
     std::thread::spawn(move || {
@@ -210,6 +210,9 @@ pub fn precreate(app: &AppHandle) {
         .resizable(false)
         .visible(false)
         .build();
+
+    // Nhân vật bám ngoài mép bảng Cài đặt / Công việc (cần bảng đã dựng).
+    crate::sidegirl::precreate(app);
 
     dbg_log("[windows] precreate done");
 }
@@ -388,6 +391,7 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
         let _ = w.set_focus();
         let _ = w.emit("popup-refresh", tab.to_string());
         force_repaint(app, "popup");
+        crate::sidegirl::sync(app, "popup", true);
         dbg_log("[windows] popup shown");
     } else {
         dbg_log("[windows] popup window missing (precreate failed?)");
@@ -397,6 +401,7 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
 pub fn open_tasks(app: &AppHandle) {
     open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 820.0, 580.0);
     dock_pet_to(app, "tasks");
+    crate::sidegirl::sync(app, "tasks", true);
 }
 
 // ─── Ghép pet vào giữa cửa sổ Cài đặt / Công việc ───────────────────────────
@@ -526,14 +531,42 @@ pub fn reposition_docked_pet(app: &AppHandle, label: &str) {
 
 /// Đóng bảng `label`: chỉ nhả pet nếu chính bảng đó đang giữ nó.
 pub fn undock_pet_from(app: &AppHandle, label: &str) {
+    REDOCK_ON_RESTORE.lock().unwrap().retain(|l| l != label);
     if pet_host() == label {
         undock_pet(app);
+    }
+}
+
+/// Bảng đang thu nhỏ đã nhả pet ra; mở lại bảng thì ghép pet vào lại.
+static REDOCK_ON_RESTORE: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+/// Bảng `label` vừa đổi cỡ: thu nhỏ thì trả pet về chỗ cũ (nếu không pet nằm
+/// trơ giữa màn hình nơi bảng từng ở), mở lại thì ghép pet vào giữa bảng.
+/// Phải gọi TRƯỚC `reposition_docked_pet`: bảng thu nhỏ nằm ở toạ độ
+/// (-32000, -32000), dời pet theo là pet biến mất khỏi màn hình.
+pub fn host_minimize_changed(app: &AppHandle, label: &str) {
+    let Some(w) = app.get_webview_window(label) else { return };
+    let minimized = w.is_minimized().unwrap_or(false);
+    let mut redock = REDOCK_ON_RESTORE.lock().unwrap();
+    if minimized {
+        if pet_host() == label {
+            if !redock.iter().any(|l| l == label) {
+                redock.push(label.to_string());
+            }
+            drop(redock);
+            undock_pet(app);
+        }
+    } else if redock.iter().any(|l| l == label) && w.is_visible().unwrap_or(false) {
+        redock.retain(|l| l != label);
+        drop(redock);
+        dock_pet_to(app, label);
     }
 }
 
 pub fn open_settings(app: &AppHandle) {
     open_simple(app, "settings", "settings.html", "Cài đặt", 880.0, 600.0);
     dock_pet_to(app, "settings");
+    crate::sidegirl::sync(app, "settings", true);
 }
 
 fn open_simple(app: &AppHandle, label: &str, _html: &str, _title: &str, _w: f64, _h: f64) {

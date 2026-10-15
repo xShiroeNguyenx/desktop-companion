@@ -46,7 +46,15 @@
   } catch (_) { /* ignore */ }
   window.__VOICE_LANGUAGE__ = voiceLang;
   window.__AUDIO_BASE_URL__ = '/media/audio/' + voiceLang;
-  window.__MESSAGE_LANGUAGE__ = 'vi';
+  // Ngôn ngữ chữ: lựa chọn vừa đổi trong phiên này (sessionStorage, vì
+  // initialization_script tiêm lúc dựng cửa sổ và không cập nhật khi nạp lại
+  // trang) thắng giá trị đã lưu mà Rust tiêm vào.
+  let messageLang = window.__INIT_MESSAGE_LANGUAGE__ || 'vi';
+  try {
+    const recent = sessionStorage.getItem('messageLanguage');
+    if (recent) messageLang = recent;
+  } catch (_) { /* ignore */ }
+  window.__MESSAGE_LANGUAGE__ = ['vi', 'ja', 'en'].includes(messageLang) ? messageLang : 'vi';
   window.__AUDIO_MUTED__ = false;
   window.__FOCUS_FOLLOW__ = true;
   window.__AMBIENT_PRESET__ = 'off';

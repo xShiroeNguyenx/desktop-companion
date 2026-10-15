@@ -31,7 +31,11 @@
     cb.checked = !!t.done;
     cb.title = t.done ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu đã làm';
     cb.addEventListener('change', async () => {
-      await invoke('tasks_set_done', { id: t.id, done: cb.checked });
+      try {
+        await invoke('tasks_set_done', { id: t.id, done: cb.checked });
+      } catch (e) {
+        showStatus(String(e));
+      }
       render();
     });
 
@@ -40,12 +44,14 @@
 
     const txt = document.createElement('div');
     txt.className = 'tk-text';
-    txt.textContent = t.text;
+    window.Linkify.renderLinks(txt, t.text, openLink);
 
     // Ghi chú: bấm vào biến thành textarea, Enter hoặc rời chuột thì lưu.
+    // Bấm vào link trong ghi chú thì mở link (renderLinks chặn sự kiện lại).
     const note = document.createElement('div');
     note.className = 'tk-note' + (t.note ? '' : ' empty');
-    note.textContent = t.note || '+ Thêm ghi chú';
+    if (t.note) window.Linkify.renderLinks(note, t.note, openLink);
+    else note.textContent = '+ Thêm ghi chú';
     note.title = 'Bấm để sửa ghi chú';
     note.addEventListener('click', () => editNote(t, note));
 
@@ -64,6 +70,16 @@
       span.textContent = '✓ Xong: ' + doneAt;
       meta.appendChild(span);
     }
+    // Hạn chót: việc chưa xong thì hiện mức gấp; bấm vào để sửa.
+    const due = !t.done && window.DueFmt.describeDue(t.due_at, Date.now());
+    if (due) {
+      const span = document.createElement('span');
+      span.className = 'tk-due ' + due.level;
+      span.textContent = due.text;
+      span.title = 'Bấm để đổi hạn chót';
+      span.addEventListener('click', () => editDue(t, body));
+      meta.appendChild(span);
+    }
 
     body.append(txt, note);
     if (meta.childElementCount) body.appendChild(meta);
@@ -78,8 +94,99 @@
       render();
     });
 
-    row.append(cb, body, del);
+    // Ghim lên desktop thành tờ note (chỉ việc chưa làm).
+    if (!t.done) {
+      const cal = document.createElement('button');
+      cal.className = 'tk-cal' + (t.due_at ? ' on' : '');
+      cal.textContent = '📅';
+      cal.type = 'button';
+      cal.title = t.due_at ? 'Đổi hạn chót' : 'Đặt hạn chót';
+      cal.addEventListener('click', () => editDue(t, body));
+
+      const pin = document.createElement('button');
+      pin.className = 'tk-pin' + (t.pinned ? ' on' : '');
+      pin.textContent = '📌';
+      pin.type = 'button';
+      pin.title = t.pinned ? 'Đang ghim trên desktop. Bấm để gỡ' : 'Ghim lên màn hình desktop';
+      pin.addEventListener('click', async () => {
+        try {
+          await invoke('tasks_set_pinned', { id: t.id, pinned: !t.pinned });
+          showStatus('');
+        } catch (e) {
+          showStatus(String(e));
+        }
+        render();
+      });
+      row.append(cb, body, cal, pin, del);
+    } else {
+      row.append(cb, body, del);
+    }
     return row;
+  }
+
+  // Link trong nội dung / ghi chú: mở bằng trình duyệt (Rust chỉ nhận http/https).
+  async function openLink(url) {
+    try {
+      await invoke('open_url', { url });
+    } catch (e) {
+      showStatus(String(e));
+    }
+  }
+
+  // Ô chọn hạn chót hiện ngay dưới việc đó: Lưu / Bỏ hạn / Esc để huỷ.
+  function editDue(task, body) {
+    if (body.querySelector('.tk-due-edit')) return;
+    const box = document.createElement('div');
+    box.className = 'tk-due-edit';
+    const input = document.createElement('input');
+    input.type = 'datetime-local';
+    input.value = window.DueFmt.toLocalInput(task.due_at);
+    input.setAttribute('aria-label', 'Hạn chót');
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'action';
+    save.textContent = 'Lưu';
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'ghost';
+    clear.textContent = 'Bỏ hạn';
+
+    const apply = async (dueAt) => {
+      try {
+        await invoke('tasks_set_due', { id: task.id, dueAt });
+        showStatus('');
+      } catch (e) {
+        showStatus(String(e));
+      }
+      render();
+    };
+    save.addEventListener('click', () => {
+      const ms = window.DueFmt.fromLocalInput(input.value);
+      if (ms == null) {
+        showStatus('Chọn ngày giờ trước đã nha.');
+        input.focus();
+        return;
+      }
+      apply(String(ms));
+    });
+    clear.addEventListener('click', () => apply(''));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') save.click();
+      else if (e.key === 'Escape') render();
+    });
+    box.append(input, save);
+    if (task.due_at) box.append(clear);
+    body.appendChild(box);
+    input.focus();
+  }
+
+  // Dòng báo lỗi dưới ô thêm việc (vd: đã ghim đủ số tờ). Tự ẩn sau vài giây.
+  let statusTimer = 0;
+  function showStatus(msg) {
+    const el = $('tkStatus');
+    el.textContent = msg;
+    clearTimeout(statusTimer);
+    if (msg) statusTimer = setTimeout(() => { el.textContent = ''; }, 5000);
   }
 
   // Đổi dòng ghi chú thành ô nhập, lưu khi Enter hoặc rời ô. Esc thì huỷ.
@@ -136,7 +243,8 @@
       console.error(e);
     }
 
-    const todo = tasks.filter((t) => !t.done);
+    // Việc có hạn gần nhất lên đầu; việc không hạn giữ thứ tự cũ ở dưới.
+    const todo = tasks.filter((t) => !t.done).sort(window.DueFmt.byDue);
     // Việc xong gần nhất lên đầu; task cũ chưa có done_at thì xuống cuối.
     const done = tasks
       .filter((t) => t.done)
@@ -169,6 +277,11 @@
 
   // Reload the list each time the window is shown (it's pre-created once).
   listen('tasks-refresh', render);
+  // "Còn 20 phút" phải tự đếm xuống khi bảng đang mở. Bỏ qua lúc đang sửa
+  // hạn / ghi chú, để không xoá mất ô người dùng đang nhập.
+  setInterval(() => {
+    if (!document.hidden && !document.querySelector('.tk-due-edit, .tk-note-input')) render();
+  }, 60_000);
 
   render();
 })();

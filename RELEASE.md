@@ -41,10 +41,15 @@ The site is served at **https://desktop.techdecoded.net/** (custom domain):
 
 ## Cutting a release
 
-1. **Bump the version** in three files (keep them identical):
+1. **Bump the version** in these files (keep them identical):
    - `package.json` → `"version"`
+   - `package-lock.json` → top-level `"version"` and `packages[""].version`
    - `src-tauri/Cargo.toml` → `version`
    - `src-tauri/tauri.conf.json` → `"version"`
+
+   Then run `cargo test` (in `src-tauri/`) so `Cargo.lock` picks up the new
+   version — CI builds with `--locked` and fails if the lock file is stale.
+   Run `npm test` too; CI runs both.
 
 2. **Commit and tag** (the tag must be `v` + the version):
    ```bash

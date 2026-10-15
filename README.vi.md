@@ -26,10 +26,30 @@ duyệt, Word…).
   và bấm ⏹ để dừng giữa chừng.
 - **Hỏi về đoạn đang bôi đen** — chọn 💭 trên menu xoay của bông hoa để mở chat kèm
   sẵn đoạn văn ("giải thích giúp anh", "câu này lịch sự chưa?"…).
-- **Tạo task bằng lời** — "nhắc anh gửi báo cáo cho sếp" là task được thêm vào danh
-  sách; bong bóng chỉ báo đã lưu khi lưu thật sự thành công.
+- **Tạo task bằng lời** — "nhắc anh gửi báo cáo trước 5 giờ chiều mai" là task được
+  thêm kèm hạn chót; "xong báo cáo rồi" là task được đánh dấu xong. Bong bóng chỉ báo
+  khi đã lưu thật, và pet hỏi lại chứ không đoán khi chưa chắc là việc nào.
+- **Đặt tên cho bạn đồng hành** — pet xin bạn đặt tên (một thẻ nhỏ ngay trên pet),
+  cảm ơn bằng chính cái tên đó, rồi hỏi nên xưng hô thế nào: em – anh, em – chị,
+  mình – bạn, tớ – cậu, em – sếp, hoặc tự nhập. Pet nói và chat được bằng **tiếng
+  Việt, tiếng Nhật hoặc tiếng Anh**; đổi tất cả trong Cài đặt → *Bạn đồng hành*.
 - **Pet tự bắt chuyện** — sau một lúc im lặng (Cài đặt: tắt / 30 phút / 1 giờ / 2 giờ)
-  pet nói một câu: nhắc việc tồn lâu nhất, hoặc nhắc nghỉ mắt.
+  pet nói một câu: nhắc việc tồn lâu nhất, hoặc nhắc nghỉ mắt. Pet không nói khi
+  không ai nghe: chờ lúc bạn rời máy, khoá màn hình hay đang mở thứ gì toàn màn hình,
+  và hai câu tự nói cách nhau ít nhất 10 phút. 🔕 **Đừng làm phiền** (menu xoay hoặc
+  tray) cho pet im lặng 1 tiếng.
+- **Hạn chót** — bấm 📅 ở mỗi việc. Bảng Công việc xếp việc gấp lên đầu và tô màu
+  theo mức gấp. Pet nhắc vào buổi sáng ngày tới hạn, trước 1 giờ, lúc tới hạn, và
+  mỗi ngày một lần trong tối đa 3 ngày quá hạn; khi pet đang ẩn hoặc bạn đang trình
+  chiếu thì nhắc bằng **thông báo Windows**.
+- **Nhắc nghỉ** (bật sẵn, không cần API key) — nghỉ mắt sau 45 phút ngồi máy, uống
+  nước và đứng dậy sau 60 phút. Rời máy 5 phút là tính đã nghỉ; các lời nhắc rơi
+  gần nhau được gộp thành một câu.
+- **Khen khi xong việc** — pet chúc mừng mỗi việc xong, có câu riêng khi xong việc
+  cuối cùng, xong trước hạn, và việc thứ 3 / 5 / 10 trong ngày.
+- **Ghim task lên desktop** — bấm 📌 để biến việc thành tờ note hồng, cây ghim mang
+  mặt nhân vật. Kéo đi đâu cũng được; ✓ đóng dấu xong, ✕ gỡ ghim, 📍 giữ luôn nổi
+  trên các cửa sổ khác. Link trong nội dung và ghi chú bấm được.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Lưu công việc** — biến đoạn văn bản bất kỳ thành TODO. Cửa sổ Tasks chia hai
@@ -38,8 +58,10 @@ duyệt, Word…).
 - **Ngữ cảnh dịch** — danh sách ngữ cảnh có sẵn trong Cài đặt (vd: "chat công việc
   trang trọng") để dịch nhanh đúng giọng điệu. Chọn một cái mặc định hoặc không.
 - **Pet vào đứng giữa bảng** — mở Cài đặt hoặc Tasks thì pet tự dời vào khoảng
-  giữa hai cột (click xuyên qua được nên không vướng tay), đóng bảng thì pet
-  quay về đúng chỗ cũ.
+  giữa hai cột (click xuyên qua được nên không vướng tay), đóng hoặc thu nhỏ bảng
+  thì pet quay về đúng chỗ cũ.
+- **🌸 Bunny Lounge** (tuỳ chọn, Cài đặt → *Diện mạo*) — các cô nàng tựa bên khung
+  Cài đặt, Công việc và Trợ lý văn bản; phần đè lên bảng mờ đi nên vẫn đọc rõ.
 - **Nhìn theo con trỏ** — đầu/mắt nhân vật dõi theo chuột khi chuột ở gần pet.
 - **Phóng to / thu nhỏ** — `Ctrl` + lăn chuột để đổi kích thước; tự nhớ kích thước.
 - **Model Live2D tự thêm** — nạp model `*.model3.json` của bạn từ thư mục bất kỳ.
@@ -75,7 +97,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · Thoát
+Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🔕 Đừng làm phiền (1 giờ) · Thoát
 
 ### Chuột phải vào pet
 
@@ -84,7 +106,7 @@ viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nh�
 thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
-nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt
+nhạc nền, tắt tiếng) · Chat nhanh · Công việc · 🔕 Đừng làm phiền · Cài đặt
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.
@@ -105,6 +127,8 @@ vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đó
 npm install
 npm run dev      # chạy chế độ phát triển
 npm run build    # tạo bộ cài trong src-tauri/target/release/bundle/
+npm test         # test JS (app/js/*.test.js)
+cd src-tauri && cargo test   # test Rust
 ```
 
 ---

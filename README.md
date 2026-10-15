@@ -25,10 +25,36 @@
   (stored only on your machine; 🗑 clears them), and ⏹ stops it mid-reply.
 - **Ask about a selection** — pick 💭 on the flower's radial menu to open the chat
   with the selected text attached ("explain this", "is this polite?"…).
-- **Tasks by chat** — "nhắc anh gửi báo cáo cho sếp" adds the task to your list;
-  the bubble confirms only once it is really saved.
+- **Tasks by chat** — "nhắc anh gửi báo cáo trước 5 giờ chiều mai" adds the task
+  with its deadline; "xong báo cáo rồi" ticks it off. The bubble confirms only
+  once it is really saved, and the pet asks instead of guessing when it is not
+  sure which task you meant.
+- **Name your companion** — she asks for a name (a small card right on the
+  pet), thanks you by it, and asks how to address you: em – anh, em – chị,
+  mình – bạn, tớ – cậu, em – sếp, or your own words. She can speak and chat in
+  **Vietnamese, Japanese or English**; change everything in Settings →
+  *Bạn đồng hành*.
 - **The pet speaks up** — after a quiet stretch (Settings: off / 30 min / 1 h / 2 h)
   it says one line: nudges your oldest unfinished task or reminds you to rest.
+  It never talks to an empty room: it waits while you are away, the screen is
+  locked, or something is full screen, and keeps its own lines at least 10
+  minutes apart. 🔕 **Do not disturb** (right-click ring or tray) silences it
+  for an hour.
+- **Deadlines** — 📅 on any task. The Tasks panel sorts by the nearest deadline
+  and colours it by urgency. The pet reminds you on the morning it is due, an
+  hour before, when it is due, and once a day for up to three days after; when
+  the pet is hidden or you are presenting, a **Windows notification** comes
+  instead.
+- **Rest reminders** (on by default, no API key needed) — rest your eyes after
+  45 minutes at the computer, drink water and stand up after 60. Stepping away
+  for 5 minutes counts as a rest; reminders that fall close together become one.
+- **Cheers when you finish** — the pet celebrates every finished task, with
+  something special for the last one on the list, finishing early, and your
+  3rd / 5th / 10th task of the day.
+- **Pin tasks to the desktop** — 📌 turns a task into a pink sticky note held
+  by a pushpin with your companion's face. Drag it anywhere; ✓ stamps it done,
+  ✕ unpins it, 📍 keeps it above other windows. Links in tasks and notes are
+  clickable.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Save tasks** — turn any selected text into a TODO. The Tasks window keeps
@@ -38,7 +64,10 @@
   so quick-translate matches the right tone. Pick a default or none.
 - **The pet joins your panels** — open Settings or Tasks and the pet steps into
   the gap between their two columns (click-through, so it stays out of the way),
-  then returns to where it was when you close them.
+  then returns to where it was when you close or minimize them.
+- **🌸 Bunny Lounge** (optional, Settings → *Diện mạo*) — companion girls lean
+  on the edge of Settings, Tasks and the text assistant; the part over the
+  panel fades so everything stays readable.
 - **Look-at cursor** — the model's head/eyes follow the mouse when it's near the pet.
 - **Resize** — `Ctrl` + mouse wheel scales the pet; size is remembered.
 - **Custom Live2D models** — load your own `*.model3.json` models from any folder.
@@ -74,7 +103,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · Settings · Toggle click-through · Quit
+Show/Hide pet · Tasks · Settings · Toggle click-through · 🔕 Do not disturb (1 hour) · Quit
 
 ### Right-click the pet
 
@@ -83,7 +112,7 @@ centre pill; clicking a category swaps the ring for its entries and turns the
 pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
-ambient, mute) · Quick Chat · Tasks · Settings
+ambient, mute) · Quick Chat · Tasks · 🔕 Do not disturb · Settings
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or
@@ -105,6 +134,8 @@ stays visible while you pick. They stay open across choices — close with × or
 npm install
 npm run dev      # run in development
 npm run build    # produce installers in src-tauri/target/release/bundle/
+npm test         # JS unit tests (app/js/*.test.js)
+cd src-tauri && cargo test   # Rust unit tests
 ```
 
 ---

@@ -1089,6 +1089,9 @@ function setupCompactContextMenu() {
       vscode.postMessage({ command: 'openSettings' });
     } else if (action === 'open-tasks') {
       vscode.postMessage({ command: 'openTasks' });
+    } else if (action === 'toggle-dnd') {
+      // Rust đổi trạng thái, báo lại bằng dndState + một câu xác nhận.
+      vscode.postMessage({ command: 'setDnd', value: !window.__DND__ });
     } else if (action === 'play-motion') {
       showBubble(t('bubbles.motion', 'Chọn motion cho em diễn nha~ 🎬'));
       showMotionPanel();
@@ -1184,6 +1187,9 @@ function setupCompactContextMenu() {
         })),
         { icon: '💬', label: 'Chat nhanh', action: 'chat-quick' },
         { icon: '📝', label: 'Công việc', action: 'open-tasks' },
+        window.__DND__
+          ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
+          : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
         { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
       ],
       onAction: handleMenuAction,
@@ -1372,6 +1378,8 @@ function setupMessagePanel() {
 
     window.__MESSAGE_LANGUAGE__ = messageLanguage;
     syncMessageLanguageDomState(messageLanguage);
+    // Trang pet nạp lại khi đổi model: pet-config.js đọc lại lựa chọn này.
+    try { sessionStorage.setItem('messageLanguage', messageLanguage); } catch (_) { /* ignore */ }
     panel.classList.remove('show');
     vscode.postMessage({ command: 'setMessageLanguage', messageLanguage });
   });

@@ -4,6 +4,85 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-15
+
+### Added
+- **Pin a task to your desktop.** Press 📌 next to a task in the Tasks panel
+  and it becomes a pink sticky note on the desktop, held by a pushpin with
+  your companion's face on it. Drag it anywhere; it stays where you left it,
+  also after a restart. Hover the note for its buttons: **✓ Xong** stamps it
+  done, drops it off the screen and the pet cheers you on; **✕** unpins it
+  (the task stays in your list); **📍** keeps it above other windows. Double-
+  click a note to open the Tasks panel. Up to 8 notes at a time.
+- **Companion girls cling to the panels.** A pink-haired bunny idol leans on
+  the left edge of the Settings window, a silver-haired bunny on Tasks, and a
+  blue-haired cat girl on the text assistant (*Mở đầy đủ* from the flower),
+  about a third of each overlapping the frame. The overlapping part
+  fades to a faint ghost so the panel stays readable, and clicks go through
+  to the panel underneath. They follow the panel when you
+  move or resize it, hide with it, and never take clicks. If a panel opens too
+  close to the left side of the screen, it slides right just enough for her
+  to fit. Turn them off (or back on) with Settings → *Diện mạo* → *🌸 Bunny
+  Lounge* (off by default); it applies right away.
+- **Links in tasks are clickable.** A web link in a task or its note — on a
+  pinned note or in the Tasks panel — opens in your default browser. Only
+  `http://` and `https://` links open; anything else stays plain text.
+- **Give your companion a name.** Until she has one, she asks you now and then
+  (at most three times, a week apart) with a small card right on the pet:
+  type a name, or pick *Để sau*. She thanks you by name, then asks how she
+  should address you. You can also name her in chat ("từ giờ em tên là Mây
+  nhé"); the reply notes the new name only once it is really saved. Change it
+  any time in Settings → *Bạn đồng hành*.
+- **Choose how she addresses you**: em – anh, em – chị, mình – bạn, tớ – cậu,
+  em – sếp, or your own words. When she speaks Japanese or English she uses
+  your name instead (with さん / くん / ちゃん / 様 in Japanese).
+- **Deadlines for tasks.** Press 📅 on a task to give it a date and time. The
+  Tasks panel sorts by the nearest deadline and shows how urgent each one is
+  ("⏰ Còn 20 phút", "⚠️ Quá hạn 1 ngày"); pinned notes show it too. The pet
+  reminds you once per step: on the morning of the due day, an hour before,
+  when it is due, and once a day for up to three days after. Tell the pet "nhắc
+  anh gửi báo cáo trước 5 giờ chiều mai" and the task is saved with its
+  deadline.
+- **Windows notifications for deadlines.** If a deadline arrives while the pet
+  is hidden, in a panel, set to do-not-disturb, or you are presenting full
+  screen, you get a Windows notification instead (Settings → *Nhắc nhở*, with
+  a *Gửi thử* button).
+- **Rest reminders, on by default**: rest your eyes every 45 minutes, drink
+  water and stand up every 60 minutes of sitting at the computer. Stepping
+  away for 5 minutes counts as a rest. Reminders that fall close together are
+  combined into one line. They need no API key.
+- **The pet cheers when you finish a task** — from the Tasks panel, a pinned
+  note, or chat — with something special for the last task on the list,
+  finishing before the deadline, and your 3rd, 5th and 10th task of the day.
+- **Finish or delete tasks by chat.** Say you are done with a task and the pet
+  ticks it off. It only changes a task when it is sure which one you meant,
+  and says so when it is not.
+- **Do not disturb.** Pick 🔕 on the pet's right-click ring or in the tray
+  menu and the pet stops starting conversations for an hour. Pick it again
+  (🔔) to turn it back off early. Your questions in chat are still answered.
+
+### Changed
+- **The text assistant (*Mở đầy đủ* from the flower) now matches the Settings
+  look**: the same soft pink background, a sakura glass card, pink section
+  headings, pill tabs and the same inputs and buttons.
+- **The pet no longer talks to an empty room.** It waits instead of starting a
+  conversation while you are away from the computer (5 minutes without mouse
+  or keyboard, or the screen is locked), while a game, video or slideshow is
+  full screen, or while it is hidden. Only these on/off states are read, never
+  window titles, app names or screen content.
+- Lines the pet says on its own are now at least 10 minutes apart (adjustable
+  in Settings → *Nhắc nhở*). Deadline reminders do not wait.
+- **"Ngôn ngữ chữ" now sticks and reaches the chat.** The language picked in
+  the pet's sound menu (or in Settings) is saved, survives a restart, and the
+  pet's lines and chat replies follow it in Vietnamese, Japanese or English.
+  Menus and panels are still in Vietnamese.
+
+### Fixed
+- **Minimizing Settings or Tasks no longer leaves the pet stranded.** The pet
+  that stands in the middle of the panel stayed floating where the panel had
+  been. It now goes back to its usual spot when the panel is minimized, and
+  steps back into the panel when you open it again.
+
 ## [0.4.1] - 2026-10-14
 
 ### Changed

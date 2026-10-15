@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -13,6 +13,8 @@ tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
 
 # Self-update: check GitHub Releases, download + install signed updates,
 # then relaunch via the process plugin.
@@ -41,6 +43,8 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Threading",
     "Win32_Foundation",
     "Win32_System_SystemInformation",
+    # SHQueryUserNotificationState: pet im khi đang trình chiếu / toàn màn hình.
+    "Win32_UI_Shell",
 ] }
 # WinRT SpeechSynthesizer (giọng có sẵn của Windows, kể cả giọng OneCore).
 windows = { version = "0.61", features = [

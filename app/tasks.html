@@ -183,6 +183,71 @@
     }
     .tk-del:hover { color: var(--danger); }
 
+    /* Ghim lên desktop: mờ khi chưa ghim, sáng + nghiêng khi đang ghim. */
+    .tk-pin {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 2px;
+      line-height: 1.5;
+      opacity: 0.35;
+      filter: grayscale(1);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .tk-pin:hover { opacity: 0.8; filter: none; }
+    .tk-pin.on { opacity: 1; filter: none; transform: rotate(-20deg); }
+    .tk-item:has(.tk-pin.on) { border-color: rgba(255, 150, 190, 0.55); }
+
+    /* Hạn chót: nút 📅 giống nút ghim; nhãn hạn tô theo mức gấp. */
+    .tk-cal {
+      flex: 0 0 auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 2px;
+      line-height: 1.5;
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
+    .tk-cal:hover, .tk-cal.on { opacity: 0.9; filter: none; }
+    .tk-due { cursor: pointer; border-radius: 6px; padding: 0 5px; }
+    .tk-due.later { color: var(--muted); background: rgba(255, 255, 255, 0.05); }
+    .tk-due.today { color: #ffd166; background: rgba(255, 209, 102, 0.12); }
+    .tk-due.soon { color: #ff9f43; background: rgba(255, 159, 67, 0.16); font-weight: 600; }
+    .tk-due.over { color: var(--danger); background: rgba(255, 107, 107, 0.14); font-weight: 600; }
+    .tk-due-edit { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+    .tk-due-edit input {
+      flex: 1 1 150px;
+      min-width: 0;
+      font: inherit;
+      font-size: 11px;
+      color: var(--text);
+      background: rgba(28, 30, 40, 0.7);
+      border: 1px solid rgba(255, 150, 190, 0.45);
+      border-radius: 6px;
+      padding: 3px 6px;
+      color-scheme: dark;
+    }
+    .tk-due-edit button { font-size: 11px; padding: 3px 9px; }
+
+    /* Link trong nội dung / ghi chú: bấm để mở trình duyệt. */
+    .tk-item .lnk {
+      color: #8fb4ff;
+      text-decoration: underline;
+      text-decoration-color: rgba(143, 180, 255, 0.4);
+      text-underline-offset: 2px;
+      word-break: break-all;
+      cursor: pointer;
+    }
+    .tk-item .lnk:hover { color: #b5ceff; text-decoration-color: currentColor; }
+    .tk-item.done .lnk { color: var(--muted); }
+
+    .tk-status { font-size: 11px; color: var(--danger); min-height: 0; }
+    .tk-status:empty { display: none; }
+
     .tk-empty {
       color: var(--muted);
       text-align: center;
@@ -199,6 +264,7 @@
       <input type="text" id="newTask" placeholder="Thêm việc mới..." />
       <button class="action" id="addBtn" style="flex: 0 0 auto;">Thêm</button>
     </div>
+    <output class="tk-status" id="tkStatus"></output>
   </div>
 
   <div class="tk-grid">
@@ -216,6 +282,8 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/due.js"></script>
+  <script src="js/linkify.js"></script>
   <script src="js/tasks.js"></script>
 </body>
 </html>

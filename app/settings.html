@@ -112,6 +112,23 @@
       background: rgba(255, 255, 255, 0.03);
     }
     .set-toggle label { flex: 1; font-size: 12px; color: var(--text); }
+
+    /* Công tắc "Bunny Lounge": chữ ánh hồng–tím, viền sáng hơn các hàng khác. */
+    .set-toggle--premium {
+      border-color: rgba(255, 150, 190, 0.45);
+      background: linear-gradient(120deg, rgba(255, 115, 171, 0.12), rgba(160, 130, 255, 0.10));
+    }
+    .set-toggle--premium label { display: flex; flex-direction: column; gap: 1px; cursor: pointer; }
+    .premium-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: linear-gradient(90deg, #ff8fc0, #ffd1e6 45%, #b9a2ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .premium-sub { font-size: 10.5px; color: var(--muted); }
     .set-toggle input { flex: 0 0 auto; accent-color: var(--accent); }
 
     /* Ô nhập / select trong cột: viền hồng nhạt cho ăn với lớp kính. */
@@ -252,6 +269,42 @@
       </div>
 
       <div class="set-group">
+        <h3>⏰ Nhắc nhở</h3>
+        <div class="set-field">
+          <label for="remindEyes">Nhắc nghỉ mắt</label>
+          <select id="remindEyes" class="remind-select"></select>
+        </div>
+        <div class="set-field">
+          <label for="remindWater">Nhắc uống nước</label>
+          <select id="remindWater" class="remind-select"></select>
+        </div>
+        <div class="set-field">
+          <label for="remindStand">Nhắc đứng dậy vận động</label>
+          <select id="remindStand" class="remind-select"></select>
+          <div class="status">Đếm thời gian ngồi máy liên tục; rời máy từ 5 phút là tính đã nghỉ. Không cần API key.</div>
+        </div>
+        <div class="set-field">
+          <label for="quietGap">Hai câu em tự nói cách nhau ít nhất</label>
+          <select id="quietGap">
+            <option value="5">5 phút</option>
+            <option value="10">10 phút</option>
+            <option value="20">20 phút</option>
+            <option value="30">30 phút</option>
+          </select>
+        </div>
+        <div class="set-toggle">
+          <label for="dueToast">Thông báo Windows khi tới hạn mà em đang ẩn</label>
+          <input type="checkbox" id="dueToast" />
+        </div>
+        <div class="set-field">
+          <div class="row tight">
+            <button class="ghost" id="toastTest" type="button" style="flex:1;">🔔 Gửi thử thông báo</button>
+          </div>
+          <div class="status" id="toastStatus">Không thấy thông báo? Kiểm tra Cài đặt Windows → Hệ thống → Thông báo (và chế độ Không làm phiền / Focus).</div>
+        </div>
+      </div>
+
+      <div class="set-group">
         <h3>⚙️ Hệ thống</h3>
         <div class="set-toggle">
           <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
@@ -296,6 +349,52 @@
     <!-- ─── Cột phải: dịch + diện mạo ───────────────────────────────── -->
     <div class="set-col set-col--right">
       <div class="set-group">
+        <h3>🌸 Bạn đồng hành</h3>
+        <div class="set-field">
+          <label for="petName">Tên của em</label>
+          <input type="text" id="petName" maxlength="20" placeholder="Chưa đặt tên" />
+        </div>
+        <div class="set-field">
+          <label for="messageLanguage">Em nói bằng</label>
+          <select id="messageLanguage">
+            <option value="vi">Tiếng Việt</option>
+            <option value="ja">日本語 (tiếng Nhật)</option>
+            <option value="en">English (tiếng Anh)</option>
+          </select>
+          <div class="status">Câu nhắc, câu khen và câu trả lời chat theo ngôn ngữ này.</div>
+        </div>
+        <div class="set-field" id="viPairBlock">
+          <label for="viPair">Xưng hô</label>
+          <select id="viPair">
+            <option value="em|anh">em – anh</option>
+            <option value="em|chị">em – chị</option>
+            <option value="mình|bạn">mình – bạn</option>
+            <option value="tớ|cậu">tớ – cậu</option>
+            <option value="em|sếp">em – sếp</option>
+            <option value="custom">Tự nhập…</option>
+          </select>
+          <div class="row tight" id="viCustom" style="display:none;">
+            <input type="text" id="viSelf" maxlength="12" placeholder="Em tự xưng" aria-label="Em tự xưng" />
+            <input type="text" id="viUser" maxlength="12" placeholder="Em gọi bạn là" aria-label="Em gọi bạn là" />
+          </div>
+        </div>
+        <div class="set-field">
+          <label for="userName">Tên của bạn</label>
+          <input type="text" id="userName" maxlength="20" placeholder="Không bắt buộc" />
+        </div>
+        <div class="set-field" id="jaHonorificBlock">
+          <label for="jaHonorific">Gọi tên bằng tiếng Nhật</label>
+          <select id="jaHonorific">
+            <option value="さん">〜さん</option>
+            <option value="くん">〜くん</option>
+            <option value="ちゃん">〜ちゃん</option>
+            <option value="様">〜様</option>
+            <option value="">Chỉ gọi tên</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="set-group">
         <h3>🌐 Dịch thuật</h3>
         <div class="set-field">
           <label for="target">Ngôn ngữ dịch mặc định</label>
@@ -324,6 +423,13 @@
 
       <div class="set-group">
         <h3>🎨 Diện mạo</h3>
+        <div class="set-toggle set-toggle--premium">
+          <label for="sideGirls">
+            <span class="premium-title">🌸 Bunny Lounge</span>
+            <span class="premium-sub">Các cô nàng tựa bên khung Cài đặt, Công việc &amp; Trợ lý văn bản</span>
+          </label>
+          <input type="checkbox" id="sideGirls" />
+        </div>
         <div class="set-field">
           <label for="addModelFolder">Model Live2D tự thêm</label>
           <div id="customModelList" style="display:flex; flex-direction:column; gap:4px;"></div>

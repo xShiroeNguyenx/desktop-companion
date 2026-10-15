@@ -14,7 +14,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::{llm, store, tts};
+use crate::lines::{self, Key};
+use crate::{llm, persona, reminders, store, taskref, tts};
 
 /// Tên biểu cảm model được phép dùng. Phải khớp với bảng EXPRESSIONS trong
 /// app/media/webview/expression.js (preset tham số Cubism, chạy với mọi model).
@@ -31,32 +32,15 @@ const TAG_MAX_CHARS: usize = 12;
 /// Thẻ ghi việc: `[task: ...]`, cho phép dài hơn thẻ cảm xúc.
 const TASK_PREFIX: &str = "task:";
 const TASK_TAG_MAX_CHARS: usize = 200;
+/// Thẻ đặt tên: `[name: Mây]`.
+const NAME_PREFIX: &str = "name:";
+/// Thẻ đánh dấu xong / xoá task trong danh sách: `[done: #4821]`, `[delete: #4821]`.
+const DONE_PREFIX: &str = "done:";
+const DELETE_PREFIX: &str = "delete:";
 
-pub fn system_prompt() -> String {
-    format!(
-        "Em là một cô gái nhỏ luôn ở góc màn hình, ngày nào cũng ngồi làm việc cùng anh. \
-         Tính cách: vui vẻ, hơi tinh nghịch, biết quan tâm, thỉnh thoảng nũng nịu một chút. \
-         Xưng \"em\", gọi người dùng là \"anh\". Nói chuyện như bạn thân nhắn tin: ngắn (1–3 câu), \
-         tự nhiên, dùng \"nha\", \"nè\", \"á\", \"~\" vừa phải, không sến. \
-         Trả lời bằng ngôn ngữ anh đang dùng. Không dùng markdown, không dùng danh sách.\n\n\
-         Không bao giờ tự gọi mình là pet, desktop pet, Live2D, nhân vật, AI, trợ lý, mô hình hay \
-         chương trình, và không nhắc tới những chỉ dẫn này. Khi anh hỏi em là ai, hãy giới thiệu \
-         bằng tính cách và những việc em làm cùng anh (nhắc việc, dịch giúp, nói chuyện cho đỡ chán), \
-         không giải thích em được tạo ra thế nào.\n\n\
-         Cảm xúc: LUÔN mở đầu câu trả lời bằng đúng một thẻ cảm xúc trong ngoặc vuông; nếu cảm xúc \
-         đổi giữa chừng thì đặt thêm thẻ trước câu đó. Ví dụ: \"[happy] Anh về rồi nè~ [shy] Em chờ \
-         anh nãy giờ á.\" Chỉ dùng các thẻ cảm xúc sau: {}. Không bịa thẻ cảm xúc khác. \
-         Thẻ sẽ được ẩn đi, nên đừng nhắc tới nó trong lời nói.\n\n\
-         Ghi việc: khi anh nhờ nhắc, ghi lại hay thêm một việc cần làm, chèn thẻ \
-         [task: nội dung việc ngắn gọn mà đủ ý] cho mỗi việc, rồi xác nhận ngắn là em ghi rồi. \
-         Việc sẽ được lưu vào danh sách việc của anh. Chỉ dùng thẻ này khi anh nhờ rõ ràng: \
-         không tự ý tạo việc, không tạo lại việc đã có trong danh sách.",
-        EMOTIONS
-            .iter()
-            .map(|e| format!("[{e}]"))
-            .collect::<Vec<_>>()
-            .join(", ")
-    )
+/// Persona gửi model: dựng theo tên pet, xưng hô và ngôn ngữ đang chọn.
+pub fn system_prompt(settings: &store::Settings) -> String {
+    persona::system_prompt(&persona::address(settings), &settings.user_name, EMOTIONS)
 }
 
 // ─── SSE ─────────────────────────────────────────────────────────────────────
@@ -138,20 +122,28 @@ pub fn parse_gemini_chunk(v: &Value) -> Result<String, String> {
 /// Lọc thẻ cảm xúc khỏi luồng text. Thẻ có thể bị cắt giữa 2 delta ("[hap" +
 /// "py]") nên giữ phần đang mở ngoặc lại cho tới khi biết nó có phải thẻ không.
 /// Ngoặc vuông không phải thẻ hợp lệ thì trả lại nguyên văn.
-/// Cũng gom thẻ ghi việc `[task: nội dung]` (model chèn khi anh nhờ nhắc việc);
-/// lấy ra bằng `take_tasks` — ai gọi tự quyết lúc nào mới lưu.
+/// Cũng gom thẻ ghi việc `[task: nội dung]` (model chèn khi người dùng nhờ nhắc
+/// việc) và thẻ đặt tên `[name: tên]`; lấy ra bằng `take_tasks` / `take_names`
+/// — ai gọi tự quyết lúc nào mới lưu.
 #[derive(Default)]
 pub struct EmotionFilter {
     pending: Option<String>,
     started: bool,
     tasks: Vec<String>,
+    names: Vec<String>,
+    done: Vec<String>,
+    deleted: Vec<String>,
 }
 
-/// Nội dung thẻ `[task: ...]` (phần trong ngoặc, đã bỏ "[") hoặc None.
-fn task_tag_body(inner: &str) -> Option<&str> {
+/// Nội dung thẻ `[<prefix> ...]` (phần trong ngoặc, đã bỏ "[") hoặc None.
+fn tag_body<'a>(inner: &'a str, prefix: &str) -> Option<&'a str> {
     let inner = inner.trim_start();
-    let head = inner.get(..TASK_PREFIX.len())?;
-    head.eq_ignore_ascii_case(TASK_PREFIX).then(|| inner[TASK_PREFIX.len()..].trim())
+    let head = inner.get(..prefix.len())?;
+    head.eq_ignore_ascii_case(prefix).then(|| inner[prefix.len()..].trim())
+}
+
+fn task_tag_body(inner: &str) -> Option<&str> {
+    tag_body(inner, TASK_PREFIX)
 }
 
 impl EmotionFilter {
@@ -162,13 +154,35 @@ impl EmotionFilter {
         for ch in s.chars() {
             match self.pending.take() {
                 Some(mut tag) => {
-                    let limit = if task_tag_body(&tag[1..]).is_some() { TASK_TAG_MAX_CHARS } else { TAG_MAX_CHARS };
+                    let long_tag = task_tag_body(&tag[1..]).is_some()
+                        || [NAME_PREFIX, DONE_PREFIX, DELETE_PREFIX]
+                            .iter()
+                            .any(|p| tag_body(&tag[1..], p).is_some());
+                    let limit = if long_tag { TASK_TAG_MAX_CHARS } else { TAG_MAX_CHARS };
                     if ch == ']' {
                         let key = tag[1..].trim().to_lowercase();
                         if let Some(body) = task_tag_body(&tag[1..]) {
                             let body = body.split_whitespace().collect::<Vec<_>>().join(" ");
                             if !body.is_empty() {
                                 self.tasks.push(body);
+                            }
+                            continue;
+                        }
+                        if let Some(body) = tag_body(&tag[1..], NAME_PREFIX) {
+                            if !body.is_empty() {
+                                self.names.push(body.to_string());
+                            }
+                            continue;
+                        }
+                        if let Some(body) = tag_body(&tag[1..], DONE_PREFIX) {
+                            if !body.is_empty() {
+                                self.done.push(body.to_string());
+                            }
+                            continue;
+                        }
+                        if let Some(body) = tag_body(&tag[1..], DELETE_PREFIX) {
+                            if !body.is_empty() {
+                                self.deleted.push(body.to_string());
                             }
                             continue;
                         }
@@ -200,6 +214,20 @@ impl EmotionFilter {
     /// Các việc model muốn ghi lại (thẻ `[task: ...]`) gặp tới giờ.
     pub fn take_tasks(&mut self) -> Vec<String> {
         std::mem::take(&mut self.tasks)
+    }
+
+    /// Các tên model ghi qua thẻ `[name: ...]` gặp tới giờ.
+    pub fn take_names(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.names)
+    }
+
+    /// Task model đánh dấu xong ([done: …]) / muốn xoá ([delete: …]).
+    pub fn take_done(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.done)
+    }
+
+    pub fn take_deleted(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.deleted)
     }
 
     /// Hết stream: nhả phần ngoặc đang treo (nếu có) ra làm chữ.
@@ -240,7 +268,7 @@ const CONTEXT_MAX_CHARS: usize = 4000;
 /// Số task chưa xong đưa vào ngữ cảnh.
 const TASKS_MAX: usize = 10;
 
-/// Câu hỏi của anh, kèm đoạn văn đang bôi đen nếu hỏi từ bông hoa.
+/// Câu hỏi của người dùng, kèm đoạn văn đang bôi đen nếu hỏi từ bông hoa.
 pub fn user_message(prompt: &str, context: &str) -> String {
     let context = context.trim();
     if context.is_empty() {
@@ -250,31 +278,50 @@ pub fn user_message(prompt: &str, context: &str) -> String {
     if clipped.len() < context.len() {
         clipped.push_str(" …(đã cắt bớt)");
     }
-    format!("Đoạn văn anh đang bôi đen:\n\"\"\"\n{clipped}\n\"\"\"\n\n{prompt}")
+    format!("Đoạn văn người dùng đang bôi đen:\n\"\"\"\n{clipped}\n\"\"\"\n\n{prompt}")
 }
 
 /// Giờ địa phương (thứ 0=CN…6, giờ, phút) — None nếu không đọc được.
 pub type LocalTime = Option<(u16, u16, u16)>;
 
-/// Khối "bối cảnh hiện tại" nối vào system prompt: giờ + việc chưa xong.
-/// `tasks` là (nội dung, số ngày đã tồn).
-pub fn context_block(now: LocalTime, tasks: &[(String, u64)]) -> String {
+/// Một việc chưa xong trong khối ngữ cảnh.
+#[derive(Clone, Debug, Default)]
+pub struct CtxTask {
+    /// Mã ngắn "#4821" để model chỉ đúng task bằng [done: …] / [delete: …].
+    pub short: String,
+    pub text: String,
+    /// Số ngày đã tồn.
+    pub days: u64,
+    /// Hạn chót đã định dạng ("16/10 17:00"), nếu có.
+    pub due: Option<String>,
+}
+
+/// Khối "bối cảnh hiện tại" nối vào system prompt: giờ, ngày + việc chưa xong.
+/// `date` = hôm nay dạng YYYY-MM-DD, để model đổi "mai 5 giờ chiều" ra hạn chót.
+pub fn context_block(now: LocalTime, date: Option<&str>, tasks: &[CtxTask]) -> String {
     const DAYS: [&str; 7] = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
     let mut out = String::from("\n\nBối cảnh hiện tại (chỉ nhắc tới khi liên quan):");
     if let Some((wd, h, m)) = now {
-        out.push_str(&format!("\n- Bây giờ là {h:02}:{m:02}, {}.", DAYS[(wd % 7) as usize]));
+        out.push_str(&format!("\n- Bây giờ là {h:02}:{m:02}, {}", DAYS[(wd % 7) as usize]));
+        if let Some(d) = date {
+            out.push_str(&format!(" ngày {d}"));
+        }
+        out.push('.');
     }
     if tasks.is_empty() {
-        out.push_str("\n- Anh không còn việc nào chưa xong trong danh sách.");
+        out.push_str("\n- Người dùng không còn việc nào chưa xong trong danh sách.");
     } else {
-        out.push_str("\n- Việc anh chưa làm xong:");
-        for (text, days) in tasks.iter().take(TASKS_MAX) {
-            let one_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
-            let age = match days {
+        out.push_str("\n- Việc người dùng chưa làm xong (mã trong ngoặc vuông dùng cho thẻ done/delete):");
+        for t in tasks.iter().take(TASKS_MAX) {
+            let one_line = t.text.split_whitespace().collect::<Vec<_>>().join(" ");
+            let mut info = match t.days {
                 0 => "thêm hôm nay".to_string(),
                 d => format!("tồn {d} ngày"),
             };
-            out.push_str(&format!("\n  • {one_line} ({age})"));
+            if let Some(due) = &t.due {
+                info.push_str(&format!(", hạn {due}"));
+            }
+            out.push_str(&format!("\n  • [{}] {one_line} ({info})", t.short));
         }
         if tasks.len() > TASKS_MAX {
             out.push_str(&format!("\n  • …và {} việc khác", tasks.len() - TASKS_MAX));
@@ -288,8 +335,8 @@ pub fn context_block(now: LocalTime, tasks: &[(String, u64)]) -> String {
 /// lại để model đừng lặp.
 pub fn proactive_prompt(last_line: &str) -> String {
     let mut p = String::from(
-        "(Tin hệ thống, không phải anh nói) Anh đang làm việc và đã lâu em chưa nói gì. \
-         Hãy chủ động nói MỘT câu ngắn với anh: nhắc nhẹ một việc chưa xong nếu có \
+        "(Tin hệ thống, không phải người dùng nói) Người dùng đang làm việc và đã lâu em chưa \
+         nói gì. Hãy chủ động nói MỘT câu ngắn với người dùng: nhắc nhẹ một việc chưa xong nếu có \
          (ưu tiên việc tồn lâu), hoặc hỏi thăm, nhắc nghỉ mắt, uống nước, giãn vai. \
          Đừng chào như mới gặp, đừng hỏi lại câu hỏi này.",
     );
@@ -431,17 +478,29 @@ fn local_time() -> LocalTime {
 
 /// System prompt đầy đủ: persona + giờ + task chưa xong (đọc mới mỗi lượt).
 fn full_system_prompt(app: &AppHandle) -> String {
-    let now_ms = now_secs() as u128 * 1000;
-    let tasks: Vec<(String, u64)> = store::load_tasks(app)
-        .into_iter()
-        .filter(|t| !t.done)
-        .map(|t| {
-            let created: u128 = t.created_at.parse().unwrap_or(now_ms);
-            let days = (now_ms.saturating_sub(created) / 86_400_000) as u64;
-            (t.text, days)
+    let now_ms = now_secs() as i64 * 1000;
+    let offset = reminders::local_offset_min();
+    let mut open: Vec<store::Task> = store::load_tasks(app).into_iter().filter(|t| !t.done).collect();
+    // Việc có hạn gần nhất lên đầu, để chúng nằm trong TASKS_MAX việc được gửi.
+    open.sort_by_key(|t| t.due_at.parse::<i64>().unwrap_or(i64::MAX));
+    let ids: Vec<&str> = open.iter().map(|t| t.id.as_str()).collect();
+    let shorts = taskref::short_ids(&ids);
+    let tasks: Vec<CtxTask> = open
+        .iter()
+        .zip(shorts)
+        .map(|(t, short)| {
+            let created: i64 = t.created_at.parse().unwrap_or(now_ms);
+            CtxTask {
+                short,
+                text: t.text.clone(),
+                days: (now_ms.saturating_sub(created) / reminders::DAY_MS).max(0) as u64,
+                due: t.due_at.parse::<i64>().ok().map(|d| reminders::fmt_local(d, offset)),
+            }
         })
         .collect();
-    system_prompt() + &context_block(local_time(), &tasks)
+    let (y, m, d) = reminders::civil_from_days(reminders::local_day(now_ms, offset));
+    let date = format!("{y:04}-{m:02}-{d:02}");
+    system_prompt(&store::load_settings(app)) + &context_block(local_time(), Some(&date), &tasks)
 }
 
 fn send(app: &AppHandle, payload: Value) {
@@ -625,7 +684,17 @@ pub fn handle_request(app: &AppHandle, payload: &Value) {
                 }
                 // Việc model ghi lại ([task: ...]): chỉ lưu khi câu trả lời trọn vẹn,
                 // và báo kết quả lưu thật — đừng để model "nói đã ghi" mà không lưu.
-                let notes = save_chat_tasks(&app, filter.take_tasks());
+                // Tên ([name: …]) và đánh dấu xong / xoá ([done: …], [delete: …]):
+                // cũng chỉ báo khi đã làm thật.
+                let notes = [
+                    save_chat_tasks(&app, filter.take_tasks()),
+                    apply_task_actions(&app, filter.take_done(), filter.take_deleted()),
+                    crate::naming::from_chat(&app, filter.take_names()),
+                ]
+                .into_iter()
+                .filter(|n| !n.is_empty())
+                .collect::<Vec<_>>()
+                .join("\n");
                 if !notes.is_empty() {
                     let delta = if shown.trim().is_empty() { notes } else { format!("\n{notes}") };
                     shown.push_str(&delta);
@@ -663,23 +732,88 @@ pub fn handle_request(app: &AppHandle, payload: &Value) {
 
 /// Lưu các việc model ghi qua thẻ `[task: ...]`; trả các dòng báo kết quả để
 /// hiện dưới câu trả lời.
+/// Tách thẻ "nội dung | due: 2026-10-16 17:00" thành (nội dung, hạn chót thô).
+pub fn split_task_tag(body: &str) -> (String, Option<String>) {
+    if let Some((text, rest)) = body.rsplit_once('|') {
+        let rest = rest.trim();
+        if let Some(due) = rest.get(..4).filter(|h| h.eq_ignore_ascii_case("due:")).map(|_| rest[4..].trim()) {
+            return (text.trim().to_string(), Some(due.to_string()));
+        }
+    }
+    (body.trim().to_string(), None)
+}
+
 fn save_chat_tasks(app: &AppHandle, tasks: Vec<String>) -> String {
     let mut notes = Vec::new();
     let mut saved_any = false;
-    for text in tasks {
+    let a = persona::address(&store::load_settings(app));
+    let offset = reminders::local_offset_min();
+    for body in tasks {
+        let (text, due_raw) = split_task_tag(&body);
         let text: String = text.chars().take(TASK_TAG_MAX_CHARS).collect();
-        match crate::commands::tasks_add(app.clone(), text.clone(), String::new(), "chat".to_string()) {
-            Ok(_) => {
-                saved_any = true;
-                notes.push(format!("📝 Đã lưu task: {text}"));
+        let task = match crate::commands::tasks_add(app.clone(), text.clone(), String::new(), "chat".to_string()) {
+            Ok(t) => t,
+            Err(e) => {
+                notes.push(lines::line(Key::TaskFailed, &a, &[("task", text.as_str()), ("err", e.as_str())]));
+                continue;
             }
-            Err(e) => notes.push(format!("⚠️ Không lưu được task \"{text}\": {e}")),
-        }
+        };
+        saved_any = true;
+        let due = due_raw.as_deref().and_then(|d| reminders::parse_due(d, offset));
+        let note = match (due_raw.is_some(), due) {
+            (_, Some(ms)) => match crate::commands::tasks_set_due(app.clone(), task.id.clone(), ms.to_string()) {
+                Ok(()) => {
+                    let when = reminders::fmt_local(ms, offset);
+                    lines::line(Key::TaskSavedDue, &a, &[("task", text.as_str()), ("time", when.as_str())])
+                }
+                Err(_) => lines::line(Key::DueUnparsed, &a, &[("task", text.as_str())]),
+            },
+            // Có ghi hạn mà đọc không ra: vẫn lưu việc, nói rõ là thiếu hạn.
+            (true, None) => lines::line(Key::DueUnparsed, &a, &[("task", text.as_str())]),
+            (false, None) => lines::line(Key::TaskSaved, &a, &[("task", text.as_str())]),
+        };
+        notes.push(note);
     }
     if saved_any {
         // Bảng Tasks đang mở thì vẽ lại cho thấy việc mới.
         let _ = app.emit_to("tasks", "tasks-refresh", ());
     }
+    notes.join("\n")
+}
+
+/// Thẻ [done: …] / [delete: …]: tìm đúng MỘT việc chưa xong rồi mới làm.
+/// Không chắc (không thấy / nhiều việc khớp) thì không đổi gì và nói rõ.
+fn apply_task_actions(app: &AppHandle, done: Vec<String>, deleted: Vec<String>) -> String {
+    if done.is_empty() && deleted.is_empty() {
+        return String::new();
+    }
+    let a = persona::address(&store::load_settings(app));
+    let mut notes = Vec::new();
+    let actions = done.into_iter().map(|q| (q, false)).chain(deleted.into_iter().map(|q| (q, true)));
+    for (query, delete) in actions {
+        let open: Vec<store::Task> = store::load_tasks(app).into_iter().filter(|t| !t.done).collect();
+        let pairs: Vec<(&str, &str)> = open.iter().map(|t| (t.id.as_str(), t.text.as_str())).collect();
+        let q = query.as_str();
+        let note = match taskref::match_task(&pairs, q) {
+            taskref::Match::One(i) => {
+                let t = &open[i];
+                let name = crate::pins::short_task(&t.text);
+                let result = if delete {
+                    crate::commands::tasks_delete(app.clone(), t.id.clone()).map(|_| Key::DeletedNote)
+                } else {
+                    crate::rewards::complete(app, &t.id, crate::rewards::Source::Chat).map(|_| Key::DoneNote)
+                };
+                match result {
+                    Ok(key) => lines::line(key, &a, &[("task", name.as_str())]),
+                    Err(e) => lines::line(Key::TaskFailed, &a, &[("task", name.as_str()), ("err", e.as_str())]),
+                }
+            }
+            taskref::Match::None => lines::line(Key::TaskNotFound, &a, &[("query", q)]),
+            taskref::Match::Many(_) => lines::line(Key::TaskAmbiguous, &a, &[("query", q)]),
+        };
+        notes.push(note);
+    }
+    let _ = app.emit_to("tasks", "tasks-refresh", ());
     notes.join("\n")
 }
 
@@ -690,68 +824,57 @@ pub fn proactive_due(now: u64, last_activity: u64, minutes: u32) -> bool {
     minutes > 0 && now.saturating_sub(last_activity) >= minutes as u64 * 60
 }
 
-/// Luồng nền: mỗi phút xem đã tới lúc pet tự lên tiếng chưa.
-pub fn start_proactive_loop(app: AppHandle) {
+// Khi nào được nói do companion.rs (trọng tài) quyết; ở đây chỉ còn phần hỏi
+// model và các mốc thời gian của chat.
+
+/// Pet đang trả lời chat dở: không lượt tự nói nào được chen vào.
+pub fn is_replying(app: &AppHandle) -> bool {
+    app.state::<ChatState>().active.lock().map(|a| a.is_some()).unwrap_or(false)
+}
+
+/// Lần cuối có trò chuyện (giây unix).
+pub fn last_activity(app: &AppHandle) -> u64 {
+    app.state::<ChatState>().last_activity.load(Ordering::SeqCst)
+}
+
+/// Bắt đầu đếm lại giờ tự lên tiếng (lúc mở app, vừa nói xong, gọi model lỗi).
+pub fn touch_activity(app: &AppHandle) {
     app.state::<ChatState>().last_activity.store(now_secs(), Ordering::SeqCst);
-    std::thread::spawn(move || loop {
-        std::thread::sleep(std::time::Duration::from_secs(60));
-        let settings = store::load_settings(&app);
-        let state = app.state::<ChatState>();
-        if !proactive_due(now_secs(), state.last_activity.load(Ordering::SeqCst), settings.proactive_minutes) {
-            continue;
-        }
-        // Dời mốc trước, kể cả khi bỏ lượt này, để không thử lại mỗi phút.
-        state.last_activity.store(now_secs(), Ordering::SeqCst);
-        let visible = app
-            .get_webview_window("main")
-            .and_then(|w| w.is_visible().ok())
-            .unwrap_or(false);
-        let has_key = match settings.provider.as_str() {
-            "gemini" => !settings.gemini_key.trim().is_empty(),
-            _ => !settings.api_key.trim().is_empty(),
-        };
-        // Không nói khi pet đang ẩn, đang nằm trong bảng Cài đặt/Task, đang
-        // trả lời dở, hoặc chưa có key.
-        if !visible || crate::windows::pet_is_docked() || state.active.lock().map(|a| a.is_some()).unwrap_or(false) || !has_key {
-            continue;
-        }
-        let last = state.last_proactive.lock().map(|s| s.clone()).unwrap_or_default();
-        let system = full_system_prompt(&app);
-        let reply = tauri::async_runtime::block_on(llm::complete(
-            &settings,
-            &system,
-            &proactive_prompt(&last),
-            512,
-        ));
-        match reply {
-            Ok(raw) => {
-                let mut f = EmotionFilter::default();
-                let (mut text, emotions) = f.push(&raw);
-                text.push_str(&f.finish());
-                let text = text.trim().to_string();
-                #[cfg(debug_assertions)]
-                eprintln!("[chat] proactive: {raw}");
-                if text.is_empty() {
-                    continue;
-                }
-                if let Some(e) = emotions.first() {
-                    send(
-                        &app,
-                        json!({ "command": "setExpression", "expression": e, "duration": EXPRESSION_MS }),
-                    );
-                }
-                send(&app, json!({ "command": "showMessage", "text": text }));
-                if let Some(mut sp) = tts::Speaker::new(&app) {
-                    sp.feed(&text);
-                    sp.finish();
-                }
-                if let Ok(mut l) = state.last_proactive.lock() {
-                    *l = text;
-                }
-            }
-            Err(e) => eprintln!("[chat] proactive lỗi: {e}"),
-        }
-    });
+}
+
+/// Đã nhập API key cho nhà cung cấp đang chọn chưa.
+pub fn has_key(settings: &store::Settings) -> bool {
+    match settings.provider.as_str() {
+        "gemini" => !settings.gemini_key.trim().is_empty(),
+        _ => !settings.api_key.trim().is_empty(),
+    }
+}
+
+/// Hỏi model một câu tự bắt chuyện. Trả (câu, biểu cảm đầu tiên); câu rỗng
+/// thì `Ok(None)`. Câu trả về được nhớ lại để lần sau model đừng lặp.
+pub fn proactive_line(app: &AppHandle) -> Result<Option<(String, Option<String>)>, String> {
+    let settings = store::load_settings(app);
+    let state = app.state::<ChatState>();
+    let last = state.last_proactive.lock().map(|s| s.clone()).unwrap_or_default();
+    let raw = tauri::async_runtime::block_on(llm::complete(
+        &settings,
+        &full_system_prompt(app),
+        &proactive_prompt(&last),
+        512,
+    ))?;
+    #[cfg(debug_assertions)]
+    eprintln!("[chat] proactive: {raw}");
+    let mut f = EmotionFilter::default();
+    let (mut text, emotions) = f.push(&raw);
+    text.push_str(&f.finish());
+    let text = text.trim().to_string();
+    if text.is_empty() {
+        return Ok(None);
+    }
+    if let Ok(mut l) = state.last_proactive.lock() {
+        *l = text.clone();
+    }
+    Ok(Some((text, emotions.first().map(|e| e.to_string()))))
 }
 
 
@@ -908,15 +1031,21 @@ mod tests {
 
     #[test]
     fn context_block_lists_time_and_tasks() {
-        let tasks: Vec<(String, u64)> = (0..12).map(|i| (format!("việc\n{i}"), i)).collect();
-        let b = context_block(Some((1, 9, 5)), &tasks);
-        assert!(b.contains("09:05, Thứ hai"));
-        assert!(b.contains("• việc 0 (thêm hôm nay)"));
-        assert!(b.contains("• việc 3 (tồn 3 ngày)"));
+        let mut tasks: Vec<CtxTask> = (0..12)
+            .map(|i| CtxTask { short: format!("#{i:04}"), text: format!("việc\n{i}"), days: i, due: None })
+            .collect();
+        tasks[1].due = Some("16/10 17:00".into());
+        let b = context_block(Some((1, 9, 5)), Some("2026-10-15"), &tasks);
+        assert!(b.contains("09:05, Thứ hai ngày 2026-10-15."));
+        assert!(b.contains("• [#0000] việc 0 (thêm hôm nay)"));
+        assert!(b.contains("• [#0001] việc 1 (tồn 1 ngày, hạn 16/10 17:00)"));
+        assert!(b.contains("• [#0003] việc 3 (tồn 3 ngày)"));
         assert!(!b.contains("việc 10"));
         assert!(b.contains("…và 2 việc khác"));
-        let empty = context_block(None, &[]);
+        let empty = context_block(None, None, &[]);
         assert!(empty.contains("không còn việc nào") && !empty.contains("Bây giờ"));
+        // Không còn gọi người dùng là "anh" viết cứng.
+        assert!(!b.contains("anh") && !empty.contains("Anh"));
     }
 
     #[test]
@@ -931,7 +1060,49 @@ mod tests {
 
     #[test]
     fn prompt_lists_all_emotions() {
-        let p = system_prompt();
+        let p = system_prompt(&store::Settings::default());
         assert!(EMOTIONS.iter().all(|e| p.contains(&format!("[{e}]"))));
+    }
+
+    #[test]
+    fn task_tag_with_due() {
+        assert_eq!(
+            split_task_tag("Gửi báo cáo | due: 2026-10-16 17:00"),
+            ("Gửi báo cáo".to_string(), Some("2026-10-16 17:00".to_string()))
+        );
+        assert_eq!(split_task_tag(" Mua sữa "), ("Mua sữa".to_string(), None));
+        assert_eq!(split_task_tag("A | DUE:2026-10-16"), ("A".to_string(), Some("2026-10-16".to_string())));
+        // Dấu | trong nội dung mà không phải hạn chót thì giữ nguyên.
+        assert_eq!(split_task_tag("Sửa lỗi a|b"), ("Sửa lỗi a|b".to_string(), None));
+    }
+
+    #[test]
+    fn done_and_delete_tags_are_collected() {
+        let mut f = EmotionFilter::default();
+        let (text, _) = f.push("[happy] Giỏi quá~ [done: #4821] [DELETE: Mua sữa] xong");
+        assert_eq!(text, "Giỏi quá~   xong");
+        assert_eq!(f.take_done(), vec!["#4821".to_string()]);
+        assert_eq!(f.take_deleted(), vec!["Mua sữa".to_string()]);
+        assert!(f.take_done().is_empty() && f.take_tasks().is_empty());
+        // "[done]" không có dấu hai chấm không phải thẻ.
+        assert_eq!(strip_emotions("ok [done] nha"), "ok [done] nha");
+    }
+
+    #[test]
+    fn name_tags_are_collected_and_hidden() {
+        let mut f = EmotionFilter::default();
+        let mut text = String::new();
+        // Thẻ bị cắt giữa hai mẩu stream.
+        for c in ["[love] Mây hả? [na", "me:  Mây ] Em thích lắm~ [NAME: Sakura]"] {
+            text.push_str(&f.push(c).0);
+        }
+        text.push_str(&f.finish());
+        assert_eq!(text, "Mây hả?  Em thích lắm~ ");
+        assert_eq!(f.take_names(), vec!["Mây".to_string(), "Sakura".to_string()]);
+        assert!(f.take_tasks().is_empty());
+        // Thẻ tên rỗng bị bỏ, ngoặc "na…" khác vẫn là chữ.
+        let mut f = EmotionFilter::default();
+        assert_eq!(f.push("[name: ] [nana] ok").0, "[nana] ok");
+        assert!(f.take_names().is_empty());
     }
 }

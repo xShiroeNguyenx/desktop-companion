@@ -27,6 +27,7 @@ import {
   STREAM_TIMEOUT_TEXT,
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
+import { handleNamingMessage } from './naming.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
 
 function disposeCurrentModel() {
@@ -120,6 +121,9 @@ async function initLive2D() {
 
     debugLog('Live2D fully initialized!');
     vscode.postMessage({ command: 'live2dReady' });
+    // Chụp mặt nhân vật cho cây ghim của các tờ note. Đợi model đứng yên một
+    // chút; Rust bỏ qua nếu đã có ảnh của đúng model này.
+    setTimeout(() => capturePinAvatar(false), 2500);
   } catch (error) {
     const errMsg = error && error.message ? error.message : String(error);
     showError('Live2D Error: ' + errMsg);
@@ -235,6 +239,29 @@ window.addEventListener('message', (event) => {
       break;
     case 'captureModelChibi':
       void handleCaptureModelChibi(event.data.modelId);
+      break;
+    case 'capturePinAvatar':
+      capturePinAvatar(true);
+      break;
+    // "Đừng làm phiền" (companion.rs): menu tròn đọc cờ này lúc mở.
+    case 'dndState':
+      window.__DND__ = !!event.data.on;
+      break;
+    // Thẻ đặt tên / chọn xưng hô (naming.rs).
+    case 'naming:askName':
+    case 'naming:askAddress':
+    case 'naming:done':
+    case 'naming:error':
+      handleNamingMessage(event.data);
+      break;
+    // Đổi "Ngôn ngữ chữ" từ bảng Cài đặt. Nhớ qua sessionStorage vì trang pet
+    // nạp lại khi đổi model (pet-config.js đọc lại).
+    case 'messageLanguage':
+      if (['vi', 'ja', 'en'].includes(event.data.value)) {
+        window.__MESSAGE_LANGUAGE__ = event.data.value;
+        document.documentElement.lang = event.data.value;
+        try { sessionStorage.setItem('messageLanguage', event.data.value); } catch (_) { /* ignore */ }
+      }
       break;
     case 'agentProfile:list:state':
       renderAgentProfileList(event.data.profiles || []);
@@ -392,6 +419,76 @@ function autoCropCanvas(src) {
   return out;
 }
 
+// Cắt phần đầu nhân vật thành ảnh vuông 128px cho cây ghim (pin.html).
+// Vẽ lại rồi đọc canvas NGAY trong cùng một lượt: canvas WebGL không bật
+// preserveDrawingBuffer, đợi sang frame sau thì có thể đọc ra ảnh trống.
+// `force` = người dùng vừa ghim mà chưa có ảnh nào; không thì Rust chỉ lưu
+// khi model khác với model của ảnh đang có.
+function capturePinAvatar(force) {
+  try {
+    const canvas = document.getElementById('live2dCanvas');
+    if (!state.isLive2DReady || !canvas || !canvas.width || !canvas.height) return;
+    if (state.app && typeof state.app.render === 'function') state.app.render();
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    const tctx = tmp.getContext('2d', { willReadFrequently: true });
+    if (!tctx) return;
+    tctx.drawImage(canvas, 0, 0);
+    const data = tctx.getImageData(0, 0, w, h).data;
+
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (data[(y * w + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return; // canvas trống: giữ ảnh cũ / ảnh mặc định
+
+    const cw = maxX - minX + 1;
+    const ch = maxY - minY + 1;
+    // Đầu + vai: ~28% chiều cao với model toàn thân, không rộng quá thân hình.
+    const side = Math.max(16, Math.round(Math.min(cw * 0.8, ch * 0.28)));
+    // Tâm ngang = trung bình các điểm có màu trong dải đầu (tóc xoã hai bên
+    // làm lệch tâm của khung bao, nhưng ít lệch trung bình).
+    let sumX = 0, n = 0;
+    for (let y = minY; y < Math.min(h, minY + side); y++) {
+      for (let x = minX; x <= maxX; x++) {
+        if (data[(y * w + x) * 4 + 3] > 8) { sumX += x; n++; }
+      }
+    }
+    const cx = n ? sumX / n : minX + cw / 2;
+    const sx = Math.round(Math.min(Math.max(cx - side / 2, 0), Math.max(0, w - side)));
+    const sy = Math.max(0, minY - Math.round(side * 0.04));
+
+    const out = document.createElement('canvas');
+    out.width = 128;
+    out.height = 128;
+    const octx = out.getContext('2d');
+    if (!octx) return;
+    octx.imageSmoothingQuality = 'high';
+    octx.drawImage(tmp, sx, sy, side, side, 0, 0, 128, 128);
+    vscode.postMessage({
+      command: 'pinAvatar',
+      dataUrl: out.toDataURL('image/png'),
+      modelId: window.__MODEL_ID__ || '',
+      force: !!force,
+    });
+  } catch (err) {
+    debugLog('capturePinAvatar failed: ' + (err && err.message ? err.message : err));
+  }
+}
+
 debugLog('Webview script loaded');
+// Trang pet nạp lại mỗi lần đổi model: hỏi lại trạng thái "Đừng làm phiền".
+vscode.postMessage({ command: 'dnd:sync' });
 initAmbientAudio();
 initLive2D();

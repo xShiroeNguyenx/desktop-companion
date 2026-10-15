@@ -6,7 +6,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::{llm, selection, store, tts, windows};
+use crate::{links, llm, naming, notify, persona, pins, rewards, selection, store, tts, windows};
 
 fn lang_name(code: &str) -> &'static str {
     match code {
@@ -19,7 +19,7 @@ fn lang_name(code: &str) -> &'static str {
     }
 }
 
-fn now_millis() -> u128 {
+pub(crate) fn now_millis() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -173,56 +173,146 @@ pub fn tasks_list(app: AppHandle) -> Vec<store::Task> {
 
 #[tauri::command]
 pub fn tasks_add(app: AppHandle, text: String, note: String, source: String) -> Result<store::Task, String> {
-    let mut tasks = store::load_tasks(&app);
-    // Id theo mili-giây; chat có thể thêm vài task cùng lúc nên nhích lên tới khi không trùng.
-    let mut id = now_millis();
-    while tasks.iter().any(|t| t.id == id.to_string()) {
-        id += 1;
-    }
-    let task = store::Task {
-        id: id.to_string(),
-        text,
-        note,
-        source,
-        done: false,
-        created_at: format!("{}", now_millis()),
-        done_at: String::new(),
-    };
-    tasks.insert(0, task.clone());
-    store::save_tasks(&app, &tasks)?;
-    Ok(task)
+    store::update_tasks(&app, |tasks| {
+        // Id theo mili-giây; chat có thể thêm vài task cùng lúc nên nhích lên tới khi không trùng.
+        let mut id = now_millis();
+        while tasks.iter().any(|t| t.id == id.to_string()) {
+            id += 1;
+        }
+        let task = store::Task {
+            id: id.to_string(),
+            text,
+            note,
+            source,
+            done: false,
+            created_at: format!("{}", now_millis()),
+            done_at: String::new(),
+            pinned: false,
+            pin_pos: None,
+            pin_top: false,
+            due_at: String::new(),
+            reminded: 0,
+        };
+        tasks.insert(0, task.clone());
+        task
+    })
 }
 
 #[tauri::command]
 pub fn tasks_set_done(app: AppHandle, id: String, done: bool) -> Result<(), String> {
-    let mut tasks = store::load_tasks(&app);
-    if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
-        t.done = done;
-        // Ghi mốc hoàn thành; bỏ tick thì xoá đi để việc trở lại "chưa làm".
-        t.done_at = if done {
-            format!("{}", now_millis())
-        } else {
-            String::new()
-        };
+    if done {
+        // Lưu + gỡ tờ note ghim + pet khen (rewards.rs).
+        return rewards::complete(&app, &id, rewards::Source::Panel).map(|_| ());
     }
-    store::save_tasks(&app, &tasks)
+    // Bỏ tick: xoá mốc hoàn thành để việc trở lại "chưa làm".
+    store::update_tasks(&app, |tasks| {
+        if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+            t.done = false;
+            t.done_at = String::new();
+        }
+    })
+}
+
+/// Đặt / xoá hạn chót (`due_at` millis UTC dạng chuỗi, rỗng = bỏ hạn). Đổi hạn
+/// thì nhắc lại từ đầu.
+#[tauri::command]
+pub fn tasks_set_due(app: AppHandle, id: String, due_at: String) -> Result<(), String> {
+    let due_at = due_at.trim().to_string();
+    if !due_at.is_empty() && due_at.parse::<i64>().map_or(true, |v| v <= 0) {
+        return Err("Hạn chót không hợp lệ.".into());
+    }
+    store::update_tasks(&app, |tasks| {
+        if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+            if t.due_at != due_at {
+                t.due_at = due_at.clone();
+                t.reminded = 0;
+            }
+        }
+    })?;
+    pins::refresh(&app, &id);
+    Ok(())
+}
+
+/// Mở link (trong nội dung / ghi chú task) bằng trình duyệt mặc định.
+/// Chỉ http(s) — xem links.rs.
+#[tauri::command]
+pub fn open_url(app: AppHandle, url: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    let url = links::safe_web_url(&url)?;
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| format!("Không mở được link: {e}"))
+}
+
+/// Nút "Gửi thử" thông báo Windows trong Cài đặt.
+#[tauri::command]
+pub fn notify_test(app: AppHandle) -> Result<(), String> {
+    let a = persona::address(&store::load_settings(&app));
+    notify::toast(&app, &crate::lines::line(crate::lines::Key::ToastTest, &a, &[]))
 }
 
 /// Sửa ghi chú của một công việc.
 #[tauri::command]
 pub fn tasks_set_note(app: AppHandle, id: String, note: String) -> Result<(), String> {
-    let mut tasks = store::load_tasks(&app);
-    if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
-        t.note = note;
-    }
-    store::save_tasks(&app, &tasks)
+    store::update_tasks(&app, |tasks| {
+        if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+            t.note = note;
+        }
+    })?;
+    pins::refresh(&app, &id);
+    Ok(())
 }
 
 #[tauri::command]
 pub fn tasks_delete(app: AppHandle, id: String) -> Result<(), String> {
-    let mut tasks = store::load_tasks(&app);
-    tasks.retain(|t| t.id != id);
-    store::save_tasks(&app, &tasks)
+    store::update_tasks(&app, |tasks| tasks.retain(|t| t.id != id))?;
+    pins::close(&app, &id);
+    Ok(())
+}
+
+// ── Tờ note ghim trên desktop (pins.rs) ─────────────────────────────────────
+// async: ghim mở cửa sổ mới, mà dựng cửa sổ trong command đồng bộ có thể treo
+// WebView2 trên Windows. pins.rs tự chuyển việc dựng sang main thread.
+
+#[tauri::command]
+pub async fn tasks_set_pinned(app: AppHandle, id: String, pinned: bool) -> Result<(), String> {
+    pins::set_pinned(&app, &id, pinned)
+}
+
+/// Task của tờ note `id` (pin.js gọi mỗi lần vẽ lại).
+#[tauri::command]
+pub fn pin_get(app: AppHandle, id: String) -> Option<store::Task> {
+    store::load_tasks(&app).into_iter().find(|t| t.id == id)
+}
+
+#[tauri::command]
+pub async fn pin_done(app: AppHandle, id: String) -> Result<(), String> {
+    pins::mark_done(&app, &id)
+}
+
+#[tauri::command]
+pub fn pin_set_top(app: AppHandle, id: String, top: bool) -> Result<(), String> {
+    pins::set_top(&app, &id, top)
+}
+
+#[tauri::command]
+pub fn pin_resize(app: AppHandle, id: String, w: f64, h: f64) {
+    pins::resize(&app, &id, w, h);
+}
+
+/// Ảnh mặt nhân vật cho đầu cây ghim, dạng data URL. Rỗng = chưa chụp, tờ note
+/// dùng ảnh mặc định.
+#[tauri::command]
+pub fn pin_avatar(app: AppHandle) -> String {
+    use base64::Engine;
+    store::load_pin_avatar(&app)
+        .map(|png| {
+            format!(
+                "data:image/png;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(png)
+            )
+        })
+        .unwrap_or_default()
 }
 
 // ── Settings / autostart ────────────────────────────────────────────────────
@@ -328,10 +418,56 @@ pub fn settings_get(app: AppHandle) -> store::Settings {
 
 #[tauri::command]
 pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(), String> {
-    // Form Cài đặt không có trường này; giữ giá trị cũ thay vì để serde xoá về rỗng.
-    settings.skip_update_version = store::load_settings(&app).skip_update_version;
+    let old = store::load_settings(&app);
+    // Form Cài đặt không có các trường này; giữ giá trị cũ thay vì để serde xoá
+    // về mặc định.
+    settings.skip_update_version = old.skip_update_version.clone();
+    settings.name_asks = old.name_asks;
+    settings.name_asked_at = old.name_asked_at;
+    settings.address_asked = old.address_asked;
+
+    // Tên + xưng hô: cùng luật làm sạch với thẻ trên pet và thẻ [name:] trong chat.
+    // Tên pet / tên người dùng được để trống; từ xưng hô trống thì về mặc định.
+    let clean = |v: &str, max: usize| -> Result<String, String> {
+        if v.trim().is_empty() { Ok(String::new()) } else { persona::sanitize_name(v, max) }
+    };
+    settings.pet_name = clean(&settings.pet_name, persona::NAME_MAX).map_err(|e| format!("Tên của em: {e}"))?;
+    settings.user_name = clean(&settings.user_name, persona::NAME_MAX).map_err(|e| format!("Tên của bạn: {e}"))?;
+    settings.vi_self = clean(&settings.vi_self, persona::PRONOUN_MAX).map_err(|e| format!("Xưng hô: {e}"))?;
+    settings.vi_user = clean(&settings.vi_user, persona::PRONOUN_MAX).map_err(|e| format!("Xưng hô: {e}"))?;
+    settings.message_language = persona::Lang::from_code(&settings.message_language).code().to_string();
+    if !persona::JA_HONORIFICS.contains(&settings.ja_honorific.as_str()) {
+        settings.ja_honorific = old.ja_honorific.clone();
+    }
+
     selection::set_auto_enabled(settings.auto_flower);
-    store::save_settings(&app, &settings)
+    store::save_settings(&app, &settings)?;
+    if settings.side_girls != old.side_girls {
+        crate::sidegirl::set_enabled(&app, settings.side_girls);
+    }
+
+    if settings.message_language != old.message_language {
+        let _ = app.emit_to(
+            "main",
+            "pet-message",
+            serde_json::json!({ "command": "messageLanguage", "value": settings.message_language }),
+        );
+    }
+    // Đổi tên từ Cài đặt: pet cảm ơn / nhận tên mới như khi đặt từ thẻ hỏi tên.
+    if !settings.pet_name.is_empty() {
+        naming::react(&app, naming::classify_change(&old.pet_name, &settings.pet_name));
+    }
+    Ok(())
+}
+
+/// Công tắc "nhân vật bám cạnh bảng": lưu và áp dụng ngay (không chờ Lưu).
+#[tauri::command]
+pub fn set_side_girls(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut s = store::load_settings(&app);
+    s.side_girls = enabled;
+    store::save_settings(&app, &s)?;
+    crate::sidegirl::set_enabled(&app, enabled);
+    Ok(())
 }
 
 #[tauri::command]

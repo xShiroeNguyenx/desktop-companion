@@ -8,74 +8,214 @@
   <style>
     /* Fallback inline styling so the window is never blank even if ui.css fails. */
     html, body { background: #1e1f26; color: #e7e9f0; font-family: "Segoe UI", sans-serif; }
+
+    /* ─── Cùng phong cách bảng Cài đặt: nền hồng nhạt + một tấm kính sakura ─── */
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 150, 190, 0.14), transparent 60%),
+        var(--bg);
+    }
+
+    .pp-head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px 6px;
+    }
+    .pp-head h2 { font-size: 15px; }
+
+    /* Tấm kính chứa toàn bộ nội dung; chỉ phần này cuộn. */
+    .pp-card {
+      flex: 1 1 auto;
+      min-height: 0;
+      margin: 0 10px 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 150, 190, 0.32);
+      background: linear-gradient(165deg, rgba(255, 183, 213, 0.16), rgba(255, 218, 233, 0.06));
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 22px rgba(255, 150, 190, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 150, 190, 0.4) transparent;
+    }
+    .pp-card::-webkit-scrollbar { width: 6px; }
+    .pp-card::-webkit-scrollbar-thumb {
+      background: rgba(255, 150, 190, 0.35);
+      border-radius: 3px;
+    }
+
+    /* Tiêu đề mục: chữ hoa nhỏ màu hồng, gạch chân mảnh — như .set-group > h3. */
+    .pp-section-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 150, 190, 0.2);
+    }
+    .pp-section-head .box-label {
+      flex: 1;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .pp-card .selected-box {
+      border-color: rgba(255, 150, 190, 0.22);
+      background: rgba(28, 30, 40, 0.5);
+      color: #d9b6c6;
+      border-radius: 10px;
+    }
+
+    /* Tab dạng viên thuốc hồng. */
+    .pp-card .tabs { gap: 6px; }
+    .pp-card .tab {
+      border-radius: 10px;
+      border-color: rgba(255, 150, 190, 0.22);
+      background: rgba(255, 150, 190, 0.08);
+      color: var(--muted);
+      font-size: 12.5px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .pp-card .tab:hover { background: rgba(255, 150, 190, 0.16); color: var(--text); }
+    .pp-card .tab.active {
+      background: linear-gradient(180deg, var(--accent), #e85f99);
+      border-color: transparent;
+      color: #1b1320;
+      box-shadow: 0 4px 12px rgba(255, 115, 171, 0.3);
+    }
+
+    .pp-card .panel { gap: 7px; }
+    .pp-field { display: flex; flex-direction: column; gap: 3px; }
+    .pp-card label { font-size: 11.5px; }
+
+    /* Ô nhập / select: viền hồng nhạt cho ăn với lớp kính. */
+    .pp-card select,
+    .pp-card textarea,
+    .pp-card input[type="text"] {
+      border-color: rgba(255, 150, 190, 0.22);
+      background: rgba(28, 30, 40, 0.66);
+      padding: 6px 9px;
+      font-size: 12.5px;
+    }
+    .pp-card select:focus,
+    .pp-card textarea:focus,
+    .pp-card input:focus {
+      outline: none;
+      border-color: rgba(255, 150, 190, 0.6);
+    }
+
+    .pp-card button.action {
+      border-radius: 10px;
+      box-shadow: 0 4px 14px rgba(255, 115, 171, 0.28);
+    }
+    .pp-card button.ghost {
+      background: rgba(255, 150, 190, 0.12);
+      border-color: rgba(255, 150, 190, 0.28);
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 10px;
+    }
+    .pp-card button.ghost:hover {
+      background: rgba(255, 150, 190, 0.24);
+      border-color: rgba(255, 150, 190, 0.5);
+    }
+
+    .pp-card .result {
+      border-color: rgba(255, 150, 190, 0.22);
+      background: rgba(28, 30, 40, 0.5);
+      border-radius: 10px;
+    }
+    .pp-card .status { font-size: 11px; min-height: 0; }
+    .pp-card .status:empty { display: none; }
   </style>
 </head>
 <body>
-  <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
-  <div class="row tight" style="align-items:center;margin-bottom:2px;">
-    <div class="box-label" id="selLabel" style="flex:1;font-size:11px;color:#9aa0b4;">Văn bản đã chọn</div>
-    <button class="ghost" id="selCopy" type="button" style="flex:0 0 auto;padding:4px 10px;font-size:12px;">Sao chép</button>
-  </div>
-  <div class="selected-box" id="selectedText">(chưa có văn bản được chọn)</div>
+  <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; margin:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="translate">🌸 Dịch</div>
-    <div class="tab" data-tab="reply">💬 Trả lời</div>
-    <div class="tab" data-tab="task">📝 Lưu task</div>
+  <div class="pp-head">
+    <h2>🌸 Trợ lý văn bản</h2>
   </div>
 
-  <!-- Dịch -->
-  <div class="panel active" id="panel-translate">
-    <div>
-      <label>Dịch sang</label>
-      <select id="trTarget">
-        <option value="vi">Tiếng Việt</option>
-        <option value="en">Tiếng Anh</option>
-        <option value="ja">Tiếng Nhật</option>
-      </select>
+  <div class="pp-card">
+    <div class="pp-section-head">
+      <div class="box-label" id="selLabel">Văn bản đã chọn</div>
+      <button class="ghost" id="selCopy" type="button">Sao chép</button>
     </div>
-    <div>
-      <label>Ngữ cảnh</label>
-      <select id="trContext">
-        <option value="">(Mặc định)</option>
-      </select>
-    </div>
-    <button class="action" id="trGo">Dịch</button>
-    <div class="status" id="trStatus"></div>
-    <div class="result empty" id="trResult">Bản dịch sẽ hiện ở đây.</div>
-    <button class="ghost" id="trCopy">Sao chép bản dịch</button>
-  </div>
+    <div class="selected-box" id="selectedText">(chưa có văn bản được chọn)</div>
 
-  <!-- Trả lời -->
-  <div class="panel" id="panel-reply">
-    <div>
-      <label>Trả lời bằng</label>
-      <select id="rpTarget">
-        <option value="">Tự động (theo ngôn ngữ đoạn gốc)</option>
-        <option value="en">Tiếng Anh</option>
-        <option value="ja">Tiếng Nhật</option>
-        <option value="vi">Tiếng Việt</option>
-      </select>
+    <div class="tabs">
+      <div class="tab active" data-tab="translate">🌸 Dịch</div>
+      <div class="tab" data-tab="reply">💬 Trả lời</div>
+      <div class="tab" data-tab="task">📝 Lưu task</div>
     </div>
-    <div>
-      <label>Câu trả lời của bạn (gõ tiếng Việt)</label>
-      <textarea id="rpInput" placeholder="Gõ câu trả lời bằng tiếng Việt..."></textarea>
-    </div>
-    <button class="action" id="rpGo">Tạo câu trả lời</button>
-    <div class="status" id="rpStatus"></div>
-    <div class="result empty" id="rpResult">Câu trả lời sẽ hiện ở đây.</div>
-    <button class="ghost" id="rpCopy">Sao chép câu trả lời</button>
-  </div>
 
-  <!-- Lưu task -->
-  <div class="panel" id="panel-task">
-    <div>
-      <label>Ghi chú (tuỳ chọn)</label>
-      <textarea id="tkNote" placeholder="Thêm chi tiết cho công việc..."></textarea>
+    <!-- Dịch -->
+    <div class="panel active" id="panel-translate">
+      <div class="pp-field">
+        <label for="trTarget">Dịch sang</label>
+        <select id="trTarget">
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">Tiếng Anh</option>
+          <option value="ja">Tiếng Nhật</option>
+        </select>
+      </div>
+      <div class="pp-field">
+        <label for="trContext">Ngữ cảnh</label>
+        <select id="trContext">
+          <option value="">(Mặc định)</option>
+        </select>
+      </div>
+      <button class="action" id="trGo">Dịch</button>
+      <div class="status" id="trStatus"></div>
+      <div class="result empty" id="trResult">Bản dịch sẽ hiện ở đây.</div>
+      <button class="ghost" id="trCopy">Sao chép bản dịch</button>
     </div>
-    <button class="action" id="tkGo">Lưu thành công việc</button>
-    <div class="status" id="tkStatus"></div>
-    <button class="ghost" id="tkOpen">Mở danh sách công việc</button>
+
+    <!-- Trả lời -->
+    <div class="panel" id="panel-reply">
+      <div class="pp-field">
+        <label for="rpTarget">Trả lời bằng</label>
+        <select id="rpTarget">
+          <option value="">Tự động (theo ngôn ngữ đoạn gốc)</option>
+          <option value="en">Tiếng Anh</option>
+          <option value="ja">Tiếng Nhật</option>
+          <option value="vi">Tiếng Việt</option>
+        </select>
+      </div>
+      <div class="pp-field">
+        <label for="rpInput">Câu trả lời của bạn (gõ tiếng Việt)</label>
+        <textarea id="rpInput" placeholder="Gõ câu trả lời bằng tiếng Việt..."></textarea>
+      </div>
+      <button class="action" id="rpGo">Tạo câu trả lời</button>
+      <div class="status" id="rpStatus"></div>
+      <div class="result empty" id="rpResult">Câu trả lời sẽ hiện ở đây.</div>
+      <button class="ghost" id="rpCopy">Sao chép câu trả lời</button>
+    </div>
+
+    <!-- Lưu task -->
+    <div class="panel" id="panel-task">
+      <div class="pp-field">
+        <label for="tkNote">Ghi chú (tuỳ chọn)</label>
+        <textarea id="tkNote" placeholder="Thêm chi tiết cho công việc..."></textarea>
+      </div>
+      <button class="action" id="tkGo">Lưu thành công việc</button>
+      <div class="status" id="tkStatus"></div>
+      <button class="ghost" id="tkOpen">Mở danh sách công việc</button>
+    </div>
   </div>
 
   <script src="js/tauri-api.js"></script>

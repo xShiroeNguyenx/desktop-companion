@@ -48,6 +48,74 @@ pub struct Settings {
     pub tts_voice_windows: String,
     #[serde(default = "default_tts_voice_edge")]
     pub tts_voice_edge: String,
+
+    // ── Bạn đồng hành (persona.rs) ──
+    /// Tên người dùng đặt cho pet; rỗng = chưa đặt.
+    #[serde(default)]
+    pub pet_name: String,
+    /// Tên của người dùng (tuỳ chọn), dùng khi nói tiếng Nhật / tiếng Anh.
+    #[serde(default)]
+    pub user_name: String,
+    /// Xưng hô tiếng Việt: pet tự xưng / gọi người dùng.
+    #[serde(default = "default_vi_self")]
+    pub vi_self: String,
+    #[serde(default = "default_vi_user")]
+    pub vi_user: String,
+    #[serde(default = "default_ja_honorific")]
+    pub ja_honorific: String,
+    /// "vi" | "ja" | "en": câu pet nói + ngôn ngữ trả lời chat.
+    #[serde(default = "default_message_language")]
+    pub message_language: String,
+    /// Đã xin đặt tên mấy lần, lần cuối lúc nào (giây unix). Không có trên form
+    /// Cài đặt: settings_set giữ nguyên giá trị cũ.
+    #[serde(default)]
+    pub name_asks: u32,
+    #[serde(default)]
+    pub name_asked_at: u64,
+    /// Đã hỏi "nên gọi bạn là gì" sau lần đặt tên đầu chưa.
+    #[serde(default)]
+    pub address_asked: bool,
+
+    // ── Nhắc nhở (reminders.rs) ── phút ngồi máy liên tục; 0 = tắt.
+    #[serde(default = "default_remind_eyes")]
+    pub remind_eyes_min: u32,
+    #[serde(default = "default_remind_hourly")]
+    pub remind_water_min: u32,
+    #[serde(default = "default_remind_hourly")]
+    pub remind_stand_min: u32,
+    /// Hai câu pet tự nói cách nhau tối thiểu bao nhiêu phút.
+    #[serde(default = "default_quiet_gap")]
+    pub quiet_gap_min: u32,
+    /// Hạn chót tới mà pet đang ẩn / đang trình chiếu → thông báo Windows.
+    #[serde(default = "default_true")]
+    pub due_toast: bool,
+    /// "Bunny Lounge": nhân vật bám cạnh bảng Cài đặt / Công việc (sidegirl.rs).
+    /// Mặc định tắt, người dùng tự bật.
+    #[serde(default)]
+    pub side_girls: bool,
+}
+
+fn default_remind_eyes() -> u32 {
+    45
+}
+fn default_remind_hourly() -> u32 {
+    60
+}
+fn default_quiet_gap() -> u32 {
+    10
+}
+
+fn default_vi_self() -> String {
+    "em".to_string()
+}
+fn default_vi_user() -> String {
+    "anh".to_string()
+}
+fn default_ja_honorific() -> String {
+    "さん".to_string()
+}
+fn default_message_language() -> String {
+    "vi".to_string()
 }
 
 fn default_tts_engine() -> String {
@@ -121,6 +189,21 @@ impl Default for Settings {
             tts_engine: default_tts_engine(),
             tts_voice_windows: String::new(),
             tts_voice_edge: default_tts_voice_edge(),
+            pet_name: String::new(),
+            user_name: String::new(),
+            vi_self: default_vi_self(),
+            vi_user: default_vi_user(),
+            ja_honorific: default_ja_honorific(),
+            message_language: default_message_language(),
+            name_asks: 0,
+            name_asked_at: 0,
+            address_asked: false,
+            remind_eyes_min: default_remind_eyes(),
+            remind_water_min: default_remind_hourly(),
+            remind_stand_min: default_remind_hourly(),
+            quiet_gap_min: default_quiet_gap(),
+            due_toast: true,
+            side_girls: false,
         }
     }
 }
@@ -140,6 +223,21 @@ pub struct Task {
     /// Mốc hoàn thành (millis). Rỗng khi việc chưa xong — bỏ tick thì xoá đi.
     #[serde(default)]
     pub done_at: String,
+    /// Đang ghim lên màn hình desktop thành một tờ note (xem pins.rs).
+    #[serde(default)]
+    pub pinned: bool,
+    /// Vị trí tờ note (physical px, toạ độ màn hình). None = chưa kéo lần nào.
+    #[serde(default)]
+    pub pin_pos: Option<(i32, i32)>,
+    /// Tờ note luôn nổi trên mọi cửa sổ thay vì nằm trên desktop.
+    #[serde(default)]
+    pub pin_top: bool,
+    /// Hạn chót (millis UTC). Rỗng = không có hạn.
+    #[serde(default)]
+    pub due_at: String,
+    /// Mốc nhắc hạn chót đã nói gần nhất (reminders::Stage::rank). Đổi hạn thì về 0.
+    #[serde(default)]
+    pub reminded: u8,
 }
 
 fn config_dir(app: &AppHandle) -> Option<PathBuf> {
@@ -184,6 +282,41 @@ pub fn save_tasks(app: &AppHandle, tasks: &[Task]) -> Result<(), String> {
     let path = tasks_path(app).ok_or("no config dir")?;
     let json = serde_json::to_string_pretty(tasks).map_err(|e| e.to_string())?;
     std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+// Bảng Tasks, chat, và các tờ note ghim cùng ghi tasks.json từ nhiều luồng.
+// Đọc-sửa-ghi phải nằm trọn trong khoá, nếu không lần ghi sau đè mất lần trước.
+static TASKS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Đọc tasks, cho `f` sửa, rồi ghi lại — trong một khoá.
+pub fn update_tasks<R>(app: &AppHandle, f: impl FnOnce(&mut Vec<Task>) -> R) -> Result<R, String> {
+    let _guard = TASKS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tasks = load_tasks(app);
+    let out = f(&mut tasks);
+    save_tasks(app, &tasks)?;
+    Ok(out)
+}
+
+fn pin_avatar_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("pin_avatar.png"))
+}
+
+/// Ảnh mặt nhân vật trên đầu cây ghim (PNG). None = chưa chụp lần nào.
+pub fn load_pin_avatar(app: &AppHandle) -> Option<Vec<u8>> {
+    std::fs::read(pin_avatar_path(app)?).ok()
+}
+
+/// Model Live2D của ảnh đang lưu, để đổi model thì chụp lại.
+pub fn load_pin_avatar_model(app: &AppHandle) -> String {
+    pin_avatar_path(app)
+        .and_then(|p| std::fs::read_to_string(p.with_extension("model")).ok())
+        .unwrap_or_default()
+}
+
+pub fn save_pin_avatar(app: &AppHandle, png: &[u8], model: &str) -> Result<(), String> {
+    let path = pin_avatar_path(app).ok_or("no config dir")?;
+    std::fs::write(&path, png).map_err(|e| e.to_string())?;
+    std::fs::write(path.with_extension("model"), model).map_err(|e| e.to_string())
 }
 
 // Lịch sử Quick Chat (chỉ nằm trên máy, xoá được từ khung chat).

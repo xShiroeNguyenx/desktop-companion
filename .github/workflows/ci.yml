@@ -35,3 +35,10 @@ jobs:
       - name: Cargo check
         working-directory: src-tauri
         run: cargo check --locked
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: JS tests
+        run: npm test

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+  Nhân vật bám mép trái bảng Cài đặt / Công việc (src-tauri/src/sidegirl.rs).
+  Cửa sổ trong suốt, click xuyên qua; Rust đặt vị trí + kích thước (tỉ lệ 2:3
+  đúng bằng ảnh), báo có lật ảnh không, và mép bảng nằm ở đâu ("edge") để phần
+  người đè lên bảng được làm mờ — nội dung bảng bên dưới vẫn đọc được.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bạn đồng hành</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+    }
+    /* Mặt nạ đặt ở khung bọc (không lật), ảnh bên trong mới lật: vùng mờ luôn
+       ở phía bảng dù ảnh có lật hay không. --edge do Rust gửi (0..1). */
+    #frame {
+      position: absolute;
+      inset: 0;
+      --edge: 66%;
+      /* Độ đậm còn lại của phần đè lên bảng. */
+      --ghost: 0.18;
+      -webkit-mask-image: linear-gradient(to right,
+        #000 0, #000 calc(var(--edge) - 4%),
+        rgba(0, 0, 0, var(--ghost)) calc(var(--edge) + 3%),
+        rgba(0, 0, 0, var(--ghost)) 100%);
+      mask-image: linear-gradient(to right,
+        #000 0, #000 calc(var(--edge) - 4%),
+        rgba(0, 0, 0, var(--ghost)) calc(var(--edge) + 3%),
+        rgba(0, 0, 0, var(--ghost)) 100%);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    #frame.ready { opacity: 1; }
+    #girl {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+      pointer-events: none;
+      transform-origin: center bottom;
+      filter: drop-shadow(0 6px 12px rgba(255, 120, 170, 0.35));
+      animation: bob 5s ease-in-out infinite;
+    }
+    #girl.flip { transform: scaleX(-1); }
+    /* Nhún nhẹ như đang đu trên mép khung. */
+    @keyframes bob {
+      0%, 100% { translate: 0 0; }
+      50%      { translate: 0 -4px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #girl { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="frame"><img id="girl" alt="" draggable="false" /></div>
+  <script>
+    (function () {
+      const frame = document.getElementById('frame');
+      const img = document.getElementById('girl');
+      img.src = window.__SIDE_IMG__ || '';
+      const T = window.__TAURI__ || {};
+      if (T.event && T.event.listen) {
+        T.event.listen('side-layout', (e) => {
+          const p = e.payload || {};
+          img.classList.toggle('flip', !!p.flip);
+          const edge = Number(p.edge);
+          if (edge > 0 && edge < 1) frame.style.setProperty('--edge', (edge * 100).toFixed(1) + '%');
+          frame.classList.add('ready');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

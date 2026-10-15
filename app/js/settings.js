@@ -197,6 +197,64 @@
   });
   $('newContext').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('addContext').click(); });
 
+  // Xưng hô tiếng Việt chỉ hiện khi nói tiếng Việt; hậu tố Nhật chỉ khi nói
+  // tiếng Nhật. Ô tự nhập chỉ hiện khi chọn "Tự nhập…".
+  function syncCompanionFields() {
+    const lang = $('messageLanguage').value;
+    $('viPairBlock').style.display = lang === 'vi' ? '' : 'none';
+    $('jaHonorificBlock').style.display = lang === 'ja' ? '' : 'none';
+    $('viCustom').style.display = $('viPair').value === 'custom' ? '' : 'none';
+  }
+  $('messageLanguage').addEventListener('change', syncCompanionFields);
+  $('viPair').addEventListener('change', syncCompanionFields);
+
+  function viPronouns() {
+    const v = $('viPair').value;
+    if (v === 'custom') return [$('viSelf').value.trim(), $('viUser').value.trim()];
+    return v.split('|');
+  }
+
+  // Chu kỳ nhắc sức khoẻ (phút, 0 = tắt). Giá trị lạ (sửa tay settings.json)
+  // được thêm vào danh sách để không bị đổi ngầm khi Lưu.
+  const REMIND_CHOICES = [0, 30, 45, 60, 90, 120];
+  function fillRemind(id, value) {
+    const sel = $(id);
+    const values = REMIND_CHOICES.includes(value) ? REMIND_CHOICES : [...REMIND_CHOICES, value].sort((a, b) => a - b);
+    sel.innerHTML = '';
+    for (const v of values) {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = v === 0 ? 'Tắt' : `Sau ${v} phút ngồi máy`;
+      sel.appendChild(opt);
+    }
+    sel.value = String(value);
+  }
+
+  $('toastTest').addEventListener('click', async () => {
+    const st = $('toastStatus');
+    try {
+      await invoke('notify_test');
+      st.className = 'status ok';
+      st.textContent = 'Đã gửi. Không thấy thông báo thì kiểm tra Cài đặt Windows → Hệ thống → Thông báo (và chế độ Không làm phiền / Focus).';
+    } catch (e) {
+      st.className = 'status err';
+      st.textContent = 'Không gửi được thông báo: ' + e;
+    }
+  });
+
+  // Bật / tắt nhân vật bám cạnh bảng: áp dụng ngay để xem trước, không chờ Lưu.
+  $('sideGirls').addEventListener('change', async () => {
+    const box = $('sideGirls');
+    try {
+      await invoke('set_side_girls', { enabled: box.checked });
+    } catch (e) {
+      box.checked = !box.checked;
+      const st = $('status');
+      st.className = 'status err';
+      st.textContent = 'Không đổi được: ' + e;
+    }
+  });
+
   async function load() {
     try {
       const s = await invoke('settings_get');
@@ -231,6 +289,7 @@
       renderCustomModels();
       setHotkeyDisplay(s.hotkey || 'Ctrl+Shift+Space');
       $('autoFlower').checked = s.auto_flower !== false;
+      $('sideGirls').checked = s.side_girls === true;
       $('proactive').value = String(s.proactive_minutes ?? 60);
       // Giá trị lạ (sửa tay settings.json) → vẫn hiện được thay vì ô trống.
       if ($('proactive').value === '') $('proactive').value = '60';
@@ -238,6 +297,24 @@
       if (!$('ttsEngine').value) $('ttsEngine').value = 'off';
       ttsVoices.windows = s.tts_voice_windows || '';
       ttsVoices.edge = s.tts_voice_edge || 'vi-VN-HoaiMyNeural';
+      // Bạn đồng hành
+      $('petName').value = s.pet_name || '';
+      $('userName').value = s.user_name || '';
+      $('messageLanguage').value = ['vi', 'ja', 'en'].includes(s.message_language) ? s.message_language : 'vi';
+      $('jaHonorific').value = s.ja_honorific ?? 'さん';
+      const pair = `${s.vi_self || 'em'}|${s.vi_user || 'anh'}`;
+      const known = [...$('viPair').options].some((o) => o.value === pair);
+      $('viPair').value = known ? pair : 'custom';
+      $('viSelf').value = s.vi_self || 'em';
+      $('viUser').value = s.vi_user || 'anh';
+      syncCompanionFields();
+      // Nhắc nhở
+      fillRemind('remindEyes', s.remind_eyes_min ?? 45);
+      fillRemind('remindWater', s.remind_water_min ?? 60);
+      fillRemind('remindStand', s.remind_stand_min ?? 60);
+      $('quietGap').value = String(s.quiet_gap_min ?? 10);
+      if ($('quietGap').value === '') $('quietGap').value = '10';
+      $('dueToast').checked = s.due_toast !== false;
     } catch (e) { log('settings_get: ' + e); }
     try {
       $('autostart').checked = await invoke('autostart_status');
@@ -354,6 +431,7 @@
       contexts: contexts,
       default_context: $('defaultContext').value,
       auto_flower: $('autoFlower').checked,
+      side_girls: $('sideGirls').checked,
       proactive_minutes: Number($('proactive').value) || 0,
       tts_engine: $('ttsEngine').value,
       tts_voice_windows: ttsVoices.windows,
@@ -361,6 +439,17 @@
       hotkey: hotkeyValue,
       pet_model: petModel,
       custom_models: customModels,
+      pet_name: $('petName').value.trim(),
+      user_name: $('userName').value.trim(),
+      vi_self: viPronouns()[0],
+      vi_user: viPronouns()[1],
+      ja_honorific: $('jaHonorific').value,
+      message_language: $('messageLanguage').value,
+      remind_eyes_min: Number($('remindEyes').value) || 0,
+      remind_water_min: Number($('remindWater').value) || 0,
+      remind_stand_min: Number($('remindStand').value) || 0,
+      quiet_gap_min: Number($('quietGap').value) || 10,
+      due_toast: $('dueToast').checked,
     };
 
     const status = $('status');
