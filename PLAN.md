@@ -856,7 +856,8 @@ Settings.
 |---|---|---|
 | **v0.5.0** ✅ (phát hành 2026-10-15) | Ghim task (12.4c) + Phase 9 + 9B + Phase 10, cộng các việc phát sinh: link bấm được trong task, Bunny Lounge (nhân vật bám mép bảng Cài đặt / Công việc / Trợ lý văn bản, mặc định tắt), giao diện Trợ lý văn bản theo phong cách Cài đặt, sửa lỗi thu nhỏ bảng để pet nằm trơ | Xem CHANGELOG [0.5.0] |
 | **v0.6.0** ✅ (phát hành 2026-10-15) | Phase 11 + 12 + 13 gộp một bản, cộng: "🗂️ Mở đầy đủ" trên menu chuột phải (trợ lý văn bản ở chế độ tự gõ), biểu tượng game trên đầu pet, nhóm menu 💞 Đồng hành | Xem CHANGELOG [0.6.0] |
-| **v0.7.0** ✅ (chuẩn bị phát hành 2026-10-16) | Trang Mini Games, oẳn tù tì và đoán số thành cửa sổ riêng, game mới Gỡ bom, ⚙ Cài đặt xuống ô dưới cùng của menu tròn | Xem CHANGELOG [0.7.0] |
+| **v0.7.0** ✅ (phát hành 2026-10-16) | Trang Mini Games, oẳn tù tì và đoán số thành cửa sổ riêng, game mới Gỡ bom, ⚙ Cài đặt xuống ô dưới cùng của menu tròn | Xem CHANGELOG [0.7.0] |
+| **v0.8.0** ✅ (chuẩn bị phát hành 2026-10-16) | Mục 13 (Phase 14 + 15 + 16): hiệu ứng thời tiết toàn màn hình, theo mùa & giờ, thời tiết thật (Open-Meteo), thẻ dự báo, widget ghim, pet nói về thời tiết + bản tin sáng; nhóm ☁️ Thời tiết trên menu tròn; Bunny Lounge thêm thẻ thời tiết + trang Mini Games | Xem CHANGELOG [0.8.0] |
 
 Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
 / "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).
@@ -883,3 +884,291 @@ Mỗi bản: `cargo test` + `npm test` + `cargo build` xanh (CI chạy `cargo ch
 - Bản build đã cài: ẩn pet, đặt task hạn sau 2 phút → toast hiện, bấm toast mở pet + bảng Tasks;
   hiện pet lại thì không nhắc lặp. Tắt thông báo của app trong Windows → nút Gửi thử báo được
   hướng dẫn kiểm tra.
+
+## 13. Thời tiết: hiệu ứng toàn màn hình + dự báo
+
+> Lập kế hoạch ngày 2026-10-16, tính từ v0.7.0. Phase 14 → 16 đã code, phát hành chung ở **v0.8.0**.
+
+### 13.1 Mục tiêu
+
+- **Hiệu ứng thời tiết phủ toàn màn hình:** mưa, tuyết, gió (lá / cánh hoa anh đào), sương mù,
+  nắng, sao đêm, sấm chớp. Hiệu ứng nằm **trên desktop và các app khác nhưng dưới pet và các bảng
+  của app**, và **không bao giờ chặn chuột / bàn phím**.
+- **Pet sống cùng thời tiết:** đổi nét mặt, nói câu hợp thời tiết ("Mưa rồi, {you} nhớ mang ô
+  nha~"), có câu báo thời tiết buổi sáng.
+- **Thẻ dự báo là một cửa sổ riêng** (đã chốt 2026-10-16), giống thẻ Widgets của Windows: nhiệt
+  độ hiện tại, cao / thấp, dự báo 5–7 ngày, biểu đồ nhiệt độ theo giờ kèm khả năng mưa (%), đổi
+  °C / °F, "cập nhật lúc …".
+- **Ghim thời tiết lên desktop** (đã chốt 2026-10-16), giống ghim task: một widget nhỏ nằm trên
+  màn hình, kéo đi được, nhớ vị trí, tự cập nhật (13.7b).
+
+### 13.2 Nguồn dữ liệu: Open-Meteo
+
+| Lựa chọn | Kết luận |
+|---|---|
+| MSN Weather (thẻ Widgets của Windows) | **Không dùng.** Không có API công khai; các endpoint ẩn `api.msn.com/weather/...` dùng key nhúng của Microsoft, không tài liệu, có thể bị chặn, vi phạm điều khoản. |
+| Azure Maps Weather | Chính thức nhưng cần subscription key. Key không giấu được trong app desktop phát hành → mỗi người phải tự tạo key hoặc phải có server trung gian. Không đáng. |
+| **Open-Meteo** | **Chọn.** Miễn phí, **không cần key**, có hiện tại + theo giờ + theo ngày, khả năng mưa, gió, mã thời tiết WMO, kèm API tìm toạ độ theo tên thành phố. |
+
+- Dự báo: `https://api.open-meteo.com/v1/forecast` với `current`, `hourly`
+  (`temperature_2m`, `precipitation_probability`, `weather_code`), `daily`
+  (`temperature_2m_max/min`, `weather_code`), `timezone=auto`.
+- Tìm thành phố: `https://geocoding-api.open-meteo.com/v1/search?name=…&language=vi|ja|en`.
+- **Ghi công bắt buộc** (dữ liệu CC BY 4.0): dòng nhỏ "Dữ liệu thời tiết: Open-Meteo.com" trên thẻ
+  dự báo + trong README.
+- Gói free dành cho dùng phi thương mại, có giới hạn lượt gọi mỗi ngày. App hỏi **30 phút / lần**
+  (chỉ khi tính năng bật) nên dư sức. Nếu sau này thương mại hoá thì xem lại gói trả phí.
+- Gọi HTTP từ **Rust** (`reqwest` đã có trong `Cargo.toml`), không gọi từ WebView: một chỗ cache,
+  một chỗ xử lý lỗi, các cửa sổ chỉ nhận kết quả.
+
+### 13.3 Nguyên tắc (chốt trước khi làm)
+
+1. **Mặc định TẮT**, giống Bunny Lounge. Bật trong Cài đặt → *Thời tiết* hoặc tray.
+2. **Riêng tư:** **không tự dò vị trí theo IP / GPS.** Người dùng tự gõ tên thành phố, chọn từ
+   danh sách gợi ý; chỉ lưu tên + toạ độ trong `settings.json` trên máy. Thứ duy nhất gửi đi là
+   toạ độ thành phố tới Open-Meteo. Như mọi dữ liệu người dùng: không đưa thành phố thật vào repo /
+   test / ví dụ (test dùng toạ độ giả).
+3. **Không chặn máy:** lớp phủ luôn xuyên chuột, không nhận focus, không hiện trên taskbar. Luôn
+   có **lối thoát khẩn**: phím tắt toàn cục bật / tắt hiệu ứng + mục tray.
+4. **Nhẹ:** giới hạn số hạt, ~30 khung hình/giây, **tự dừng** khi có app toàn màn hình
+   (`awareness.rs` đã có), khoá máy / rời máy lâu, chạy pin (tuỳ chọn), cửa sổ phủ bị ẩn.
+5. **Không cần mạng vẫn chạy:** chế độ chọn tay và theo mùa không gọi mạng. Mất mạng ở chế độ
+   thời tiết thật → giữ cache tối đa 3 giờ, quá hạn thì tắt hiệu ứng và thẻ ghi "chưa cập nhật
+   được", không báo lỗi ồn ào.
+6. **An toàn ánh sáng:** sấm chớp có công tắc riêng, **mặc định tắt**; khi bật thì tối đa một lần
+   chớp mỗi 8 giây, độ sáng thấp, không nhấp nháy liên tục. Tôn trọng `prefers-reduced-motion`
+   (giảm hạt, bỏ chớp).
+7. **Logic quyết định là hàm thuần có test:** mã WMO → loại hiệu ứng + cường độ, hiệu ứng theo
+   mùa / giờ, khi nào hỏi lại API, khi nào pet được nói câu thời tiết, tham số hạt theo cường độ.
+
+### 13.4 Ba chế độ
+
+| Chế độ | Nguồn | Mạng |
+|---|---|---|
+| **Chọn tay** | Người dùng chọn: mưa / tuyết / gió / hoa anh đào / sương / nắng / sao / tắt | Không |
+| **Theo mùa & giờ** | Tháng + giờ địa phương: xuân hoa anh đào, hè nắng, thu lá bay, đông tuyết; đêm có sao | Không |
+| **Thời tiết thật** | Open-Meteo theo thành phố đã chọn, hỏi lại mỗi 30 phút | Có |
+
+Đổi mã WMO (rút gọn): 0–1 quang (đêm: sao) · 2–3 mây · 45, 48 sương mù · 51–57 mưa phùn (mưa nhẹ)
+· 61–67, 80–82 mưa (nhẹ / vừa / to theo mã) · 71–77, 85–86 tuyết · 95–99 dông (mưa to + chớp nếu
+bật). Gió ≥ 30 km/h: thêm lá bay, mưa / tuyết rơi xiên.
+
+### 13.5 Kiến trúc
+
+```
+src-tauri/src/
+  weather.rs      (mới, thuần + test) mã WMO → WeatherKind + Intensity; chế độ mùa/giờ;
+                  parse JSON Open-Meteo → Forecast; cache + khi nào hỏi lại; khi nào pet được nói
+  weather_net.rs  (mới) gọi Open-Meteo bằng reqwest (timeout 10 s), vòng nền 30 phút, geocoding
+  power.rs        (mới, nhỏ) đang cắm sạc hay chạy pin (GetSystemPowerStatus)
+  windows.rs      cửa sổ phủ "fx-<n>" mỗi màn hình + cửa sổ thẻ dự báo "weather"
+  pins.rs         thêm widget ghim thời tiết "pin-weather" (dùng chung cách tạo / kéo / nhớ vị trí
+                  với tờ note task; khớp sẵn glob "pin-*" trong capabilities)
+  lines.rs        câu thời tiết vi/ja/en (biến xưng hô như mọi câu khác)
+  companion.rs    nối WeatherKind vào trọng tài lời nói + nét mặt pet
+app/
+  fx.html + js/fx.js            canvas hạt, nhận "fx-set {kind, intensity, wind, lightning}"
+  js/fx-core.js (+ test)        tham số hạt thuần: số hạt, tốc độ, góc rơi theo gió, chu kỳ chớp
+  weather.html + js/weather.js  thẻ dự báo
+  weather-pin.html + js/weather-pin.js  widget ghim thời tiết
+```
+
+**Cửa sổ phủ (`fx-<n>`):**
+- **Mỗi màn hình một cửa sổ** (không trải qua cả màn hình ảo: hai màn khác DPI sẽ lệch toạ độ).
+  Theo dõi cắm / rút màn phụ để dựng lại, không để cửa sổ mồ côi.
+- Trong suốt, không viền, không bóng, `always_on_top`, `skip_taskbar`, không focus được,
+  **`set_ignore_cursor_events(true)`** ngay khi tạo và **kiểm lại tường minh** sau khi hiện (API
+  thất bại im lặng → không đặt được thì không hiện lớp phủ, log lý do, báo trong Cài đặt).
+- Phủ cả màn hình (kể cả taskbar); "mặt đất" cho tuyết đọng / mưa bắn tóe lấy theo work area.
+- **Thứ tự lớp:** pet, menu tròn, bảng Cài đặt / Công việc / game phải nằm **trên** lớp phủ. Trên
+  Windows các cửa sổ topmost xếp theo lần kích hoạt cuối → sau khi hiện lớp phủ thì nâng lại pet và
+  các bảng đang mở. **Đây là spike đầu tiên của Phase 14**, làm trước khi viết hiệu ứng.
+- Canvas 2D, `requestAnimationFrame` khoá ~30 fps; ẩn cửa sổ là dừng hẳn vòng vẽ.
+
+**Hiệu ứng (`fx.js`):**
+- Mưa: vệt mảnh xiên theo gió, bắn tóe nhỏ ở mặt đất; mưa to thêm một lớp mưa xa mờ hơn.
+- Tuyết: bông to nhỏ lắc lư, đọng thành dải mỏng ở mặt đất rồi tan dần (giới hạn chiều cao).
+- Thu / gió: lá bay ngang có xoay. Xuân: cánh hoa anh đào.
+- Sương mù: vài lớp gradient trôi chậm, độ mờ thấp.
+- Nắng: tia sáng nhẹ ở một góc. Đêm quang: vài ngôi sao lấp lánh ở mép trên.
+- Dông: mưa to + chớp (nếu bật) + tiếng sấm nhỏ (theo công tắc âm thanh).
+- Cường độ Nhẹ / Vừa / Dày nhân số hạt (ví dụ mưa 80 / 160 / 280 hạt trên màn 1080p).
+
+### 13.6 Pet phản ứng theo thời tiết
+
+- Kind mới `Weather` trong trọng tài (ưu tiên thấp, dưới nhắc hạn chót / sức khoẻ), tuân
+  `quiet_gap_min`, Đừng làm phiền, toàn màn hình, phiên Focus như mọi câu tự nói.
+- Nói khi **thời tiết đổi loại** (quang → mưa, mưa → tạnh), tối đa một câu mỗi 2 giờ cho cùng
+  loại. Chế độ chọn tay: một câu ngay khi người dùng bật hiệu ứng.
+- **Bản tin buổi sáng** (chế độ thời tiết thật): gộp vào câu chào đầu ngày đã có — "Hôm nay
+  {min}–{max}°, chiều mưa {p}%, {you} nhớ mang ô nha~". Một lần mỗi ngày.
+- Nét mặt: mưa → `sad` ngắn, tuyết → `surprised`, nắng đẹp → `happy`.
+- Không cần API key: câu mẫu `lines.rs` vi/ja/en (test kiểm đủ ngôn ngữ như các nhóm khác). Có key
+  + bật `llm_lines` thì LLM viết lại cho tự nhiên.
+- Để sau: pet cầm ô / mặc áo ấm (cần thêm motion / parts trong model Live2D).
+
+### 13.7 Thẻ dự báo (`weather.html`)
+
+- Mở từ menu tròn 💞 Đồng hành → ☁️ Thời tiết và từ tray. Cửa sổ nhỏ cùng phong cách các cửa sổ
+  game (vẽ khổ lớn rồi `zoom`).
+- Nội dung (bám theo thẻ Widgets): tên thành phố + giờ địa phương, "cập nhật … phút trước",
+  °F / °C, icon + nhiệt độ hiện tại + mô tả + cao / thấp, dải 5–7 ngày (icon + cao / thấp), biểu
+  đồ nhiệt độ 24 giờ tới với khả năng mưa (%) dưới mỗi mốc, dòng ghi công Open-Meteo.
+- Phần riêng của app: Miu nhỏ ở góc nói một câu theo thời tiết; nút "Bật hiệu ứng như ngoài trời"
+  nếu hiệu ứng đang tắt.
+- Chưa chọn thành phố → thẻ hiện ô tìm thành phố (gợi ý từ geocoding, chọn một là lưu).
+- Biểu đồ vẽ bằng SVG tự viết, không thêm thư viện biểu đồ.
+
+### 13.7b Ghim thời tiết lên desktop (`pin-weather`)
+
+Làm theo đúng cách ghim task (12.4c) để người dùng thấy quen và tái dùng code `pins.rs`:
+- **Ghim từ đâu:** nút 📌 trên thẻ dự báo, mục tray "📌 Ghim thời tiết", và menu chuột phải của
+  widget để gỡ. Chưa chọn thành phố thì nút ghim mờ, kèm gợi ý "Chọn thành phố trước nha~".
+- **Cửa sổ:** trong suốt, không viền, ẩn khỏi taskbar + Alt+Tab (`WS_EX_TOOLWINDOW`), **không
+  luôn-nổi theo mặc định** (nằm như widget, cửa sổ khác che được); nút 📍 bật luôn-nổi. Kéo ở bất
+  cứ đâu; vị trí lưu sau khi đứng yên 400 ms. Mở app thì widget hiện lại đúng chỗ; màn hình phụ đã
+  rút thì về màn hình chính.
+- ~~Đầu ghim là mặt nhân vật~~ — đổi theo người dùng (2026-10-16): không có đầu ghim, Miu
+  (`media/game/rps-wink.png`, cùng hình trên thẻ dự báo) đứng ở góc phải hàng nhiệt độ.
+- **Hai cỡ** (đổi bằng nhấp vào góc widget):
+  - *Nhỏ:* icon + nhiệt độ hiện tại + cao / thấp + khả năng mưa giờ tới.
+  - *Lớn:* thêm tên thành phố, "cập nhật … phút trước", 3 mốc giờ tới hoặc 3 ngày tới.
+- **Bấm đúp** mở thẻ dự báo đầy đủ. ✕ gỡ ghim.
+- **Cập nhật:** Rust `emit_to("pin-weather", "weather-data", …)` mỗi lần có dữ liệu mới; widget
+  không tự gọi mạng. Mất mạng → hiện số liệu cũ, mờ đi, kèm "chưa cập nhật được".
+- Một widget thời tiết (một thành phố), **không tính** vào giới hạn 8 tờ note task.
+- Màu nền đổi nhẹ theo thời tiết (nắng ấm, mưa xanh xám, đêm tím) nhưng vẫn cùng phong cách hồng
+  của app; chữ đủ tương phản trên nền desktop sáng lẫn tối.
+- **Vòng hỏi Open-Meteo chạy khi:** chế độ `live`, **hoặc** widget đang ghim, **hoặc** thẻ dự báo
+  đang mở. Nghĩa là ghim widget không bắt buộc bật hiệu ứng toàn màn hình.
+- Giới hạn như tờ note task: Win+D (Show desktop) che cả widget.
+- Lưu ý khi code: nhãn `pin-weather` khớp glob `pin-*` (capability dùng chung được), còn
+  `pins::id_from_label` chỉ nhận id toàn chữ số nên không nhầm nó là task (thêm test cho
+  `"pin-weather"`).
+
+### 13.8 Settings mới (nhóm ☁️ Thời tiết)
+
+| Trường (`Settings`) | Giá trị | Mặc định |
+|---|---|---|
+| `weather_mode` | `off` / `manual` / `season` / `live` | `off` |
+| `weather_manual` | `rain` / `snow` / `wind` / `sakura` / `fog` / `sun` / `stars` | `rain` |
+| `weather_intensity` | `light` / `medium` / `heavy` | `medium` |
+| `weather_city`, `weather_lat`, `weather_lon` | tên + toạ độ người dùng chọn | rỗng |
+| `weather_units` | `c` / `f` | `c` |
+| `weather_lightning` | sấm chớp | **tắt** |
+| `weather_pause_battery` | dừng hiệu ứng khi chạy pin | bật |
+| `weather_talk` | pet nói câu thời tiết + bản tin sáng | bật |
+| `weather_pin`, `weather_pin_pos`, `weather_pin_top`, `weather_pin_size` | widget ghim: đang ghim, vị trí, luôn-nổi, cỡ `small` / `large` | tắt / rỗng / tắt / `small` |
+| `weather_shortcut` | phím tắt bật / tắt nhanh hiệu ứng | `Ctrl+Alt+W` (đăng ký thất bại / trùng thì báo trong Cài đặt) |
+
+Tất cả `#[serde(default = …)]`. Nhãn mới có đủ vi / ja / en.
+
+### 13.9 Các phase
+
+| Phase | Nội dung | Ước lượng |
+|---|---|---|
+| **14 — Lớp phủ + hiệu ứng chọn tay** | Spike thứ tự lớp + xuyên chuột trên 1 và 2 màn hình; cửa sổ `fx-<n>`; `fx.js` mưa / tuyết / gió / hoa; cường độ; tự dừng khi toàn màn hình / khoá máy / rời máy / chạy pin; phím tắt + tray; nhóm Cài đặt *Thời tiết* (tắt / chọn tay) | ~2 ngày |
+| **15 — Pet phản ứng + theo mùa** | `weather.rs` phần mùa / giờ (thuần + test); sương / nắng / sao; Kind `Weather` trong trọng tài; câu `lines.rs` 3 thứ tiếng; nét mặt | ~1 ngày |
+| **16 — Thời tiết thật + thẻ dự báo + ghim** | `weather_net.rs` + geocoding; parse + cache + đổi mã WMO (thuần + test); chế độ `live` + dông; bản tin sáng; cửa sổ riêng `weather.html` (dự báo ngày, biểu đồ giờ, °C / °F, ghi công); widget ghim `pin-weather` (13.7b) | ~3 ngày |
+
+**Phase 14 — đã code (2026-10-16, chưa phát hành):**
+- `src-tauri/src/fx.rs`: phần thuần có test (`pause_reason`, `overlay_rect` thấp hơn màn 1px,
+  `ground` theo vùng làm việc, `holes` theo từng màn + DPI, `wants_hole`, làm sạch giá trị cài
+  đặt) + vòng nền 500 ms: dựng / gỡ `fx-<n>` theo danh sách màn hình, kiểm cờ
+  `WS_EX_TRANSPARENT` sau `set_ignore_cursor_events` (không có thì không hiện, báo trong Cài
+  đặt, thôi thử lại tới lần đổi cài đặt kế tiếp), hiện bằng `SW_SHOWNOACTIVATE`, nâng pet lên trên
+  lớp phủ bằng `SetWindowPos(HWND_TOPMOST)` mỗi nhịp, dừng theo toàn màn hình / rời máy / pin
+  (`GetSystemPowerStatus`, feature `Win32_System_Power`).
+- Phím tắt `weather_shortcut` (mặc định Ctrl+Alt+W) đăng ký lại sau mỗi lần `unregister_all` của
+  phím chụp chữ; tray "🌦 Bật / Tắt hiệu ứng thời tiết"; menu tròn 💞 → 🌦.
+- `app/fx.html` + `js/fx.js` (canvas, ~30 fps, dừng hẳn khi không active, khoét lỗ bằng
+  `clearRect`), `js/fx-core.js` + test (số hạt theo diện tích / cường độ có trần, sinh hạt, bước
+  rơi, tuyết đọng, lỗ). Mưa bắn tóe + tuyết đọng ở mép trên taskbar.
+- Cài đặt: `weather_mode` (`off` / `manual`), `weather_manual`, `weather_intensity`,
+  `weather_pause_battery`, `weather_shortcut`; nhóm 🌦 Thời tiết áp dụng ngay khi đổi.
+- **Chưa kiểm trên máy thật:** thứ tự lớp (pet / menu tròn / bảng có thật sự trên lớp phủ),
+  xuyên chuột, hai màn hình khác DPI, mức CPU / GPU. Nếu menu tròn hoặc bông hoa (topmost, hiện
+  sau lớp phủ) bị lớp phủ đè thì chúng vẫn được khoét lỗ nên không bị mưa vẽ lên.
+
+**Phase 15 — đã code (2026-10-16, chưa phát hành):**
+- `src-tauri/src/weather.rs` (thuần + test): `KINDS` (7 loại, đồng bộ `FxCore.KINDS`),
+  `season_kind(tháng, giờ)` (xuân hoa anh đào, hè nắng, thu lá, đông tuyết cả đêm, đêm 19:00–6:00
+  có sao), `expression` (chỉ nét có trong `expression.js`, không có "sad" nên mưa dùng `shy`),
+  `Talk::observe` (nói khi đổi loại hoặc vừa bật; cùng loại cách ≥ 2 giờ; lần quan sát đầu sau
+  khi mở app chỉ ghi nhận, không nói).
+- `fx.rs`: `Mode::Season`, `current_kind()` cho trọng tài, phím tắt / tray bật lại đúng chế độ
+  trước lúc tắt (`weather_last_mode`).
+- Trọng tài: Kind `Weather` (dưới `SysWarn`, trên `Chatter`), ttl 10 phút, câu
+  `Key::Weather*` 3 thứ tiếng × 3 biến thể; công tắc `weather_talk`.
+- `fx-core.js` / `fx.js`: sương mù (mảng gradient trôi ngang), nắng (quầng sáng + 7 tia ở góc
+  trên phải), sao (lấp lánh ở nửa trên màn hình).
+- Cài đặt: ô chế độ Tắt / Chọn hiệu ứng / Theo mùa & giờ; ô hiệu ứng chỉ bật khi chọn tay.
+- **Chưa làm (để Phase 16):** dông + chớp (cần thời tiết thật), bản tin buổi sáng.
+
+**Phase 16 — đã code (2026-10-16, chưa phát hành):**
+- `weather.rs` thêm phần thuần có test: `wmo_effect` (mã WMO → loại / cường độ / dông; trời nhiều
+  mây không vẽ; gió ≥ 30 km/h mà trời khô thì lá bay), `parse_forecast` / `parse_places` (bỏ giờ /
+  ngày thiếu số, từ chối toạ độ sai), `forecast_url` / `geocode_url` / `url_encode`,
+  `fetch_due` (30 phút; lỗi thì 5 phút sau thử lại), `is_stale` (> 3 giờ), `brief_due`,
+  `brief_rainy`, `fmt_temp`. Đã thử URL thật với toạ độ giả: đúng cấu trúc JSON.
+- `weather_net.rs`: cache `weather.json` trong thư mục cấu hình; vòng nền 2 giây chỉ gọi mạng khi
+  có thành phố VÀ (chế độ live hoặc widget đang ghim hoặc thẻ dự báo đang mở); `live_effect` cho
+  fx.rs (dữ liệu quá cũ → None, tắt hiệu ứng); đổi thành phố thì bỏ cache cũ ngay; `take_brief`
+  cho trọng tài; widget ghim `pin-weather` (dựng / vị trí / luôn nổi / cỡ / Alt+F4 = gỡ ghim).
+- `fx.rs`: `Mode::Live`, `Show { kind, intensity, lightning, thunder }`; cường độ live theo trời
+  thật; chớp chỉ khi dông VÀ bật `weather_lightning`. `fx.js`: chớp nhẹ (đỉnh 0.18, tắt dần
+  0.35 s, cách ≥ 8 s, bỏ khi reduced-motion).
+- Trọng tài: câu "dông" (`storm`), bản tin sáng `WeatherBrief` / `WeatherBriefRain` (biến
+  {min} {max} {rain}, ttl 30 phút, một lần / ngày 6–11 giờ, chỉ khi dữ liệu còn mới).
+- Thẻ dự báo `weather.html` + `js/weather.js` (cửa sổ dựng sẵn "weather", 475×396), chữ / icon /
+  biểu đồ thuần trong `js/weather-core.js` + test. Widget `weather-pin.html` + `js/weather-pin.js`.
+- Mở thẻ: tray "☁️ Dự báo thời tiết", menu tròn 💞 → ☁️, nút trong Cài đặt. Cài đặt thêm chế độ
+  "Theo thời tiết thật", công tắc chớp; mỗi chế độ có một dòng giải thích ngắn.
+- Sửa sau khi người dùng thử (2026-10-16): các lệnh thời tiết đụng cửa sổ chuyển sang async (lệnh
+  đồng bộ dựng / gỡ widget làm treo WebView2); kéo thẻ ở bất cứ đâu bằng JS `startDragging`; nút
+  × ẩn bằng lệnh Rust `weather_close`; widget mới hiện ngay cạnh thẻ (`weather_net::beside`);
+  widget bỏ đầu ghim, có Miu ở góc; ô tìm thành phố nằm ngay trong thẻ (không phủ cả thẻ); cô cáo
+  steampunk `media/side/weather-girl.png` bám mép trái thẻ (sidegirl `side_weather`, theo công
+  tắc Bunny Lounge); menu tròn: nhóm ☁️ Thời tiết (Dự báo / Hiệu ứng / Ghim) thay ô 🔕, 🔕 vào
+  nhóm 💞 — vòng vẫn 8 ô nên ⚙ vẫn ở đáy. Lệnh `weather:pin` từ pet chạy ở luồng riêng.
+- **Chưa làm / giới hạn:** tiếng sấm (chưa có file âm thanh); mưa / tuyết xiên theo gió (chỉ có lá
+  bay khi gió mạnh); Win+D che cả widget như tờ note task.
+
+### 13.10 Rủi ro
+
+| Rủi ro | Cách giảm |
+|---|---|
+| Lớp phủ trong suốt toàn màn hình tốn GPU / CPU (Windows phải ghép hình liên tục) | Giới hạn hạt + 30 fps; dừng hẳn vòng vẽ khi ẩn; tự dừng theo pin / toàn màn hình / rời máy; đo trong Task Manager ở 3 mức cường độ trước khi phát hành |
+| Xuyên chuột hỏng → cả màn hình "đơ" | Kiểm tường minh sau khi đặt; không đặt được thì không hiện; phím tắt toàn cục + tray để tắt ngay |
+| Lớp phủ đè lên pet / bảng của app | Spike ở đầu Phase 14; nâng lại cửa sổ của app sau khi hiện lớp phủ |
+| Nhiều màn hình, DPI khác nhau, cắm / rút màn | Mỗi màn một cửa sổ; dựng lại khi danh sách màn hình đổi |
+| Không phủ được game chạy fullscreen độc quyền | Chấp nhận: lúc đó vốn phải tắt hiệu ứng |
+| Sấm chớp gây khó chịu | Mặc định tắt, giới hạn tần suất + độ sáng, tôn trọng reduced-motion |
+| Open-Meteo đổi API / giới hạn lượt | Gói lời gọi trong `weather_net.rs`; cache; lỗi thì tắt êm chế độ `live`, các chế độ khác vẫn chạy |
+
+### 13.11 Kiểm thử bằng tay
+
+- Bật mưa mức Dày: click, kéo cửa sổ, gõ phím, cuộn ở app bên dưới đều bình thường; pet, menu tròn,
+  bảng Cài đặt vẫn nằm **trên** lớp mưa và bấm được.
+- Hai màn hình khác DPI: phủ đúng cả hai, không lệch, không hở; rút màn phụ → không còn cửa sổ
+  phủ mồ côi.
+- Video / trình chiếu toàn màn hình → hiệu ứng dừng, thoát ra thì chạy lại. Rút sạc (khi bật dừng
+  theo pin) → dừng.
+- Phím tắt bật / tắt hiệu ứng chạy cả khi app khác đang focus.
+- Chế độ `live`: chọn thành phố → thẻ dự báo khớp số liệu Open-Meteo; ngắt mạng → thẻ ghi chưa cập
+  nhật được, không báo lỗi liên tục; có mạng lại → tự cập nhật.
+- Ghim thời tiết: widget hiện đúng số liệu như thẻ dự báo; kéo đi, thoát app, mở lại → đúng chỗ
+  cũ; rút màn phụ → widget về màn chính; 📍 bật luôn-nổi hoạt động; đổi cỡ nhỏ / lớn được lưu; ghim
+  khi chế độ hiệu ứng đang tắt vẫn tự cập nhật mỗi 30 phút; gỡ ghim + đóng thẻ dự báo + chế độ khác
+  `live` → không còn gọi mạng.
+- Thời tiết đổi (giả lập bằng dữ liệu test) → pet nói đúng một câu, không lặp trong 2 giờ; bản
+  tin sáng một lần mỗi ngày; Đừng làm phiền / Focus → pet im.
+
+### 13.12 Câu hỏi cần chốt trước khi code
+
+1. ~~Phase 14 làm hiệu ứng nào trước?~~ **Đã chốt:** mưa, tuyết, hoa anh đào, lá bay; sương / nắng /
+   sao ở Phase 15, dông ở Phase 16.
+2. ~~Phím tắt khẩn?~~ **Đã chốt:** `Ctrl+Alt+W` (đổi được trong Cài đặt).
+3. ~~Thẻ dự báo: cửa sổ riêng hay tab trong bảng Công việc?~~ **Đã chốt (2026-10-16): cửa sổ
+   riêng, kèm ghim thời tiết lên desktop** (13.7b).
+4. ~~Chia bản phát hành?~~ **Đã chốt:** gộp cả ba phase vào **v0.8.0**.

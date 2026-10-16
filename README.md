@@ -74,6 +74,16 @@
   3, 5 or 7), guess the number (1–10 up to 1–100, with hints) and Bomb Squad,
   a minesweeper in three sizes. A "★ Today" game of the day, achievements and
   the friendship points games gave you today sit on the same page.
+- **🌦 Weather** — rain, snow, cherry blossoms, falling leaves, fog, sunshine
+  or a starry night across your whole screen, never blocking the mouse and
+  pausing by itself when you watch something full screen, lock the PC or step
+  away. Pick an effect, let it follow the season and time of day, or follow
+  the **real weather** in a city you choose. A forecast card (now, 7 days, a
+  24-hour chart with the chance of rain, °C / °F) and a weather widget you can
+  pin to the desktop; the pet comments when the weather changes and gives a
+  short morning report. Toggle the effect with **Ctrl+Alt+W**. Your location is
+  never looked up — only the coordinates of the city you pick are sent to
+  [Open-Meteo](https://open-meteo.com) (no API key needed).
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
@@ -88,8 +98,8 @@
   the gap between their two columns (click-through, so it stays out of the way),
   then returns to where it was when you close or minimize them.
 - **🌸 Bunny Lounge** (optional, Settings → *Diện mạo*) — companion girls lean
-  on the edge of Settings, Tasks and the text assistant; the part over the
-  panel fades so everything stays readable.
+  on the edge of Settings, Tasks, the text assistant, the weather card and the
+  Mini Games page; the part over the panel fades so everything stays readable.
 - **Look-at cursor** — the model's head/eyes follow the mouse when it's near the pet.
 - **Resize** — `Ctrl` + mouse wheel scales the pet; size is remembered.
 - **Custom Live2D models** — load your own `*.model3.json` models from any folder.
@@ -125,7 +135,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · Quit
+Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · Quit
 
 ### Right-click the pet
 
@@ -135,7 +145,8 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games) · 🔕 Do not disturb · 🗂️ Mở đầy đủ (text assistant)
+(🍅 focus, 💗 bond, 🎮 Mini Games, 🔕 Do not disturb) · ☁️ Weather (forecast,
+effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or
@@ -169,6 +180,7 @@ cd src-tauri && cargo test   # Rust unit tests
 - **Live2D Cubism 4** rendered with **[PIXI.js](https://pixijs.com)**
 - Global mouse hook + simulated copy for cross-app text capture (Windows)
 - Anthropic / Gemini HTTP APIs for translation & reply
+- [Open-Meteo](https://open-meteo.com) for weather forecasts and city search
 
 ---
 
@@ -176,6 +188,7 @@ cd src-tauri && cargo test   # Rust unit tests
 
 - Live2D sample models © Live2D Inc. (used under their Free Material License).
 - Built on the rendering runtime from the Anime Companion project.
+- Weather data by [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
 
 ## License
 

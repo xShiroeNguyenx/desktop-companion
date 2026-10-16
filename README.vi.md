@@ -65,6 +65,14 @@ duyệt, Word…).
   ứng theo từng nước: oẳn tù tì (thắng 3, 5 hoặc 7 trận), đoán số (1–10 tới 1–100, có
   gợi ý) và Gỡ bom (dò mìn 3 cỡ bàn). Cùng trang có "★ Hôm nay" (game của ngày), thành
   tích và số điểm thân thiết đã nhận từ game hôm nay.
+- **🌦 Thời tiết** — mưa, tuyết, hoa anh đào, lá bay, sương mù, nắng hay sao đêm
+  trên toàn màn hình; không bao giờ chặn chuột, tự dừng khi bạn xem toàn màn hình,
+  khoá máy hoặc rời máy. Chọn hiệu ứng, để tự theo mùa & giờ, hoặc theo **thời tiết
+  thật** ở thành phố bạn chọn. Có thẻ dự báo (hiện tại, 7 ngày, biểu đồ 24 giờ kèm
+  khả năng mưa, °C / °F) và widget thời tiết ghim lên desktop; pet nói một câu khi
+  trời đổi và có bản tin buổi sáng. Bật / tắt hiệu ứng bằng **Ctrl+Alt+W**. App
+  không dò vị trí của bạn — chỉ gửi toạ độ thành phố bạn chọn tới
+  [Open-Meteo](https://open-meteo.com) (không cần API key).
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -78,7 +86,8 @@ duyệt, Word…).
   giữa hai cột (click xuyên qua được nên không vướng tay), đóng hoặc thu nhỏ bảng
   thì pet quay về đúng chỗ cũ.
 - **🌸 Bunny Lounge** (tuỳ chọn, Cài đặt → *Diện mạo*) — các cô nàng tựa bên khung
-  Cài đặt, Công việc và Trợ lý văn bản; phần đè lên bảng mờ đi nên vẫn đọc rõ.
+  Cài đặt, Công việc, Trợ lý văn bản, thẻ thời tiết và trang Mini Games; phần đè lên
+  bảng mờ đi nên vẫn đọc rõ.
 - **Nhìn theo con trỏ** — đầu/mắt nhân vật dõi theo chuột khi chuột ở gần pet.
 - **Phóng to / thu nhỏ** — `Ctrl` + lăn chuột để đổi kích thước; tự nhớ kích thước.
 - **Model Live2D tự thêm** — nạp model `*.model3.json` của bạn từ thư mục bất kỳ.
@@ -114,7 +123,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · Thoát
+Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · Thoát
 
 ### Chuột phải vào pet
 
@@ -124,8 +133,8 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games) · 🔕 Đừng làm phiền ·
-🗂️ Mở đầy đủ (trợ lý văn bản)
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🔕 Đừng làm phiền) ·
+☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.
@@ -158,12 +167,14 @@ cd src-tauri && cargo test   # test Rust
 - **Live2D Cubism 4** render bằng **[PIXI.js](https://pixijs.com)**
 - Global mouse hook + giả lập copy để bắt văn bản xuyên ứng dụng (Windows)
 - API HTTP của Anthropic / Gemini cho dịch & trả lời
+- [Open-Meteo](https://open-meteo.com) cho dự báo thời tiết và tìm thành phố
 
 ---
 
 ## Ghi công
 
 - Model mẫu Live2D © Live2D Inc. (dùng theo Free Material License).
+- Dữ liệu thời tiết: [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
 - Xây trên runtime render của dự án Anime Companion.
 
 ## Giấy phép

@@ -126,7 +126,7 @@ pub fn should_save_avatar(force: bool, has_avatar: bool, stored_model: &str, mod
 // Ẩn tờ note khỏi Alt+Tab và taskbar (WS_EX_TOOLWINDOW). Khác bông hoa: tờ note
 // vẫn được nhận focus bình thường, chỉ là không chen vào danh sách cửa sổ.
 #[cfg(windows)]
-fn set_tool_window(window: &tauri::WebviewWindow) {
+pub(crate) fn set_tool_window(window: &tauri::WebviewWindow) {
     use windows_sys::Win32::Foundation::HWND;
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TOOLWINDOW,
@@ -142,9 +142,9 @@ fn set_tool_window(window: &tauri::WebviewWindow) {
 }
 
 #[cfg(not(windows))]
-fn set_tool_window(_window: &tauri::WebviewWindow) {}
+pub(crate) fn set_tool_window(_window: &tauri::WebviewWindow) {}
 
-fn work_areas(app: &AppHandle) -> Vec<Rect> {
+pub(crate) fn work_areas(app: &AppHandle) -> Vec<Rect> {
     app.available_monitors()
         .unwrap_or_default()
         .iter()
@@ -155,7 +155,7 @@ fn work_areas(app: &AppHandle) -> Vec<Rect> {
         .collect()
 }
 
-fn primary_area(app: &AppHandle) -> Rect {
+pub(crate) fn primary_area(app: &AppHandle) -> Rect {
     app.primary_monitor()
         .ok()
         .flatten()

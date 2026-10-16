@@ -6,6 +6,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-16
+
+### Added
+- **Weather effects across your whole screen.** Turn them on in Settings →
+  *🌦 Thời tiết*: pick rain, snow, cherry blossoms, falling leaves, fog,
+  sunshine or a starry night (light, medium or heavy); or choose **"By season
+  & time"** — blossoms in spring, sunshine in summer, leaves in autumn, snow
+  in winter, stars at night, no internet needed; or **"Real weather"**, which
+  follows the sky in the city you picked, including thunderstorms with
+  optional soft lightning. Rain splashes and snow settles on top of the
+  taskbar. The effect never blocks your mouse or keyboard, stays under the pet,
+  leaves the app's own panels clear, and pauses by itself when you watch
+  something full screen, lock the PC, step away or run on battery (optional).
+  Every monitor gets its own layer. Switch it on or off with **Ctrl+Alt+W**
+  (changeable), the tray, or ☁️ → 🌦 on the ring. Off by default.
+- **A weather forecast card.** Open it from the tray (*☁️ Dự báo thời tiết*),
+  the ☁️ group on the right-click ring, or Settings. It shows the sky and
+  temperature right now, today's high and low, seven days ahead and a 24-hour
+  chart with the chance of rain, in °C or °F, plus a line from Miu. Type your
+  city's name right inside the card (click the city name to change it later).
+  Your location is never looked up: only the coordinates of the city you
+  choose are sent to [Open-Meteo](https://open-meteo.com) (free, no key
+  needed), every 30 minutes and only while you use the weather features. When
+  the connection drops it keeps the last data, marked as not updated.
+- **Pin the weather to your desktop**, like a pinned task: a small widget with
+  Miu in the corner, the temperature, today's high / low and the chance of
+  rain in the next hour. Make it larger to see the next three days, keep it on
+  top with 📍, drag it anywhere — it remembers where it was. Double-click opens
+  the full forecast. Pin or unpin it from the card or ☁️ → 📌 on the ring.
+- **The pet notices the weather.** When the effect changes (or you just turned
+  it on) she says one line about it in your language and pronouns — "It's
+  raining~ take an umbrella ☔", "So many stars tonight…" — with a matching
+  face. At most one line per kind of weather every two hours, never just
+  because you opened the app, and it can be turned off. With a city chosen she
+  also gives a short **morning report** once a day: today's low and high and
+  the chance of rain, with an umbrella reminder when rain is likely.
+
+### Changed
+- **The right-click ring has a ☁️ Weather group** (forecast, effects on / off,
+  pin to desktop) where 🔕 used to be; 🔕 *Do not disturb* moved into
+  💞 *Đồng hành*. Settings stays in the bottom slot.
+- **🌸 Bunny Lounge reaches two more panels:** a steampunk fox girl leans on
+  the weather card and a gothic cat girl hugging a purple plush cat on the
+  Mini Games page (when Bunny Lounge is on).
+
 ## [0.7.0] - 2026-10-16
 
 ### Added

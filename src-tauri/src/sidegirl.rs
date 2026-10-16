@@ -1,4 +1,4 @@
-// Nhân vật bám mép trái bảng Cài đặt / Công việc / Trợ lý văn bản (popup): một cửa sổ trong suốt riêng
+// Nhân vật bám mép trái bảng Cài đặt / Công việc / Trợ lý văn bản (popup) / thẻ thời tiết / Mini Games: một cửa sổ trong suốt riêng
 // (side.html) đứng ngoài mép trái, khoảng một phần ba người đè lên khung bảng.
 //
 // Cửa sổ này là "owned window" của bảng (builder.parent): luôn nằm ngay trên
@@ -25,7 +25,7 @@ pub struct Spec {
 }
 
 /// Đo từ ảnh gốc 1024×1536 (app/media/side/).
-pub const SPECS: [Spec; 3] = [
+pub const SPECS: [Spec; 5] = [
     Spec {
         label: "side_settings",
         host: "settings",
@@ -48,6 +48,23 @@ pub const SPECS: [Spec; 3] = [
         img: "media/side/popup-girl.png",
         edge_frac: 0.62,
         hand_right: true,
+    },
+    // Cô cáo steampunk ở thẻ dự báo thời tiết (ảnh gốc tay vươn sang trái → lật).
+    // Đã thử giữ hướng gốc: phần người nằm sau thẻ, gần như không thấy nhân vật.
+    Spec {
+        label: "side_weather",
+        host: "weather",
+        img: "media/side/weather-girl.png",
+        edge_frac: 0.6,
+        hand_right: false,
+    },
+    // Cô mèo gothic ôm mèo bông tím ở trang Mini Games (ảnh gốc tay vươn sang trái → lật).
+    Spec {
+        label: "side_arcade",
+        host: "arcade",
+        img: "media/side/arcade-girl.png",
+        edge_frac: 0.6,
+        hand_right: false,
     },
 ];
 
@@ -241,7 +258,7 @@ mod tests {
 
     #[test]
     fn every_panel_has_one_girl() {
-        for host in ["settings", "tasks", "popup"] {
+        for host in ["settings", "tasks", "popup", "weather", "arcade"] {
             assert_eq!(SPECS.iter().filter(|s| s.host == host).count(), 1);
         }
         assert!(SPECS.iter().all(|s| (0.0..=1.0).contains(&s.edge_frac) && s.label.starts_with("side_")));

@@ -233,6 +233,17 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    // Thẻ dự báo thời tiết (weather.html), mở từ tray / menu tròn 💞 → ☁️.
+    let _ = WebviewWindowBuilder::new(app, "weather", WebviewUrl::App("weather.html".into()))
+        .title("Thời tiết")
+        .inner_size(WEATHER_W, WEATHER_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
     // Trang Mini Games: chọn trò (mở từ menu tròn 💞 → 🎮).
     let _ = WebviewWindowBuilder::new(app, "arcade", WebviewUrl::App("arcade.html".into()))
         .title("Mini Games")
@@ -456,6 +467,29 @@ const MINES_H: f64 = 448.0;
 const ARCADE_W: f64 = 726.0;
 const ARCADE_H: f64 = 475.0;
 
+// Thẻ dự báo: weather.html vẽ theo khổ 720×600, zoom 0.66 — ĐỒNG BỘ với
+// `html { zoom: 0.66 }` trong weather.html.
+const WEATHER_W: f64 = 475.0;
+const WEATHER_H: f64 = 396.0;
+
+/// Tray / menu tròn → thẻ dự báo giữa màn hình. weather.js nghe "weather-data";
+/// mở thẻ cũng là một lý do để hỏi Open-Meteo (weather_net::needed).
+pub fn open_weather(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("weather") else {
+        dbg_log("[windows] weather window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    // Cô cáo bám mép trái (Bunny Lounge); thiếu chỗ bên trái thì dịch thẻ sang phải.
+    crate::sidegirl::sync(app, "weather", true);
+    crate::weather_net::broadcast(app);
+    crate::weather_net::wake();
+    force_repaint(app, "weather");
+}
+
 /// Menu tròn 🎮 → trang Mini Games giữa màn hình (arcade.js nghe "arcade-refresh"
 /// để đọc lại điểm thân thiết và thành tích).
 pub fn open_arcade(app: &AppHandle) {
@@ -467,6 +501,8 @@ pub fn open_arcade(app: &AppHandle) {
     let _ = w.show();
     let _ = w.unminimize();
     let _ = w.set_focus();
+    // Cô mèo gothic bám mép trái (Bunny Lounge); thiếu chỗ thì dịch trang sang phải.
+    crate::sidegirl::sync(app, "arcade", true);
     let _ = app.emit_to("arcade", "arcade-refresh", ());
     force_repaint(app, "arcade");
 }

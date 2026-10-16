@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<!--
+  Thẻ dự báo thời tiết (PLAN.md 13.7): mở từ tray / menu tròn 💞 → ☁️. Dữ liệu
+  do Rust gửi (weather_net::view, sự kiện "weather-data"); hiển thị ở
+  js/weather.js, icon / mô tả / biểu đồ ở js/weather-core.js (có test).
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thời tiết</title>
+  <style>
+    :root {
+      --ink: #f6eaf4;
+      --ink-soft: #c9b6d6;
+      --pink: #ff73ab;
+      --card: rgba(255, 255, 255, 0.07);
+      --line: rgba(255, 255, 255, 0.14);
+      --blue: #6aa8ff;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Vẽ theo khổ 720×600 rồi thu về 66% (475×396). ĐỒNG BỘ với WEATHER_W /
+       WEATHER_H trong windows.rs. */
+    html { zoom: 0.66; }
+
+    .window {
+      position: absolute;
+      inset: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 18px 14px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      background:
+        radial-gradient(60% 45% at 85% 0%, rgba(255, 170, 210, 0.28), transparent 70%),
+        linear-gradient(165deg, #2c2f4a, #3a2c52 60%, #452f58);
+      box-shadow: 0 10px 30px rgba(20, 10, 40, 0.5);
+    }
+    /* Nền đổi nhẹ theo trời: nắng ấm, mưa xanh xám, đêm tím đậm. */
+    .window.sky-sun { background: radial-gradient(55% 45% at 90% 0%, rgba(255, 210, 120, 0.35), transparent 70%), linear-gradient(165deg, #3a3550, #4a3456 60%, #533760); }
+    .window.sky-rain { background: radial-gradient(55% 45% at 90% 0%, rgba(140, 180, 255, 0.25), transparent 70%), linear-gradient(165deg, #263247, #2d3352 60%, #353356); }
+    .window.sky-night { background: radial-gradient(55% 45% at 90% 0%, rgba(170, 150, 255, 0.25), transparent 70%), linear-gradient(165deg, #1e2140, #2a2348 60%, #33274f); }
+
+    .head { display: flex; align-items: flex-start; gap: 10px; }
+    .place { flex: 1; min-width: 0; }
+    .place .city {
+      display: flex; align-items: baseline; gap: 14px;
+      font-size: 22px; font-weight: 800;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .place .city button {
+      border: none; background: none; color: inherit; font: inherit; padding: 0; cursor: pointer;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .place .city button:hover { text-decoration: underline; text-decoration-color: var(--pink); }
+    .place .time { font-size: 20px; font-weight: 700; color: var(--ink-soft); }
+    .place .ago { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+    .units { display: flex; background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 3px; }
+    .units button {
+      border: none; background: none; color: var(--ink-soft); border-radius: 8px;
+      width: 40px; height: 32px; font: 700 16px "Segoe UI", sans-serif; cursor: pointer;
+    }
+    .units button.on { background: rgba(255, 255, 255, 0.85); color: #3a2c52; }
+    .round-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1); color: var(--ink);
+      font: 700 16px/1 "Segoe UI", sans-serif; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .round-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .round-btn.on { background: var(--pink); border-color: var(--pink); }
+    .round-btn.close { background: var(--pink); border-color: var(--pink); }
+
+    .now { display: flex; align-items: center; gap: 18px; }
+    .now .ic { font-size: 74px; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3)); }
+    .now .t { font: 800 76px/1 "Segoe UI", sans-serif; letter-spacing: -2px; }
+    .now .t sup { font-size: 30px; font-weight: 700; vertical-align: top; position: relative; top: 8px; margin-left: 2px; }
+    .now .desc { flex: 1; min-width: 0; }
+    .now .desc b { display: block; font-size: 24px; font-weight: 800; }
+    .now .desc span { font-size: 18px; color: var(--ink-soft); }
+    .miu { position: relative; width: 126px; height: 104px; flex: 0 0 auto; }
+    .miu img { position: absolute; right: -6px; bottom: -6px; width: 96px; height: 96px; object-fit: contain; object-position: right bottom; }
+    .miu .say {
+      position: absolute; right: 64px; top: -6px; width: 150px;
+      padding: 7px 10px; border-radius: 14px; background: #fff; color: #5b2f47;
+      font-size: 12px; font-weight: 700; line-height: 1.35;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day {
+      padding: 8px 2px 7px;
+      border-radius: 14px;
+      text-align: center;
+      background: var(--card);
+      font-size: 13px;
+    }
+    .day.first { background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+    .day .n { font-weight: 800; font-size: 14px; white-space: nowrap; }
+    .day .i { font-size: 26px; line-height: 1.3; }
+    .day .r { font-size: 14px; font-weight: 700; }
+    .day .r span { color: var(--ink-soft); font-weight: 600; }
+
+    .chart {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      border-radius: 16px;
+      background: var(--card);
+      padding: 6px 14px 0;
+    }
+    .chart svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .chart .tl { font: 700 15px "Segoe UI", sans-serif; fill: #f2e3ee; }
+    .chart .rl { font: 700 13px "Segoe UI", sans-serif; fill: var(--blue); }
+    .chart .hl { font: 600 13px "Segoe UI", sans-serif; fill: var(--ink-soft); }
+
+    .foot { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-soft); }
+    .foot .credit { flex: 1; }
+    .pill {
+      border: none; border-radius: 12px; padding: 7px 12px;
+      font: 700 13.5px "Segoe UI", sans-serif; cursor: pointer;
+      background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff;
+    }
+    .pill.ghost { background: rgba(255, 255, 255, 0.12); color: var(--ink); }
+    .pill:disabled { opacity: 0.6; cursor: default; }
+    .banner {
+      padding: 7px 12px; border-radius: 12px;
+      background: rgba(255, 160, 90, 0.2); color: #ffd7b0;
+      font-size: 13.5px; font-weight: 600;
+    }
+    .banner.info { background: rgba(120, 200, 160, 0.2); color: #c8f5dc; }
+    /* Kéo thẻ ở bất cứ đâu, trừ nút / ô nhập / kết quả tìm. */
+    .window { cursor: grab; }
+    button, input, .results { cursor: pointer; }
+    input { cursor: text; }
+    .round-btn.spin { animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Chọn thành phố: một hàng tìm kiếm ngay dưới tiêu đề, kết quả xổ xuống
+       trong thẻ. Chưa có thành phố thì thẻ chỉ còn hàng này + lời Miu. */
+    .search { display: flex; flex-direction: column; gap: 8px; }
+    .search form { display: flex; gap: 8px; align-items: center; }
+    .search .hint { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+    .search input {
+      flex: 1; height: 44px; padding: 0 14px;
+      border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1); color: var(--ink);
+      font: 600 16px "Segoe UI", sans-serif; outline: none;
+    }
+    .search input:focus { border-color: var(--pink); }
+    .results { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 190px; }
+    .results:empty { display: none; }
+    .results button {
+      text-align: left; padding: 10px 14px; border-radius: 12px;
+      border: 1px solid transparent; background: rgba(255, 255, 255, 0.08); color: var(--ink);
+      font: 600 15px "Segoe UI", sans-serif; cursor: pointer;
+    }
+    .results button:hover { border-color: var(--pink); background: rgba(255, 255, 255, 0.14); }
+    .results button small { display: block; color: var(--ink-soft); font-weight: 500; font-size: 13px; }
+    .results .msg { color: var(--ink-soft); font-size: 14px; padding: 6px 2px; }
+    /* Chưa chọn thành phố: ẩn dải ngày + biểu đồ, Miu lớn hơn ở giữa. */
+    .window.nocity .days, .window.nocity .chart, .window.nocity .now .desc span { display: none; }
+    .window.nocity .now { margin-top: 16px; justify-content: center; }
+    .window.nocity .now .ic, .window.nocity .now .t, .window.nocity .now .desc { display: none; }
+    .window.nocity .miu { width: 420px; height: 230px; }
+    .window.nocity .miu img { right: 40px; width: 210px; height: 210px; }
+    .window.nocity .miu .say { right: 230px; top: 40px; width: 200px; font-size: 15px; padding: 12px 14px; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="window" id="win">
+    <header class="head">
+      <div class="place">
+        <div class="city"><button id="cityBtn" type="button"></button><span class="time" id="cityTime"></span></div>
+        <div class="ago" id="ago"></div>
+      </div>
+      <div class="units" id="units">
+        <button type="button" data-u="f">°F</button>
+        <button type="button" data-u="c">°C</button>
+      </div>
+      <button class="round-btn" id="refreshBtn" type="button">⟳</button>
+      <button class="round-btn" id="pinBtn" type="button">📌</button>
+      <button class="round-btn close" id="closeBtn" type="button">×</button>
+    </header>
+
+    <section class="search" id="search" hidden>
+      <form id="pickForm">
+        <input id="pickInput" type="text" autocomplete="off" spellcheck="false" maxlength="80" />
+        <button class="pill" id="pickGo" type="submit"></button>
+        <button class="round-btn" id="pickClose" type="button">×</button>
+      </form>
+      <p class="hint" id="pickHint"></p>
+      <div class="results" id="results"></div>
+    </section>
+
+    <div class="banner" id="banner" hidden></div>
+
+    <section class="now" id="now">
+      <div class="ic" id="nowIcon"></div>
+      <div class="t" id="nowTemp"></div>
+      <div class="desc"><b id="nowDesc"></b><span id="nowHL"></span></div>
+      <div class="miu">
+        <div class="say" id="miuSay"></div>
+        <img src="media/game/rps-wink.png" alt="" draggable="false" />
+      </div>
+    </section>
+
+    <section class="days" id="days"></section>
+
+    <section class="chart"><svg id="chart"></svg></section>
+
+    <footer class="foot">
+      <span class="credit" id="credit"></span>
+      <button class="pill" id="liveBtn" type="button"></button>
+    </footer>
+
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/weather-core.js"></script>
+  <script src="js/weather.js"></script>
+</body>
+</html>

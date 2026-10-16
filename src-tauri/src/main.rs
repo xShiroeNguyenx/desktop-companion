@@ -19,6 +19,9 @@ mod reminders;
 mod rewards;
 mod selection;
 mod sidegirl;
+mod fx;
+mod weather;
+mod weather_net;
 mod store;
 mod taskref;
 mod tts;
@@ -277,6 +280,24 @@ fn pet_command(app: AppHandle, payload: Value) {
         "bond:show" => companion::show_bond_card(&app),
         // Menu tròn 🎮: mở trang Mini Games; từ đó mỗi trò mở cửa sổ riêng (open_mini_game).
         "games:show" => companion::show_games(&app),
+        // Menu tròn 💞 → 🌦: bật / tắt hiệu ứng thời tiết (loại chọn trong Cài đặt).
+        "weather:toggle" => {
+            fx::toggle(&app);
+        }
+        // Menu tròn 💞 → ☁️: thẻ dự báo thời tiết.
+        "weather:open" => windows::open_weather(&app),
+        // Menu tròn ☁️ → 📌. Dựng / gỡ cửa sổ không được làm trong command đồng bộ
+        // này (treo WebView2), nên chạy ở luồng riêng. Chưa có thành phố → mở thẻ.
+        "weather:pin" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || {
+                let on = !store::load_settings(&app2).weather_pin;
+                if weather_net::set_pinned(&app2, on).is_err() {
+                    let app3 = app2.clone();
+                    let _ = app2.run_on_main_thread(move || windows::open_weather(&app3));
+                }
+            });
+        }
         // Menu tròn 🍅: bắt đầu / dừng phiên Tập trung; pet nạp lại trang thì hỏi trạng thái.
         "focus:toggle" => companion::toggle_focus(&app),
         "focus:sync" => companion::sync_focus(&app),
@@ -398,10 +419,13 @@ fn register_capture_hotkey(app: &AppHandle, spec: &str) -> bool {
     let normalized = spec.trim();
     let parsed = Shortcut::from_str(normalized)
         .or_else(|_| Shortcut::from_str("Ctrl+Shift+Space"));
-    match parsed {
+    let ok = match parsed {
         Ok(sc) => gs.register(sc).is_ok(),
         Err(_) => false,
-    }
+    };
+    // unregister_all vừa gỡ cả phím tắt thời tiết: đăng ký lại.
+    fx::register_shortcut(app);
+    ok
 }
 
 // Transient Ctrl+C: registered only while the flower is visible so pressing
@@ -445,7 +469,10 @@ fn main() {
                     // Transient Ctrl+C (only registered while the flower shows):
                     // copy the captured selection, then dismiss the flower with a
                     // ✓ / ✕ on the copy icon.
-                    if shortcut.matches(Modifiers::CONTROL, Code::KeyC) {
+                    // Phím tắt thời tiết: bật / tắt hiệu ứng (lối thoát khẩn khi lớp phủ gây phiền).
+                    if fx::is_shortcut(shortcut) {
+                        fx::toggle(app);
+                    } else if shortcut.matches(Modifiers::CONTROL, Code::KeyC) {
                         let ok = selection::copy_last_selection();
                         if let Some(w) = app.get_webview_window("flower") {
                             let _ = w.emit("flower-copied", ok);
@@ -559,6 +586,20 @@ fn main() {
             commands::set_side_girls,
             commands::autostart_status,
             commands::autostart_set,
+            commands::weather_fx_set,
+            commands::weather_fx_status,
+            commands::weather_get,
+            commands::weather_search,
+            commands::weather_set_city,
+            commands::weather_set_units,
+            commands::weather_refresh,
+            commands::weather_use_live,
+            commands::weather_pin_set,
+            commands::weather_pin_top,
+            commands::weather_pin_size,
+            commands::open_weather,
+            commands::weather_close,
+            commands::arcade_close,
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
@@ -619,6 +660,10 @@ fn main() {
             // Global selection capture + look-at feed, and the hotkey fallback.
             selection::init(&app_handle);
             register_capture_hotkey(&app_handle, &settings.hotkey);
+            // Hiệu ứng thời tiết toàn màn hình (mặc định tắt; gồm phím tắt bật / tắt).
+            fx::start(app_handle.clone());
+            // Thời tiết thật (Open-Meteo): chỉ gọi mạng khi được bật; widget ghim hiện lại.
+            weather_net::start(app_handle.clone());
 
             // Silent update check ~5s after launch; if a newer version exists,
             // mở hộp thoại cập nhật (kèm bong bóng nhắc từ pet). Version mà
@@ -663,6 +708,11 @@ fn main() {
             let focus_item =
                 MenuItem::with_id(app, "focus", "🍅 Bắt đầu tập trung", true, None::<&str>)?;
             companion::set_focus_tray_item(&app_handle, focus_item.clone());
+            let weather_item =
+                MenuItem::with_id(app, "weather", "🌦 Bật hiệu ứng thời tiết", true, None::<&str>)?;
+            fx::set_tray_item(&app_handle, weather_item.clone());
+            let forecast_item =
+                MenuItem::with_id(app, "forecast", "☁️ Dự báo thời tiết", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -674,6 +724,8 @@ fn main() {
                     &click_through_item,
                     &focus_item,
                     &dnd_item,
+                    &weather_item,
+                    &forecast_item,
                     &sep,
                     &quit_item,
                 ],
@@ -700,6 +752,10 @@ fn main() {
                     "open_tasks" => windows::open_tasks(app),
                     "open_settings" => windows::open_settings(app),
                     "focus" => companion::toggle_focus(app),
+                    "weather" => {
+                        fx::toggle(app);
+                    }
+                    "forecast" => windows::open_weather(app),
                     "dnd" => {
                         let on = !companion::dnd_active(app);
                         companion::set_dnd(app, on, true);
@@ -726,6 +782,10 @@ fn main() {
         .on_window_event(|window, event| match event {
             // Tờ note ghim không phải cửa sổ dựng sẵn: Alt+F4 đóng hẳn nó, và
             // coi như gỡ ghim.
+            // Widget thời tiết ghim: Alt+F4 = gỡ ghim (trước nhánh tờ note task).
+            WindowEvent::CloseRequested { .. } if window.label() == weather_net::PIN_LABEL => {
+                weather_net::on_closed(window.app_handle());
+            }
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
             }
@@ -767,6 +827,17 @@ fn main() {
                     }
                     // Cô mèo bám mép cửa sổ Trợ lý văn bản đi theo nó.
                     "popup" => sidegirl::sync(window.app_handle(), "popup", false),
+                    // Cô cáo bám mép thẻ thời tiết.
+                    "weather" => sidegirl::sync(window.app_handle(), "weather", false),
+                    // Cô mèo gothic bám mép trang Mini Games.
+                    "arcade" => sidegirl::sync(window.app_handle(), "arcade", false),
+                    label if label == weather_net::PIN_LABEL => {
+                        if let (WindowEvent::Moved(pos), true) =
+                            (event, window.is_visible().unwrap_or(false))
+                        {
+                            weather_net::remember_pos(window.app_handle(), pos.x, pos.y);
+                        }
+                    }
                     label if label.starts_with("pin-") => {
                         if let (WindowEvent::Moved(pos), true) =
                             (event, window.is_visible().unwrap_or(false))

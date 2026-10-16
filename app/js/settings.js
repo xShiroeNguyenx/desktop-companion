@@ -300,6 +300,53 @@
     }
   });
 
+  // Nhóm Thời tiết: áp dụng ngay để xem trước, không chờ Lưu (giống Bunny Lounge).
+  const WEATHER_HINT = $('weatherStatus').textContent;
+  async function showWeatherStatus() {
+    const st = $('weatherStatus');
+    let msg = '';
+    try { msg = await invoke('weather_fx_status'); } catch (_) { /* ignore */ }
+    st.className = msg ? 'status err' : 'status';
+    st.textContent = msg || WEATHER_HINT;
+  }
+  async function applyWeather() {
+    try {
+      syncWeatherFields();
+      await invoke('weather_fx_set', {
+        mode: $('weatherMode').value,
+        kind: $('weatherKind').value,
+        intensity: $('weatherIntensity').value,
+        pauseBattery: $('weatherBattery').checked,
+        talk: $('weatherTalk').checked,
+        lightning: $('weatherLightning').checked,
+      });
+      // Lớp phủ dựng trong vòng nền (nửa giây một nhịp): chờ một chút rồi hỏi kết quả.
+      setTimeout(showWeatherStatus, 1200);
+    } catch (e) {
+      const st = $('weatherStatus');
+      st.className = 'status err';
+      st.textContent = 'Không đổi được: ' + e;
+    }
+  }
+  // "Theo mùa" tự chọn hiệu ứng → ô chọn hiệu ứng chỉ dùng cho chế độ chọn tay.
+  const WEATHER_MODE_HINT = {
+    off: '',
+    manual: 'Hiệu ứng bạn chọn ở ô bên dưới.',
+    season: 'Xuân hoa anh đào · hè nắng · thu lá bay · đông tuyết · đêm có sao. Không cần mạng.',
+    live: 'Theo trời thật ở thành phố bạn chọn (cập nhật 30 phút/lần). Trời nhiều mây thì không vẽ gì.',
+  };
+  function syncWeatherFields() {
+    const mode = $('weatherMode').value;
+    $('weatherKind').disabled = mode !== 'manual';
+    $('weatherIntensity').disabled = mode === 'live';
+    $('weatherLightning').disabled = mode !== 'live';
+    $('weatherModeHint').textContent = WEATHER_MODE_HINT[mode] || '';
+  }
+  $('weatherOpen').addEventListener('click', () => invoke('open_weather').catch((e) => log('open_weather: ' + e)));
+  for (const id of ['weatherMode', 'weatherKind', 'weatherIntensity', 'weatherBattery', 'weatherTalk', 'weatherLightning']) {
+    $(id).addEventListener('change', applyWeather);
+  }
+
   // Bật / tắt nhân vật bám cạnh bảng: áp dụng ngay để xem trước, không chờ Lưu.
   $('sideGirls').addEventListener('change', async () => {
     const box = $('sideGirls');
@@ -348,6 +395,15 @@
       setHotkeyDisplay(s.hotkey || 'Ctrl+Shift+Space');
       $('autoFlower').checked = s.auto_flower !== false;
       $('sideGirls').checked = s.side_girls === true;
+      $('weatherMode').value = ['off', 'manual', 'season', 'live'].includes(s.weather_mode) ? s.weather_mode : 'off';
+      $('weatherLightning').checked = s.weather_lightning === true;
+      $('weatherKind').value = ['rain', 'snow', 'sakura', 'leaves', 'fog', 'sun', 'stars'].includes(s.weather_manual) ? s.weather_manual : 'rain';
+      $('weatherTalk').checked = s.weather_talk !== false;
+      syncWeatherFields();
+      $('weatherIntensity').value = ['light', 'medium', 'heavy'].includes(s.weather_intensity) ? s.weather_intensity : 'medium';
+      $('weatherBattery').checked = s.weather_pause_battery !== false;
+      $('weatherShortcut').value = s.weather_shortcut ?? 'Ctrl+Alt+W';
+      showWeatherStatus();
       $('proactive').value = String(s.proactive_minutes ?? 60);
       // Giá trị lạ (sửa tay settings.json) → vẫn hiện được thay vì ô trống.
       if ($('proactive').value === '') $('proactive').value = '60';
@@ -536,6 +592,13 @@
       sysmon_enabled: $('sysmonEnabled').checked,
       cpu_warn_pct: Number($('cpuWarn').value) || 90,
       ram_warn_pct: Number($('ramWarn').value) || 90,
+      weather_mode: $('weatherMode').value,
+      weather_talk: $('weatherTalk').checked,
+      weather_lightning: $('weatherLightning').checked,
+      weather_manual: $('weatherKind').value,
+      weather_intensity: $('weatherIntensity').value,
+      weather_pause_battery: $('weatherBattery').checked,
+      weather_shortcut: $('weatherShortcut').value.trim(),
     };
 
     const status = $('status');
@@ -552,6 +615,7 @@
       }
       status.className = 'status ok';
       status.textContent = 'Đã lưu! ✓';
+      showWeatherStatus();
     } catch (e) {
       status.className = 'status err';
       status.textContent = String(e);

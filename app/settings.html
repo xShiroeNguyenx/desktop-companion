@@ -493,11 +493,67 @@
       </div>
 
       <div class="set-group">
+        <h3>🌦 Thời tiết</h3>
+        <div class="set-field">
+          <label for="weatherMode">Hiệu ứng thời tiết trên toàn màn hình</label>
+          <select id="weatherMode">
+            <option value="off">Tắt</option>
+            <option value="manual">Chọn hiệu ứng</option>
+            <option value="season">Theo mùa &amp; giờ</option>
+            <option value="live">Theo thời tiết thật</option>
+          </select>
+          <div class="status" id="weatherModeHint"></div>
+        </div>
+        <div class="row tight">
+          <div class="set-field">
+            <label for="weatherKind">Hiệu ứng</label>
+            <select id="weatherKind">
+              <option value="rain">🌧 Mưa</option>
+              <option value="snow">❄️ Tuyết</option>
+              <option value="sakura">🌸 Hoa anh đào</option>
+              <option value="leaves">🍂 Lá bay</option>
+              <option value="fog">🌫 Sương mù</option>
+              <option value="sun">☀️ Nắng</option>
+              <option value="stars">✨ Sao đêm</option>
+            </select>
+          </div>
+          <div class="set-field">
+            <label for="weatherIntensity">Cường độ</label>
+            <select id="weatherIntensity">
+              <option value="light">Nhẹ</option>
+              <option value="medium">Vừa</option>
+              <option value="heavy">Dày</option>
+            </select>
+          </div>
+        </div>
+        <div class="row tight">
+          <button class="ghost" id="weatherOpen" type="button" style="flex:1;">☁️ Thẻ dự báo &amp; chọn thành phố</button>
+        </div>
+        <div class="set-toggle">
+          <label for="weatherLightning">Chớp khi có dông (thời tiết thật)</label>
+          <input type="checkbox" id="weatherLightning" />
+        </div>
+        <div class="set-toggle">
+          <label for="weatherTalk">Em nói một câu khi thời tiết đổi</label>
+          <input type="checkbox" id="weatherTalk" />
+        </div>
+        <div class="set-toggle">
+          <label for="weatherBattery">Dừng hiệu ứng khi máy chạy pin</label>
+          <input type="checkbox" id="weatherBattery" />
+        </div>
+        <div class="set-field">
+          <label for="weatherShortcut">Phím tắt bật / tắt nhanh</label>
+          <input type="text" id="weatherShortcut" placeholder="Ctrl+Alt+W" spellcheck="false" />
+        </div>
+        <div class="status" id="weatherStatus">Hiệu ứng không chặn chuột hay bàn phím, không vẽ đè lên bảng của em, và tự dừng khi bạn xem toàn màn hình, khoá máy hoặc rời máy. Bật / tắt nhanh bằng phím tắt, tray hoặc 💞 → 🌦 trên menu tròn.</div>
+      </div>
+
+      <div class="set-group">
         <h3>🎨 Diện mạo</h3>
         <div class="set-toggle set-toggle--premium">
           <label for="sideGirls">
             <span class="premium-title">🌸 Bunny Lounge</span>
-            <span class="premium-sub">Các cô nàng tựa bên khung Cài đặt, Công việc &amp; Trợ lý văn bản</span>
+            <span class="premium-sub">Các cô nàng tựa bên khung Cài đặt, Công việc, Trợ lý văn bản, Thời tiết &amp; Mini Games</span>
           </label>
           <input type="checkbox" id="sideGirls" />
         </div>

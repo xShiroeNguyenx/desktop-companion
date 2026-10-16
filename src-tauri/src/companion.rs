@@ -40,6 +40,8 @@ pub enum Kind {
     Health,
     Milestone,
     SysWarn,
+    /// Thời tiết vừa đổi / vừa bật hiệu ứng (weather.rs). Ưu tiên thấp.
+    Weather,
     Chatter,
 }
 
@@ -208,6 +210,21 @@ pub fn welcome_key(away_secs: u64, local_hour: u32, new_day: bool) -> Key {
     }
 }
 
+/// Câu mẫu cho từng loại thời tiết.
+pub fn weather_key(kind: &str) -> Option<Key> {
+    Some(match kind {
+        "rain" => Key::WeatherRain,
+        "snow" => Key::WeatherSnow,
+        "sakura" => Key::WeatherSakura,
+        "leaves" => Key::WeatherLeaves,
+        "fog" => Key::WeatherFog,
+        "sun" => Key::WeatherSun,
+        "stars" => Key::WeatherStars,
+        "storm" => Key::WeatherStorm,
+        _ => return None,
+    })
+}
+
 /// Bật DND lúc `now` → mốc hết hạn; tắt → 0.
 pub fn dnd_until_after_toggle(on: bool, now: u64) -> u64 {
     if on { now + DND_SECS } else { 0 }
@@ -233,6 +250,7 @@ pub struct CompanionState {
     cpu_prev: Mutex<Option<CpuTimes>>,
     cpu_high: Mutex<Sustain>,
     ram_high: Mutex<Sustain>,
+    weather: Mutex<crate::weather::Talk>,
 }
 
 fn now_secs() -> u64 {
@@ -713,6 +731,35 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
         && persona::name_ask_due(&settings.pet_name, settings.name_asks, settings.name_asked_at, now);
     sync_kind(pending, Kind::AskName, &if ask_name { vec!["ask-name".to_string()] } else { vec![] }, now);
 
+    // Thời tiết đổi (hoặc người dùng vừa bật hiệu ứng): một câu, cùng loại cách
+    // nhau ≥ 2 giờ. Quá 10 phút chưa nói được thì thôi. Tắt hiệu ứng → bỏ câu chờ.
+    let seen = crate::fx::current_kind();
+    let fresh = app.state::<CompanionState>().weather.lock().ok().and_then(|mut t| t.observe(now, seen));
+    let is_change = |c: &Candidate| c.kind == Kind::Weather && !c.tag.starts_with("weather:brief:");
+    if seen.is_none() {
+        pending.retain(|c| !is_change(c));
+    }
+    if let Some(k) = fresh.filter(|_| settings.weather_talk) {
+        pending.retain(|c| !is_change(c));
+        pending.push(Candidate { kind: Kind::Weather, since: now, ttl: Some(10 * 60), tag: format!("weather:{k}") });
+    }
+    // Bản tin buổi sáng (cần dữ liệu thời tiết thật còn mới): một lần mỗi ngày,
+    // 6–11 giờ. Quá 30 phút chưa nói được thì thôi.
+    if !pending.iter().any(|c| c.tag.starts_with("weather:brief:")) {
+        let (today, hour) = today_and_hour(now);
+        if let Some(day) = crate::weather_net::take_brief(app, today, hour) {
+            let u = settings.weather_units.as_str();
+            let tag = format!(
+                "weather:brief:{}:{}:{}:{}",
+                crate::weather::fmt_temp(day.min, u),
+                crate::weather::fmt_temp(day.max, u),
+                day.rain.unwrap_or(0),
+                u8::from(crate::weather::brief_rainy(&day)),
+            );
+            pending.push(Candidate { kind: Kind::Weather, since: now, ttl: Some(30 * 60), tag });
+        }
+    }
+
     // Tự bắt chuyện (cần key). Tắt / xoá key / vừa chat xong → bỏ câu đang chờ.
     let chatter_due = chat::has_key(settings)
         && chat::proactive_due(now, chat::last_activity(app), settings.proactive_minutes);
@@ -774,6 +821,17 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
             let (what, pct) = rest.split_once(':')?;
             let key = if what == "cpu" { Key::CpuHigh } else { Key::RamHigh };
             return Some((lines::line(key, &a, &[("pct", pct)]), Some("surprised".into())));
+        }
+        Kind::Weather if c.tag.starts_with("weather:brief:") => {
+            let parts: Vec<&str> = c.tag.split(':').collect();
+            let [_, _, min, max, rain, wet] = parts.as_slice() else { return None };
+            let key = if *wet == "1" { Key::WeatherBriefRain } else { Key::WeatherBrief };
+            return Some((lines::line(key, &a, &[("min", min), ("max", max), ("rain", rain)]), Some("happy".into())));
+        }
+        Kind::Weather => {
+            let kind = c.tag.strip_prefix("weather:")?;
+            let key = weather_key(kind)?;
+            return Some((lines::line(key, &a, &[]), Some(crate::weather::expression(kind).into())));
         }
         Kind::FocusEnd => {
             let brk = settings.break_min.to_string();

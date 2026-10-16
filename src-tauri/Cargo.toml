@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -45,6 +45,8 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_SystemInformation",
     # SHQueryUserNotificationState: pet im khi đang trình chiếu / toàn màn hình.
     "Win32_UI_Shell",
+    # GetSystemPowerStatus: hiệu ứng thời tiết dừng khi chạy pin (fx.rs).
+    "Win32_System_Power",
 ] }
 # WinRT SpeechSynthesizer (giọng có sẵn của Windows, kể cả giọng OneCore).
 windows = { version = "0.61", features = [

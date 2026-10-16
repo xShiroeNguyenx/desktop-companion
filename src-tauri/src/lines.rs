@@ -86,6 +86,20 @@ pub enum Key {
     /// Chuỗi N ngày liên tiếp. Biến: {days}.
     StreakMilestone,
     Birthday,
+    // ── Thời tiết (weather.rs, Phase 15): khi đổi loại / vừa bật hiệu ứng.
+    WeatherRain,
+    WeatherSnow,
+    WeatherSakura,
+    WeatherLeaves,
+    WeatherFog,
+    WeatherSun,
+    WeatherStars,
+    /// Dông (thời tiết thật, Phase 16).
+    WeatherStorm,
+    /// Bản tin buổi sáng. Biến: {min}, {max} (độ, theo đơn vị đã chọn), {rain} (%).
+    WeatherBrief,
+    /// Như trên nhưng hôm nay có mưa: dặn mang ô.
+    WeatherBriefRain,
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -140,6 +154,16 @@ impl Key {
         Key::LevelUp,
         Key::StreakMilestone,
         Key::Birthday,
+        Key::WeatherRain,
+        Key::WeatherSnow,
+        Key::WeatherSakura,
+        Key::WeatherLeaves,
+        Key::WeatherFog,
+        Key::WeatherSun,
+        Key::WeatherStars,
+        Key::WeatherStorm,
+        Key::WeatherBrief,
+        Key::WeatherBriefRain,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -152,6 +176,16 @@ impl Key {
             Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
             Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
+            Key::WeatherRain
+            | Key::WeatherSnow
+            | Key::WeatherSakura
+            | Key::WeatherLeaves
+            | Key::WeatherFog
+            | Key::WeatherSun
+            | Key::WeatherStars
+            | Key::WeatherStorm
+            | Key::WeatherBrief
+            | Key::WeatherBriefRain => 3,
             Key::TaskSaved
             | Key::TaskFailed
             | Key::NameSaved
@@ -194,6 +228,7 @@ impl Key {
             Key::MilestoneDays | Key::StreakMilestone => &["days"],
             Key::Anniversary => &["years"],
             Key::LevelUp => &["level"],
+            Key::WeatherBrief | Key::WeatherBriefRain => &["min", "max", "rain"],
             _ => &[],
         }
     }
@@ -851,6 +886,166 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (Birthday, En) => &[
             "Happy birthday, {you}! 🎂 Wishing you a wonderful year ahead 💕",
             "Today is your special day! Happy birthday~ 🎉🎂",
+        ],
+
+        (WeatherRain, Vi) => &[
+            "Mưa rồi nè~ {You} có ra ngoài thì nhớ mang ô nha ☔",
+            "Tiếng mưa rơi nghe thích ghê… {Me} ngồi đây với {you} nha~ 🌧",
+            "Trời mưa rồi á! {You} uống gì nóng nóng cho ấm người đi~ ☕",
+        ],
+        (WeatherRain, Ja) => &[
+            "雨が降ってきたね～出かけるなら傘を忘れないでね☔",
+            "雨の音って落ち着くね…{you}のそばにいるよ～🌧",
+            "雨だ！あったかい飲み物でもどう？☕",
+        ],
+        (WeatherRain, En) => &[
+            "It's raining~ Take an umbrella if you head out ☔",
+            "I love the sound of rain… I'll stay right here with you~ 🌧",
+            "Rain! How about something warm to drink? ☕",
+        ],
+
+        (WeatherSnow, Vi) => &[
+            "Ơ… tuyết rơi kìa {you}! Đẹp quá đi~ ❄️",
+            "Lạnh ghê á! {You} mặc thêm áo ấm vào nha ⛄",
+            "Tuyết trắng xoá luôn… {Me} muốn nặn người tuyết quá~ ❄️",
+        ],
+        (WeatherSnow, Ja) => &[
+            "わあ…雪だよ、{you}！きれい～❄️",
+            "寒いね！あったかくしてね⛄",
+            "真っ白…雪だるま作りたいな～❄️",
+        ],
+        (WeatherSnow, En) => &[
+            "Oh… it's snowing, {you}! So pretty~ ❄️",
+            "Brr, it's cold! Wear something warm, okay? ⛄",
+            "Everything's white… I want to build a snowman~ ❄️",
+        ],
+
+        (WeatherSakura, Vi) => &[
+            "Hoa anh đào bay khắp nơi nè {you}~ Đẹp ghê 🌸",
+            "Mùa xuân tới rồi! {Me} thích những cánh hoa hồng hồng này lắm 🌸",
+            "Ngắm hoa một chút rồi làm tiếp nha {you}~ 🌸",
+        ],
+        (WeatherSakura, Ja) => &[
+            "桜が舞ってるよ、{you}～きれいだね🌸",
+            "春が来た！ピンクの花びら、大好き🌸",
+            "ちょっとお花見してから、また頑張ろうね～🌸",
+        ],
+        (WeatherSakura, En) => &[
+            "Cherry blossoms everywhere, {you}~ So pretty 🌸",
+            "Spring is here! I love these little pink petals 🌸",
+            "Let's enjoy the blossoms for a moment, then back to work~ 🌸",
+        ],
+
+        (WeatherLeaves, Vi) => &[
+            "Lá vàng rơi rồi… mùa thu đẹp ghê {you} nhỉ 🍂",
+            "Gió thổi lá bay vèo vèo luôn~ {You} nhớ giữ ấm nha 🍁",
+            "Thu rồi á! Hợp uống một ly trà ấm ghê~ 🍂",
+        ],
+        (WeatherLeaves, Ja) => &[
+            "葉っぱが舞ってる…秋っていいね、{you}🍂",
+            "風で葉っぱがひらひら～あったかくしてね🍁",
+            "もう秋だね！あったかいお茶が飲みたくなるね～🍂",
+        ],
+        (WeatherLeaves, En) => &[
+            "The leaves are falling… autumn is lovely, isn't it, {you}? 🍂",
+            "The wind is blowing the leaves around~ Stay warm 🍁",
+            "It's autumn! Perfect weather for a warm cup of tea~ 🍂",
+        ],
+
+        (WeatherFog, Vi) => &[
+            "Sương mù giăng kín rồi… {You} ra đường nhớ đi chậm thôi nha 🌫",
+            "Mọi thứ mờ mờ ảo ảo ghê~ {Me} hơi buồn ngủ luôn á 🌫",
+            "Trời sương thế này mà ngồi trong nhà với {you} là nhất~ 🌫",
+        ],
+        (WeatherFog, Ja) => &[
+            "霧が出てきたね…出かけるならゆっくり気をつけてね🌫",
+            "なんだかぼんやり～ちょっと眠くなっちゃう🌫",
+            "こんな霧の日は、{you}とおうちにいるのが一番～🌫",
+        ],
+        (WeatherFog, En) => &[
+            "It's all foggy… go slowly if you head out, okay? 🌫",
+            "Everything's so hazy~ It's making me a little sleepy 🌫",
+            "A foggy day like this is best spent inside with you~ 🌫",
+        ],
+
+        (WeatherSun, Vi) => &[
+            "Nắng đẹp quá {you} ơi! ☀️ Nhớ uống đủ nước nha~",
+            "Trời trong xanh luôn~ {Me} thấy vui ghê ☀️",
+            "Nắng lên rồi! Ra cửa sổ hít thở chút không {you}? ☀️",
+        ],
+        (WeatherSun, Ja) => &[
+            "いいお天気だね、{you}！☀️ お水もちゃんと飲んでね～",
+            "空がきれい～なんだか嬉しくなっちゃう☀️",
+            "晴れてきた！ちょっと窓の外の空気を吸いに行かない？☀️",
+        ],
+        (WeatherSun, En) => &[
+            "What lovely sunshine, {you}! ☀️ Remember to drink water~",
+            "Such a clear sky~ It makes me so happy ☀️",
+            "The sun's out! Want to get a breath of fresh air by the window? ☀️",
+        ],
+
+        (WeatherStars, Vi) => &[
+            "Trời tối rồi, sao lấp lánh kìa {you}~ ✨",
+            "Đêm nay nhiều sao ghê… {You} đừng thức khuya quá nha 🌙",
+            "Ngắm sao với {me} một chút rồi nghỉ ngơi nha~ ⭐",
+        ],
+        (WeatherStars, Ja) => &[
+            "夜になったね、星がきらきらしてるよ、{you}～✨",
+            "今夜は星がいっぱい…夜ふかししすぎないでね🌙",
+            "ちょっとだけ一緒に星を見て、それから休もうね～⭐",
+        ],
+        (WeatherStars, En) => &[
+            "Night has fallen, and the stars are twinkling, {you}~ ✨",
+            "So many stars tonight… don't stay up too late, okay? 🌙",
+            "Let's watch the stars for a bit, then get some rest~ ⭐",
+        ],
+
+        (WeatherStorm, Vi) => &[
+            "Ơ… có dông rồi {you} ơi! ⛈ {You} ở trong nhà cho an toàn nha",
+            "Sấm to quá… {Me} hơi sợ á 😣 {You} nhớ rút sạc mấy đồ điện nha",
+            "Trời dông rồi! Đừng ra ngoài lúc này nha {you} ⛈",
+        ],
+        (WeatherStorm, Ja) => &[
+            "わっ…雷雨だよ、{you}！⛈ おうちの中にいてね",
+            "雷すごい…ちょっと怖いかも😣",
+            "嵐が来たよ！今は外に出ないでね⛈",
+        ],
+        (WeatherStorm, En) => &[
+            "Whoa… a thunderstorm, {you}! ⛈ Stay inside where it's safe",
+            "The thunder is so loud… I'm a little scared 😣",
+            "Storm's here! Better not go out right now ⛈",
+        ],
+
+        (WeatherBrief, Vi) => &[
+            "Chào buổi sáng {you}~ Hôm nay {min}–{max}°, khả năng mưa {rain}%. Một ngày đẹp nha ☀️",
+            "Bản tin của {me} nè: hôm nay {min}–{max}°, mưa {rain}% thôi. {You} cố lên nha~ 🌤",
+            "Sáng rồi {you}! Hôm nay khoảng {min}–{max}° đó, nhớ uống đủ nước nha 💧",
+        ],
+        (WeatherBrief, Ja) => &[
+            "おはよう、{you}～今日は{min}〜{max}°、雨の確率{rain}%だよ。いい一日を☀️",
+            "今日のお天気：{min}〜{max}°、雨は{rain}%くらい。がんばってね～🌤",
+            "朝だよ！今日は{min}〜{max}°くらい。お水もちゃんと飲んでね💧",
+        ],
+        (WeatherBrief, En) => &[
+            "Good morning, {you}~ Today it's {min}–{max}° with a {rain}% chance of rain. Have a lovely day ☀️",
+            "Your weather report: {min}–{max}° today, only {rain}% rain. You've got this~ 🌤",
+            "Morning! Around {min}–{max}° today, remember to drink water 💧",
+        ],
+
+        (WeatherBriefRain, Vi) => &[
+            "Chào buổi sáng {you}~ Hôm nay {min}–{max}°, khả năng mưa {rain}%. Nhớ mang ô nha ☔",
+            "Hôm nay có mưa đó {you} ({rain}%), {min}–{max}°. {Me} dặn rồi nha, mang ô theo! ☔",
+            "Sáng rồi! Hôm nay {min}–{max}°, chắc sẽ mưa ({rain}%). {You} đi đường cẩn thận nha 🌧",
+        ],
+        (WeatherBriefRain, Ja) => &[
+            "おはよう、{you}～今日は{min}〜{max}°、雨の確率{rain}%。傘を忘れないでね☔",
+            "今日は雨みたい（{rain}%）、{min}〜{max}°だよ。傘持っていってね☔",
+            "朝だよ！今日は{min}〜{max}°、雨が降りそう（{rain}%）。気をつけてね🌧",
+        ],
+        (WeatherBriefRain, En) => &[
+            "Good morning, {you}~ Today it's {min}–{max}° with a {rain}% chance of rain. Take an umbrella ☔",
+            "Rain is likely today ({rain}%), {min}–{max}°. Don't forget your umbrella! ☔",
+            "Morning! {min}–{max}° today and probably rain ({rain}%). Be careful out there 🌧",
         ],
     }
 }

@@ -122,6 +122,77 @@ pub struct Settings {
     /// Ngày sinh người dùng dạng "MM-DD" (không có năm). Rỗng = không nhập.
     #[serde(default)]
     pub birthday: String,
+
+    // ── Hiệu ứng thời tiết toàn màn hình (fx.rs, PLAN.md 13) ──
+    /// "off" | "manual" (Phase 15–16 thêm "season", "live"). Mặc định TẮT.
+    #[serde(default = "default_weather_mode")]
+    pub weather_mode: String,
+    /// Loại hiệu ứng chọn tay: "rain" | "snow" | "sakura" | "leaves".
+    #[serde(default = "default_weather_manual")]
+    pub weather_manual: String,
+    /// "light" | "medium" | "heavy".
+    #[serde(default = "default_weather_intensity")]
+    pub weather_intensity: String,
+    /// Dừng hiệu ứng khi máy đang chạy pin.
+    #[serde(default = "default_true")]
+    pub weather_pause_battery: bool,
+    /// Phím tắt bật / tắt nhanh hiệu ứng (lối thoát khẩn). Rỗng = không dùng.
+    #[serde(default = "default_weather_shortcut")]
+    pub weather_shortcut: String,
+    /// Pet nói một câu khi thời tiết đổi (và khi vừa bật hiệu ứng).
+    #[serde(default = "default_true")]
+    pub weather_talk: bool,
+    /// Chế độ trước lần tắt gần nhất, để phím tắt / tray bật lại đúng chế độ đó.
+    #[serde(default = "default_weather_last_mode")]
+    pub weather_last_mode: String,
+    /// Thành phố người dùng tự chọn (tên hiển thị + toạ độ). Rỗng = chưa chọn.
+    /// Chỉ lưu trên máy; thứ duy nhất gửi đi là toạ độ tới Open-Meteo.
+    #[serde(default)]
+    pub weather_city: String,
+    #[serde(default)]
+    pub weather_lat: f64,
+    #[serde(default)]
+    pub weather_lon: f64,
+    /// "c" | "f".
+    #[serde(default = "default_weather_units")]
+    pub weather_units: String,
+    /// Chớp khi có dông (chế độ thời tiết thật). Mặc định TẮT (an toàn ánh sáng).
+    #[serde(default)]
+    pub weather_lightning: bool,
+    /// Widget thời tiết ghim trên desktop (weather_net.rs, cửa sổ "pin-weather").
+    #[serde(default)]
+    pub weather_pin: bool,
+    #[serde(default)]
+    pub weather_pin_pos: Option<(i32, i32)>,
+    #[serde(default)]
+    pub weather_pin_top: bool,
+    /// "small" | "large".
+    #[serde(default = "default_weather_pin_size")]
+    pub weather_pin_size: String,
+}
+
+fn default_weather_units() -> String {
+    "c".into()
+}
+fn default_weather_pin_size() -> String {
+    "small".into()
+}
+
+fn default_weather_last_mode() -> String {
+    "manual".into()
+}
+
+fn default_weather_mode() -> String {
+    "off".into()
+}
+fn default_weather_manual() -> String {
+    "rain".into()
+}
+fn default_weather_intensity() -> String {
+    "medium".into()
+}
+fn default_weather_shortcut() -> String {
+    "Ctrl+Alt+W".into()
 }
 
 fn default_sleepy_idle() -> u32 {
@@ -255,6 +326,22 @@ impl Default for Settings {
             focus_min: default_focus_min(),
             break_min: default_break_min(),
             birthday: String::new(),
+            weather_mode: default_weather_mode(),
+            weather_manual: default_weather_manual(),
+            weather_intensity: default_weather_intensity(),
+            weather_pause_battery: true,
+            weather_shortcut: default_weather_shortcut(),
+            weather_talk: true,
+            weather_last_mode: default_weather_last_mode(),
+            weather_city: String::new(),
+            weather_lat: 0.0,
+            weather_lon: 0.0,
+            weather_units: default_weather_units(),
+            weather_lightning: false,
+            weather_pin: false,
+            weather_pin_pos: None,
+            weather_pin_top: false,
+            weather_pin_size: default_weather_pin_size(),
         }
     }
 }
@@ -355,6 +442,11 @@ fn bond_path(app: &AppHandle) -> Option<PathBuf> {
 static BOND_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// Mức thân thiết (bond.rs). File thiếu hoặc hỏng → bắt đầu lại từ đầu, không lỗi.
+/// Đường dẫn file trong thư mục cấu hình của app (cache thời tiết…).
+pub fn config_file(app: &AppHandle, name: &str) -> Option<PathBuf> {
+    Some(config_dir(app)?.join(name))
+}
+
 pub fn load_bond(app: &AppHandle) -> crate::bond::Bond {
     bond_path(app)
         .and_then(|p| std::fs::read_to_string(p).ok())

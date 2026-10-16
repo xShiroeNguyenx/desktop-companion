@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!--
+  Widget thời tiết ghim trên desktop (PLAN.md 13.7b, weather_net.rs →
+  "pin-weather"). Cùng cách với tờ note task: cửa sổ trong suốt, kéo ở đâu cũng
+  được, không luôn-nổi trừ khi bật 📍. Có Miu ở góc như thẻ dự báo (không dùng
+  đầu ghim mặt nhân vật). Kích thước cửa sổ: weather_net::pin_size.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thời tiết</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #f6eaf4;
+      user-select: none;
+    }
+    .wrap { position: absolute; inset: 0; padding: 6px; }
+    .card {
+      position: relative;
+      height: 100%;
+      padding: 10px 12px 8px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(160deg, rgba(48, 46, 78, 0.94), rgba(74, 48, 92, 0.94));
+      box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
+      cursor: grab;
+      animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
+      display: flex; flex-direction: column; gap: 4px;
+      overflow: hidden;
+    }
+    .card.sky-sun { background: linear-gradient(160deg, rgba(86, 64, 96, 0.94), rgba(122, 78, 96, 0.94)); }
+    .card.sky-rain { background: linear-gradient(160deg, rgba(38, 52, 78, 0.94), rgba(52, 52, 92, 0.94)); }
+    .card.sky-night { background: linear-gradient(160deg, rgba(28, 30, 62, 0.95), rgba(46, 36, 78, 0.95)); }
+    .card.old { opacity: 0.72; }
+    @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
+
+    .city { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
+    .ago { font-size: 10.5px; color: #c9b6d6; margin-top: auto; }
+    /* Hàng nhiệt độ: icon + số bên trái, Miu bên phải (không đè lên chữ nào). */
+    .now { display: flex; align-items: center; gap: 6px; min-height: 64px; }
+    .now .ic { font-size: 36px; line-height: 1; }
+    .now .t { font: 800 36px/1 "Segoe UI", sans-serif; letter-spacing: -1px; white-space: nowrap; }
+    .now .t sup { font-size: 14px; vertical-align: top; position: relative; top: 4px; margin-left: 1px; }
+    .now .miu {
+      margin-left: auto;
+      width: 70px; height: 70px; flex: 0 0 auto;
+      object-fit: contain; object-position: right bottom;
+      pointer-events: none;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+    }
+    .meta { font-size: 12px; color: #e2d3ea; line-height: 1.45; }
+    .meta b { color: #fff; }
+    .rain { color: #8fc0ff; font-weight: 700; }
+    .days { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
+    .days div { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.07); }
+    .days .n { flex: 1; font-weight: 700; white-space: nowrap; }
+    .days .i { font-size: 15px; }
+    .days .lo { color: #c9b6d6; }
+    .empty { font-size: 12px; color: #e2d3ea; line-height: 1.4; }
+    .small .city, .small .ago, .small .days { display: none; }
+    .large .now .miu { width: 84px; height: 84px; }
+
+    .tools {
+      position: absolute; right: 6px; bottom: 6px;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .card:hover .tools { opacity: 1; }
+    .tools button {
+      width: 24px; height: 24px; border-radius: 8px;
+      border: none; background: rgba(40, 30, 60, 0.85); color: #fff;
+      font-size: 12px; cursor: pointer;
+    }
+    .tools button:hover { background: rgba(90, 70, 120, 0.95); }
+    .tools button.on { background: #ff73ab; }
+    @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="card small" id="card">
+      <div class="city" id="city"></div>
+      <div class="now">
+        <span class="ic" id="ic"></span><span class="t" id="t"></span>
+        <img class="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
+      </div>
+      <div class="meta" id="meta"></div>
+      <div class="days" id="days"></div>
+      <div class="ago" id="ago"></div>
+      <div class="tools">
+        <button id="topBtn" type="button">📍</button>
+        <button id="sizeBtn" type="button">⤢</button>
+        <button id="unpinBtn" type="button">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/weather-core.js"></script>
+  <script src="js/weather-pin.js"></script>
+</body>
+</html>

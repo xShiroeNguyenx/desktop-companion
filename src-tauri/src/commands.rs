@@ -262,6 +262,7 @@ pub fn open_mini_game(app: AppHandle, kind: String) -> Result<(), String> {
     if let Some(w) = app.get_webview_window("arcade") {
         let _ = w.hide();
     }
+    crate::sidegirl::hide(&app, "arcade");
     open(&app);
     Ok(())
 }
@@ -453,6 +454,16 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.name_asks = old.name_asks;
     settings.name_asked_at = old.name_asked_at;
     settings.address_asked = old.address_asked;
+    settings.weather_last_mode = old.weather_last_mode.clone();
+    // Thành phố, đơn vị và widget ghim đổi ở thẻ dự báo / widget, không ở form Cài đặt.
+    settings.weather_city = old.weather_city.clone();
+    settings.weather_lat = old.weather_lat;
+    settings.weather_lon = old.weather_lon;
+    settings.weather_units = old.weather_units.clone();
+    settings.weather_pin = old.weather_pin;
+    settings.weather_pin_pos = old.weather_pin_pos;
+    settings.weather_pin_top = old.weather_pin_top;
+    settings.weather_pin_size = old.weather_pin_size.clone();
 
     // Tên + xưng hô: cùng luật làm sạch với thẻ trên pet và thẻ [name:] trong chat.
     // Tên pet / tên người dùng được để trống; từ xưng hô trống thì về mặc định.
@@ -479,6 +490,10 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     if settings.side_girls != old.side_girls {
         crate::sidegirl::set_enabled(&app, settings.side_girls);
     }
+    crate::fx::configure(&app, &settings);
+    if settings.weather_shortcut.trim() != old.weather_shortcut.trim() {
+        crate::fx::register_shortcut(&app);
+    }
 
     if settings.message_language != old.message_language {
         let _ = app.emit_to(
@@ -492,6 +507,122 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
         naming::react(&app, naming::classify_change(&old.pet_name, &settings.pet_name));
     }
     Ok(())
+}
+
+/// Nhóm "Thời tiết" trong Cài đặt: lưu và áp dụng ngay để xem trước (không chờ Lưu).
+#[tauri::command]
+pub fn weather_fx_set(
+    app: AppHandle,
+    mode: String,
+    kind: String,
+    intensity: String,
+    pause_battery: bool,
+    talk: bool,
+    lightning: bool,
+) -> Result<(), String> {
+    let mut s = store::load_settings(&app);
+    let mode = crate::fx::Mode::from_code(&mode);
+    if mode != crate::fx::Mode::Off {
+        s.weather_last_mode = mode.code().to_string();
+    }
+    s.weather_mode = mode.code().to_string();
+    s.weather_talk = talk;
+    s.weather_lightning = lightning;
+    s.weather_manual = crate::fx::clean_kind(&kind).to_string();
+    s.weather_intensity = crate::fx::clean_intensity(&intensity).to_string();
+    s.weather_pause_battery = pause_battery;
+    store::save_settings(&app, &s)?;
+    crate::fx::configure(&app, &s);
+    crate::weather_net::broadcast(&app);
+    Ok(())
+}
+
+/// Thẻ dự báo / widget ghim: toàn bộ dữ liệu đang có (weather_net::view).
+#[tauri::command]
+pub fn weather_get(app: AppHandle) -> Value {
+    crate::weather_net::view(&app)
+}
+
+/// Tìm thành phố theo tên (Open-Meteo geocoding). Async: gọi mạng.
+#[tauri::command]
+pub async fn weather_search(app: AppHandle, query: String) -> Result<Vec<crate::weather::Place>, String> {
+    let lang = persona::address(&store::load_settings(&app)).lang.code();
+    crate::weather_net::search(&query, lang).await
+}
+
+#[tauri::command]
+pub async fn weather_set_city(app: AppHandle, name: String, lat: f64, lon: f64) -> Result<(), String> {
+    crate::weather_net::set_city(&app, &name, lat, lon)
+}
+
+#[tauri::command]
+pub async fn weather_set_units(app: AppHandle, units: String) -> Result<(), String> {
+    crate::weather_net::set_units(&app, &units)
+}
+
+/// Nút làm mới: hỏi lại Open-Meteo ngay ở nhịp kế tiếp.
+#[tauri::command]
+pub fn weather_refresh() {
+    crate::weather_net::wake();
+}
+
+/// Nút "Bật hiệu ứng như ngoài trời" trên thẻ dự báo.
+#[tauri::command]
+pub async fn weather_use_live(app: AppHandle) -> Result<(), String> {
+    let mut s = store::load_settings(&app);
+    s.weather_mode = "live".into();
+    s.weather_last_mode = "live".into();
+    store::save_settings(&app, &s)?;
+    crate::fx::configure(&app, &s);
+    crate::weather_net::broadcast(&app);
+    Ok(())
+}
+
+// Các lệnh thời tiết đụng tới cửa sổ (dựng / gỡ widget ghim, luôn nổi, đổi cỡ,
+// ẩn thẻ) là async, giống tasks_set_pinned: làm việc đó trong command đồng bộ
+// (chạy trên main thread) có thể treo WebView2 — bấm được một lần rồi cả thẻ đơ.
+#[tauri::command]
+pub async fn weather_pin_set(app: AppHandle, pinned: bool) -> Result<(), String> {
+    crate::weather_net::set_pinned(&app, pinned)
+}
+
+#[tauri::command]
+pub async fn weather_pin_top(app: AppHandle, top: bool) -> Result<(), String> {
+    crate::weather_net::set_top(&app, top)
+}
+
+#[tauri::command]
+pub async fn weather_pin_size(app: AppHandle, size: String) -> Result<(), String> {
+    crate::weather_net::set_size(&app, &size)
+}
+
+/// Nút × / Esc trên trang Mini Games: ẩn trang và nhân vật bám mép của nó.
+#[tauri::command]
+pub async fn arcade_close(app: AppHandle) -> Result<(), String> {
+    let w = app.get_webview_window("arcade").ok_or("không thấy trang Mini Games")?;
+    w.hide().map_err(|e| e.to_string())?;
+    crate::sidegirl::hide(&app, "arcade");
+    Ok(())
+}
+
+/// Nút × / Esc trên thẻ dự báo.
+#[tauri::command]
+pub async fn weather_close(app: AppHandle) -> Result<(), String> {
+    let w = app.get_webview_window("weather").ok_or("không thấy cửa sổ thời tiết")?;
+    w.hide().map_err(|e| e.to_string())?;
+    crate::sidegirl::hide(&app, "weather");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_weather(app: AppHandle) {
+    crate::windows::open_weather(&app);
+}
+
+/// Lý do hiệu ứng thời tiết không chạy được (rỗng = ổn), cho Cài đặt hiện ra.
+#[tauri::command]
+pub fn weather_fx_status() -> String {
+    crate::fx::status()
 }
 
 /// Công tắc "nhân vật bám cạnh bảng": lưu và áp dụng ngay (không chờ Lưu).

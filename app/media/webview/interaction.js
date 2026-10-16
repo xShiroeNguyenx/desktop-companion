@@ -1092,6 +1092,15 @@ function setupCompactContextMenu() {
     } else if (action === 'open-assistant') {
       // Trợ lý văn bản ở chế độ tự gõ (windows.rs → open_assistant).
       vscode.postMessage({ command: 'openAssistant' });
+    } else if (action === 'toggle-weather-pin') {
+      // Ghim / gỡ widget thời tiết (chưa chọn thành phố thì Rust mở thẻ dự báo).
+      vscode.postMessage({ command: 'weather:pin' });
+    } else if (action === 'open-weather') {
+      // Thẻ dự báo thời tiết (windows.rs → open_weather).
+      vscode.postMessage({ command: 'weather:open' });
+    } else if (action === 'toggle-weather') {
+      // Rust bật / tắt lớp phủ hiệu ứng thời tiết (fx.rs).
+      vscode.postMessage({ command: 'weather:toggle' });
     } else if (action === 'show-games') {
       // Rust mở trang Mini Games (arcade.html).
       vscode.postMessage({ command: 'games:show' });
@@ -1213,11 +1222,23 @@ function setupCompactContextMenu() {
               : { icon: '🍅', label: 'Tập trung', action: 'toggle-focus' },
             { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
             { icon: '🎮', label: 'Chơi', action: 'show-games' },
+            window.__DND__
+              ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
+              : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
           ],
         },
-        window.__DND__
-          ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
-          : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
+        // Thời tiết: thẻ dự báo, bật / tắt hiệu ứng toàn màn hình, ghim lên desktop.
+        // Đứng ở ô cũ của 🔕 để vòng vẫn 8 ô và ⚙ Cài đặt vẫn nằm ô dưới cùng.
+        {
+          id: 'weather',
+          icon: '☁️',
+          label: 'Thời tiết',
+          items: [
+            { icon: '☁️', label: 'Dự báo', action: 'open-weather' },
+            { icon: '🌦', label: 'Hiệu ứng', action: 'toggle-weather' },
+            { icon: '📌', label: 'Ghim / gỡ ghim', action: 'toggle-weather-pin' },
+          ],
+        },
         { icon: '🗂️', label: 'Mở đầy đủ', action: 'open-assistant' },
       ],
       onAction: handleMenuAction,

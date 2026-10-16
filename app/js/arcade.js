@@ -240,10 +240,13 @@
     }
   }
 
+  // Ẩn bằng lệnh Rust (ẩn luôn nhân vật bám mép), lỗi thì mới dùng API cửa sổ của JS.
   function hideWindow() {
     closeSheets();
-    const w = window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow();
-    if (w) w.hide().catch(() => {});
+    invoke('arcade_close').catch(() => {
+      const w = window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow();
+      if (w) w.hide().catch(() => {});
+    });
   }
 
   // ─── Sự kiện ─────────────────────────────────────────────────────────────
