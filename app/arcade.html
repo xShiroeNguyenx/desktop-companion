@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<!--
+  Trang Mini Games (menu tròn 💞 Đồng hành → 🎮 Chơi). Chọn một trò → Rust ẩn
+  trang này và mở cửa sổ game đó (open_mini_game). Luồng ở js/arcade.js.
+  Ảnh thẻ / banner ở media/arcade/ (cắt từ ảnh thiết kế).
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Games</title>
+  <style>
+    :root {
+      --ink: #5b2f47;
+      --ink-soft: #9a6a84;
+      --pink: #ff73ab;
+      --pink-2: #ff9ec7;
+      --line: rgba(255, 150, 190, 0.45);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Vẽ theo khổ 1100×720 rồi thu về 66% (726×475). ĐỒNG BỘ với ARCADE_W /
+       ARCADE_H trong windows.rs. */
+    html { zoom: 0.66; }
+
+    .window {
+      position: absolute;
+      inset: 6px;
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      background:
+        radial-gradient(60% 50% at 70% 10%, rgba(255, 190, 220, 0.5), transparent 70%),
+        linear-gradient(160deg, #4a3560, #3b2c52 55%, #45305a);
+      box-shadow: 0 10px 30px rgba(40, 20, 60, 0.45);
+    }
+
+    /* ─── Cột trái: hồ sơ, hôm nay, chibi, điểm thân thiết ───────────────── */
+    .side {
+      flex: 0 0 214px;
+      display: flex; flex-direction: column; gap: 12px;
+      padding: 14px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #fbe9f3;
+    }
+    .profile { display: flex; align-items: center; gap: 10px; }
+    .profile img {
+      width: 54px; height: 54px; border-radius: 50%;
+      object-fit: cover; object-position: center 12%;
+      background: #ffe0ee; border: 2px solid #ffc2dc;
+    }
+    .profile b { display: block; font-size: 20px; }
+    .profile small { font-size: 12px; opacity: 0.8; }
+    .today {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+    }
+    .today h4 { margin: 0; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: #ffb3d4; }
+    .today .row { display: flex; justify-content: space-between; gap: 6px; }
+    .today .row b { color: #fff; }
+    .chibi { position: relative; margin-top: auto; height: 200px; }
+    .chibi img {
+      position: absolute; left: -6px; bottom: 0;
+      width: 130px; height: 128px; object-fit: contain; object-position: left bottom;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+    }
+    .chibi .say {
+      position: absolute; right: 0; top: 0;
+      width: 128px;
+      padding: 9px 10px;
+      border-radius: 18px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12.5px; font-weight: 700; line-height: 1.35; text-align: center;
+    }
+    .chibi .say::after { content: ' ♡'; color: var(--pink); }
+    .bond {
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .bond .top { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+    .bond .top .heart { font-size: 22px; }
+    .bond .nums { font-size: 13px; opacity: 0.9; }
+    .bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, #ff8fc0, #ff5fa2); transition: width 0.5s ease; }
+
+    /* ─── Phần chính ─────────────────────────────────────────────────────── */
+    .main { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .banner {
+      position: relative;
+      flex: 0 0 236px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(120deg, #5b3f73, #7b4f86);
+    }
+    .banner .art {
+      position: absolute; right: 0; top: 0; height: 100%;
+      width: 62%;
+      object-fit: cover; object-position: left top;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%);
+      mask-image: linear-gradient(90deg, transparent, #000 22%);
+      pointer-events: none;
+    }
+    .banner .text { position: absolute; left: 22px; top: 22px; width: 52%; }
+    .banner h1 {
+      margin: 0;
+      font: 900 54px/1.05 "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #ffd1e6, #ff7fb8 55%, #c86bff);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 3px 0 #fff) drop-shadow(0 6px 10px rgba(60, 20, 80, 0.45));
+      display: flex; align-items: center; gap: 12px;
+    }
+    .banner h1 .pad { font-size: 50px; color: initial; -webkit-text-fill-color: initial; filter: none; }
+    .banner .sub { margin-top: 10px; font-size: 16px; font-weight: 700; color: #fff; text-shadow: 0 2px 6px rgba(60, 20, 80, 0.6); }
+    /* Bong bóng nằm dưới tiêu đề, đuôi chỉ sang Miu bên phải. */
+    .banner .bubble {
+      position: absolute; left: 22px; top: 112px;
+      width: 330px;
+      padding: 10px 14px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      font-size: 13.5px; font-weight: 700; line-height: 1.4; text-align: center;
+      box-shadow: 0 4px 14px rgba(60, 20, 80, 0.3);
+    }
+    .banner .bubble::after { content: ' ♡'; color: var(--pink); }
+    .banner .bubble::before {
+      content: ''; position: absolute; right: -12px; top: 50%; translate: 0 -50%;
+      border: 8px solid transparent; border-left: 14px solid rgba(255, 255, 255, 0.95); border-right: 0;
+    }
+    .tools { position: absolute; right: 14px; top: 14px; display: flex; gap: 10px; z-index: 3; }
+    .round-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--ink);
+      font: 800 17px/1 "Segoe UI", sans-serif;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 8px rgba(60, 20, 80, 0.3);
+    }
+    .round-btn:hover { background: #fff; }
+    .round-btn.close { background: var(--pink); color: #fff; }
+    .round-btn.on { background: var(--pink-2); color: #fff; }
+
+    .cards {
+      position: relative;
+      z-index: 2;
+      margin-top: -64px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .card {
+      position: relative;
+      padding: 8px 8px 12px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #fff6fb, #ffe4f0);
+      border: 2px solid #fff;
+      box-shadow: 0 8px 20px rgba(40, 20, 60, 0.35);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .card.guess { background: linear-gradient(180deg, #faf4ff, #ece0ff); }
+    .card.mines { background: linear-gradient(180deg, #f2f8ff, #dceaff); }
+    .card .artBox { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 374 / 300; }
+    .card .artBox img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* Nhãn đè đúng chỗ nhãn vẽ sẵn trong ảnh (để dịch được). */
+    .badge {
+      position: absolute; left: 0; top: 0;
+      padding: 6px 14px 6px 10px;
+      border-radius: 14px 0 16px 0;
+      font-size: 14px; font-weight: 800; color: #fff;
+      display: flex; align-items: center; gap: 6px;
+      min-width: 112px; min-height: 40px;
+    }
+    .rps .badge { background: linear-gradient(90deg, #ff6fa8, #ff8dbd); }
+    .guess .badge { background: linear-gradient(90deg, #8a6cf0, #a98bff); }
+    .mines .badge { background: linear-gradient(90deg, #5d7df5, #7d9bff); }
+    .ribbon {
+      position: absolute; right: 8px; top: 8px;
+      padding: 4px 10px; border-radius: 10px;
+      background: #ffd76a; color: #7a4a00;
+      font-size: 12.5px; font-weight: 900;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    .card .desc { text-align: center; font-size: 13.5px; font-weight: 600; line-height: 1.4; min-height: 38px; padding: 0 4px; }
+    .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.75);
+      font-size: 11.5px; line-height: 1.25; color: var(--ink-soft);
+      min-width: 0;
+    }
+    .chip .ic { font-size: 18px; }
+    .chip b { display: block; color: var(--ink); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .play {
+      border: none;
+      border-radius: 16px;
+      height: 50px;
+      font: 800 20px "Segoe UI", sans-serif;
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 5px 14px rgba(40, 20, 60, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    }
+    .play::before { content: '▶'; font-size: 18px; }
+    .play:hover { filter: brightness(1.06); }
+    .play:active { translate: 0 2px; }
+    .rps .play { background: linear-gradient(180deg, #ff8fc0, #ff5a9c); }
+    .guess .play { background: linear-gradient(180deg, #b39bff, #8a6cf0); }
+    .mines .play { background: linear-gradient(180deg, #7fb2ff, #4f7ff0); }
+
+    .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .tile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fbe9f3;
+      font: inherit; text-align: left;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .tile:hover { background: rgba(255, 255, 255, 0.14); }
+    .tile .ic { font-size: 30px; }
+    .tile b { display: block; font-size: 15px; color: #fff; }
+    .tile small { display: block; font-size: 12px; opacity: 0.8; line-height: 1.35; }
+    .tile .go { margin-left: auto; font-size: 20px; opacity: 0.7; }
+
+    /* ─── Bảng nổi: thành tích, hướng dẫn ─────────────────────────────────── */
+    .sheet {
+      position: absolute;
+      right: 14px; top: 64px;
+      width: 380px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 12px 30px rgba(40, 20, 60, 0.45);
+      z-index: 9;
+      font-size: 14px; line-height: 1.5;
+      animation: pop 0.3s cubic-bezier(.34, 1.56, .64, 1);
+    }
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } }
+    .sheet h3 { margin: 0 0 8px; font-size: 17px; }
+    .sheet p { margin: 0 0 6px; }
+    .sheet table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .sheet th { text-align: left; font-size: 12px; color: var(--ink-soft); font-weight: 700; padding: 4px 6px; }
+    .sheet td { padding: 6px; border-top: 1px solid var(--line); font-weight: 600; }
+    .sheet td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <aside class="side" data-tauri-drag-region>
+      <div class="profile" data-tauri-drag-region>
+        <img src="media/game/rps-wink.png" alt="" draggable="false" />
+        <div><b id="petName">Miu</b><small>Desktop Companion</small></div>
+      </div>
+      <div class="today">
+        <h4 data-t="today"></h4>
+        <div class="row"><span data-t="todayPoints"></span><b id="todayPoints">0/3</b></div>
+        <div class="row"><span data-t="todayGame"></span><b id="todayGame"></b></div>
+      </div>
+      <div class="chibi">
+        <div class="say" id="chibiSay"></div>
+        <img src="media/game/rps-cheer.png" alt="" draggable="false" />
+      </div>
+      <div class="bond">
+        <div class="top"><span class="heart">💗</span><span data-t="bond"></span></div>
+        <div class="nums" id="bondNums"></div>
+        <div class="bar"><i id="bondBar"></i></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <header class="banner" data-tauri-drag-region>
+        <img class="art" src="media/arcade/banner.jpg" alt="" draggable="false" />
+        <div class="text" data-tauri-drag-region>
+          <h1><span class="pad">🎮</span>Mini Games</h1>
+          <div class="sub" id="subText"></div>
+        </div>
+        <div class="bubble" id="bubble"></div>
+        <div class="tools">
+          <button class="round-btn" id="helpBtn" type="button">?</button>
+          <button class="round-btn" id="statsBtn" type="button">📊</button>
+          <button class="round-btn close" id="closeBtn" type="button">×</button>
+        </div>
+      </header>
+
+      <div class="cards">
+        <article class="card rps" data-game="rps">
+          <div class="artBox">
+            <img src="media/arcade/card-rps.jpg" alt="Rock Paper Scissors" draggable="false" />
+            <div class="badge">⭐ <span data-t="tagRps"></span></div>
+          </div>
+          <div class="desc" data-t="descRps"></div>
+          <div class="chips">
+            <div class="chip"><span class="ic">⏱️</span><span><span data-t="quick"></span><b data-t="quickRps"></b></span></div>
+            <div class="chip"><span class="ic">📊</span><span><span data-t="wins"></span><b id="statRps">—</b></span></div>
+          </div>
+          <button class="play" type="button" data-t="play"></button>
+        </article>
+        <article class="card guess" data-game="guess">
+          <div class="artBox">
+            <img src="media/arcade/card-guess.jpg" alt="Guess My Number" draggable="false" />
+            <div class="badge">👑 <span data-t="tagGuess"></span></div>
+          </div>
+          <div class="desc" data-t="descGuess"></div>
+          <div class="chips">
+            <div class="chip"><span class="ic">⏱️</span><span><span data-t="round"></span><b data-t="quickGuess"></b></span></div>
+            <div class="chip"><span class="ic">📊</span><span><span data-t="streak"></span><b id="statGuess">—</b></span></div>
+          </div>
+          <button class="play" type="button" data-t="play"></button>
+        </article>
+        <article class="card mines" data-game="mines">
+          <div class="artBox">
+            <img src="media/arcade/card-mines.jpg" alt="Bomb Squad" draggable="false" />
+            <div class="badge">⚙️ <span data-t="tagMines"></span></div>
+          </div>
+          <div class="desc" data-t="descMines"></div>
+          <div class="chips">
+            <div class="chip"><span class="ic">⏱️</span><span><span data-t="time"></span><b data-t="quickMines"></b></span></div>
+            <div class="chip"><span class="ic">📊</span><span><span data-t="fastest"></span><b id="statMines">—</b></span></div>
+          </div>
+          <button class="play" type="button" data-t="play"></button>
+        </article>
+      </div>
+
+      <div class="tiles">
+        <button class="tile" id="tileStats" type="button">
+          <span class="ic">🏆</span><span><b data-t="achTitle"></b><small data-t="achSub"></small></span><span class="go">›</span>
+        </button>
+        <button class="tile" id="tileReward" type="button">
+          <span class="ic">🎁</span><span><b data-t="rewardTitle"></b><small id="rewardSub"></small></span><span class="go">›</span>
+        </button>
+        <button class="tile" id="tileDaily" type="button">
+          <span class="ic">📅</span><span><b data-t="dailyTitle"></b><small id="dailySub"></small></span><span class="go">›</span>
+        </button>
+      </div>
+
+      <div class="sheet" id="statsSheet" hidden>
+        <h3>🏆 <span data-t="achTitle"></span></h3>
+        <table>
+          <thead><tr><th></th><th data-t="colPlays"></th><th data-t="colWins"></th><th data-t="colBest"></th></tr></thead>
+          <tbody id="statsBody"></tbody>
+        </table>
+      </div>
+      <div class="sheet" id="helpSheet" hidden></div>
+    </section>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/games-core.js"></script>
+  <script src="js/arcade.js"></script>
+</body>
+</html>

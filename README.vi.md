@@ -61,8 +61,10 @@ duyệt, Word…).
   bị trừ). Mỗi sáng pet chào kèm số việc tới hạn hôm nay, chúc mừng các cột mốc
   (7 / 30 / 100 / 365 ngày, kỷ niệm, chuỗi ngày, lên cấp) và sinh nhật bạn, càng thân
   thì nói chuyện càng tự nhiên.
-- **🎮 Mini game** — oẳn tù tì (ai thắng 3 trận trước) và đoán số (1–100, 7 lượt).
-  Tay pet ra, số bạn đoán và cuối cùng là số pet đã nghĩ hiện ngay trên đầu pet.
+- **🎮 Mini Games** — trang riêng (💞 → 🎮) với 3 trò, mỗi trò một cửa sổ và Miu phản
+  ứng theo từng nước: oẳn tù tì (thắng 3, 5 hoặc 7 trận), đoán số (1–10 tới 1–100, có
+  gợi ý) và Gỡ bom (dò mìn 3 cỡ bàn). Cùng trang có "★ Hôm nay" (game của ngày), thành
+  tích và số điểm thân thiết đã nhận từ game hôm nay.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -121,8 +123,9 @@ viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nh�
 thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
-nhạc nền, tắt tiếng) · Chat nhanh · Công việc · 🗂️ Mở đầy đủ (trợ lý văn bản) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 chơi) · 🔕 Đừng làm phiền · Cài đặt
+nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games) · 🔕 Đừng làm phiền ·
+🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.

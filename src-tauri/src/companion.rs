@@ -480,10 +480,38 @@ pub fn show_bond_card(app: &AppHandle) {
     );
 }
 
-/// Menu tròn 🎮: mở bảng mini game trên pet (games.js), kèm ngôn ngữ và tên pet.
-pub fn show_games(app: &AppHandle) {
+/// Các cửa sổ game + trang Mini Games: ngôn ngữ, tên pet, xưng hô, điểm thân
+/// thiết (hôm nay từ game, và tiến độ lên mức kế tiếp).
+pub fn game_info(app: &AppHandle) -> serde_json::Value {
+    use crate::bond::{daily_cap, earned_today, level, level_name, progress, Event};
     let a = persona::address(&store::load_settings(app));
-    pet(app, json!({ "command": "games:open", "lang": a.lang.code(), "pet": a.pet }));
+    let (today, _) = today_and_hour(now_secs());
+    let b = store::load_bond(app);
+    json!({
+        "lang": a.lang.code(),
+        "pet": a.pet,
+        // Cách pet gọi người dùng (xưng hô đã chọn), cho chữ "Anh thắng rồi!".
+        "you": a.you,
+        "me": a.me,
+        "points_today": earned_today(&b, Event::Game, today),
+        "points_cap": daily_cap(Event::Game),
+        "points": b.points,
+        "level_name": level_name(level(b.points), a.lang),
+        // Điểm trong mức hiện tại / điểm cần để lên mức kế; mức cao nhất thì null.
+        "progress": progress(b.points).map(|(have, need)| json!({ "have": have, "need": need })),
+    })
+}
+
+/// Hết một ván trong cửa sổ game: cộng điểm, pet ngoài desktop đổi nét mặt.
+pub fn game_result(app: &AppHandle, user_won: bool) {
+    bond_award(app, crate::bond::Event::Game);
+    let expression = if user_won { "shy" } else { "happy" };
+    pet(app, json!({ "command": "setExpression", "expression": expression, "duration": EXPRESSION_MS }));
+}
+
+/// Menu tròn 🎮: mở trang Mini Games (arcade.html).
+pub fn show_games(app: &AppHandle) {
+    crate::windows::open_arcade(app);
 }
 
 /// Một dòng cho khối ngữ cảnh gửi model: mức thân thiết hiện tại.

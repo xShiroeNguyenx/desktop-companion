@@ -49,7 +49,7 @@ pub enum Event {
     FocusDone,
     Chat,
     Headpat,
-    /// Chơi xong một ván mini game (games.js → game:result).
+    /// Chơi xong một ván mini game (cửa sổ game → lệnh game_result).
     Game,
     /// Được đặt tên lần đầu.
     Named,
@@ -80,6 +80,19 @@ impl Event {
             Event::Named => (10, 10),
         }
     }
+}
+
+/// Trần điểm mỗi ngày của một loại sự kiện (bảng phần thưởng trong game).
+pub fn daily_cap(ev: Event) -> u32 {
+    ev.points().1
+}
+
+/// Điểm đã nhận hôm nay từ một loại sự kiện.
+pub fn earned_today(b: &Bond, ev: Event, today: Day) -> u32 {
+    if b.earned_day != today {
+        return 0;
+    }
+    b.earned.get(ev.key()).copied().unwrap_or(0)
 }
 
 /// Mốc điểm của từng cấp. Khoảng 1 tháng dùng đều đặn lên cấp 3.
@@ -254,6 +267,9 @@ mod tests {
         assert_eq!(award(&mut b, Event::Headpat, t), 0);
         // Sang ngày mới: trần đặt lại.
         assert_eq!(award(&mut b, Event::TaskDone, t + 1), 2);
+        assert_eq!(earned_today(&b, Event::TaskDone, t + 1), 2);
+        assert_eq!(earned_today(&b, Event::TaskDone, t + 2), 0); // ngày khác: chưa có gì
+        assert_eq!(daily_cap(Event::Game), 3);
     }
 
     #[test]

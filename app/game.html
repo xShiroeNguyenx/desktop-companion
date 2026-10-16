@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<!--
+  Cửa sổ Oẳn tù tì (mở từ pet: 💞 Đồng hành → 🎮 Chơi → Oẳn tù tì). Luật nằm ở
+  js/games-core.js (có test); giao diện + luồng chơi ở js/game-rps.js.
+  Cửa sổ trong suốt, không viền: khung bo góc vẽ bằng CSS, kéo bằng thanh tiêu đề.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oẳn tù tì</title>
+  <style>
+    :root {
+      --ink: #5b2f47;
+      --ink-soft: #9a6a84;
+      --pink: #ff73ab;
+      --pink-2: #ff9ec7;
+      --blue: #5b8cff;
+      --card: rgba(255, 255, 255, 0.82);
+      --line: rgba(255, 150, 190, 0.45);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Bố cục vẽ theo khổ 900×560 rồi thu cả trang về 72% để cửa sổ nhỏ gọn
+       (648×404). ĐỒNG BỘ với GAME_W / GAME_H trong windows.rs. */
+    html { zoom: 0.72; }
+
+    /* ─── Khung cửa sổ ───────────────────────────────────────────────────── */
+    /* Khung cửa sổ. KHÔNG đặt tên .win: trùng với class kết quả "win" của
+       banner / thẻ VS (từng làm chữ "Thắng rồi!" thành tấm nền đè lên khung). */
+    .window {
+      position: absolute;
+      inset: 6px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background:
+        radial-gradient(60% 70% at 70% 30%, rgba(255, 214, 233, 0.95), transparent 70%),
+        radial-gradient(50% 60% at 10% 90%, rgba(214, 196, 255, 0.85), transparent 70%),
+        linear-gradient(160deg, #ffe6f1, #f3dcff 60%, #ffd9ea);
+      box-shadow: 0 10px 30px rgba(160, 60, 120, 0.35);
+    }
+    /* Cánh hoa rơi nhẹ phía sau. */
+    .window::before {
+      content: '🌸 ✦ 🌸 ✧ 🌸';
+      position: absolute;
+      left: 34%; top: 60px;
+      font-size: 18px;
+      letter-spacing: 46px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px 6px 16px;
+      position: relative;
+      z-index: 5;
+    }
+    .head .title {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px;
+      border-radius: 14px 14px 14px 4px;
+      background: rgba(255, 255, 255, 0.85);
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .head .spacer { flex: 1; align-self: stretch; }
+    .round-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--ink);
+      font: 800 15px/1 "Segoe UI", sans-serif;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .round-btn:hover { background: #fff; }
+    .round-btn.close { background: var(--pink); color: #fff; }
+    .round-btn.close:hover { background: #f05a97; }
+    .round-btn.on { background: var(--pink-2); color: #fff; }
+
+    /* ─── Sân khấu ───────────────────────────────────────────────────────── */
+    .stage { position: relative; flex: 1; min-height: 0; }
+
+    .girl {
+      position: absolute;
+      right: 2%;
+      bottom: -6%;
+      height: 112%;
+      pointer-events: none;
+      filter: drop-shadow(0 8px 18px rgba(200, 80, 140, 0.35));
+      transition: transform 0.3s ease;
+      animation: breathe 4s ease-in-out infinite;
+    }
+    .girl.flip { transform: scaleX(-1); }
+    /* Nhân vật nền bán thân (Miu): đáy sát mép dưới, không tràn khung. */
+    .girl.bust { height: 86%; bottom: 0; right: 1%; }
+
+    /* Khung biểu cảm: ô kính vuông ngay trên hàng thẻ, cùng bề rộng. */
+    .portrait {
+      position: absolute;
+      left: 320px; right: 30%;
+      top: 6px;
+      bottom: 178px;
+      border-radius: 22px;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background:
+        radial-gradient(70% 70% at 50% 35%, rgba(255, 255, 255, 0.55), transparent 75%),
+        linear-gradient(160deg, rgba(255, 236, 245, 0.7), rgba(236, 222, 255, 0.6));
+      box-shadow: 0 8px 20px rgba(200, 80, 140, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      overflow: hidden;
+      z-index: 3;
+    }
+    /* Cả 4 ảnh chồng lên nhau, chỉ ảnh .on hiện. Phủ kín khung bằng inset +
+       object-fit (không dựa vào chiều cao % để khỏi lệch khi khung đổi cỡ). */
+    .portrait .face {
+      position: absolute;
+      inset: 4% 3% 0;
+      width: 94%;
+      height: 96%;
+      object-fit: contain;
+      object-position: center bottom;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .portrait .face.on { visibility: visible; }
+    /* Hình hoà ngang hơn các hình khác (≈ 1.17:1): phủ kín khung, cắt bớt tóc
+       hai bên, để cùng cỡ mặt với các biểu cảm còn lại. */
+    .portrait .face[data-mood="draw"] { inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+    /* Đổi biểu cảm: nảy nhẹ; người chơi thắng thì nhún, thua thì lắc. */
+    .portrait .face.swap { animation: swap 0.3s cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes swap { from { scale: 0.92; } }
+    .portrait .face.cheer { animation: cheer 0.6s ease 2; }
+    .portrait .face.pout { animation: pout 0.5s ease 2; }
+    @keyframes breathe { 50% { translate: 0 -5px; } }
+    .girl.cheer { animation: cheer 0.6s ease 2; }
+    @keyframes cheer { 30% { translate: 0 -14px; } 60% { translate: 0 0; } }
+    .girl.pout { animation: pout 0.5s ease 2; }
+    @keyframes pout { 25% { rotate: -2deg; } 75% { rotate: 2deg; } }
+
+    .bubble {
+      position: absolute;
+      right: 4%;
+      top: 4%;
+      max-width: 210px;
+      padding: 14px 18px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 14px rgba(200, 80, 140, 0.25);
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 1.35;
+      z-index: 4;
+    }
+    .bubble::after { content: '♡'; display: block; color: var(--pink); font-size: 13px; }
+    .bubble.pop { animation: pop 0.35s cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes pop { from { transform: scale(0.6); opacity: 0; } }
+
+    /* Cột trái: tên trò + tỉ số. */
+    .left {
+      position: absolute;
+      left: 18px; top: 4px;
+      width: 290px;
+      z-index: 3;
+    }
+    .logo {
+      margin: 0;
+      font-size: 46px;
+      line-height: 0.95;
+      font-weight: 900;
+      color: #ff6fa8;
+      -webkit-text-stroke: 7px #fff;
+      paint-order: stroke fill;
+      text-shadow: 0 6px 14px rgba(200, 80, 140, 0.35);
+      transform: rotate(-6deg);
+      transform-origin: left bottom;
+    }
+    .ribbon {
+      display: inline-block;
+      margin: 14px 0 0 24px;
+      padding: 5px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #b3709a;
+      font-weight: 700;
+      font-size: 13px;
+      transform: rotate(-6deg);
+    }
+    .score {
+      margin-top: 18px;
+      padding: 10px 12px 10px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 6px 16px rgba(200, 80, 140, 0.18);
+    }
+    .score .s-head { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+    .score .s-cols { display: flex; gap: 6px; }
+    .score .s-col { flex: 1; text-align: center; border-radius: 12px; padding: 6px 4px 2px; }
+    .score .s-col.you { background: rgba(91, 140, 255, 0.12); color: var(--blue); }
+    .score .s-col.pet { background: rgba(255, 115, 171, 0.14); color: var(--pink); }
+    .score .s-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .score .s-num { font-weight: 900; font-size: 42px; line-height: 1.05; }
+    .score .s-num.bump { animation: bump 0.4s ease; }
+    @keyframes bump { 40% { transform: scale(1.35); } }
+    .score .s-foot { margin-top: 6px; text-align: center; font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+
+    /* Ba thẻ chọn tay. */
+    .cards {
+      position: absolute;
+      left: 320px; right: 30%;
+      bottom: 16px;
+      display: flex;
+      gap: 12px;
+      z-index: 3;
+    }
+    .card {
+      flex: 1;
+      min-width: 0;
+      height: 150px;
+      border-radius: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      background: var(--card);
+      box-shadow: 0 6px 16px rgba(200, 80, 140, 0.2);
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      font: inherit;
+      color: var(--ink);
+      position: relative;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(200, 80, 140, 0.3); }
+    .card .icon { font-size: 54px; line-height: 1.1; }
+    .card .label { font-weight: 700; font-size: 15px; }
+    .card .key { position: absolute; right: 9px; bottom: 7px; font-size: 11px; color: var(--ink-soft); }
+    .card.picked {
+      border-color: var(--pink);
+      background: #fff0f7;
+      transform: translateY(-8px) scale(1.04);
+      box-shadow: 0 0 0 4px rgba(255, 115, 171, 0.35), 0 12px 24px rgba(200, 80, 140, 0.35);
+    }
+    .cards.locked .card { cursor: default; }
+    .cards.locked .card:not(.picked) { opacity: 0.55; }
+
+    /* Kết quả một lượt: You [thẻ] VS [thẻ] Pet. */
+    /* Rộng hơn hàng thẻ một chút: hai thẻ + chữ VS không bị chồng nhau. */
+    .versus {
+      position: absolute;
+      left: 300px; right: 24%;
+      bottom: 16px;
+      height: 150px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      z-index: 3;
+    }
+    .vs-card {
+      flex: 0 0 auto;
+      width: 108px; height: 136px;
+      border-radius: 18px;
+      border: 3px solid;
+      background: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: 0 8px 18px rgba(200, 80, 140, 0.25);
+      animation: pop 0.35s cubic-bezier(.34, 1.56, .64, 1);
+    }
+    .vs-card .tag { font-weight: 800; font-size: 13px; padding: 2px 10px; border-radius: 10px; color: #fff; margin-bottom: 4px; }
+    .vs-card .icon { font-size: 56px; line-height: 1.1; }
+    .vs-card.you { border-color: var(--blue); }
+    .vs-card.you .tag { background: var(--blue); }
+    .vs-card.pet { border-color: var(--pink); }
+    .vs-card.pet .tag { background: var(--pink); }
+    .vs-card.win { box-shadow: 0 0 0 5px rgba(255, 214, 102, 0.8), 0 8px 18px rgba(200, 80, 140, 0.25); }
+    .vs-text { font: 900 34px/1 "Segoe UI", sans-serif; color: #ff9ec7; -webkit-text-stroke: 5px #fff; paint-order: stroke fill; }
+
+    .banner {
+      position: absolute;
+      left: 320px; right: 30%;
+      bottom: 176px;
+      text-align: center;
+      /* Một dòng: "Anh thắng rồi!" dài hơn "Thắng rồi!"; tràn nhẹ ra hai bên
+         khung thì vẫn đẹp hơn là gãy dòng. */
+      white-space: nowrap;
+      font: 900 38px/1 "Segoe UI", sans-serif;
+      -webkit-text-stroke: 8px #fff;
+      paint-order: stroke fill;
+      text-shadow: 0 6px 14px rgba(200, 80, 140, 0.35);
+      z-index: 4;
+      pointer-events: none;
+    }
+    .banner.win { color: #ff6fa8; }
+    .banner.lose { color: #5b8cff; }
+    .banner.draw { color: #ffb84d; }
+    .banner.show { animation: banner 0.5s cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes banner { from { transform: scale(0.4) rotate(-8deg); opacity: 0; } }
+
+    /* Hết ván. */
+    .over {
+      position: absolute;
+      left: 320px; right: 30%;
+      bottom: 16px;
+      height: 150px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px solid #fff;
+      box-shadow: 0 8px 18px rgba(200, 80, 140, 0.25);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      z-index: 3;
+      animation: pop 0.35s cubic-bezier(.34, 1.56, .64, 1);
+    }
+    .over .final { font-weight: 800; font-size: 18px; text-align: center; padding: 0 10px; }
+    .over .row { display: flex; gap: 10px; }
+    .pill {
+      border: none;
+      border-radius: 14px;
+      padding: 9px 20px;
+      font: 700 14px "Segoe UI", sans-serif;
+      cursor: pointer;
+      background: linear-gradient(180deg, #ff8fc0, #ff5fa2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255, 95, 162, 0.35);
+    }
+    .pill.ghost { background: rgba(255, 150, 190, 0.18); color: var(--ink); box-shadow: none; }
+
+    .help {
+      position: absolute;
+      left: 320px; right: 30%;
+      bottom: 180px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.95);
+      font-size: 13px;
+      line-height: 1.5;
+      z-index: 6;
+      box-shadow: 0 6px 16px rgba(200, 80, 140, 0.2);
+    }
+
+    /* ─── Bảng cài đặt game (trượt từ phải) ──────────────────────────────── */
+    .settings {
+      position: absolute;
+      top: 52px; right: 10px; bottom: 10px;
+      width: 270px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 26px rgba(160, 60, 120, 0.3);
+      z-index: 8;
+      display: flex; flex-direction: column; gap: 12px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      animation: slide 0.25s ease;
+    }
+    @keyframes slide { from { transform: translateX(20px); opacity: 0; } }
+    .settings h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+    .set-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 13px; }
+    .seg { display: flex; background: rgba(255, 150, 190, 0.14); border-radius: 12px; padding: 3px; }
+    .seg button {
+      border: none; background: none; border-radius: 9px;
+      padding: 5px 10px; font: 600 12.5px "Segoe UI", sans-serif; color: var(--ink); cursor: pointer;
+    }
+    .seg button.on { background: #fff; color: #e0458f; box-shadow: 0 2px 6px rgba(200, 80, 140, 0.2); }
+    /* Hàng nhân vật: xuống dòng riêng, 4 ô chia đều bề rộng — không cuộn ngang. */
+    .set-row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+    .chars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .chars button {
+      width: 100%; aspect-ratio: 1; border-radius: 14px; padding: 0; cursor: pointer;
+      border: 2px solid transparent; background: #ffeaf3; overflow: hidden;
+    }
+    .chars button img { width: 100%; height: 160%; object-fit: cover; object-position: 50% 0; }
+    .chars button.on { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255, 115, 171, 0.25); }
+    .switch { position: relative; width: 44px; height: 24px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch span {
+      position: absolute; inset: 0; border-radius: 12px; background: #e6d3dd; cursor: pointer; transition: background 0.2s;
+    }
+    .switch span::before {
+      content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; transition: transform 0.2s;
+    }
+    .switch input:checked + span { background: var(--pink); }
+    .switch input:checked + span::before { transform: translateX(20px); }
+    .reward { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
+    .reward .r-title { font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+    .reward .r-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+    .reward .r-bar { height: 12px; border-radius: 6px; background: #ffe0ee; overflow: hidden; }
+    .reward .r-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #ff8fc0, #ff5fa2); transition: width 0.5s; }
+    .reward .r-num { text-align: right; font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+
+    [hidden] { display: none !important; }
+    body.no-anim *, body.no-anim *::before, body.no-anim *::after { animation: none !important; transition: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="head" data-tauri-drag-region>
+      <div class="title" data-tauri-drag-region>🐾 <span id="titleText">Oẳn tù tì</span></div>
+      <div class="spacer" data-tauri-drag-region></div>
+      <button class="round-btn" id="helpBtn" type="button">?</button>
+      <button class="round-btn" id="setBtn" type="button">⚙</button>
+      <button class="round-btn close" id="closeBtn" type="button">×</button>
+    </header>
+
+    <main class="stage">
+      <img class="girl" id="girl" alt="" draggable="false" />
+      <div class="bubble" id="bubble"></div>
+
+      <section class="left">
+        <h1 class="logo" id="logo">Oẳn<br>Tù Tì</h1>
+        <div class="ribbon" id="ribbon"></div>
+        <div class="score">
+          <div class="s-head">⭐ <span id="scoreTitle"></span></div>
+          <div class="s-cols">
+            <div class="s-col you"><div class="s-name" id="youName"></div><div class="s-num" id="youScore">0</div></div>
+            <div class="s-col pet"><div class="s-name" id="petName"></div><div class="s-num" id="petScore">0</div></div>
+          </div>
+          <div class="s-foot">⭐ <span id="firstTo"></span></div>
+        </div>
+      </section>
+
+      <!-- Khung biểu cảm phía trên ba thẻ: Miu đổi nét mặt theo từng lúc. -->
+      <!-- Cả 4 biểu cảm nằm sẵn trong khung, chỉ một cái hiện (.on): không đổi
+           src giữa chừng nên không bao giờ trống lúc ảnh mới đang giải mã. -->
+      <div class="portrait" id="portrait">
+        <img class="face on" data-mood="idle" src="media/game/rps-wink.png" alt="" draggable="false" decoding="sync" />
+        <img class="face" data-mood="think" src="media/game/rps-think.png" alt="" draggable="false" decoding="sync" />
+        <img class="face" data-mood="cheer" src="media/game/rps-cheer.png" alt="" draggable="false" decoding="sync" />
+        <img class="face" data-mood="pout" src="media/game/rps-pout.png" alt="" draggable="false" decoding="sync" />
+        <img class="face" data-mood="draw" src="media/game/rps-draw.png" alt="" draggable="false" decoding="sync" />
+      </div>
+      <div class="help" id="help" hidden></div>
+      <div class="banner" id="banner"></div>
+      <section class="cards" id="cards"></section>
+      <section class="versus" id="versus" hidden></section>
+      <section class="over" id="over" hidden>
+        <div class="final" id="final"></div>
+        <div class="row">
+          <button class="pill" id="againBtn" type="button"></button>
+          <button class="pill ghost" id="quitBtn" type="button"></button>
+        </div>
+      </section>
+
+      <aside class="settings" id="settings" hidden>
+        <h3>⚙ <span id="setTitle"></span></h3>
+        <div class="set-row"><span id="lblTarget"></span><div class="seg" id="segTarget"></div></div>
+        <div class="set-row col"><span id="lblChar"></span><div class="chars" id="chars"></div></div>
+        <div class="set-row"><span id="lblDiff"></span><div class="seg" id="segDiff"></div></div>
+        <div class="set-row"><span id="lblSound"></span><label class="switch"><input type="checkbox" id="optSound" aria-labelledby="lblSound" /><span></span></label></div>
+        <div class="set-row"><span id="lblAnim"></span><label class="switch"><input type="checkbox" id="optAnim" aria-labelledby="lblAnim" /><span></span></label></div>
+        <div class="reward">
+          <div class="r-title">🎁 <span id="rTitle"></span></div>
+          <div class="r-sub" id="rSub"></div>
+          <div class="r-bar"><div class="r-fill" id="rFill"></div></div>
+          <div class="r-num" id="rNum"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/games-core.js"></script>
+  <script src="js/game-rps.js"></script>
+</body>
+</html>

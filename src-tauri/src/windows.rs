@@ -211,6 +211,50 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    // Cửa sổ Oẳn tù tì: trong suốt, không viền (khung bo góc vẽ bằng CSS).
+    let _ = WebviewWindowBuilder::new(app, "game", WebviewUrl::App("game.html".into()))
+        .title("Oẳn tù tì")
+        .inner_size(GAME_W, GAME_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
+    // Cửa sổ Đoán số: cùng kiểu và cùng kích thước với cửa sổ Oẳn tù tì.
+    let _ = WebviewWindowBuilder::new(app, "guess", WebviewUrl::App("guess.html".into()))
+        .title("Đoán số")
+        .inner_size(GAME_W, GAME_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
+    // Trang Mini Games: chọn trò (mở từ menu tròn 💞 → 🎮).
+    let _ = WebviewWindowBuilder::new(app, "arcade", WebviewUrl::App("arcade.html".into()))
+        .title("Mini Games")
+        .inner_size(ARCADE_W, ARCADE_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
+    // Cửa sổ Gỡ mìn: cùng kiểu, to hơn một chút cho bàn 16×16.
+    let _ = WebviewWindowBuilder::new(app, "mines", WebviewUrl::App("mines.html".into()))
+        .title("Gỡ mìn")
+        .inner_size(MINES_W, MINES_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
     // Nhân vật bám ngoài mép bảng Cài đặt / Công việc (cần bảng đã dựng).
     crate::sidegirl::precreate(app);
 
@@ -396,6 +440,80 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
     } else {
         dbg_log("[windows] popup window missing (precreate failed?)");
     }
+}
+
+// Cửa sổ Oẳn tù tì (logical px).
+// game.html vẽ theo khổ 900×560 rồi thu nhỏ bằng CSS zoom 0.72 — ĐỒNG BỘ
+// với `html { zoom: 0.72 }` trong game.html.
+const GAME_W: f64 = 648.0;
+const GAME_H: f64 = 404.0;
+// Cửa sổ Gỡ mìn: mines.html vẽ theo khổ 1040×640, zoom 0.7 — ĐỒNG BỘ với
+// `html { zoom: 0.7 }` trong mines.html.
+const MINES_W: f64 = 728.0;
+const MINES_H: f64 = 448.0;
+// Trang Mini Games: arcade.html vẽ theo khổ 1100×720, zoom 0.66 — ĐỒNG BỘ với
+// `html { zoom: 0.66 }` trong arcade.html.
+const ARCADE_W: f64 = 726.0;
+const ARCADE_H: f64 = 475.0;
+
+/// Menu tròn 🎮 → trang Mini Games giữa màn hình (arcade.js nghe "arcade-refresh"
+/// để đọc lại điểm thân thiết và thành tích).
+pub fn open_arcade(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("arcade") else {
+        dbg_log("[windows] arcade window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    let _ = app.emit_to("arcade", "arcade-refresh", ());
+    force_repaint(app, "arcade");
+}
+
+/// Bảng mini game trên pet → Oẳn tù tì: hiện cửa sổ game giữa màn hình, bắt
+/// đầu ván mới (game-rps.js nghe "game-refresh").
+pub fn open_game(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("game") else {
+        dbg_log("[windows] game window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    let _ = app.emit_to("game", "game-refresh", ());
+    force_repaint(app, "game");
+}
+
+/// Bảng mini game trên pet → Đoán số: hiện cửa sổ giữa màn hình, ván mới
+/// (game-guess.js nghe "guess-refresh").
+pub fn open_guess(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("guess") else {
+        dbg_log("[windows] guess window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    let _ = app.emit_to("guess", "guess-refresh", ());
+    force_repaint(app, "guess");
+}
+
+/// Bảng mini game trên pet → Gỡ mìn: hiện cửa sổ giữa màn hình; ván đang chơi
+/// dở thì giữ nguyên (game-mines.js nghe "mines-refresh").
+pub fn open_mines(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("mines") else {
+        dbg_log("[windows] mines window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    let _ = app.emit_to("mines", "mines-refresh", ());
+    force_repaint(app, "mines");
 }
 
 /// Menu chuột phải của pet → "Mở đầy đủ": Trợ lý văn bản ở chế độ tự gõ, đặt

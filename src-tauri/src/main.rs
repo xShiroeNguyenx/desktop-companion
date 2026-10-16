@@ -275,9 +275,8 @@ fn pet_command(app: AppHandle, payload: Value) {
         "headpat" => companion::bond_award(&app, bond::Event::Headpat),
         // Menu tròn 💗: bảng mức thân thiết.
         "bond:show" => companion::show_bond_card(&app),
-        // Menu tròn 🎮: mở bảng mini game; chơi xong một ván thì cộng điểm thân thiết.
+        // Menu tròn 🎮: mở trang Mini Games; từ đó mỗi trò mở cửa sổ riêng (open_mini_game).
         "games:show" => companion::show_games(&app),
-        "game:result" => companion::bond_award(&app, bond::Event::Game),
         // Menu tròn 🍅: bắt đầu / dừng phiên Tập trung; pet nạp lại trang thì hỏi trạng thái.
         "focus:toggle" => companion::toggle_focus(&app),
         "focus:sync" => companion::sync_focus(&app),
@@ -542,6 +541,9 @@ fn main() {
             commands::tasks_set_due,
             commands::notify_test,
             commands::open_url,
+            commands::game_info,
+            commands::open_mini_game,
+            commands::game_result,
             commands::pin_get,
             commands::pin_done,
             commands::pin_set_top,

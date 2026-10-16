@@ -1093,7 +1093,7 @@ function setupCompactContextMenu() {
       // Trợ lý văn bản ở chế độ tự gõ (windows.rs → open_assistant).
       vscode.postMessage({ command: 'openAssistant' });
     } else if (action === 'show-games') {
-      // Rust trả games:open kèm ngôn ngữ + tên pet (games.js vẽ bảng).
+      // Rust mở trang Mini Games (arcade.html).
       vscode.postMessage({ command: 'games:show' });
     } else if (action === 'show-bond') {
       // Rust gửi lại số liệu bằng bond:card (bond.js vẽ bảng).
@@ -1199,7 +1199,9 @@ function setupCompactContextMenu() {
         })),
         { icon: '💬', label: 'Chat nhanh', action: 'chat-quick' },
         { icon: '📝', label: 'Công việc', action: 'open-tasks' },
-        { icon: '🗂️', label: 'Mở đầy đủ', action: 'open-assistant' },
+        // Cài đặt nằm ô dưới cùng của vòng (ô thứ 5 trên 8, đếm từ đỉnh theo
+        // chiều kim đồng hồ); "Mở đầy đủ" lên ô trên-trái thay chỗ.
+        { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
         // Gom Tập trung / Thân thiết / Chơi vào một nhóm cho vòng đầu đỡ chật.
         {
           id: 'together',
@@ -1216,7 +1218,7 @@ function setupCompactContextMenu() {
         window.__DND__
           ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
           : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
-        { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
+        { icon: '🗂️', label: 'Mở đầy đủ', action: 'open-assistant' },
       ],
       onAction: handleMenuAction,
       labels: {

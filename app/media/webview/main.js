@@ -29,7 +29,6 @@ import {
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
 import { handleBondMessage } from './bond.js';
-import { handleGamesMessage } from './games.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
 
 function disposeCurrentModel() {
@@ -252,10 +251,6 @@ window.addEventListener('message', (event) => {
     // Bảng "💗 Thân thiết" (companion.rs → show_bond_card).
     case 'bond:card':
       handleBondMessage(event.data);
-      break;
-    // Bảng mini game (companion.rs → show_games).
-    case 'games:open':
-      handleGamesMessage(event.data);
       break;
     // Phiên Tập trung (companion.rs): menu tròn đọc cờ này lúc mở.
     case 'focusState':

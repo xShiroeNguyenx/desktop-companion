@@ -810,6 +810,19 @@ cột mốc chưa nói, đọc `bond.json` hỏng → mặc định.
   theo cặp xưng hô tiếng Việt — dùng tên pet (hoặc "Em") và "Bạn". Trò "bắt chuột" và trò dùng AI
   vẫn để sau như plan.
 
+**Làm lại ở v0.7.0 (2026-10-16):** bảng chơi trên pet (`games.js`) bị bỏ, thay bằng cửa sổ riêng:
+- **Trang Mini Games** `arcade.html` + `js/arcade.js` (cửa sổ `arcade`, 726×475): 3 thẻ game
+  (ảnh ở `media/arcade/`), game của ngày (`GamesCore.dailyPick`), thành tích đọc từ
+  localStorage (`rpsStats`, `guessStats`, `minesStats`), điểm thân thiết qua `game_info`.
+  "Chơi ngay" → lệnh `open_mini_game(kind)` ẩn trang và mở cửa sổ game.
+- **Oẳn tù tì** `game.html` + `js/game-rps.js`, **Đoán số** `guess.html` + `js/game-guess.js`
+  (648×404), **Gỡ bom** `mines.html` + `js/game-mines.js` (728×448, luật thuần ở
+  `js/mines-core.js`, có test). Hết ván → lệnh `game_result` → `bond::Event::Game`.
+- Ảnh biểu cảm Miu dùng chung ở `media/game/` (wink / think / cheer / pout / draw).
+- Câu pet nói trong game đã theo cặp xưng hô (`game_info` trả `you` / `me`).
+- **Chưa làm:** Gỡ bom dùng lại 5 ảnh của oẳn tù tì (nhân vật trong ảnh thiết kế không tách nền
+  sạch được); CSS chung giữa các cửa sổ game chưa gom thành một file.
+
 ### 12.9 Settings mới (tổng hợp)
 
 | Nhóm | Trường (`Settings`) | Mặc định |
@@ -841,8 +854,9 @@ Settings.
 
 | Bản | Nội dung | Người dùng thấy gì |
 |---|---|---|
-| **v0.5.0** ✅ (chuẩn bị phát hành 2026-10-15) | Ghim task (12.4c) + Phase 9 + 9B + Phase 10, cộng các việc phát sinh: link bấm được trong task, Bunny Lounge (nhân vật bám mép bảng Cài đặt / Công việc / Trợ lý văn bản, mặc định tắt), giao diện Trợ lý văn bản theo phong cách Cài đặt, sửa lỗi thu nhỏ bảng để pet nằm trơ | Xem CHANGELOG [0.5.0] |
-| **v0.6.0** ✅ (chuẩn bị phát hành 2026-10-15) | Phase 11 + 12 + 13 gộp một bản, cộng: "🗂️ Mở đầy đủ" trên menu chuột phải (trợ lý văn bản ở chế độ tự gõ), biểu tượng game trên đầu pet, nhóm menu 💞 Đồng hành | Xem CHANGELOG [0.6.0] |
+| **v0.5.0** ✅ (phát hành 2026-10-15) | Ghim task (12.4c) + Phase 9 + 9B + Phase 10, cộng các việc phát sinh: link bấm được trong task, Bunny Lounge (nhân vật bám mép bảng Cài đặt / Công việc / Trợ lý văn bản, mặc định tắt), giao diện Trợ lý văn bản theo phong cách Cài đặt, sửa lỗi thu nhỏ bảng để pet nằm trơ | Xem CHANGELOG [0.5.0] |
+| **v0.6.0** ✅ (phát hành 2026-10-15) | Phase 11 + 12 + 13 gộp một bản, cộng: "🗂️ Mở đầy đủ" trên menu chuột phải (trợ lý văn bản ở chế độ tự gõ), biểu tượng game trên đầu pet, nhóm menu 💞 Đồng hành | Xem CHANGELOG [0.6.0] |
+| **v0.7.0** ✅ (chuẩn bị phát hành 2026-10-16) | Trang Mini Games, oẳn tù tì và đoán số thành cửa sổ riêng, game mới Gỡ bom, ⚙ Cài đặt xuống ô dưới cùng của menu tròn | Xem CHANGELOG [0.7.0] |
 
 Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
 / "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).

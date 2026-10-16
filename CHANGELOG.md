@@ -4,6 +4,52 @@ All notable changes to Desktop Companion are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.7.0] - 2026-10-16
+
+### Added
+- **A Mini Games page.** 💞 → 🎮 now opens a page of its own instead of the
+  small card on the pet: three illustrated cards (Rock paper scissors, Guess
+  my number, Bomb Squad) with your best result on each and a *Play now*
+  button, a "★ Today" game of the day, your friendship level and how many
+  points games gave you today, plus Achievements (plays, wins and records for
+  every game) and Rewards.
+- **New mini game: Bomb Squad (minesweeper).** Pick it on the Mini Games page.
+  Choose Easy (8 × 8, 10 bombs), Normal (12 × 12, 25) or Hard (16 × 16, 40);
+  left-click opens a tile, right-click plants a flag, and clicking a number
+  whose bombs are all flagged opens the rest around it. Your first tile is
+  always safe. The top bar shows the timer, bombs left and flags placed. Miu
+  sits on the right and reacts as you play: nervous while you hold a tile,
+  happy when it is safe, startled by a bomb and cheering when the board is
+  clear. Her tip box explains the rules and can light up a safe tile
+  (3 hints on Easy, 2 on Normal, 1 on Hard). ⚙ turns sound, quick-open and
+  her chatter on or off and shows your plays, win rate and fastest time per
+  level. Closing the window mid-game pauses the clock and keeps the board.
+
+### Changed
+- **⚙ Settings sits at the bottom of the round menu** (it swapped places with
+  🗂️ *Mở đầy đủ*), so it is easy to find.
+- **Rock paper scissors has its own big window now.** A playful card with the
+  game's title, a You vs. pet scoreboard, the character on the right with a
+  speech bubble, and three large cards to pick from (or keys Q · W · E). Your
+  pick lights up while she thinks, then the round shows both hands side by
+  side with a big *Win! / Lose… / Draw!*. A framed portrait above the cards
+  shows Miu reacting to the game: a wink while she waits, a puzzled "?" while
+  she picks, cheering when she wins, a pout when she loses and a big smile on
+  a draw. ⚙ opens game settings: play to 3, 5 or 7 wins, choose the character
+  (Miu, the cat girl or either bunny), difficulty (easy lets you win more,
+  hard learns which hand you like), sound effects, animations, and how many
+  friendship points games have given you today.
+- **Guess the number has its own window too.** Miu sits on the left and
+  reacts to every guess (puzzled when it is too low, pouting when it is too
+  high, cheering when you get it). Type with the on-screen keypad or your
+  keyboard, then *Guess* (Enter), *Clear* or ask for a *Hint*. The right panel
+  shows the range, hearts for the guesses you have left and a history of every
+  try. ⚙ lets you pick the range (1–10, 20, 50 or 100), 5, 7 or 10 guesses,
+  whether to show "hot / cold" hints, sound, and difficulty (easy gives 3
+  hints, normal 1, hard none), plus your plays, win rate and best streak.
+
 ## [0.6.0] - 2026-10-15
 
 ### Added

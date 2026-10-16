@@ -244,6 +244,34 @@ pub fn open_url(app: AppHandle, url: String) -> Result<(), String> {
         .map_err(|e| format!("Không mở được link: {e}"))
 }
 
+/// Cửa sổ Oẳn tù tì: ngôn ngữ, tên pet, điểm thân thiết hôm nay từ game.
+#[tauri::command]
+pub fn game_info(app: AppHandle) -> Value {
+    crate::companion::game_info(&app)
+}
+
+/// Trang Mini Games: bấm "Chơi ngay" → ẩn trang, mở cửa sổ game đó.
+#[tauri::command]
+pub fn open_mini_game(app: AppHandle, kind: String) -> Result<(), String> {
+    let open: fn(&AppHandle) = match kind.as_str() {
+        "rps" => crate::windows::open_game,
+        "guess" => crate::windows::open_guess,
+        "mines" => crate::windows::open_mines,
+        _ => return Err(format!("không có game '{kind}'")),
+    };
+    if let Some(w) = app.get_webview_window("arcade") {
+        let _ = w.hide();
+    }
+    open(&app);
+    Ok(())
+}
+
+/// Cửa sổ game: hết một ván.
+#[tauri::command]
+pub fn game_result(app: AppHandle, won: bool) {
+    crate::companion::game_result(&app, won);
+}
+
 /// Nút "Gửi thử" thông báo Windows trong Cài đặt.
 #[tauri::command]
 pub fn notify_test(app: AppHandle) -> Result<(), String> {

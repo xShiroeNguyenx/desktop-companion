@@ -69,9 +69,11 @@
   due today, celebrates milestones (7 / 30 / 100 / 365 days, anniversaries,
   streaks, new levels) and your birthday, and talks more casually as you get
   closer.
-- **🎮 Mini games** — rock paper scissors (first to 3) and guess the number
-  (1–100 in 7 tries). Her move, your guess and finally her secret number pop
-  up above her head.
+- **🎮 Mini Games** — a page of its own (💞 → 🎮) with three games, each in
+  its own window where Miu reacts to every move: rock paper scissors (first to
+  3, 5 or 7), guess the number (1–10 up to 1–100, with hints) and Bomb Squad,
+  a minesweeper in three sizes. A "★ Today" game of the day, achievements and
+  the friendship points games gave you today sit on the same page.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
@@ -132,8 +134,8 @@ centre pill; clicking a category swaps the ring for its entries and turns the
 pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
-ambient, mute) · Quick Chat · Tasks · 🗂️ Mở đầy đủ (text assistant) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 games) · 🔕 Do not disturb · Settings
+ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
+(🍅 focus, 💗 bond, 🎮 Mini Games) · 🔕 Do not disturb · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or

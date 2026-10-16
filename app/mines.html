@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<!--
+  Cửa sổ Gỡ mìn (mở từ pet: 💞 Đồng hành → 🎮 Chơi → Gỡ mìn). Luật nằm ở
+  js/mines-core.js (có test); giao diện + luồng chơi ở js/game-mines.js.
+  Cùng phong cách với game.html / guess.html nhưng khổ to hơn cho bàn 16×16.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gỡ mìn</title>
+  <style>
+    :root {
+      --ink: #5b2f47;
+      --ink-soft: #9a6a84;
+      --pink: #ff73ab;
+      --pink-2: #ff9ec7;
+      --line: rgba(255, 150, 190, 0.45);
+      --card: rgba(255, 255, 255, 0.72);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Vẽ theo khổ 1040×640 rồi thu về 70% (728×448). ĐỒNG BỘ với MINES_W /
+       MINES_H trong windows.rs. */
+    html { zoom: 0.7; }
+
+    .window {
+      position: absolute;
+      inset: 6px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background:
+        radial-gradient(45% 60% at 85% 35%, rgba(255, 214, 233, 0.95), transparent 70%),
+        radial-gradient(50% 60% at 10% 90%, rgba(214, 196, 255, 0.85), transparent 70%),
+        linear-gradient(160deg, #ffe6f1, #f0dcff 60%, #ffd9ea);
+      box-shadow: 0 10px 30px rgba(160, 60, 120, 0.35);
+    }
+
+    /* ─── Thanh trên: tên game, đồng hồ, số bom, số cờ, nút ─────────────── */
+    .head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px 8px 12px;
+      position: relative;
+      z-index: 5;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 16px 5px 8px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 228, 242, 0.92));
+      border: 2px solid rgba(255, 150, 190, 0.5);
+      width: 214px;
+    }
+    .brand .logo { font-size: 30px; line-height: 1; }
+    .brand .name { font: 900 19px/1.1 "Segoe UI", sans-serif; color: #c2367a; }
+    .brand .sub { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); }
+    .stat {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      font: 800 20px "Segoe UI", sans-serif;
+      font-variant-numeric: tabular-nums;
+      min-width: 112px;
+      justify-content: center;
+    }
+    .stat .ic { font-size: 20px; }
+    .stat .flags b { color: #e0458f; }
+    .head .spacer { flex: 1; align-self: stretch; }
+    .round-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--ink);
+      font: 800 16px/1 "Segoe UI", sans-serif;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .round-btn:hover { background: #fff; }
+    .round-btn.close { background: var(--pink); color: #fff; }
+    .round-btn.close:hover { background: #f05a97; }
+    .round-btn.on { background: var(--pink-2); color: #fff; }
+
+    .stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      gap: 12px;
+      padding: 0 12px 12px;
+    }
+    .panel {
+      border-radius: 20px;
+      background: var(--card);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 6px 16px rgba(200, 80, 140, 0.18);
+    }
+
+    /* ─── Cột trái: độ khó, mục tiêu, điều khiển ─────────────────────────── */
+    .left {
+      flex: 0 0 214px;
+      padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .left h4 { margin: 2px 0 0; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+    .levels { display: flex; flex-direction: column; gap: 6px; }
+    .level {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 10px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      background: rgba(255, 255, 255, 0.6);
+      font: inherit; color: inherit; text-align: left;
+      cursor: pointer;
+    }
+    .level:hover { background: #fff; }
+    .level.on { background: rgba(255, 150, 190, 0.28); border-color: rgba(255, 115, 171, 0.55); }
+    .level .cat { font-size: 24px; }
+    .level b { display: block; font-size: 15px; }
+    .level small { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+    .goal, .ctrl { font-size: 12.5px; line-height: 1.45; font-weight: 600; color: #6e4560; }
+    .ctrl div { display: flex; gap: 6px; }
+    .ctrl .k { flex: 0 0 auto; font-weight: 800; color: #c2367a; }
+    .cheer {
+      margin-top: auto;
+      display: flex; align-items: flex-end; gap: 4px;
+    }
+    .cheer img { width: 70px; height: 70px; object-fit: contain; object-position: center bottom; }
+    .cheer .say {
+      flex: 1; padding: 7px 9px; border-radius: 14px; background: #fff;
+      font-size: 12px; font-weight: 700; text-align: center; line-height: 1.35;
+    }
+
+    /* ─── Bàn mìn ở giữa ─────────────────────────────────────────────────── */
+    .boardWrap {
+      flex: 0 0 auto;
+      position: relative;
+      padding: 8px;
+      aspect-ratio: 1;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255, 196, 222, 0.75), rgba(232, 200, 255, 0.75));
+    }
+    .board {
+      display: grid;
+      width: 100%; height: 100%;
+      gap: var(--gap, 4px);
+    }
+    .cell {
+      position: relative;
+      border-radius: var(--r, 10px);
+      display: flex; align-items: center; justify-content: center;
+      font: 900 var(--fs, 30px)/1 "Segoe UI", sans-serif;
+      cursor: pointer;
+      background: linear-gradient(180deg, #ffd5e8, #ffbcd9);
+      box-shadow: inset 0 -3px 0 rgba(224, 69, 143, 0.22), inset 0 2px 0 rgba(255, 255, 255, 0.7);
+      color: rgba(224, 69, 143, 0.28);
+    }
+    /* Emoji trên ô: font chữ đậm 900 sẽ rơi về Segoe UI Symbol (đơn sắc), nên
+       ép font emoji màu với độ đậm thường; vài lớp của emoji vẽ bằng màu chữ nên
+       cũng đặt màu đặc. */
+    .cell::before, .cell::after { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-weight: 400; color: #2b1a24; }
+    .cell::before { content: '🐾'; font-size: calc(var(--fs, 30px) * 0.62); opacity: 0.35; filter: grayscale(0.4); }
+    .board.dense .cell:not(.flag)::before { content: none; }
+    .cell:hover { filter: brightness(1.05); }
+    .cell.press { filter: brightness(0.96); translate: 0 1px; }
+    .cell.flag::before { content: '🚩'; opacity: 1; filter: none; font-size: calc(var(--fs, 30px) * 0.75); }
+    .cell.open {
+      cursor: default;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: inset 0 0 0 1px rgba(255, 150, 190, 0.25);
+    }
+    .cell.open::before { content: none; }
+    .cell.open.n1 { color: #4a7bff; }
+    .cell.open.n2 { color: #2fa36b; }
+    .cell.open.n3 { color: #f07a2a; }
+    .cell.open.n4 { color: #8a5cf0; }
+    .cell.open.n5 { color: #d9467a; }
+    .cell.open.n6 { color: #1f9fa8; }
+    .cell.open.n7 { color: #5b2f47; }
+    .cell.open.n8 { color: #8f8f8f; }
+    .cell.mine { background: rgba(255, 228, 210, 0.95); }
+    .cell.mine::after { content: '💣'; font-size: calc(var(--fs, 30px) * 0.8); }
+    .cell.boom { background: #ff9a9a; box-shadow: 0 0 0 3px #ff5f7a; animation: boom 0.4s ease; }
+    .cell.wrong::after { content: '❌'; position: absolute; font-size: calc(var(--fs, 30px) * 0.6); }
+    .cell.hint { box-shadow: 0 0 0 3px #7fc4ff, 0 0 12px #7fc4ff; animation: glow 0.8s ease-in-out 3 alternate; }
+    .cell.fresh { animation: open 0.25s ease; }
+    @keyframes open { from { transform: scale(0.7); opacity: 0.4; } }
+    @keyframes boom { 30% { transform: scale(1.25); } }
+    @keyframes glow { to { box-shadow: 0 0 0 3px #b6dcff, 0 0 2px #b6dcff; } }
+
+    .result {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 76%;
+      padding: 18px 16px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 10px 28px rgba(160, 60, 120, 0.35);
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      animation: pop 0.35s cubic-bezier(.34, 1.56, .64, 1);
+      z-index: 4;
+    }
+    .result .icon { font-size: 46px; line-height: 1; }
+    .result .verdict { font: 900 30px/1.15 "Segoe UI", sans-serif; }
+    .result.won .verdict { color: #23885b; }
+    .result.lost .verdict { color: #e0458f; }
+    .result .sub { font-size: 15px; font-weight: 600; color: var(--ink-soft); line-height: 1.4; }
+    .result .row { display: flex; gap: 10px; margin-top: 4px; }
+    .pill {
+      border: none;
+      border-radius: 14px;
+      padding: 10px 22px;
+      font: 800 16px "Segoe UI", sans-serif;
+      cursor: pointer;
+      background: linear-gradient(180deg, #ff8fc0, #ff5fa2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255, 95, 162, 0.35);
+    }
+    .pill.ghost { background: rgba(255, 150, 190, 0.18); color: var(--ink); box-shadow: none; }
+
+    /* ─── Cột phải: nhân vật + bong bóng, gợi ý ──────────────────────────── */
+    .right {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      display: flex; flex-direction: column;
+    }
+    .hero { position: relative; flex: 1; min-height: 0; pointer-events: none; }
+    .hero .face {
+      position: absolute;
+      left: -10px; right: -10px; top: 46px; bottom: 0;
+      width: calc(100% + 20px); height: calc(100% - 46px);
+      object-fit: contain;
+      object-position: center bottom;
+      visibility: hidden;
+      filter: drop-shadow(0 8px 18px rgba(200, 80, 140, 0.3));
+    }
+    .hero .face.on { visibility: visible; }
+    .hero .face.swap { animation: swap 0.3s cubic-bezier(.34, 1.56, .64, 1); }
+    .hero .face.cheer { animation: jump 0.6s ease 2; }
+    .hero .face.shock { animation: shock 0.4s ease 2; }
+    @keyframes swap { from { scale: 0.92; } }
+    @keyframes jump { 30% { translate: 0 -14px; } 60% { translate: 0 0; } }
+    @keyframes shock { 25% { translate: -5px 0; } 75% { translate: 5px 0; } }
+    .bubble {
+      position: absolute;
+      left: 6px; right: 6px; top: 0;
+      padding: 10px 14px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 14px rgba(200, 80, 140, 0.25);
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.4;
+      z-index: 2;
+    }
+    .bubble::after { content: '♡'; color: var(--pink); margin-left: 4px; }
+    .pop { animation: pop 0.35s cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes pop { from { transform: scale(0.6); opacity: 0; } }
+    .tips {
+      position: relative;
+      z-index: 2;
+      margin-top: -18px;
+      padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .tips h4 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .tips p { margin: 0; font-size: 12.5px; line-height: 1.45; font-weight: 600; color: #6e4560; min-height: 54px; }
+    .hintBtn {
+      border: none;
+      border-radius: 12px;
+      padding: 7px 10px;
+      font: 800 13.5px "Segoe UI", sans-serif;
+      cursor: pointer;
+      background: linear-gradient(180deg, #fff3c4, #ffd76a);
+      color: #7a4a00;
+      white-space: nowrap;
+    }
+    .hintBtn:disabled { opacity: 0.5; cursor: default; }
+
+    .help {
+      position: absolute;
+      left: 238px; top: 0;
+      width: 420px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.97);
+      font-size: 14px;
+      line-height: 1.55;
+      z-index: 7;
+      box-shadow: 0 6px 16px rgba(200, 80, 140, 0.2);
+    }
+    .help p { margin: 0 0 6px; }
+
+    /* ─── Bảng cài đặt (trượt từ phải) ─────────────────────────────────────── */
+    .settings {
+      position: absolute;
+      top: 0; right: 12px; bottom: 12px;
+      width: 300px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 10px 26px rgba(160, 60, 120, 0.3);
+      z-index: 8;
+      display: flex; flex-direction: column; gap: 12px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      animation: slide 0.25s ease;
+    }
+    @keyframes slide { from { transform: translateX(20px); opacity: 0; } }
+    .settings h3 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 6px; }
+    .set-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; font-size: 14px; }
+    .switch { position: relative; width: 44px; height: 24px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch span { position: absolute; inset: 0; border-radius: 12px; background: #e6d3dd; cursor: pointer; transition: background 0.2s; }
+    .switch span::before {
+      content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; transition: transform 0.2s;
+    }
+    .switch input:checked + span { background: var(--pink); }
+    .switch input:checked + span::before { transform: translateX(20px); }
+    .stats { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+    .stats .s-title { font-weight: 800; font-size: 15px; }
+    .stats .s-row { display: flex; justify-content: space-between; font-size: 14px; }
+    .stats .s-row b { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="head" data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>
+        <span class="logo">🐰</span>
+        <div data-tauri-drag-region>
+          <div class="name" id="titleText"></div>
+          <div class="sub" id="subText"></div>
+        </div>
+      </div>
+      <div class="stat" title="⏱"><span class="ic">⏱️</span><span id="timeText">00:00</span></div>
+      <div class="stat"><span class="ic">💣</span><span id="leftText">10</span></div>
+      <div class="stat"><span class="ic">🚩</span><span class="flags"><b id="flagText">0</b>/<span id="mineText">10</span></span></div>
+      <div class="spacer" data-tauri-drag-region></div>
+      <button class="round-btn" id="soundBtn" type="button">🔊</button>
+      <button class="round-btn" id="helpBtn" type="button">?</button>
+      <button class="round-btn" id="setBtn" type="button">⚙</button>
+      <button class="round-btn close" id="closeBtn" type="button">×</button>
+    </header>
+
+    <main class="stage">
+      <aside class="left panel">
+        <h4>🌸 <span data-t="choose"></span></h4>
+        <div class="levels" id="levels"></div>
+        <h4>🎯 <span data-t="goalTitle"></span></h4>
+        <div class="goal" data-t="goal"></div>
+        <h4>🖱️ <span data-t="ctrlTitle"></span></h4>
+        <div class="ctrl">
+          <div><span class="k" data-t="kLeft"></span><span data-t="aOpen"></span></div>
+          <div><span class="k" data-t="kRight"></span><span data-t="aFlag"></span></div>
+          <div><span class="k" data-t="kNum"></span><span data-t="aChord"></span></div>
+        </div>
+        <div class="cheer">
+          <img src="media/game/rps-wink.png" alt="" draggable="false" />
+          <div class="say" data-t="cheer"></div>
+        </div>
+      </aside>
+
+      <section class="boardWrap panel" id="boardWrap">
+        <div class="board" id="board"></div>
+        <div class="result" id="result" hidden>
+          <div class="icon" id="resIcon"></div>
+          <div class="verdict" id="resVerdict"></div>
+          <div class="sub" id="resSub"></div>
+          <div class="row">
+            <button class="pill" id="resMain" type="button"></button>
+            <button class="pill ghost" id="resAlt" type="button"></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="right">
+        <div class="hero" id="hero">
+          <img class="face on" data-mood="idle" src="media/game/rps-wink.png" alt="" draggable="false" decoding="sync" />
+          <img class="face" data-mood="think" src="media/game/rps-think.png" alt="" draggable="false" decoding="sync" />
+          <img class="face" data-mood="safe" src="media/game/rps-draw.png" alt="" draggable="false" decoding="sync" />
+          <img class="face" data-mood="boom" src="media/game/rps-pout.png" alt="" draggable="false" decoding="sync" />
+          <img class="face" data-mood="win" src="media/game/rps-cheer.png" alt="" draggable="false" decoding="sync" />
+          <div class="bubble" id="bubble">…</div>
+        </div>
+        <div class="tips panel">
+          <h4>💡 <span id="tipsTitle"></span></h4>
+          <p id="tipText"></p>
+          <button class="hintBtn" id="hintBtn" type="button"></button>
+        </div>
+      </section>
+
+      <div class="help" id="help" hidden></div>
+
+      <aside class="settings" id="settings" hidden>
+        <h3>⚙ <span data-t="set"></span></h3>
+        <div class="set-row"><span id="lblSound" data-t="sound"></span><label class="switch"><input type="checkbox" id="optSound" aria-labelledby="lblSound" /><span></span></label></div>
+        <div class="set-row"><span id="lblChord" data-t="chordOpt"></span><label class="switch"><input type="checkbox" id="optChord" aria-labelledby="lblChord" /><span></span></label></div>
+        <div class="set-row"><span id="lblTalk" data-t="talkOpt"></span><label class="switch"><input type="checkbox" id="optTalk" aria-labelledby="lblTalk" /><span></span></label></div>
+        <div class="stats">
+          <div class="s-title">👑 <span data-t="stats"></span></div>
+          <div class="s-row"><span data-t="plays"></span><b id="statPlays">0</b></div>
+          <div class="s-row"><span data-t="rate"></span><b id="statRate">0%</b></div>
+          <div class="s-row"><span id="bestEasy"></span><b id="statEasy">—</b></div>
+          <div class="s-row"><span id="bestNormal"></span><b id="statNormal">—</b></div>
+          <div class="s-row"><span id="bestHard"></span><b id="statHard">—</b></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/mines-core.js"></script>
+  <script src="js/game-mines.js"></script>
+</body>
+</html>
