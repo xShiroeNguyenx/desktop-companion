@@ -169,6 +169,14 @@ pub struct Settings {
     /// "small" | "large".
     #[serde(default = "default_weather_pin_size")]
     pub weather_pin_size: String,
+    /// Lịch tháng ghim trên desktop (calendar_pin.rs, cửa sổ "pin-calendar").
+    #[serde(default)]
+    pub calendar_pin: bool,
+    #[serde(default)]
+    pub calendar_pin_pos: Option<(i32, i32)>,
+    /// Mặc định luôn nổi: lịch để liếc nhanh, nằm dưới cửa sổ khác thì ít ai thấy.
+    #[serde(default = "default_true")]
+    pub calendar_pin_top: bool,
 }
 
 fn default_weather_units() -> String {
@@ -342,6 +350,9 @@ impl Default for Settings {
             weather_pin_pos: None,
             weather_pin_top: false,
             weather_pin_size: default_weather_pin_size(),
+            calendar_pin: false,
+            calendar_pin_pos: None,
+            calendar_pin_top: true,
         }
     }
 }
@@ -419,7 +430,10 @@ pub fn load_tasks(app: &AppHandle) -> Vec<Task> {
 pub fn save_tasks(app: &AppHandle, tasks: &[Task]) -> Result<(), String> {
     let path = tasks_path(app).ok_or("no config dir")?;
     let json = serde_json::to_string_pretty(tasks).map_err(|e| e.to_string())?;
-    std::fs::write(path, json).map_err(|e| e.to_string())
+    std::fs::write(path, json).map_err(|e| e.to_string())?;
+    // Lịch ghim có chấm hạn chót của task: mọi lần ghi tasks.json đều báo nó.
+    crate::calendar_pin::tasks_changed(app);
+    Ok(())
 }
 
 // Bảng Tasks, chat, và các tờ note ghim cùng ghi tasks.json từ nhiều luồng.

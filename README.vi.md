@@ -73,6 +73,11 @@ duyệt, Word…).
   trời đổi và có bản tin buổi sáng. Bật / tắt hiệu ứng bằng **Ctrl+Alt+W**. App
   không dò vị trí của bạn — chỉ gửi toạ độ thành phố bạn chọn tới
   [Open-Meteo](https://open-meteo.com) (không cần API key).
+- **📅 Lịch tháng trên màn hình** — ghim một lịch tháng nhỏ từ khay, 💞 → 📅 trên
+  menu tròn hoặc Cài đặt. Mỗi ngày có ngày âm lịch, ngày lễ Việt Nam (Tết, Trung
+  thu, Giỗ Tổ…) được đánh dấu, ngày nghỉ lễ tô đỏ, ngày có task tới hạn có chấm
+  (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn, hoặc thêm
+  việc có hạn vào ngày đó. Luôn nổi trên các cửa sổ khác, trừ khi bạn tắt 📍.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -123,7 +128,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · Thoát
+Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · Thoát
 
 ### Chuột phải vào pet
 
@@ -133,7 +138,7 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🔕 Đừng làm phiền) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 📅 lịch tháng, 🔕 Đừng làm phiền) ·
 ☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân

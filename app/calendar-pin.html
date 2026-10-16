@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!--
+  Lịch tháng ghim trên desktop (calendar_pin.rs → "pin-calendar"). Cùng cách
+  với widget thời tiết ghim: cửa sổ trong suốt, kéo ở nền / tiêu đề, 📍 bật tắt
+  luôn nổi. Âm lịch, ngày lễ, lưới tháng: js/calendar-core.js.
+  Kích thước cửa sổ: calendar_pin::SIZE.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #f6eaf4;
+      user-select: none;
+    }
+    .wrap { position: absolute; inset: 0; padding: 6px; }
+    .card {
+      position: relative;
+      height: 100%;
+      padding: 10px 10px 8px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(160deg, rgba(56, 44, 84, 0.72), rgba(84, 50, 92, 0.72));
+      /* Nền trong hơn thẻ thời tiết: bóng chữ giữ cho số đọc được trên desktop sáng. */
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
+      cursor: grab;
+      animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
+      display: flex; flex-direction: column; gap: 4px;
+      overflow: hidden;
+    }
+    @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
+
+    button { font: inherit; color: inherit; }
+    .head { display: flex; align-items: center; gap: 4px; }
+    .nav {
+      width: 26px; height: 26px; flex: 0 0 auto;
+      border: none; border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 14px; cursor: pointer;
+    }
+    .nav:hover { background: rgba(255, 255, 255, 0.18); }
+    .titles { flex: 1; min-width: 0; text-align: center; }
+    .title { font-size: 14px; font-weight: 800; white-space: nowrap; }
+    .sub { font-size: 10.5px; color: #d3bfdf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .todayBtn {
+      border: none; background: none; padding: 0;
+      font-size: 10.5px; color: #ffb3d3; text-decoration: underline; cursor: pointer;
+    }
+
+    .week, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .week div { text-align: center; font-size: 10.5px; font-weight: 700; color: #c9b6d6; padding: 2px 0; }
+    .week div.sun { color: #ff9cbf; }
+    .grid { flex: 1; grid-auto-rows: 1fr; min-height: 0; }
+    .day {
+      position: relative;
+      border: 1px solid transparent; border-radius: 9px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1px 0 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; line-height: 1.05;
+    }
+    .day:hover { background: rgba(255, 255, 255, 0.14); }
+    .day .n { font-size: 13px; font-weight: 700; }
+    .day .l { font-size: 9px; color: #c9b6d6; margin-top: 1px; }
+    .day .l.first { color: #ffd27a; font-weight: 700; }
+    .day.out { opacity: 0.38; }
+    .day.sun .n { color: #ff9cbf; }
+    .day.off .n { color: #ff7a9c; }
+    .day.fest { background: rgba(255, 210, 122, 0.12); }
+    .day.today { background: #ff73ab; border-color: #ffd0e3; }
+    .day.today .n, .day.today .l { color: #fff; }
+    .day.sel { border-color: #ffe6f1; box-shadow: 0 0 0 1px rgba(255, 230, 241, 0.5) inset; }
+    .day .dot {
+      position: absolute; top: 3px; right: 4px;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #9fd0ff;
+    }
+    .day .dot.over { background: #ff6b6b; }
+    .day.today .dot { background: #fff; }
+
+    .info {
+      position: relative;
+      flex: 0 0 134px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px 8px;
+      display: flex; flex-direction: column; gap: 2px;
+      overflow: hidden;
+      cursor: default;
+    }
+    .info .date { font-size: 12px; font-weight: 800; }
+    .info .lunar { font-size: 11px; color: #e2d3ea; }
+    .info .fest { font-size: 11px; color: #ffd27a; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* Miu mini chìm dưới chữ như hình nền của khung ngày. */
+    .miu {
+      position: absolute; right: 0; bottom: 0; z-index: 0;
+      height: 124px; width: 112px;
+      object-fit: contain; object-position: right bottom;
+      opacity: 0.32;
+      pointer-events: none;
+    }
+    .info > :not(.miu) { position: relative; z-index: 1; }
+    .tasks { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; min-height: 0; overflow: hidden; }
+    .task {
+      display: flex; gap: 6px; align-items: baseline;
+      border: none; background: rgba(255, 255, 255, 0.07); border-radius: 7px;
+      padding: 2px 6px; text-align: left; font-size: 11.5px; cursor: pointer;
+    }
+    .task:hover { background: rgba(255, 255, 255, 0.15); }
+    .task .t { color: #9fd0ff; font-weight: 700; flex: 0 0 auto; }
+    .task.over .t { color: #ff8b8b; }
+    .task .x { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .muted { font-size: 11px; color: #c9b6d6; }
+    .addRow { display: flex; gap: 4px; margin-top: auto; }
+    .addRow input {
+      min-width: 0; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 7px;
+      background: rgba(0, 0, 0, 0.25); color: #fff; font: inherit; font-size: 11.5px; padding: 3px 6px;
+      user-select: text;
+    }
+    .addRow input[type="text"] { flex: 1; }
+    .addRow input[type="time"] { width: 74px; color-scheme: dark; }
+    .small {
+      border: none; border-radius: 7px; padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.12); font-size: 11.5px; cursor: pointer; white-space: nowrap;
+    }
+    .small:hover { background: rgba(255, 255, 255, 0.22); }
+    .small.primary { background: #ff73ab; }
+    .small.primary:hover { background: #ff8cbb; }
+    .msg { font-size: 11px; color: #9ff0b8; }
+    .msg.err { color: #ff9c9c; }
+    [hidden] { display: none !important; }
+
+    .tools {
+      position: absolute; right: 8px; bottom: 8px; z-index: 2;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .card:hover .tools { opacity: 1; }
+    .tools button {
+      width: 24px; height: 24px; border-radius: 8px;
+      border: none; background: rgba(40, 30, 60, 0.85); color: #fff;
+      font-size: 12px; cursor: pointer;
+    }
+    .tools button:hover { background: rgba(90, 70, 120, 0.95); }
+    .tools button.on { background: #ff73ab; }
+    @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="card" id="card">
+      <div class="head">
+        <button class="nav" id="prevBtn" type="button">‹</button>
+        <div class="titles">
+          <div class="title" id="title"></div>
+          <div class="sub"><span id="sub"></span> <button class="todayBtn" id="todayBtn" type="button" hidden></button></div>
+        </div>
+        <button class="nav" id="nextBtn" type="button">›</button>
+      </div>
+      <div class="week" id="week"></div>
+      <div class="grid" id="grid"></div>
+      <div class="info" id="info">
+        <div class="date" id="infoDate"></div>
+        <div class="lunar" id="infoLunar"></div>
+        <div class="fest" id="infoFest" hidden></div>
+        <div class="tasks" id="infoTasks"></div>
+        <div class="addRow" id="addRow" hidden>
+          <input type="text" id="addText" maxlength="200" />
+          <input type="time" id="addTime" value="09:00" />
+          <button class="small primary" id="addSave" type="button"></button>
+        </div>
+        <div class="addRow" id="addBar">
+          <button class="small" id="addBtn" type="button"></button>
+          <span class="msg" id="msg"></span>
+        </div>
+        <img class="miu" id="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
+      </div>
+      <div class="tools">
+        <button id="topBtn" type="button">📍</button>
+        <button id="unpinBtn" type="button">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/calendar-core.js"></script>
+  <script src="js/calendar-pin.js"></script>
+</body>
+</html>

@@ -1095,6 +1095,9 @@ function setupCompactContextMenu() {
     } else if (action === 'toggle-weather-pin') {
       // Ghim / gỡ widget thời tiết (chưa chọn thành phố thì Rust mở thẻ dự báo).
       vscode.postMessage({ command: 'weather:pin' });
+    } else if (action === 'toggle-calendar-pin') {
+      // Ghim / gỡ lịch tháng lên desktop (calendar_pin.rs).
+      vscode.postMessage({ command: 'calendar:pin' });
     } else if (action === 'open-weather') {
       // Thẻ dự báo thời tiết (windows.rs → open_weather).
       vscode.postMessage({ command: 'weather:open' });
@@ -1222,6 +1225,7 @@ function setupCompactContextMenu() {
               : { icon: '🍅', label: 'Tập trung', action: 'toggle-focus' },
             { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
             { icon: '🎮', label: 'Chơi', action: 'show-games' },
+            { icon: '📅', label: 'Lịch tháng', action: 'toggle-calendar-pin' },
             window.__DND__
               ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
               : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },

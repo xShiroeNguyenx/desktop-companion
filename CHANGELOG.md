@@ -6,6 +6,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-16
+
+### Added
+- **A month calendar you can pin to your screen.** Turn it on from the tray
+  (*📅 Ghim / gỡ lịch tháng*), 💞 → 📅 on the right-click ring, or the new
+  *📅 Lịch* group in Settings. Every day
+  shows its Vietnamese lunar date (the 1st of each lunar month in gold, the
+  15th as *Rằm*), with Vietnamese holidays such as Tết, Hùng Kings Day,
+  Mid-Autumn and New Year's Eve marked, and days off in red. Days with tasks
+  due get a dot, red when something is overdue. Click a day to see its full
+  lunar date, its holiday and what is due, or to add a task due that day at
+  the time you pick. A mini Miu sits in the corner, cheering on holidays and
+  looking puzzled when something is overdue. Flip months with ‹ › or the mouse wheel. Today moves on
+  by itself after midnight. It stays above other windows by default; 📍
+  turns that off, ✕ unpins it, and it remembers where you dragged it. Shown
+  in Vietnamese, Japanese or English, following the message language.
+
+### Changed
+- New artwork for the girls on the edge of the weather card and the Mini
+  Games page (Bunny Lounge).
+
+### Fixed
+- The pet no longer disappears after you unplug a second monitor: if the
+  place she was saved at is off every screen, she comes back to the bottom
+  corner of the main screen.
+- "Start with Windows" opens the installed app again. The installed app now
+  updates the startup entry to point at itself each time it runs.
+
 ## [0.8.0] - 2026-10-16
 
 ### Added
@@ -418,6 +446,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.9.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.0
+[0.8.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.8.0
+[0.7.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.7.0
+[0.6.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.6.0
+[0.5.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.5.0
+[0.4.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.4.1
 [0.4.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.4.0
 [0.3.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.2
 [0.3.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.3.1

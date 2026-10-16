@@ -4,6 +4,7 @@
 
 mod awareness;
 mod bond;
+mod calendar_pin;
 mod chat;
 mod commands;
 mod companion;
@@ -295,6 +296,15 @@ fn pet_command(app: AppHandle, payload: Value) {
                 if weather_net::set_pinned(&app2, on).is_err() {
                     let app3 = app2.clone();
                     let _ = app2.run_on_main_thread(move || windows::open_weather(&app3));
+                }
+            });
+        }
+        // Menu tròn 💞 → 📅: ghim / gỡ lịch tháng (luồng riêng, như weather:pin).
+        "calendar:pin" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || {
+                if let Err(e) = calendar_pin::toggle(&app2) {
+                    eprintln!("[calendar] ghim lịch lỗi: {e}");
                 }
             });
         }
@@ -597,6 +607,9 @@ fn main() {
             commands::weather_pin_set,
             commands::weather_pin_top,
             commands::weather_pin_size,
+            commands::calendar_get,
+            commands::calendar_pin_set,
+            commands::calendar_pin_top,
             commands::open_weather,
             commands::weather_close,
             commands::arcade_close,
@@ -606,6 +619,20 @@ fn main() {
 
             let settings = store::load_settings(&app_handle);
             selection::set_auto_enabled(settings.auto_flower);
+
+            // Autostart lưu đường dẫn exe lúc bật. Bật từ bản dev, hay cài lại
+            // sang thư mục khác, thì Windows mở nhầm exe cũ. Bản cài đang bật
+            // autostart thì ghi lại đường dẫn về chính nó mỗi lần chạy.
+            #[cfg(not(debug_assertions))]
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let autolaunch = app_handle.autolaunch();
+                if autolaunch.is_enabled().unwrap_or(false) {
+                    if let Err(e) = autolaunch.enable() {
+                        eprintln!("[autostart] không ghi lại được đường dẫn: {e}");
+                    }
+                }
+            }
 
             let custom_json = serde_json::to_string(&settings.custom_models)
                 .unwrap_or_else(|_| "[]".to_string());
@@ -631,10 +658,23 @@ fn main() {
             let _ = window.set_shadow(false);
             let _ = apply_click_through(&window, false);
 
-            if let Some(saved) = load_saved_window_position(&app_handle) {
+            let saved = load_saved_window_position(&app_handle);
+            if let Some(saved) = saved {
                 if saved.w >= 120 && saved.h >= 120 {
                     let _ = window.set_size(tauri::PhysicalSize::new(saved.w, saved.h));
                 }
+            }
+            // Vị trí lưu lúc còn màn hình phụ (đã rút) thì pet nằm ngoài mọi màn
+            // hình: app vẫn chạy nhưng không ai thấy. Khi đó về chỗ mặc định.
+            let size = window.outer_size()?;
+            let saved = saved.filter(|s| {
+                pins::center_on_screen(
+                    (s.x, s.y),
+                    (size.width as i32, size.height as i32),
+                    &pins::work_areas(&app_handle),
+                )
+            });
+            if let Some(saved) = saved {
                 let _ = window.set_position(tauri::PhysicalPosition::new(saved.x, saved.y));
             } else if let Some(monitor) =
                 window.current_monitor()?.or(app_handle.primary_monitor()?)
@@ -664,6 +704,8 @@ fn main() {
             fx::start(app_handle.clone());
             // Thời tiết thật (Open-Meteo): chỉ gọi mạng khi được bật; widget ghim hiện lại.
             weather_net::start(app_handle.clone());
+            // Lịch tháng đang ghim thì hiện lại.
+            calendar_pin::start(&app_handle);
 
             // Silent update check ~5s after launch; if a newer version exists,
             // mở hộp thoại cập nhật (kèm bong bóng nhắc từ pet). Version mà
@@ -713,6 +755,8 @@ fn main() {
             fx::set_tray_item(&app_handle, weather_item.clone());
             let forecast_item =
                 MenuItem::with_id(app, "forecast", "☁️ Dự báo thời tiết", true, None::<&str>)?;
+            let calendar_item =
+                MenuItem::with_id(app, "calendar", "📅 Ghim / gỡ lịch tháng", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -726,6 +770,7 @@ fn main() {
                     &dnd_item,
                     &weather_item,
                     &forecast_item,
+                    &calendar_item,
                     &sep,
                     &quit_item,
                 ],
@@ -756,6 +801,14 @@ fn main() {
                         fx::toggle(app);
                     }
                     "forecast" => windows::open_weather(app),
+                    "calendar" => {
+                        let app2 = app.clone();
+                        std::thread::spawn(move || {
+                            if let Err(e) = calendar_pin::toggle(&app2) {
+                                eprintln!("[calendar] ghim lịch lỗi: {e}");
+                            }
+                        });
+                    }
                     "dnd" => {
                         let on = !companion::dnd_active(app);
                         companion::set_dnd(app, on, true);
@@ -785,6 +838,9 @@ fn main() {
             // Widget thời tiết ghim: Alt+F4 = gỡ ghim (trước nhánh tờ note task).
             WindowEvent::CloseRequested { .. } if window.label() == weather_net::PIN_LABEL => {
                 weather_net::on_closed(window.app_handle());
+            }
+            WindowEvent::CloseRequested { .. } if window.label() == calendar_pin::LABEL => {
+                calendar_pin::on_closed(window.app_handle());
             }
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
@@ -836,6 +892,13 @@ fn main() {
                             (event, window.is_visible().unwrap_or(false))
                         {
                             weather_net::remember_pos(window.app_handle(), pos.x, pos.y);
+                        }
+                    }
+                    label if label == calendar_pin::LABEL => {
+                        if let (WindowEvent::Moved(pos), true) =
+                            (event, window.is_visible().unwrap_or(false))
+                        {
+                            calendar_pin::remember_pos(window.app_handle(), pos.x, pos.y);
                         }
                     }
                     label if label.starts_with("pin-") => {

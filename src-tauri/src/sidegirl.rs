@@ -49,22 +49,21 @@ pub const SPECS: [Spec; 5] = [
         edge_frac: 0.62,
         hand_right: true,
     },
-    // Cô cáo steampunk ở thẻ dự báo thời tiết (ảnh gốc tay vươn sang trái → lật).
-    // Đã thử giữ hướng gốc: phần người nằm sau thẻ, gần như không thấy nhân vật.
+    // Cô hồ ly steampunk ở thẻ dự báo thời tiết (ảnh tay vươn sẵn sang phải).
     Spec {
         label: "side_weather",
         host: "weather",
         img: "media/side/weather-girl.png",
         edge_frac: 0.6,
-        hand_right: false,
+        hand_right: true,
     },
-    // Cô mèo gothic ôm mèo bông tím ở trang Mini Games (ảnh gốc tay vươn sang trái → lật).
+    // Miêu nữ gothic tím ở trang Mini Games (ảnh tay vươn sẵn sang phải).
     Spec {
         label: "side_arcade",
         host: "arcade",
         img: "media/side/arcade-girl.png",
         edge_frac: 0.6,
-        hand_right: false,
+        hand_right: true,
     },
 ];
 

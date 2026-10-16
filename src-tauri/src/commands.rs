@@ -464,6 +464,10 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.weather_pin_pos = old.weather_pin_pos;
     settings.weather_pin_top = old.weather_pin_top;
     settings.weather_pin_size = old.weather_pin_size.clone();
+    // Lịch ghim cũng chỉnh ngay trên widget.
+    settings.calendar_pin = old.calendar_pin;
+    settings.calendar_pin_pos = old.calendar_pin_pos;
+    settings.calendar_pin_top = old.calendar_pin_top;
 
     // Tên + xưng hô: cùng luật làm sạch với thẻ trên pet và thẻ [name:] trong chat.
     // Tên pet / tên người dùng được để trống; từ xưng hô trống thì về mặc định.
@@ -496,6 +500,7 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     }
 
     if settings.message_language != old.message_language {
+        crate::calendar_pin::broadcast(&app);
         let _ = app.emit_to(
             "main",
             "pet-message",
@@ -596,6 +601,23 @@ pub async fn weather_pin_size(app: AppHandle, size: String) -> Result<(), String
     crate::weather_net::set_size(&app, &size)
 }
 
+/// Lịch ghim: luôn nổi / ngôn ngữ (calendar_pin::view).
+#[tauri::command]
+pub fn calendar_get(app: AppHandle) -> Value {
+    crate::calendar_pin::view(&app)
+}
+
+// Dựng / gỡ cửa sổ: async như weather_pin_set, tránh treo WebView2.
+#[tauri::command]
+pub async fn calendar_pin_set(app: AppHandle, pinned: bool) -> Result<(), String> {
+    crate::calendar_pin::set_pinned(&app, pinned)
+}
+
+#[tauri::command]
+pub async fn calendar_pin_top(app: AppHandle, top: bool) -> Result<(), String> {
+    crate::calendar_pin::set_top(&app, top)
+}
+
 /// Nút × / Esc trên trang Mini Games: ẩn trang và nhân vật bám mép của nó.
 #[tauri::command]
 pub async fn arcade_close(app: AppHandle) -> Result<(), String> {
@@ -652,6 +674,11 @@ pub fn autostart_status(app: AppHandle) -> bool {
 pub fn autostart_set(app: AppHandle, enabled: bool) -> Result<(), String> {
     let manager = app.autolaunch();
     if enabled {
+        // Registry ghi đường dẫn exe đang chạy: bật từ bản dev thì Windows sẽ
+        // mở target\debug (kèm cửa sổ console) thay vì bản đã cài.
+        if cfg!(debug_assertions) {
+            return Err("Bản dev (debug) không bật khởi động cùng Windows, hãy bật trong bản đã cài.".into());
+        }
         manager.enable().map_err(|e| e.to_string())
     } else {
         // disable() xoá value trong registry. Máy mới cài chưa từng bật

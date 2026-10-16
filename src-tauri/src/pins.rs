@@ -90,6 +90,15 @@ pub fn visible_or(pos: (i32, i32), note: (i32, i32), areas: &[Rect], fallback: (
     if seen { pos } else { fallback }
 }
 
+/// Tâm cửa sổ ở `pos` (kích thước `size`) có nằm trong màn hình nào không.
+/// Dùng cho pet: cửa sổ phần lớn trong suốt, chừa một dải mép là chưa chắc thấy.
+pub fn center_on_screen(pos: (i32, i32), size: (i32, i32), areas: &[Rect]) -> bool {
+    let (cx, cy) = (pos.0 + size.0 / 2, pos.1 + size.1 / 2);
+    areas
+        .iter()
+        .any(|&(ax, ay, aw, ah)| cx >= ax && cx < ax + aw && cy >= ay && cy < ay + ah)
+}
+
 /// Kẹp kích thước tờ note mà pin.js đo được (logical px).
 pub fn clamp_note_size(w: f64, h: f64) -> (f64, f64) {
     let ok = |v: f64, lo: f64, hi: f64| if v.is_finite() { v.clamp(lo, hi) } else { lo };
@@ -430,6 +439,20 @@ mod tests {
         assert_eq!(visible_or((1920 - 48, 100), note, &areas[..1], fb), (1872, 100));
         assert_eq!(visible_or((1920 - 47, 100), note, &areas[..1], fb), fb);
         assert_eq!(visible_or((100, -500), note, &areas, fb), fb);
+    }
+
+    #[test]
+    fn pet_center_must_be_on_a_screen() {
+        let areas = [(0, 0, 1920, 1040), (1920, 0, 1280, 1000)];
+        let pet = (267, 374);
+        // Vị trí lưu lúc còn màn hình phụ, giờ chỉ còn màn hình chính.
+        assert!(center_on_screen((2262, 636), pet, &areas));
+        assert!(!center_on_screen((2262, 636), pet, &areas[..1]));
+        // Lòi một nửa ra mép phải vẫn giữ; quá nửa thì không.
+        assert!(center_on_screen((1920 - 134, 100), pet, &areas[..1]));
+        assert!(!center_on_screen((1920 - 133, 100), pet, &areas[..1]));
+        assert!(!center_on_screen((100, -400), pet, &areas));
+        assert!(!center_on_screen((100, 100), pet, &[]));
     }
 
     #[test]

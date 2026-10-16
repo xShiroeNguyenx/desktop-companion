@@ -343,6 +343,34 @@
     $('weatherModeHint').textContent = WEATHER_MODE_HINT[mode] || '';
   }
   $('weatherOpen').addEventListener('click', () => invoke('open_weather').catch((e) => log('open_weather: ' + e)));
+
+  // Ghim / gỡ lịch tháng (calendar_pin.rs). Chữ trên nút theo trạng thái thật,
+  // đọc lại mỗi lần bảng được focus vì lịch có thể đã gỡ bằng ✕ trên widget.
+  let calendarPinned = false;
+  async function syncCalendarBtn() {
+    try {
+      calendarPinned = !!(await invoke('calendar_get')).pinned;
+    } catch (e) {
+      log('calendar_get: ' + e);
+    }
+    $('calendarPin').textContent = calendarPinned ? '📅 Gỡ lịch khỏi màn hình' : '📅 Ghim lịch tháng lên màn hình';
+  }
+  $('calendarPin').addEventListener('click', async () => {
+    const want = !calendarPinned;
+    const status = $('calendarStatus');
+    try {
+      await invoke('calendar_pin_set', { pinned: want });
+      status.className = 'status ok';
+      status.textContent = want ? 'Đã ghim lịch lên màn hình ✓' : 'Đã gỡ lịch.';
+    } catch (e) {
+      status.className = 'status err';
+      status.textContent = 'Không ghim được lịch: ' + e;
+      log('calendar_pin_set: ' + e);
+    }
+    syncCalendarBtn();
+  });
+  window.addEventListener('focus', syncCalendarBtn);
+  syncCalendarBtn();
   for (const id of ['weatherMode', 'weatherKind', 'weatherIntensity', 'weatherBattery', 'weatherTalk', 'weatherLightning']) {
     $(id).addEventListener('change', applyWeather);
   }

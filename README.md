@@ -84,6 +84,12 @@
   short morning report. Toggle the effect with **Ctrl+Alt+W**. Your location is
   never looked up — only the coordinates of the city you pick are sent to
   [Open-Meteo](https://open-meteo.com) (no API key needed).
+- **📅 Month calendar on your screen** — pin a small month calendar from the
+  tray, 💞 → 📅 on the ring or Settings. Each day shows its Vietnamese lunar
+  date, Vietnamese holidays (Tết, Mid-Autumn, Hùng Kings Day…) are marked and
+  days off are in red, and days with tasks due get a dot (red when overdue).
+  Click a day for its full lunar date and what is due, or to add a task due
+  that day. It stays above other windows unless you turn 📍 off.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
@@ -135,7 +141,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · Quit
+Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · Quit
 
 ### Right-click the pet
 
@@ -145,7 +151,7 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games, 🔕 Do not disturb) · ☁️ Weather (forecast,
+(🍅 focus, 💗 bond, 🎮 Mini Games, 📅 month calendar, 🔕 Do not disturb) · ☁️ Weather (forecast,
 effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
