@@ -344,33 +344,59 @@
   }
   $('weatherOpen').addEventListener('click', () => invoke('open_weather').catch((e) => log('open_weather: ' + e)));
 
-  // Ghim / gỡ lịch tháng (calendar_pin.rs). Chữ trên nút theo trạng thái thật,
-  // đọc lại mỗi lần bảng được focus vì lịch có thể đã gỡ bằng ✕ trên widget.
-  let calendarPinned = false;
-  async function syncCalendarBtn() {
+  // Nhóm 🧩 Widget: tick = ghim / gỡ ngay (không chờ Lưu). Trạng thái đọc lại
+  // mỗi lần bảng được focus, vì widget có thể đã gỡ bằng ✕ trên chính nó.
+  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather' };
+  async function syncWidgets() {
     try {
-      calendarPinned = !!(await invoke('calendar_get')).pinned;
+      const st = await invoke('widgets_status');
+      for (const [box, id] of Object.entries(WIDGETS)) $(box).checked = !!st[id];
     } catch (e) {
-      log('calendar_get: ' + e);
+      log('widgets_status: ' + e);
     }
-    $('calendarPin').textContent = calendarPinned ? '📅 Gỡ lịch khỏi màn hình' : '📅 Ghim lịch tháng lên màn hình';
   }
-  $('calendarPin').addEventListener('click', async () => {
-    const want = !calendarPinned;
-    const status = $('calendarStatus');
+  function widgetMsg(text, ok) {
+    const status = $('widgetStatus');
+    status.className = ok ? 'status ok' : 'status err';
+    status.textContent = text;
+  }
+  for (const [box, id] of Object.entries(WIDGETS)) {
+    $(box).addEventListener('change', async () => {
+      const want = $(box).checked;
+      try {
+        if (id === 'weather') await invoke('weather_pin_set', { pinned: want });
+        else await invoke('widget_pin_set', { id, pinned: want });
+        widgetMsg(want ? 'Đã ghim lên màn hình ✓' : 'Đã gỡ khỏi màn hình.', true);
+      } catch (e) {
+        // Thời tiết chưa chọn thành phố: mở thẻ dự báo để chọn (như menu tròn).
+        if (id === 'weather') invoke('open_weather').catch(() => {});
+        widgetMsg('Không ghim được: ' + e, false);
+        log('widget ' + id + ': ' + e);
+      }
+      syncWidgets();
+    });
+  }
+  $('widgetsTidy').addEventListener('click', async () => {
     try {
-      await invoke('calendar_pin_set', { pinned: want });
-      status.className = 'status ok';
-      status.textContent = want ? 'Đã ghim lịch lên màn hình ✓' : 'Đã gỡ lịch.';
+      await invoke('widgets_tidy');
+      widgetMsg('Đã xếp gọn các widget đang ghim ✓', true);
     } catch (e) {
-      status.className = 'status err';
-      status.textContent = 'Không ghim được lịch: ' + e;
-      log('calendar_pin_set: ' + e);
+      widgetMsg('Không xếp được: ' + e, false);
     }
-    syncCalendarBtn();
   });
-  window.addEventListener('focus', syncCalendarBtn);
-  syncCalendarBtn();
+  // Ô chọn đồng hồ thêm: danh sách thành phố của clock-core.js, lưu cùng nút Lưu.
+  for (const id of ['clockZone1', 'clockZone2']) {
+    const sel = $(id);
+    sel.append(new Option(window.ClockCore.T.vi.none, ''));
+    for (const [zone, vi] of window.ClockCore.ZONES) sel.append(new Option(vi, zone));
+  }
+  function setZone(sel, zone) {
+    // Múi lưu từ trước nhưng không có trong danh sách: vẫn giữ, hiện tên theo đuôi.
+    if (zone && ![...sel.options].some((o) => o.value === zone)) sel.append(new Option(window.ClockCore.zoneName(zone, 'vi'), zone));
+    sel.value = zone || '';
+  }
+  window.addEventListener('focus', syncWidgets);
+  syncWidgets();
   for (const id of ['weatherMode', 'weatherKind', 'weatherIntensity', 'weatherBattery', 'weatherTalk', 'weatherLightning']) {
     $(id).addEventListener('change', applyWeather);
   }
@@ -427,6 +453,9 @@
       $('weatherLightning').checked = s.weather_lightning === true;
       $('weatherKind').value = ['rain', 'snow', 'sakura', 'leaves', 'fog', 'sun', 'stars'].includes(s.weather_manual) ? s.weather_manual : 'rain';
       $('weatherTalk').checked = s.weather_talk !== false;
+      $('calendarTalk').checked = s.calendar_talk !== false;
+      setZone($('clockZone1'), (s.clock_zones || [])[0]);
+      setZone($('clockZone2'), (s.clock_zones || [])[1]);
       syncWeatherFields();
       $('weatherIntensity').value = ['light', 'medium', 'heavy'].includes(s.weather_intensity) ? s.weather_intensity : 'medium';
       $('weatherBattery').checked = s.weather_pause_battery !== false;
@@ -622,6 +651,9 @@
       ram_warn_pct: Number($('ramWarn').value) || 90,
       weather_mode: $('weatherMode').value,
       weather_talk: $('weatherTalk').checked,
+      calendar_talk: $('calendarTalk').checked,
+      // Rust làm sạch (bỏ trống / trùng, tối đa 2).
+      clock_zones: [$('clockZone1').value, $('clockZone2').value],
       weather_lightning: $('weatherLightning').checked,
       weather_manual: $('weatherKind').value,
       weather_intensity: $('weatherIntensity').value,

@@ -89,7 +89,16 @@
   date, Vietnamese holidays (Tết, Mid-Autumn, Hùng Kings Day…) are marked and
   days off are in red, and days with tasks due get a dot (red when overdue).
   Click a day for its full lunar date and what is due, or to add a task due
-  that day. It stays above other windows unless you turn 📍 off.
+  that day; your birthday gets a 🎂. It stays above other windows unless you
+  turn 📍 off. The pet mentions holidays, the full moon (*Rằm*) and the 1st of
+  each lunar month, and the evening before reminds you they are tomorrow.
+- **🕐 Clock with world clocks** — your PC's time with the lunar date, plus up
+  to two more clocks (Tokyo, Seoul, New York, London…) with the time
+  difference and "tomorrow" / "yesterday"; summer time is handled. Its 🍅 row
+  starts a focus session and counts down.
+- **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
+  calendar, the clock and the weather widget, picks the extra clocks, and
+  🧹 tidies every pinned widget into a column on the right.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens

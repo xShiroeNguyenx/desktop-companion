@@ -5,17 +5,20 @@
 mod awareness;
 mod bond;
 mod calendar_pin;
+mod clock_pin;
 mod chat;
 mod commands;
 mod companion;
 mod focus;
 mod lines;
 mod links;
+mod lunar;
 mod llm;
 mod naming;
 mod persona;
 mod notify;
 mod pins;
+mod pin_widget;
 mod reminders;
 mod rewards;
 mod selection;
@@ -303,7 +306,7 @@ fn pet_command(app: AppHandle, payload: Value) {
         "calendar:pin" => {
             let app2 = app.clone();
             std::thread::spawn(move || {
-                if let Err(e) = calendar_pin::toggle(&app2) {
+                if let Err(e) = pin_widget::toggle(&app2, &calendar_pin::SPEC) {
                     eprintln!("[calendar] ghim lịch lỗi: {e}");
                 }
             });
@@ -608,8 +611,12 @@ fn main() {
             commands::weather_pin_top,
             commands::weather_pin_size,
             commands::calendar_get,
-            commands::calendar_pin_set,
-            commands::calendar_pin_top,
+            commands::clock_get,
+            commands::widget_pin_set,
+            commands::widget_pin_top,
+            commands::widgets_status,
+            commands::widgets_tidy,
+            commands::focus_toggle,
             commands::open_weather,
             commands::weather_close,
             commands::arcade_close,
@@ -704,8 +711,8 @@ fn main() {
             fx::start(app_handle.clone());
             // Thời tiết thật (Open-Meteo): chỉ gọi mạng khi được bật; widget ghim hiện lại.
             weather_net::start(app_handle.clone());
-            // Lịch tháng đang ghim thì hiện lại.
-            calendar_pin::start(&app_handle);
+            // Widget ghim (lịch, đồng hồ) đang ghim thì hiện lại.
+            pin_widget::start(&app_handle);
 
             // Silent update check ~5s after launch; if a newer version exists,
             // mở hộp thoại cập nhật (kèm bong bóng nhắc từ pet). Version mà
@@ -804,7 +811,7 @@ fn main() {
                     "calendar" => {
                         let app2 = app.clone();
                         std::thread::spawn(move || {
-                            if let Err(e) = calendar_pin::toggle(&app2) {
+                            if let Err(e) = pin_widget::toggle(&app2, &calendar_pin::SPEC) {
                                 eprintln!("[calendar] ghim lịch lỗi: {e}");
                             }
                         });
@@ -839,8 +846,11 @@ fn main() {
             WindowEvent::CloseRequested { .. } if window.label() == weather_net::PIN_LABEL => {
                 weather_net::on_closed(window.app_handle());
             }
-            WindowEvent::CloseRequested { .. } if window.label() == calendar_pin::LABEL => {
-                calendar_pin::on_closed(window.app_handle());
+            // Lịch / đồng hồ ghim (pin_widget.rs): Alt+F4 = gỡ ghim.
+            WindowEvent::CloseRequested { .. } if pin_widget::spec(window.label()).is_some() => {
+                if let Some(spec) = pin_widget::spec(window.label()) {
+                    pin_widget::on_closed(window.app_handle(), spec);
+                }
             }
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
@@ -894,11 +904,11 @@ fn main() {
                             weather_net::remember_pos(window.app_handle(), pos.x, pos.y);
                         }
                     }
-                    label if label == calendar_pin::LABEL => {
-                        if let (WindowEvent::Moved(pos), true) =
-                            (event, window.is_visible().unwrap_or(false))
+                    label if pin_widget::spec(label).is_some() => {
+                        if let (WindowEvent::Moved(pos), true, Some(spec)) =
+                            (event, window.is_visible().unwrap_or(false), pin_widget::spec(label))
                         {
-                            calendar_pin::remember_pos(window.app_handle(), pos.x, pos.y);
+                            pin_widget::remember_pos(window.app_handle(), spec, pos.x, pos.y);
                         }
                     }
                     label if label.starts_with("pin-") => {

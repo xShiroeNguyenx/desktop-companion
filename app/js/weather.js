@@ -46,6 +46,12 @@
     return g === 'cloudy' || g === 'partly' ? 'cloud' : 'sun';
   }
 
+  // Ảnh Miu theo trời (W.face); chỉ đổi khi khác để khỏi nháy ảnh.
+  function setMiu(face) {
+    const src = 'media/game/rps-' + face + '.png';
+    if ($('miuImg').getAttribute('src') !== src) $('miuImg').setAttribute('src', src);
+  }
+
   function el(tag, cls, text) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -140,6 +146,7 @@
       $('nowDesc').textContent = W.describe(c.code, lang());
       $('nowHL').textContent = today ? `${S.hi} ${W.temp(today.max, unit())}° · ${S.lo} ${W.temp(today.min, unit())}°` : '';
       $('miuSay').textContent = W.fill(SAY[lang()][kind], words());
+      setMiu(W.face(c.code, c.is_day, !!warn));
       const days = $('days');
       days.textContent = '';
       f.daily.slice(0, 7).forEach((d, i) => {
@@ -156,6 +163,8 @@
       $('nowDesc').textContent = data.hasCity ? S.never : S.noCity;
       $('nowHL').textContent = '';
       $('miuSay').textContent = S.noCity;
+      // Có thành phố mà chưa lấy được số liệu: ngại; chưa chọn thành phố: nháy mắt mời chọn.
+      setMiu(data.hasCity ? 'shy' : 'wink');
       $('days').textContent = '';
       $('chart').textContent = '';
     }

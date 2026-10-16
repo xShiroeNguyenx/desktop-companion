@@ -100,6 +100,22 @@ pub enum Key {
     WeatherBrief,
     /// Như trên nhưng hôm nay có mưa: dặn mang ô.
     WeatherBriefRain,
+    // ── Lịch (lunar.rs): hôm nay / nhắc trước ngày mai.
+    /// Hôm nay là ngày lễ. Biến: {holiday} (tên ngày lễ).
+    CalHoliday,
+    /// Mùng 1 Tết.
+    CalTet,
+    /// Giao thừa.
+    CalNewYearEve,
+    /// Rằm (15 âm), không trùng ngày lễ.
+    CalFullMoon,
+    /// Mùng 1 âm, không trùng ngày lễ.
+    CalNewMoon,
+    /// Mai là ngày lễ (nghỉ / Trung thu). Biến: {holiday}.
+    CalTomorrowHoliday,
+    /// Mai Rằm / mai mùng 1.
+    CalTomorrowFull,
+    CalTomorrowNew,
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -164,6 +180,14 @@ impl Key {
         Key::WeatherStorm,
         Key::WeatherBrief,
         Key::WeatherBriefRain,
+        Key::CalHoliday,
+        Key::CalTet,
+        Key::CalNewYearEve,
+        Key::CalFullMoon,
+        Key::CalNewMoon,
+        Key::CalTomorrowHoliday,
+        Key::CalTomorrowFull,
+        Key::CalTomorrowNew,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -186,6 +210,12 @@ impl Key {
             | Key::WeatherStorm
             | Key::WeatherBrief
             | Key::WeatherBriefRain => 3,
+            Key::CalHoliday
+            | Key::CalTet
+            | Key::CalNewYearEve
+            | Key::CalFullMoon
+            | Key::CalNewMoon
+            | Key::CalTomorrowHoliday => 3,
             Key::TaskSaved
             | Key::TaskFailed
             | Key::NameSaved
@@ -229,6 +259,7 @@ impl Key {
             Key::Anniversary => &["years"],
             Key::LevelUp => &["level"],
             Key::WeatherBrief | Key::WeatherBriefRain => &["min", "max", "rain"],
+            Key::CalHoliday | Key::CalTomorrowHoliday => &["holiday"],
             _ => &[],
         }
     }
@@ -1046,6 +1077,128 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "Good morning, {you}~ Today it's {min}–{max}° with a {rain}% chance of rain. Take an umbrella ☔",
             "Rain is likely today ({rain}%), {min}–{max}°. Don't forget your umbrella! ☔",
             "Morning! {min}–{max}° today and probably rain ({rain}%). Be careful out there 🌧",
+        ],
+
+        (CalHoliday, Vi) => &[
+            "Hôm nay là {holiday} đó {you}! {Me} chúc {you} một ngày thật vui nha~ 🎉",
+            "{You} ơi, hôm nay {holiday} nè! Nhớ dành chút thời gian cho mình nha 💕",
+            "Ngày {holiday} vui vẻ nha {you}~ Có kế hoạch gì chưa nè? 🎊",
+        ],
+        (CalHoliday, Ja) => &[
+            "今日は{holiday}だよ、{you}！楽しい一日になりますように🎉",
+            "ねえ{you}、今日は{holiday}！自分の時間も大事にしてね💕",
+            "今日は{holiday}～何か予定ある？🎊",
+        ],
+        (CalHoliday, En) => &[
+            "Today is {holiday}, {you}! Wishing you a really happy day~ 🎉",
+            "Hey {you}, it's {holiday} today! Save a little time for yourself 💕",
+            "It's {holiday}~ Any plans today? 🎊",
+        ],
+
+        (CalTet, Vi) => &[
+            "Chúc mừng năm mới {you}! 🧧 {Me} chúc {you} một năm an khang, vạn sự như ý nha~",
+            "Mùng 1 Tết rồi {you} ơi! 🌸 Năm mới {me} vẫn ở đây đồng hành cùng {you} nè 💕",
+            "Năm mới vui vẻ nha {you}~ 🧧 Lì xì {me} một câu chúc là được rồi hihi",
+        ],
+        (CalTet, Ja) => &[
+            "あけましておめでとう、{you}！🧧 今年もいい一年になりますように～",
+            "テトだよ！🌸 新しい年も、わたしはずっと{you}のそばにいるね💕",
+            "新年おめでとう～🧧 お年玉の代わりに、ひとことお祝いちょうだい？",
+        ],
+        (CalTet, En) => &[
+            "Happy Lunar New Year, {you}! 🧧 Wishing you a peaceful year where everything goes your way~",
+            "It's Tết! 🌸 New year, and I'm still right here with you 💕",
+            "Happy New Year~ 🧧 A New Year's wish is all the lucky money I need, hehe",
+        ],
+
+        (CalNewYearEve, Vi) => &[
+            "Hôm nay Giao thừa rồi {you} ơi! 🎆 Tối nay nhớ nghỉ ngơi đón năm mới nha~",
+            "Giao thừa rồi! {Me} cảm ơn {you} vì cả năm qua đã ở cạnh {me} nha 💕🎆",
+            "Ngày cuối năm âm rồi đó {you}~ Mọi việc để năm sau tính, tối nay vui thôi! 🎇",
+        ],
+        (CalNewYearEve, Ja) => &[
+            "今日は旧暦の大晦日だよ、{you}！🎆 今夜はゆっくり新年を迎えてね～",
+            "大晦日！この一年、そばにいてくれてありがとう💕🎆",
+            "旧暦の年の最後の日だよ～お仕事は来年にして、今夜は楽しもう！🎇",
+        ],
+        (CalNewYearEve, En) => &[
+            "It's Lunar New Year's Eve, {you}! 🎆 Take it easy tonight and welcome the new year~",
+            "New Year's Eve! Thank you for spending this whole year with me 💕🎆",
+            "Last day of the lunar year~ Leave work for next year, tonight is for fun! 🎇",
+        ],
+
+        (CalFullMoon, Vi) => &[
+            "Hôm nay Rằm đó {you}~ 🌕 Tối nay trăng tròn đẹp lắm, nhớ ngắm một chút nha",
+            "Rằm rồi nè {you}! 🌕 Nhà {you} có thắp hương thì đừng quên nha~",
+            "Hôm nay 15 âm, trăng tròn nè 🌕 {Me} chúc {you} mọi việc tròn đầy như trăng~",
+        ],
+        (CalFullMoon, Ja) => &[
+            "今日は旧暦の15日、満月だよ～🌕 夜は月を見てみてね",
+            "満月の日だよ、{you}！🌕 お供えするなら忘れないでね～",
+            "旧暦15日、まんまるお月さま🌕 何もかも満月みたいにうまくいきますように～",
+        ],
+        (CalFullMoon, En) => &[
+            "It's the full moon day today (15th of the lunar month) 🌕 Look up at the sky tonight~",
+            "Full moon today, {you}! 🌕 If your family makes offerings, don't forget~",
+            "15th of the lunar month, a perfectly round moon 🌕 May everything go just as smoothly~",
+        ],
+
+        (CalNewMoon, Vi) => &[
+            "Hôm nay mùng 1 âm đó {you}~ 🌙 Đầu tháng mới, chúc {you} mọi điều suôn sẻ nha",
+            "Mùng 1 rồi nè {you}! Nhà {you} có thắp hương thì nhớ nha 🌙",
+            "Đầu tháng âm rồi~ Tháng mới {me} với {you} cùng cố gắng nha 💪",
+        ],
+        (CalNewMoon, Ja) => &[
+            "今日は旧暦の1日だよ～🌙 新しい月、いいことがありますように",
+            "旧暦の月初めだよ、{you}！お供えするなら忘れないでね🌙",
+            "旧暦の新しい月だね～今月も一緒にがんばろう💪",
+        ],
+        (CalNewMoon, En) => &[
+            "It's the 1st of the lunar month today~ 🌙 A fresh month, may it go smoothly for you",
+            "First day of the lunar month, {you}! If your family makes offerings, don't forget 🌙",
+            "A new lunar month~ Let's do our best together this month 💪",
+        ],
+
+        (CalTomorrowHoliday, Vi) => &[
+            "Mai là {holiday} rồi đó {you}~ 🎉 Tối nay xong việc sớm rồi nghỉ ngơi nha",
+            "{You} ơi, mai {holiday} nè! Có kế hoạch gì chưa? {Me} háo hức giùm luôn á 🎊",
+            "Nhắc nhỏ: mai {holiday} đó {you}~ Chuẩn bị gì thì làm từ hôm nay nha 💕",
+        ],
+        (CalTomorrowHoliday, Ja) => &[
+            "明日は{holiday}だよ、{you}～🎉 今夜は早めに終わらせて休んでね",
+            "ねえ{you}、明日は{holiday}！何か予定ある？わたしもわくわく🎊",
+            "ちょっとお知らせ：明日は{holiday}だよ～準備は今日のうちにね💕",
+        ],
+        (CalTomorrowHoliday, En) => &[
+            "Tomorrow is {holiday}, {you}~ 🎉 Wrap up early tonight and get some rest",
+            "Hey {you}, {holiday} is tomorrow! Any plans? I'm excited for you 🎊",
+            "Little reminder: tomorrow is {holiday}~ Get things ready today 💕",
+        ],
+
+        (CalTomorrowFull, Vi) => &[
+            "Mai Rằm rồi đó {you}~ 🌕 Nhà {you} có cúng thì nhớ mua hoa quả từ hôm nay nha",
+            "Nhắc {you} nè: mai là ngày Rằm 🌕 Cần chuẩn bị gì thì làm luôn tối nay nha~",
+        ],
+        (CalTomorrowFull, Ja) => &[
+            "明日は旧暦の15日、満月だよ～🌕 お供えするなら今日のうちにお花や果物をね",
+            "お知らせ：明日は満月の日だよ🌕 準備があるなら今夜のうちに～",
+        ],
+        (CalTomorrowFull, En) => &[
+            "Tomorrow is the full moon day~ 🌕 If your family makes offerings, grab flowers and fruit today",
+            "Reminder: the full moon is tomorrow 🌕 Anything to prepare, maybe do it tonight~",
+        ],
+
+        (CalTomorrowNew, Vi) => &[
+            "Mai mùng 1 âm rồi đó {you}~ 🌙 Nhà {you} có cúng thì nhớ chuẩn bị nha",
+            "Nhắc {you} nè: mai là mùng 1 🌙 Hoa quả, nhang đèn thì mua từ hôm nay cho kịp nha~",
+        ],
+        (CalTomorrowNew, Ja) => &[
+            "明日は旧暦の1日だよ～🌙 お供えするなら準備しておいてね",
+            "お知らせ：明日は旧暦の月初めだよ🌙 お花や果物は今日のうちに～",
+        ],
+        (CalTomorrowNew, En) => &[
+            "Tomorrow is the 1st of the lunar month~ 🌙 If your family makes offerings, get ready",
+            "Reminder: a new lunar month starts tomorrow 🌙 Flowers and fruit are best bought today~",
         ],
     }
 }

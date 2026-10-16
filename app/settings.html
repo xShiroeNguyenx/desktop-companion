@@ -305,12 +305,35 @@
       </div>
 
       <div class="set-group">
-        <h3>📅 Lịch</h3>
+        <h3>🧩 Widget</h3>
+        <div class="set-toggle">
+          <label for="wCalendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
+          <input type="checkbox" id="wCalendar" />
+        </div>
+        <div class="set-toggle">
+          <label for="wClock">🕐 Đồng hồ (kèm 🍅 Tập trung)</label>
+          <input type="checkbox" id="wClock" />
+        </div>
+        <div class="set-toggle">
+          <label for="wWeather">☁️ Thời tiết</label>
+          <input type="checkbox" id="wWeather" />
+        </div>
+        <div class="set-field">
+          <label for="clockZone1">Đồng hồ thêm (giờ nước khác)</label>
+          <div class="row tight">
+            <select id="clockZone1" style="flex:1;"></select>
+            <select id="clockZone2" style="flex:1;"></select>
+          </div>
+        </div>
+        <div class="set-toggle">
+          <label for="calendarTalk">Em nhắc ngày lễ, Rằm, mùng 1 (hôm nay và tối hôm trước)</label>
+          <input type="checkbox" id="calendarTalk" />
+        </div>
         <div class="set-field">
           <div class="row tight">
-            <button class="ghost" id="calendarPin" type="button" style="flex:1;">📅 Ghim lịch tháng lên màn hình</button>
+            <button class="ghost" id="widgetsTidy" type="button" style="flex:1;">🧹 Xếp gọn các widget về góc phải</button>
           </div>
-          <div class="status" id="calendarStatus">Lịch tháng có âm lịch, ngày lễ và chấm hạn chót của task. Kéo đi đâu cũng được, 📍 trên lịch để bật / tắt luôn nổi.</div>
+          <div class="status" id="widgetStatus">Bật / tắt là ghim / gỡ ngay. Kéo widget đi đâu cũng được, 📍 trên widget để bật / tắt luôn nổi.</div>
         </div>
       </div>
 
@@ -584,6 +607,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/clock-core.js"></script>
   <script src="js/settings.js"></script>
 </body>
 </html>

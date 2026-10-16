@@ -121,6 +121,16 @@ test('hạn chót từ ngày + giờ', () => {
   assert.equal(C.dueAt('2026-10-16', ''), null);
 });
 
+test('sinh nhật "MM-DD" chỉ đúng ngày', () => {
+  assert.equal(C.isBirthday('03-05', 3, 5), true);
+  assert.equal(C.isBirthday('3-5', 3, 5), true);
+  assert.equal(C.isBirthday('03-05', 5, 3), false);
+  assert.equal(C.isBirthday('02-29', 2, 28), false);
+  assert.equal(C.isBirthday('', 1, 1), false);
+  assert.equal(C.isBirthday(null, 1, 1), false);
+  assert.equal(C.isBirthday('abc', 1, 1), false);
+});
+
 test('tiêu đề tháng và chữ âm lịch trong ô', () => {
   assert.equal(C.monthTitle(2026, 10, 'vi'), 'Tháng 10, 2026');
   assert.equal(C.monthTitle(2026, 10, 'ja'), '2026年10月');

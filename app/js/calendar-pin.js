@@ -67,7 +67,9 @@
       b.classList.toggle('out', !c.inMonth);
       b.classList.toggle('sun', c.weekday === 6);
       b.classList.toggle('off', hol.some((h) => h.off));
-      b.classList.toggle('fest', hol.length > 0);
+      const bday = C.isBirthday(data.birthday, c.month, c.day);
+      b.classList.toggle('fest', hol.length > 0 || bday);
+      b.classList.toggle('bday', bday);
       b.classList.toggle('today', key === todayKey);
       b.classList.toggle('sel', key === selected && key !== todayKey);
       b.append(el('span', 'n', String(c.day)), el('span', lunar.day === 1 ? 'l first' : 'l', C.lunarLabel(lunar, data.lang)));
@@ -76,6 +78,7 @@
         b.append(el('span', due.some((t) => t.over) ? 'dot over' : 'dot'));
       }
       const tips = hol.map((h) => S().h[h.id]);
+      if (bday) tips.unshift(C.fill(S().bday, { you: data.you || '' }));
       if (due) tips.push(`${due.length} ✓`);
       if (tips.length) b.title = tips.join(' · ');
       grid.append(b);
@@ -90,18 +93,22 @@
     const l = C.toLunar(d, m, y);
     $('infoLunar').textContent = C.fill(s.lunarFull, { d: l.day, m: l.month, leap: l.leap ? s.leap : '', cc: C.canChi(l.year, data.lang) });
     const hol = C.holidays(y, m, d, l);
-    $('infoFest').hidden = hol.length === 0;
-    $('infoFest').textContent = hol.map((h) => '🎉 ' + s.h[h.id]).join(' · ');
+    const bday = C.isBirthday(data.birthday, m, d);
+    const fest = hol.map((h) => '🎉 ' + s.h[h.id]);
+    if (bday) fest.unshift(C.fill(s.bday, { you: data.you || '' }));
+    $('infoFest').hidden = fest.length === 0;
+    $('infoFest').textContent = fest.join(' · ');
 
     const list = $('infoTasks');
     list.textContent = '';
     const due = byDay[selected] || [];
-    // Miu mini: ngày lễ thì reo, có việc quá hạn thì nghĩ ngợi, còn lại nháy mắt.
-    const face = hol.length ? 'cheer' : due.some((t) => t.over) ? 'think' : 'wink';
+    // Miu mini: ngày lễ / sinh nhật thì reo, có việc quá hạn thì giật mình,
+    // có việc tới hạn thì "cố lên", còn lại nháy mắt.
+    const face = fest.length ? 'cheer' : due.some((t) => t.over) ? 'surprised' : due.length ? 'fight' : 'wink';
     const src = `media/game/rps-${face}.png`;
     if ($('miu').getAttribute('src') !== src) $('miu').setAttribute('src', src);
     // Chừa chỗ cho dòng lễ và ô thêm việc: tối đa 2 việc, còn lại gộp "+n".
-    const room = hol.length ? 1 : 2;
+    const room = fest.length ? 1 : 2;
     if (!due.length) list.append(el('div', 'muted', s.noTasks));
     for (const t of due.slice(0, room)) {
       const b = el('button', t.over ? 'task over' : 'task');
@@ -235,9 +242,9 @@
     if (e.key === 'Escape') openAdd(false);
   });
   $('topBtn').addEventListener('click', () =>
-    invoke('calendar_pin_top', { top: !data.pinTop }).catch((e) => showMsg(String(e), true)));
+    invoke('widget_pin_top', { id: 'calendar', top: !data.pinTop }).catch((e) => showMsg(String(e), true)));
   $('unpinBtn').addEventListener('click', () =>
-    invoke('calendar_pin_set', { pinned: false }).catch((e) => showMsg(String(e), true)));
+    invoke('widget_pin_set', { id: 'calendar', pinned: false }).catch((e) => showMsg(String(e), true)));
 
   // Qua nửa đêm: đổi ô hôm nay; đang xem tháng của hôm qua thì đi theo sang tháng mới,
   // còn đang chọn hôm qua thì chọn sang hôm nay. Đang xem tháng khác thì giữ nguyên.

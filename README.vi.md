@@ -77,7 +77,15 @@ duyệt, Word…).
   menu tròn hoặc Cài đặt. Mỗi ngày có ngày âm lịch, ngày lễ Việt Nam (Tết, Trung
   thu, Giỗ Tổ…) được đánh dấu, ngày nghỉ lễ tô đỏ, ngày có task tới hạn có chấm
   (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn, hoặc thêm
-  việc có hạn vào ngày đó. Luôn nổi trên các cửa sổ khác, trừ khi bạn tắt 📍.
+  việc có hạn vào ngày đó; ngày sinh của bạn có 🎂. Luôn nổi trên các cửa sổ khác,
+  trừ khi bạn tắt 📍. Pet nhắc ngày lễ, Rằm, mùng 1, và tối hôm trước báo mai là
+  ngày gì.
+- **🕐 Đồng hồ có giờ thế giới** — giờ máy kèm ngày âm, thêm tối đa 2 đồng hồ
+  (Tokyo, Seoul, New York, London…) ghi chênh giờ và "ngày mai" / "hôm qua"; tự
+  tính giờ mùa hè. Hàng 🍅 bắt đầu phiên Tập trung và đếm lùi.
+- **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
+  thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
+  bên phải.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý

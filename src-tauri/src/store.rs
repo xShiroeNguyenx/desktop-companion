@@ -177,6 +177,15 @@ pub struct Settings {
     /// Mặc định luôn nổi: lịch để liếc nhanh, nằm dưới cửa sổ khác thì ít ai thấy.
     #[serde(default = "default_true")]
     pub calendar_pin_top: bool,
+    /// Pet nói về ngày lễ, Rằm, mùng 1 (hôm nay và nhắc trước một hôm).
+    #[serde(default = "default_true")]
+    pub calendar_talk: bool,
+    /// Đồng hồ ghim (clock_pin.rs).
+    #[serde(default)]
+    pub clock_pin: crate::pin_widget::PinState,
+    /// Đồng hồ thêm (tên múi giờ IANA, tối đa 2), ngoài giờ máy.
+    #[serde(default)]
+    pub clock_zones: Vec<String>,
 }
 
 fn default_weather_units() -> String {
@@ -353,6 +362,9 @@ impl Default for Settings {
             calendar_pin: false,
             calendar_pin_pos: None,
             calendar_pin_top: true,
+            calendar_talk: true,
+            clock_pin: Default::default(),
+            clock_zones: Vec::new(),
         }
     }
 }

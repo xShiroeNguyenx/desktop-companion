@@ -163,7 +163,20 @@
     return { points, line, area, marks, lo, hi };
   }
 
-  const api = { T, strings, describe, icon, temp, ago, dayName, hourLabel, clock, chart, group, fill };
+  /**
+   * Biểu cảm Miu (media/game/rps-<face>.png) cho thẻ dự báo và widget ghim.
+   * trouble = mất mạng / số liệu cũ / chưa có dữ liệu → ngại; dông → bất ngờ;
+   * đêm → buồn ngủ; trời quang ban ngày → reo; còn lại → nháy mắt.
+   */
+  function face(code, isDay, trouble) {
+    if (trouble) return 'shy';
+    const g = group(code);
+    if (g === 'storm') return 'surprised';
+    if (!isDay) return 'sleepy';
+    return g === 'clear' || g === 'mostly' ? 'cheer' : 'wink';
+  }
+
+  const api = { T, strings, describe, icon, temp, ago, dayName, hourLabel, clock, chart, group, fill, face };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WeatherCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

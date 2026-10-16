@@ -67,3 +67,14 @@ test('biểu đồ: điểm nằm trong khung, nóng nhất ở cao nhất', () 
   const flat = W.chart([{ temp: 20 }, { temp: 20 }], 100, 100);
   assert.ok(flat.points.every((p) => Number.isFinite(p.y)));
 });
+
+test('biểu cảm Miu theo trời', () => {
+  assert.equal(W.face(0, true, false), 'cheer');
+  assert.equal(W.face(1, true, false), 'cheer');
+  assert.equal(W.face(3, true, false), 'wink');
+  assert.equal(W.face(63, true, false), 'wink');
+  assert.equal(W.face(95, true, false), 'surprised');
+  assert.equal(W.face(95, false, false), 'surprised');
+  assert.equal(W.face(0, false, false), 'sleepy');
+  assert.equal(W.face(0, true, true), 'shy');
+});

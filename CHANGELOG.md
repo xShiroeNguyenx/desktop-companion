@@ -6,6 +6,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-16
+
+### Added
+- **The pet talks about the calendar.** On a holiday she wishes you a happy
+  day by its name, with her own lines for Tết and Lunar New Year's Eve, and
+  she mentions the full moon (*Rằm*) and the 1st of each lunar month. The
+  evening before a day off, the Mid-Autumn Festival, a *Rằm* or a 1st, she
+  reminds you it is tomorrow, so there is time to buy flowers and fruit for
+  the offering. Each line is said once (it is not repeated when you restart
+  the app), only in the daytime for today's day and in the evening for
+  tomorrow's, and like every other line she stays quiet while you focus, in
+  Do not disturb or full screen. Turn it off in Settings → *🧩 Widget*.
+- **A clock you can pin to your screen, with world clocks.** It shows your
+  PC's time with the weekday and lunar date, plus up to two more clocks for
+  other places (Tokyo, Seoul, New York, London…), each with the time
+  difference and "tomorrow" / "yesterday" when the date differs; summer time
+  is handled automatically. The 🍅 row starts or stops a focus session (the pet
+  joins in, as from the ring) and counts down while it runs.
+- **🧩 Widget in Settings** replaces the *📅 Lịch* group: tick the month
+  calendar, the clock or the weather widget to pin it right away, pick the
+  extra clocks, and **🧹 tidy** every pinned widget into one column on the
+  right of the main screen.
+- **Your birthday on the calendar.** The day you entered in Settings gets a
+  🎂, and clicking it shows a birthday line with Miu cheering.
+
+### Changed
+- **Four new faces for Miu.** Sleepy, surprised, shy and "you can do it!"
+  now show up where they fit: she cheers you on during a focus session and
+  on days with tasks due, gets sleepy on the clock late at night (11 pm–5 am)
+  and on the weather widget at night, is startled by overdue tasks, a
+  thunderstorm and an exploding bomb in Bomb Squad, and looks sheepish when
+  the weather can't be fetched or a game of guess the number runs out of
+  tries. On a clear day the weather card has her cheering.
+
 ## [0.9.0] - 2026-10-16
 
 ### Added
@@ -446,6 +480,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.9.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.1
 [0.9.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.0
 [0.8.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.8.0
 [0.7.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.7.0

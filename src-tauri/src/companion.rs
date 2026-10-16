@@ -5,7 +5,7 @@
 //
 // Nguồn hiện có: hạn chót, nhắc sức khoẻ (reminders.rs), xin đặt tên
 // (naming.rs), tự bắt chuyện (chat.rs), chào khi quay lại + cảnh báo CPU/RAM
-// (awareness.rs), hết pha Tập trung (focus.rs). Hạn chót còn có đường thứ hai: khi pet
+// (awareness.rs), hết pha Tập trung (focus.rs), ngày lễ / Rằm / mùng 1 (lunar.rs). Hạn chót còn có đường thứ hai: khi pet
 // không nói được thì gửi thông báo Windows (notify.rs).
 
 use std::collections::HashSet;
@@ -39,6 +39,8 @@ pub enum Kind {
     AskName,
     Health,
     Milestone,
+    /// Ngày lễ, Rằm, mùng 1 hôm nay / nhắc trước ngày mai (lunar.rs).
+    Calendar,
     SysWarn,
     /// Thời tiết vừa đổi / vừa bật hiệu ứng (weather.rs). Ưu tiên thấp.
     Weather,
@@ -337,8 +339,20 @@ pub fn sync_focus(app: &AppHandle) {
         }
     }
     pet(app, json!({ "command": "focusState", "on": on }));
+    // Đồng hồ ghim có hàng 🍅: báo pha mới.
+    crate::clock_pin::broadcast(app);
     if !on {
         pet(app, json!({ "command": "pomodoroTick", "state": "idle", "secondsLeft": 0, "totalSeconds": 0 }));
+    }
+}
+
+/// Pha Tập trung hiện tại cho đồng hồ ghim: ("idle" | "focus" | "break", giây còn lại, độ dài pha).
+pub fn focus_info(app: &AppHandle) -> (&'static str, u64, u64) {
+    let Ok(f) = app.state::<CompanionState>().focus.lock().map(|f| *f) else { return ("idle", 0, 0) };
+    match f.phase {
+        Phase::Idle => ("idle", 0, 0),
+        Phase::Focus => ("focus", f.remaining(now_secs()), f.length),
+        Phase::Break => ("break", f.remaining(now_secs()), f.length),
     }
 }
 
@@ -409,6 +423,8 @@ fn focus_loop(app: AppHandle) {
                     clock.reset(&[Health::Eyes, Health::Stand]);
                 }
                 hold_expression(&app, "happy");
+                // Sang pha nghỉ: đồng hồ ghim đổi sang đếm giờ nghỉ.
+                crate::clock_pin::broadcast(&app);
                 "focus:done"
             }
             FocusEvent::BreakDone => {
@@ -760,10 +776,70 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
         }
     }
 
+    // Lịch: ngày lễ / Rằm / mùng 1 hôm nay (6–21 giờ) và nhắc trước ngày mai
+    // (16–22 giờ). Mỗi câu nói một lần (calendar_talk.json); ra ngoài khung giờ thì bỏ câu chờ.
+    let cal: Vec<String> = if settings.calendar_talk {
+        let (today, hour) = today_and_hour(now);
+        crate::lunar::talks_due(today, hour, &calendar_said(app))
+    } else {
+        Vec::new()
+    };
+    sync_kind(pending, Kind::Calendar, &cal, now);
+
     // Tự bắt chuyện (cần key). Tắt / xoá key / vừa chat xong → bỏ câu đang chờ.
     let chatter_due = chat::has_key(settings)
         && chat::proactive_due(now, chat::last_activity(app), settings.proactive_minutes);
     sync_kind(pending, Kind::Chatter, &if chatter_due { vec!["chatter".to_string()] } else { vec![] }, now);
+}
+
+// ─── Lịch (lunar.rs) ─────────────────────────────────────────────────────────
+
+const CALENDAR_FILE: &str = "calendar_talk.json";
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+struct CalendarMemory {
+    #[serde(default)]
+    said: Vec<String>,
+}
+
+/// Tag lịch đã nói. File thiếu / hỏng → coi như chưa nói gì.
+fn calendar_said(app: &AppHandle) -> Vec<String> {
+    store::config_file(app, CALENDAR_FILE)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|s| serde_json::from_str::<CalendarMemory>(&s).ok())
+        .unwrap_or_default()
+        .said
+}
+
+fn mark_calendar_said(app: &AppHandle, tag: &str) {
+    let mut said = calendar_said(app);
+    crate::lunar::remember(&mut said, tag);
+    let Some(path) = store::config_file(app, CALENDAR_FILE) else { return };
+    let json = serde_json::to_string(&CalendarMemory { said }).unwrap_or_default();
+    if let Err(e) = std::fs::write(path, json) {
+        // Không ghi được thì lần sau có thể nói lại; chỉ ghi log.
+        eprintln!("[companion] lưu calendar_talk.json lỗi: {e}");
+    }
+}
+
+/// Câu cho một tag lịch ("cal:<when>:<ngày>:<id>") và ghi lại là đã nói.
+fn calendar_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<(String, String)> {
+    let (when, id) = crate::lunar::parse_tag(tag)?;
+    let name = crate::lunar::holiday_name(id, a.lang.code());
+    let (key, face) = match (when, id) {
+        ("today", "tet1") => (Key::CalTet, "love"),
+        ("today", "newYearEve") => (Key::CalNewYearEve, "love"),
+        ("today", "full") => (Key::CalFullMoon, "happy"),
+        ("today", "new") => (Key::CalNewMoon, "happy"),
+        ("today", _) if !name.is_empty() => (Key::CalHoliday, "happy"),
+        ("tomorrow", "full") => (Key::CalTomorrowFull, "happy"),
+        ("tomorrow", "new") => (Key::CalTomorrowNew, "happy"),
+        ("tomorrow", _) if !name.is_empty() => (Key::CalTomorrowHoliday, "happy"),
+        _ => return None,
+    };
+    let line = lines::line(key, a, &[("holiday", name)]);
+    mark_calendar_said(app, tag);
+    Some((line, face.to_string()))
 }
 
 /// Câu nhắc của một mốc hạn chót, và đánh dấu đã nhắc mốc đó.
@@ -807,6 +883,9 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
         }
         Kind::Milestone => {
             return milestone_line(app, &a, &c.tag).map(|l| (l, Some("love".into())));
+        }
+        Kind::Calendar => {
+            return calendar_line(app, &a, &c.tag).map(|(l, face)| (l, Some(face)));
         }
         Kind::Welcome => {
             let key = match c.tag.as_str() {

@@ -18,6 +18,12 @@
     return e;
   }
 
+  // Đổi ảnh Miu chỉ khi khác, để khỏi nháy ảnh mỗi phút.
+  function setFace(face) {
+    const src = 'media/game/rps-' + face + '.png';
+    if ($('miu').getAttribute('src') !== src) $('miu').setAttribute('src', src);
+  }
+
   function render() {
     if (!data) return;
     const S = W.strings(lang());
@@ -42,12 +48,14 @@
       $('ic').textContent = '🌡️';
       $('t').textContent = '--';
       meta.append(el('div', 'empty', data.error ? S.offline : S.never));
+      setFace('shy');
       return;
     }
     const c = f.current;
     const g = W.group(c.code);
     const wet = /rain|drizzle|showers|freezing|storm/i.test(g);
     card.classList.add(wet ? 'sky-rain' : !c.is_day ? 'sky-night' : g === 'clear' || g === 'mostly' ? 'sky-sun' : 'x');
+    setFace(W.face(c.code, c.is_day, !!(data.stale || data.error)));
     $('ic').textContent = W.icon(c.code, c.is_day);
     $('t').textContent = '';
     $('t').append(String(W.temp(c.temp, unit())), el('sup', null, unit() === 'f' ? '°F' : '°C'));

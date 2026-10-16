@@ -468,6 +468,9 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.calendar_pin = old.calendar_pin;
     settings.calendar_pin_pos = old.calendar_pin_pos;
     settings.calendar_pin_top = old.calendar_pin_top;
+    settings.clock_pin = old.clock_pin;
+    // Đồng hồ thêm thì chỉnh ở form (nhóm 🧩 Widget): chỉ làm sạch.
+    settings.clock_zones = crate::clock_pin::clean_zones(&settings.clock_zones);
 
     // Tên + xưng hô: cùng luật làm sạch với thẻ trên pet và thẻ [name:] trong chat.
     // Tên pet / tên người dùng được để trống; từ xưng hô trống thì về mặc định.
@@ -499,8 +502,13 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
         crate::fx::register_shortcut(&app);
     }
 
+    // Lịch ghim theo ngôn ngữ, ngày sinh, cách gọi người dùng: gửi lại cho chắc.
+    crate::calendar_pin::broadcast(&app);
+    if settings.clock_zones != old.clock_zones {
+        crate::pin_widget::resize(&app, &crate::clock_pin::SPEC);
+    }
+    crate::clock_pin::broadcast(&app);
     if settings.message_language != old.message_language {
-        crate::calendar_pin::broadcast(&app);
         let _ = app.emit_to(
             "main",
             "pet-message",
@@ -607,15 +615,53 @@ pub fn calendar_get(app: AppHandle) -> Value {
     crate::calendar_pin::view(&app)
 }
 
+/// Đồng hồ ghim: múi giờ, luôn nổi, pha Tập trung (clock_pin::view).
+#[tauri::command]
+pub fn clock_get(app: AppHandle) -> Value {
+    crate::clock_pin::view(&app)
+}
+
+fn widget_spec(id: &str) -> Result<&'static crate::pin_widget::Spec, String> {
+    match id {
+        "calendar" => Ok(&crate::calendar_pin::SPEC),
+        "clock" => Ok(&crate::clock_pin::SPEC),
+        _ => Err(format!("Không có widget \"{id}\".")),
+    }
+}
+
 // Dựng / gỡ cửa sổ: async như weather_pin_set, tránh treo WebView2.
 #[tauri::command]
-pub async fn calendar_pin_set(app: AppHandle, pinned: bool) -> Result<(), String> {
-    crate::calendar_pin::set_pinned(&app, pinned)
+pub async fn widget_pin_set(app: AppHandle, id: String, pinned: bool) -> Result<(), String> {
+    crate::pin_widget::set_pinned(&app, widget_spec(&id)?, pinned)
 }
 
 #[tauri::command]
-pub async fn calendar_pin_top(app: AppHandle, top: bool) -> Result<(), String> {
-    crate::calendar_pin::set_top(&app, top)
+pub async fn widget_pin_top(app: AppHandle, id: String, top: bool) -> Result<(), String> {
+    crate::pin_widget::set_top(&app, widget_spec(&id)?, top)
+}
+
+/// Nhóm 🧩 Widget trong Cài đặt: widget nào đang ghim.
+#[tauri::command]
+pub fn widgets_status(app: AppHandle) -> Value {
+    let s = store::load_settings(&app);
+    serde_json::json!({
+        "calendar": s.calendar_pin,
+        "clock": s.clock_pin.pinned,
+        "weather": s.weather_pin,
+    })
+}
+
+/// Nút "Xếp gọn": dồn mọi widget đang ghim về một cột ở góc phải.
+#[tauri::command]
+pub async fn widgets_tidy(app: AppHandle) -> Result<(), String> {
+    let app2 = app.clone();
+    app.run_on_main_thread(move || crate::pin_widget::tidy(&app2)).map_err(|e| e.to_string())
+}
+
+/// Hàng 🍅 trên đồng hồ ghim: bắt đầu / dừng phiên Tập trung (như menu tròn).
+#[tauri::command]
+pub async fn focus_toggle(app: AppHandle) {
+    crate::companion::toggle_focus(&app);
 }
 
 /// Nút × / Esc trên trang Mini Games: ẩn trang và nhân vật bám mép của nó.

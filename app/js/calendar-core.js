@@ -261,6 +261,15 @@
     return Number.isFinite(ms) ? ms : null;
   }
 
+  /**
+   * Ngày (month, day) có phải sinh nhật "MM-DD" (Settings.birthday) không.
+   * Giống bond.rs: chỉ đúng ngày, sinh nhật 29/2 thì chỉ có ở năm nhuận.
+   */
+  function isBirthday(birthday, month, day) {
+    const m = /^(\d{1,2})-(\d{1,2})$/.exec(String(birthday || '').trim());
+    return !!m && +m[1] === month && +m[2] === day;
+  }
+
   // ─── Chữ ───────────────────────────────────────────────────────────────────
 
   const T = {
@@ -271,7 +280,7 @@
       full: 'Rằm', today: 'Hôm nay', prev: 'Tháng trước', next: 'Tháng sau', top: 'Luôn nổi',
       unpin: 'Gỡ ghim', add: '＋ Việc', addTitle: 'Thêm việc có hạn vào ngày này', placeholder: 'Việc cần làm…',
       save: 'Lưu', cancel: 'Huỷ', noTasks: 'Không có việc nào tới hạn', more: '+{n} việc nữa',
-      overdue: 'quá hạn', saved: 'Đã thêm việc ✓', openTasks: 'Mở bảng Công việc',
+      overdue: 'quá hạn', saved: 'Đã thêm việc ✓', openTasks: 'Mở bảng Công việc', bday: 'Sinh nhật {you} 🎂',
       h: {
         newYear: 'Tết Dương lịch', valentine: 'Lễ Tình nhân', women: 'Quốc tế Phụ nữ',
         reunification: 'Giải phóng miền Nam', labour: 'Quốc tế Lao động', children: 'Quốc tế Thiếu nhi',
@@ -288,7 +297,7 @@
       full: '満月', today: '今日', prev: '前の月', next: '次の月', top: '常に手前',
       unpin: '固定をはずす', add: '＋ タスク', addTitle: 'この日が期限のタスクを追加', placeholder: 'やること…',
       save: '保存', cancel: 'やめる', noTasks: '期限のタスクはありません', more: 'ほか{n}件',
-      overdue: '期限切れ', saved: '追加したよ ✓', openTasks: 'タスク一覧を開く',
+      overdue: '期限切れ', saved: '追加したよ ✓', openTasks: 'タスク一覧を開く', bday: '{you}の誕生日 🎂',
       h: {
         newYear: '元日', valentine: 'バレンタイン', women: '国際女性デー',
         reunification: '南部解放記念日', labour: 'メーデー', children: '国際子どもの日',
@@ -305,7 +314,7 @@
       full: 'Full', today: 'Today', prev: 'Previous month', next: 'Next month', top: 'Always on top',
       unpin: 'Unpin', add: '＋ Task', addTitle: 'Add a task due on this day', placeholder: 'Something to do…',
       save: 'Save', cancel: 'Cancel', noTasks: 'Nothing due', more: '+{n} more',
-      overdue: 'overdue', saved: 'Task added ✓', openTasks: 'Open Tasks',
+      overdue: 'overdue', saved: 'Task added ✓', openTasks: 'Open Tasks', bday: 'Your birthday 🎂',
       h: {
         newYear: "New Year's Day", valentine: "Valentine's Day", women: "International Women's Day",
         reunification: 'Reunification Day', labour: 'Labour Day', children: "Children's Day",
@@ -340,7 +349,7 @@
 
   const api = {
     T, strings, fill, toLunar, jdFromDate, canChi, daysInMonth, addMonths, monthGrid,
-    dayKey, keyOfDate, holidays, tasksByDay, dueAt, monthTitle, lunarLabel,
+    dayKey, keyOfDate, holidays, tasksByDay, dueAt, monthTitle, lunarLabel, isBirthday,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CalendarCore = api;

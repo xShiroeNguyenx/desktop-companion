@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!--
+  Đồng hồ ghim trên desktop (clock_pin.rs → "pin-clock"). Cùng kiểu với lịch
+  ghim: cửa sổ trong suốt, kéo ở nền, 📍 bật tắt luôn nổi. Giờ máy, tối đa 2
+  đồng hồ múi khác (js/clock-core.js) và hàng 🍅 Tập trung.
+  Kích thước cửa sổ: clock_pin::size (132 + 30 mỗi đồng hồ thêm).
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đồng hồ</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #f6eaf4;
+      user-select: none;
+    }
+    .wrap { position: absolute; inset: 0; padding: 6px; }
+    .card {
+      position: relative;
+      height: 100%;
+      padding: 8px 12px 8px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(160deg, rgba(56, 44, 84, 0.72), rgba(84, 50, 92, 0.72));
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
+      cursor: grab;
+      animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
+    button { font: inherit; color: inherit; }
+    /* Miu mờ phía sau giờ, như hình nền (giống lịch ghim). */
+    .miu {
+      position: absolute; right: 2px; top: 2px; z-index: 0;
+      height: 82px; width: 76px;
+      object-fit: contain; object-position: right top;
+      opacity: 0.28; pointer-events: none;
+    }
+    .card > :not(.miu):not(.tools) { position: relative; z-index: 1; }
+
+    .time { font: 800 38px/1 "Segoe UI", sans-serif; letter-spacing: -1px; }
+    .date { font-size: 11.5px; color: #e2d3ea; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .zones { display: flex; flex-direction: column; margin-top: 6px; }
+    .zone {
+      height: 30px;
+      display: flex; align-items: center; gap: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 12.5px;
+    }
+    .zone .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+    .zone .t { font-weight: 800; font-size: 15px; }
+    .zone .d { font-size: 10.5px; color: #c9b6d6; min-width: 44px; text-align: right; }
+    .zone .d.shift { color: #ffd27a; }
+    .focus {
+      margin-top: auto;
+      align-self: flex-start;
+      border: none; border-radius: 9px;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .focus:hover { background: rgba(255, 255, 255, 0.22); }
+    .focus.on { background: #ff73ab; }
+    .focus.brk { background: #57b894; }
+
+    .tools {
+      position: absolute; right: 8px; bottom: 8px; z-index: 2;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .card:hover .tools { opacity: 1; }
+    .tools button {
+      width: 24px; height: 24px; border-radius: 8px;
+      border: none; background: rgba(40, 30, 60, 0.85); color: #fff;
+      font-size: 12px; cursor: pointer;
+    }
+    .tools button:hover { background: rgba(90, 70, 120, 0.95); }
+    .tools button.on { background: #ff73ab; }
+    @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="card" id="card">
+      <img class="miu" id="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
+      <div class="time" id="time"></div>
+      <div class="date" id="date"></div>
+      <div class="zones" id="zones"></div>
+      <button class="focus" id="focusBtn" type="button"></button>
+      <div class="tools">
+        <button id="topBtn" type="button">📍</button>
+        <button id="unpinBtn" type="button">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/calendar-core.js"></script>
+  <script src="js/clock-core.js"></script>
+  <script src="js/clock-pin.js"></script>
+</body>
+</html>

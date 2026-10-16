@@ -858,7 +858,8 @@ Settings.
 | **v0.6.0** ✅ (phát hành 2026-10-15) | Phase 11 + 12 + 13 gộp một bản, cộng: "🗂️ Mở đầy đủ" trên menu chuột phải (trợ lý văn bản ở chế độ tự gõ), biểu tượng game trên đầu pet, nhóm menu 💞 Đồng hành | Xem CHANGELOG [0.6.0] |
 | **v0.7.0** ✅ (phát hành 2026-10-16) | Trang Mini Games, oẳn tù tì và đoán số thành cửa sổ riêng, game mới Gỡ bom, ⚙ Cài đặt xuống ô dưới cùng của menu tròn | Xem CHANGELOG [0.7.0] |
 | **v0.8.0** ✅ (phát hành 2026-10-16) | Mục 13 (Phase 14 + 15 + 16): hiệu ứng thời tiết toàn màn hình, theo mùa & giờ, thời tiết thật (Open-Meteo), thẻ dự báo, widget ghim, pet nói về thời tiết + bản tin sáng; nhóm ☁️ Thời tiết trên menu tròn; Bunny Lounge thêm thẻ thời tiết + trang Mini Games | Xem CHANGELOG [0.8.0] |
-| **v0.9.0** (chuẩn bị phát hành 2026-10-16) | Lịch tháng ghim trên desktop: âm lịch Việt Nam (múi +7), ngày lễ, chấm hạn chót task, thêm việc theo ngày, Miu mini; mở từ khay, 💞 → 📅, Cài đặt. Sửa pet nằm ngoài màn hình khi rút màn hình phụ, autostart trỏ nhầm bản dev; ảnh mới cho nhân vật thẻ thời tiết + Mini Games | Xem CHANGELOG [0.9.0] |
+| **v0.9.0** ✅ (phát hành 2026-10-16) | Lịch tháng ghim trên desktop: âm lịch Việt Nam (múi +7), ngày lễ, chấm hạn chót task, thêm việc theo ngày, Miu mini; mở từ khay, 💞 → 📅, Cài đặt. Sửa pet nằm ngoài màn hình khi rút màn hình phụ, autostart trỏ nhầm bản dev; ảnh mới cho nhân vật thẻ thời tiết + Mini Games | Xem CHANGELOG [0.9.0] |
+| **v0.9.1** (chuẩn bị phát hành 2026-10-16) | Pet nói về lịch (ngày lễ, Rằm, mùng 1, nhắc tối hôm trước; lunar.rs, calendar_talk.json); sinh nhật 🎂 trên lịch; đồng hồ ghim có giờ thế giới (tối đa 2 múi) + hàng 🍅 Tập trung; khung widget chung pin_widget.rs; nhóm 🧩 Widget trong Cài đặt + Xếp gọn; 4 biểu cảm Miu mới; test dịch thử mọi file JS | Xem CHANGELOG [0.9.1] |
 
 Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
 / "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).
