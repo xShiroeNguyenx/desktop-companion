@@ -29,6 +29,10 @@ pub enum Category {
     Effect,
     /// Bộ câu thoại hiếm (Phase 18).
     LinePack,
+    /// Kiểu bong bóng thoại của pet (companion.css body[data-bubble]).
+    Bubble,
+    /// Biểu tượng hiện khi bôi chữ (thay 🌸, flower.html).
+    Flower,
 }
 
 impl Category {
@@ -39,18 +43,28 @@ impl Category {
             Category::MiuSet => "miu_set",
             Category::Effect => "effect",
             Category::LinePack => "line_pack",
+            Category::Bubble => "bubble",
+            Category::Flower => "flower",
         }
     }
 
     pub fn from_code(s: &str) -> Option<Category> {
-        [Category::Skin, Category::SideSet, Category::MiuSet, Category::Effect, Category::LinePack]
+        [
+            Category::Skin,
+            Category::SideSet,
+            Category::MiuSet,
+            Category::Effect,
+            Category::LinePack,
+            Category::Bubble,
+            Category::Flower,
+        ]
             .into_iter()
             .find(|c| c.code() == s)
     }
 
     /// Nhóm có "món đang dùng" (chọn một trong các món đã có).
     fn selectable(self) -> bool {
-        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet)
+        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet | Category::Bubble | Category::Flower)
     }
 }
 
@@ -62,14 +76,15 @@ pub enum Rarity {
 }
 
 impl Rarity {
-    /// Giá đổi thẳng (PLAN.md 14.2): ~3 ngày / ~1 tuần / ~2 tuần với ~20 kẹo/ngày.
+    /// Giá đổi thẳng: ~3 ngày / ~1 tuần / ~2 tuần với ~200 kẹo/ngày. Đắt gấp 6–30
+    /// lượt gacha (gacha.rs) để quay là đường rẻ, đổi thẳng là đường chắc.
     /// Chỉ test dùng: kiểm mọi món trong CATALOG có giá khớp hạng.
     #[cfg(test)]
     pub fn price(self) -> u32 {
         match self {
-            Rarity::Common => 60,
-            Rarity::Rare => 150,
-            Rarity::Epic => 300,
+            Rarity::Common => 600,
+            Rarity::Rare => 1500,
+            Rarity::Epic => 3000,
         }
     }
 
@@ -98,6 +113,227 @@ pub struct Item {
 
 pub const CATALOG: &[Item] = &[
     Item {
+        id: "skin.matcha",
+        cat: Category::Skin,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Trà xanh", "抹茶", "Matcha"],
+        desc: [
+            "Xanh trà sữa dịu mắt.",
+            "やさしい抹茶ミルク色。",
+            "Soft matcha-latte green.",
+        ],
+        asset: "matcha",
+    },
+    Item {
+        id: "skin.cotton",
+        cat: Category::Skin,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Kẹo bông", "わたあめ", "Cotton candy"],
+        desc: [
+            "Hồng và xanh pastel như kẹo bông.",
+            "ピンクと水色のパステル。",
+            "Pastel pink and sky blue.",
+        ],
+        asset: "cotton",
+    },
+    Item {
+        id: "skin.latte",
+        cat: Category::Skin,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cà phê sữa", "カフェラテ", "Café latte"],
+        desc: [
+            "Nâu kem ấm áp.",
+            "あたたかいミルクブラウン。",
+            "Warm creamy brown.",
+        ],
+        asset: "latte",
+    },
+    Item {
+        id: "skin.neon",
+        cat: Category::Skin,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Đêm neon", "ネオンの夜", "Neon night"],
+        desc: [
+            "Nền tối, viền hồng xanh phát sáng.",
+            "暗い背景に光るピンクと水色。",
+            "Dark with glowing pink and cyan.",
+        ],
+        asset: "neon",
+    },
+    Item {
+        id: "fx.hearts",
+        cat: Category::Effect,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Mưa tim", "ハートの雨", "Heart shower"],
+        desc: [
+            "Tim bay lên khi vuốt đầu và khi lên cấp thân thiết.",
+            "なでなでやなかよしレベルアップでハートが舞います。",
+            "Hearts float up on headpats and friendship level-ups.",
+        ],
+        asset: "hearts",
+    },
+    Item {
+        id: "fx.bubbles",
+        cat: Category::Effect,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Bong bóng xà phòng", "しゃぼん玉", "Soap bubbles"],
+        desc: [
+            "Bong bóng lơ lửng khi pet chào buổi sáng.",
+            "朝のあいさつでしゃぼん玉がふわふわ。",
+            "Bubbles drift up with the morning greeting.",
+        ],
+        asset: "bubbles",
+    },
+    Item {
+        id: "fx.shooting",
+        cat: Category::Effect,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Sao băng", "流れ星", "Shooting star"],
+        desc: [
+            "Sao băng vụt qua khi xong việc sau 22 giờ.",
+            "22時以降にタスクを終えると流れ星。",
+            "A shooting star when you finish a task after 10 pm.",
+        ],
+        asset: "shooting",
+    },
+    Item {
+        id: "bubble.classic",
+        cat: Category::Bubble,
+        rarity: Rarity::Common,
+        price: 0,
+        name: ["Bong bóng hồng", "ピンクの吹き出し", "Pink bubble"],
+        desc: [
+            "Bong bóng thoại quen thuộc.",
+            "いつもの吹き出し。",
+            "The familiar speech bubble.",
+        ],
+        asset: "classic",
+    },
+    Item {
+        id: "bubble.cloud",
+        cat: Category::Bubble,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Đám mây", "くも", "Cloud"],
+        desc: [
+            "Bong bóng mây trắng bồng bềnh.",
+            "ふわふわの白い雲。",
+            "A fluffy white cloud.",
+        ],
+        asset: "cloud",
+    },
+    Item {
+        id: "bubble.heart",
+        cat: Category::Bubble,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Trái tim", "ハート", "Heart"],
+        desc: [
+            "Viền hồng đậm, góc có tim nhỏ.",
+            "濃いピンクの縁に小さなハート。",
+            "Deep pink border with little hearts.",
+        ],
+        asset: "heart",
+    },
+    Item {
+        id: "bubble.lace",
+        cat: Category::Bubble,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Ren gothic", "ゴシックレース", "Gothic lace"],
+        desc: [
+            "Nền tím than, viền ren tím.",
+            "紫紺に紫のレース縁。",
+            "Dark violet with a lace trim.",
+        ],
+        asset: "lace",
+    },
+    Item {
+        id: "bubble.scroll",
+        cat: Category::Bubble,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cuộn giấy", "巻物", "Scroll"],
+        desc: [
+            "Giấy cũ màu kem, chữ nâu.",
+            "クリーム色の古い紙に茶色の文字。",
+            "Cream parchment with brown text.",
+        ],
+        asset: "scroll",
+    },
+    Item {
+        id: "flower.sakura",
+        cat: Category::Flower,
+        rarity: Rarity::Common,
+        price: 0,
+        name: ["Hoa anh đào", "さくら", "Sakura"],
+        desc: [
+            "Bông hoa 🌸 quen thuộc khi bôi chữ.",
+            "文字を選ぶといつもの🌸。",
+            "The familiar 🌸 when you select text.",
+        ],
+        asset: "sakura",
+    },
+    Item {
+        id: "flower.star",
+        cat: Category::Flower,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Ngôi sao", "ほし", "Star"],
+        desc: [
+            "Bôi chữ hiện ngôi sao ⭐.",
+            "文字を選ぶと⭐。",
+            "A ⭐ appears when you select text.",
+        ],
+        asset: "star",
+    },
+    Item {
+        id: "flower.clover",
+        cat: Category::Flower,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cỏ bốn lá", "クローバー", "Clover"],
+        desc: [
+            "Bôi chữ hiện cỏ bốn lá 🍀.",
+            "文字を選ぶと🍀。",
+            "A 🍀 appears when you select text.",
+        ],
+        asset: "clover",
+    },
+    Item {
+        id: "flower.paw",
+        cat: Category::Flower,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Dấu chân mèo", "肉球", "Paw print"],
+        desc: [
+            "Bôi chữ hiện dấu chân 🐾.",
+            "文字を選ぶと🐾。",
+            "A 🐾 appears when you select text.",
+        ],
+        asset: "paw",
+    },
+    Item {
+        id: "flower.snow",
+        cat: Category::Flower,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Bông tuyết", "雪の結晶", "Snowflake"],
+        desc: [
+            "Bôi chữ hiện bông tuyết ❄️.",
+            "文字を選ぶと❄️。",
+            "A ❄️ appears when you select text.",
+        ],
+        asset: "snow",
+    },
+    Item {
         id: "skin.lavender",
         cat: Category::Skin,
         rarity: Rarity::Common,
@@ -110,7 +346,7 @@ pub const CATALOG: &[Item] = &[
         id: "skin.sakura",
         cat: Category::Skin,
         rarity: Rarity::Common,
-        price: 60,
+        price: 600,
         name: ["Hoa anh đào", "さくら", "Sakura"],
         desc: ["Hồng phấn, chữ tím đậm.", "淡いピンクに濃い紫の文字。", "Soft pink with deep-purple text."],
         asset: "sakura",
@@ -119,7 +355,7 @@ pub const CATALOG: &[Item] = &[
         id: "skin.night",
         cat: Category::Skin,
         rarity: Rarity::Common,
-        price: 60,
+        price: 600,
         name: ["Đêm sao", "星空", "Night sky"],
         desc: ["Xanh chàm sang tím than.", "藍色から濃紺へ。", "Indigo fading into deep violet."],
         asset: "night",
@@ -128,7 +364,7 @@ pub const CATALOG: &[Item] = &[
         id: "skin.mint",
         cat: Category::Skin,
         rarity: Rarity::Common,
-        price: 60,
+        price: 600,
         name: ["Bạc hà", "ミント", "Mint"],
         desc: ["Xanh ngọc nhạt, mát mắt.", "さわやかなミントグリーン。", "Cool, pale mint green."],
         asset: "mint",
@@ -137,7 +373,7 @@ pub const CATALOG: &[Item] = &[
         id: "skin.sunset",
         cat: Category::Skin,
         rarity: Rarity::Common,
-        price: 60,
+        price: 600,
         name: ["Hoàng hôn", "夕焼け", "Sunset"],
         desc: ["Cam đào sang tím hồng.", "桃色の橙から藤色へ。", "Peach orange into rosy violet."],
         asset: "sunset",
@@ -146,7 +382,7 @@ pub const CATALOG: &[Item] = &[
         id: "skin.ocean",
         cat: Category::Skin,
         rarity: Rarity::Common,
-        price: 60,
+        price: 600,
         name: ["Biển", "海", "Ocean"],
         desc: ["Xanh biển sâu.", "深い海の青。", "Deep sea blue."],
         asset: "ocean",
@@ -155,7 +391,7 @@ pub const CATALOG: &[Item] = &[
         id: "fx.fireworks",
         cat: Category::Effect,
         rarity: Rarity::Rare,
-        price: 150,
+        price: 1500,
         name: ["Pháo hoa", "花火", "Fireworks"],
         desc: [
             "Bắn pháo hoa khi xong hết việc trong ngày.",
@@ -168,7 +404,7 @@ pub const CATALOG: &[Item] = &[
         id: "fx.confetti",
         cat: Category::Effect,
         rarity: Rarity::Rare,
-        price: 150,
+        price: 1500,
         name: ["Pháo giấy", "紙吹雪", "Confetti"],
         desc: [
             "Tung pháo giấy khi xong một phiên Tập trung.",
@@ -181,7 +417,7 @@ pub const CATALOG: &[Item] = &[
         id: "fx.petals",
         cat: Category::Effect,
         rarity: Rarity::Rare,
-        price: 150,
+        price: 1500,
         name: ["Mưa hoa anh đào", "桜吹雪", "Sakura shower"],
         desc: [
             "Cánh hoa anh đào rơi mỗi lần xong một việc.",
@@ -207,7 +443,7 @@ pub const CATALOG: &[Item] = &[
         id: "side.neko",
         cat: Category::SideSet,
         rarity: Rarity::Epic,
-        price: 300,
+        price: 3000,
         name: ["Neko Lounge", "ネコラウンジ", "Neko Lounge"],
         desc: [
             "Cô mèo gothic tím và cô mèo punk áo hoodie tai mèo tựa bên các khung của app.",
@@ -220,7 +456,7 @@ pub const CATALOG: &[Item] = &[
         id: "side.fox",
         cat: Category::SideSet,
         rarity: Rarity::Epic,
-        price: 300,
+        price: 3000,
         name: ["Hồ ly", "狐の社", "Fox Lounge"],
         desc: [
             "Cô hồ ly miko chuông vàng và cô hồ ly steampunk tựa bên các khung của app.",
@@ -233,7 +469,7 @@ pub const CATALOG: &[Item] = &[
         id: "side.snow",
         cat: Category::SideSet,
         rarity: Rarity::Epic,
-        price: 300,
+        price: 3000,
         name: ["Xứ Tuyết", "雪の国", "Snow Lounge"],
         desc: [
             "Cô mèo băng pha lê, cô thỏ tuyết và cáo tuyết tựa bên các khung của app.",
@@ -288,14 +524,25 @@ pub struct Collection {
     pub side_set: String,
     #[serde(default = "default_miu_set")]
     pub miu_set: String,
+    #[serde(default = "default_bubble")]
+    pub bubble: String,
+    #[serde(default = "default_flower")]
+    pub flower: String,
     /// Hiệu ứng đã mua và đang bật.
     #[serde(default)]
     pub effects_on: Vec<String>,
-    /// Phase 19 (gacha): số lượt chưa ra Hiếm+, và mảnh từ món trùng.
+    /// Gacha (gacha.rs): số lượt liền chưa ra Hiếm+ / chưa ra Sử thi, tổng lượt, lịch sử.
     #[serde(default)]
     pub pity: u32,
     #[serde(default)]
-    pub fragments: u32,
+    pub epic_pity: u32,
+    #[serde(default)]
+    pub pulls: u32,
+    #[serde(default)]
+    pub history: Vec<crate::gacha::HistEntry>,
+    /// Phiên bản bảng giá. File cũ (0) có kẹo theo giá ×1 → `migrate` nhân 10.
+    #[serde(default)]
+    pub econ: u32,
 }
 
 fn default_skin() -> String {
@@ -306,6 +553,12 @@ fn default_side_set() -> String {
 }
 fn default_miu_set() -> String {
     "miu.classic".into()
+}
+fn default_bubble() -> String {
+    "bubble.classic".into()
+}
+fn default_flower() -> String {
+    "flower.sakura".into()
 }
 
 impl Default for Collection {
@@ -318,16 +571,22 @@ impl Default for Collection {
             skin: default_skin(),
             side_set: default_side_set(),
             miu_set: default_miu_set(),
+            bubble: default_bubble(),
+            flower: default_flower(),
             effects_on: Vec::new(),
             pity: 0,
-            fragments: 0,
+            epic_pity: 0,
+            pulls: 0,
+            history: Vec::new(),
+            econ: ECON,
         }
     }
 }
 
 // ─── Kiếm kẹo ────────────────────────────────────────────────────────────────
 
-/// Kẹo mỗi điểm thân thiết. Tất cả ×1; muốn game cho nhiều hơn chỉ đổi một số.
+/// Kẹo mỗi điểm thân thiết. Tất cả ×10 (bảng giá v2: giá ×10 để gacha 100 🍬/lượt
+/// rẻ hơn đổi thẳng); muốn game cho nhiều hơn chỉ đổi một số.
 pub fn candy_mult(ev: Event) -> u32 {
     match ev {
         Event::Present
@@ -336,12 +595,28 @@ pub fn candy_mult(ev: Event) -> u32 {
         | Event::Chat
         | Event::Headpat
         | Event::Game
-        | Event::Named => 1,
+        | Event::Named => 10,
     }
 }
 
 /// Thưởng thêm chỉ bằng kẹo cho mỗi cột mốc thân thiết (quen N ngày, chuỗi, lên cấp, sinh nhật).
-pub const MILESTONE_BONUS: u32 = 20;
+pub const MILESTONE_BONUS: u32 = 200;
+
+/// Phiên bản bảng giá hiện tại. 2 = giá và kẹo ×10 (thêm gacha).
+pub const ECON: u32 = 2;
+
+/// File collection.json từ trước khi có gacha: kẹo theo giá cũ → nhân 10 để giữ
+/// nguyên sức mua. Trả true nếu có đổi. Gọi mỗi lần đọc file (idempotent nhờ `econ`).
+pub fn migrate(c: &mut Collection) -> bool {
+    if c.econ >= ECON {
+        return false;
+    }
+    c.candy = c.candy.saturating_mul(10);
+    c.earned_total = c.earned_total.saturating_mul(10);
+    c.spent_total = c.spent_total.saturating_mul(10);
+    c.econ = ECON;
+    true
+}
 
 /// Các sự kiện lặp lại hằng ngày (Named chỉ một lần trong đời, không tính vào trần ngày).
 const DAILY_EVENTS: [Event; 6] =
@@ -451,6 +726,8 @@ pub fn select(c: &mut Collection, cat: Category, id: &str) -> Result<&'static It
         Category::Skin => &mut c.skin,
         Category::SideSet => &mut c.side_set,
         Category::MiuSet => &mut c.miu_set,
+        Category::Bubble => &mut c.bubble,
+        Category::Flower => &mut c.flower,
         _ => unreachable!("selectable() đã lọc"),
     };
     *slot = it.id.to_string();
@@ -490,6 +767,8 @@ pub fn selected(c: &Collection, cat: Category) -> &'static Item {
         Category::Skin => &c.skin,
         Category::SideSet => &c.side_set,
         Category::MiuSet => &c.miu_set,
+        Category::Bubble => &c.bubble,
+        Category::Flower => &c.flower,
         _ => return default_of(cat),
     };
     item(id).filter(|it| it.cat == cat && owns(c, it)).unwrap_or_else(|| default_of(cat))
@@ -510,6 +789,14 @@ pub fn miu_ext(dir: &str) -> &'static str {
 
 pub fn effective_miu_ext(c: &Collection) -> &'static str {
     miu_ext(effective_miu_dir(c))
+}
+
+pub fn effective_bubble(c: &Collection) -> &'static str {
+    selected(c, Category::Bubble).asset
+}
+
+pub fn effective_flower(c: &Collection) -> &'static str {
+    selected(c, Category::Flower).asset
 }
 
 pub fn effective_side_set(c: &Collection) -> &'static str {
@@ -569,7 +856,12 @@ mod glue {
             "sideSet": effective_side_set(&c),
             "miuDir": effective_miu_dir(&c),
             "miuExt": effective_miu_ext(&c),
+            // Kiểu bong bóng thoại (cửa sổ pet) và biểu tượng khi bôi chữ (bông hoa).
+            "bubble": effective_bubble(&c),
+            "flower": effective_flower(&c),
             "items": catalog_json(&c, lang_idx),
+            // 🎰 Candy Capsule: giá, tỉ lệ, bảo hiểm, lịch sử.
+            "gacha": crate::gacha::view_json(&c, lang_idx),
             // Bunny Lounge đang tắt thì trang nhắc bật trong Cài đặt.
             "sideGirls": s.side_girls,
             // Bản dev (npm run dev): trang hiện nút thử +1000 kẹo / mở hết.
@@ -647,7 +939,7 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), items().count(), "id trùng");
-        for cat in [Category::Skin, Category::SideSet, Category::MiuSet] {
+        for cat in [Category::Skin, Category::SideSet, Category::MiuSet, Category::Bubble, Category::Flower] {
             let free = items().filter(|i| i.cat == cat && i.price == 0).count();
             assert_eq!(free, 1, "{cat:?} phải có đúng một món mặc định");
         }
@@ -661,6 +953,8 @@ mod tests {
                 Category::MiuSet => "miu.",
                 Category::Effect => "fx.",
                 Category::LinePack => "lines.",
+                Category::Bubble => "bubble.",
+                Category::Flower => "flower.",
             }));
             assert_eq!(Category::from_code(it.cat.code()), Some(it.cat));
         }
@@ -684,12 +978,12 @@ mod tests {
 
     #[test]
     fn candy_follows_bond_points() {
-        assert_eq!(max_daily_candy(), 35);
+        assert_eq!(max_daily_candy(), 350);
         let mut c = Collection::default();
-        assert_eq!(earn(&mut c, Event::TaskDone, 2), 2);
+        assert_eq!(earn(&mut c, Event::TaskDone, 2), 20);
         assert_eq!(earn(&mut c, Event::Present, 0), 0);
-        assert_eq!(grant(&mut c, MILESTONE_BONUS), 20);
-        assert_eq!((c.candy, c.earned_total), (22, 22));
+        assert_eq!(grant(&mut c, MILESTONE_BONUS), 200);
+        assert_eq!((c.candy, c.earned_total), (220, 220));
         let before = c.clone();
         earn(&mut c, Event::Game, 0);
         assert_eq!(c, before, "gain 0 không đổi gì");
@@ -702,18 +996,18 @@ mod tests {
         award(&mut b, Event::TaskDone, 100);
         award(&mut b, Event::Present, 100);
         award(&mut b, Event::Named, 100);
-        assert_eq!(earned_today(&b, 100), 7, "Named không tính vào kẹo ngày");
+        assert_eq!(earned_today(&b, 100), 70, "Named không tính vào kẹo ngày");
         assert_eq!(earned_today(&b, 101), 0);
     }
 
     #[test]
     fn buying() {
         let mut c = Collection::default();
-        assert_eq!(buy(&mut c, "skin.sakura"), Err(BuyError::NotEnough { need: 60 }));
+        assert_eq!(buy(&mut c, "skin.sakura"), Err(BuyError::NotEnough { need: 600 }));
         assert_eq!(c, Collection::default(), "thất bại không đổi gì");
-        c.candy = 100;
+        c.candy = 1000;
         assert_eq!(buy(&mut c, "skin.sakura").map(|i| i.id), Ok("skin.sakura"));
-        assert_eq!((c.candy, c.spent_total), (40, 60));
+        assert_eq!((c.candy, c.spent_total), (400, 600));
         assert_eq!(buy(&mut c, "skin.sakura"), Err(BuyError::AlreadyOwned));
         assert_eq!(buy(&mut c, "skin.lavender"), Err(BuyError::AlreadyOwned), "món mặc định luôn có");
         assert_eq!(buy(&mut c, "skin.nope"), Err(BuyError::NotFound));
@@ -727,7 +1021,7 @@ mod tests {
         assert_eq!(select(&mut c, Category::Skin, "fx.confetti"), Err(SelectError::WrongCategory));
         assert_eq!(select(&mut c, Category::Effect, "fx.confetti"), Err(SelectError::WrongCategory));
         assert_eq!(select(&mut c, Category::Skin, "x"), Err(SelectError::NotFound));
-        c.candy = 500;
+        c.candy = 5000;
         buy(&mut c, "skin.sakura").unwrap();
         assert!(select(&mut c, Category::Skin, "skin.sakura").is_ok());
         assert_eq!(effective_skin(&c), "sakura");
@@ -751,7 +1045,7 @@ mod tests {
         assert_eq!(miu_ext("media/miu/snow"), "webp");
         let mut c = Collection::default();
         assert_eq!(effective_miu_ext(&c), "png");
-        c.candy = 150;
+        c.candy = 1500;
         buy(&mut c, "miu.snow").unwrap();
         select(&mut c, Category::MiuSet, "miu.snow").unwrap();
         assert_eq!((effective_miu_dir(&c), effective_miu_ext(&c)), ("media/miu/snow", "webp"));
@@ -778,14 +1072,26 @@ mod tests {
         assert_eq!(effective_side_set(&c), "bunny");
         assert_eq!(effective_miu_dir(&c), "media/game");
         assert!(!effect_on(&c, "fireworks"));
-        let parsed: Collection = serde_json::from_str("{}").unwrap();
+        let mut parsed: Collection = serde_json::from_str("{}").unwrap();
+        assert_eq!(parsed.econ, 0, "file cũ chưa có bảng giá");
+        migrate(&mut parsed);
         assert_eq!(parsed, Collection::default());
+    }
+
+    #[test]
+    fn old_files_keep_their_buying_power() {
+        let mut c: Collection = serde_json::from_str(r#"{"candy":120,"earned_total":300,"spent_total":180,"owned":["skin.sakura"]}"#).unwrap();
+        assert!(migrate(&mut c));
+        assert_eq!((c.candy, c.earned_total, c.spent_total, c.econ), (1200, 3000, 1800, ECON));
+        assert!(!migrate(&mut c), "chỉ nhân một lần");
+        assert_eq!(c.candy, 1200);
+        assert!(!migrate(&mut Collection::default()), "người mới không bị nhân");
     }
 
     #[test]
     fn catalog_json_marks_state() {
         let mut c = Collection::default();
-        c.candy = 60;
+        c.candy = 600;
         buy(&mut c, "skin.sakura").unwrap();
         let v = catalog_json(&c, 2);
         let items = v.as_array().unwrap();

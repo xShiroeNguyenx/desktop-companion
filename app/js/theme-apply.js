@@ -1,10 +1,10 @@
 // Giao diện theo bộ nhân vật đang dùng (🍬 Bộ sưu tập), dùng chung cho Cài đặt,
 // Công việc và Trợ lý văn bản: Xứ Tuyết → theme-snow.css, Neko Lounge →
-// theme-gothic.css. Chỉ khi Bunny Lounge đang bật (tắt thì không thấy nhân vật
-// nào, giữ giao diện mặc định). Đổi bộ / bật tắt → sự kiện collection-changed.
+// theme-gothic.css, Hồ ly → theme-fox.css. Chỉ khi Bunny Lounge đang bật (tắt
+// thì không thấy nhân vật nào, giữ giao diện mặc định). Đổi bộ / bật tắt → sự kiện collection-changed.
 // Nạp SAU tauri-api.js. Thêm giao diện mới: thêm một dòng vào THEMES + file CSS.
 (function () {
-  const THEMES = { snow: 'snow', neko: 'gothic' };
+  const THEMES = { snow: 'snow', neko: 'gothic', fox: 'fox' };
   const DC = window.DC;
   if (!DC) return;
 

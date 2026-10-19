@@ -6,6 +6,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-10-19
+
+### Added
+- **🎰 Candy Capsule.** A capsule machine in the Collection window: 100 🍬 for
+  one spin or 1000 🍬 for ten, across every item in the Collection. Drop rates
+  are shown right on the machine (Common 65%, Rare 25%, Epic 10%). The 10th
+  spin without a Rare or better is always Rare or better, and the 50th without
+  an Epic is always Epic. Duplicates refund 10% of the item's price. Each spin
+  shakes the bunny machine and drops a capsule; it then bursts open in the
+  colour of the best item: a pink pop for Common, violet rays and stars for
+  Rare, and a white flash, golden rays, falling confetti and a glowing
+  "EPIC!" for Epic, with the prize popping out of the capsule. Click to skip.
+  The window now has three parts: Candy Capsule, the Candy shop (trade
+  directly, as before) and a History of your last 50 spins. Still free, still
+  never sold for real money.
+- **Four more widget skins:** Matcha, Cotton candy, Café latte and Neon night.
+- **Three more reward effects:** a heart shower on headpats and friendship
+  level-ups, soap bubbles with the morning greeting, and a shooting star
+  (instead of sakura petals) when you finish a task after 10 pm.
+- **💬 Speech bubbles.** A new Collection group that changes how the pet's
+  speech bubble looks: Cloud, Heart, Gothic lace and Scroll.
+- **🌸 Selection flower.** A new Collection group that swaps the 🌸 shown when
+  you select text for a ⭐, 🍀, 🐾 or ❄️.
+- **🦊 Fox shrine panels.** With the Hồ ly character set, Settings, Tasks, the
+  text assistant and every other window turn crimson with cream cards, gold
+  borders and sleeping foxes, lanterns and torii gates in the corners, like the
+  existing Snow and Gothic looks.
+
+### Changed
+- **New candy scale.** Everything earns 10× more candy (a milestone is now
+  +200 🍬), and shop prices are 10× higher (600 / 1500 / 3000 🍬), so
+  spinning is the cheap road and trading is the sure one. Candy you already
+  had is multiplied by 10 once, so it buys exactly what it bought before.
+
 ## [0.9.2] - 2026-10-19
 
 ### Added

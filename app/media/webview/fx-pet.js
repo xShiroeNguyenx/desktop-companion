@@ -77,11 +77,60 @@ function petals(root) {
   }
 }
 
-/** @param {'confetti'|'fireworks'|'petals'} kind */
+/** Tim bay lên từ quanh pet (vuốt đầu, lên cấp thân thiết). */
+function hearts(root) {
+  const n = reduced() ? 3 : 12;
+  const glyphs = ['💗', '💖', '💕', '💞'];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'fx-heart';
+    s.textContent = glyphs[i % glyphs.length];
+    s.style.left = (25 + Math.random() * 50) + '%';
+    s.style.animationDelay = (Math.random() * 0.5).toFixed(2) + 's';
+    s.style.setProperty('--dx', (Math.random() * 80 - 40).toFixed(0) + 'px');
+    root.appendChild(s);
+    drop(s, 2800);
+  }
+}
+
+/** Bong bóng xà phòng lơ lửng bay lên (chào buổi sáng). */
+function bubbles(root) {
+  const n = reduced() ? 4 : 14;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'fx-bubble';
+    const d = 12 + Math.random() * 22;
+    s.style.width = s.style.height = d.toFixed(0) + 'px';
+    s.style.left = (10 + Math.random() * 80) + '%';
+    s.style.animationDelay = (Math.random() * 0.9).toFixed(2) + 's';
+    s.style.setProperty('--dx', (Math.random() * 60 - 30).toFixed(0) + 'px');
+    root.appendChild(s);
+    drop(s, 4400);
+  }
+}
+
+/** Một (hai) sao băng vụt qua phía trên pet (xong việc ban đêm). */
+function shooting(root) {
+  const n = reduced() ? 1 : 2;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'fx-star';
+    s.style.left = (55 + Math.random() * 35) + '%';
+    s.style.top = (5 + Math.random() * 20) + '%';
+    s.style.animationDelay = (i * 0.45).toFixed(2) + 's';
+    root.appendChild(s);
+    drop(s, 2000);
+  }
+}
+
+/** @param {'confetti'|'fireworks'|'petals'|'hearts'|'bubbles'|'shooting'} kind */
 export function playFx(kind) {
   const root = host();
   if (!root) return;
   if (kind === 'confetti') confetti(root);
   else if (kind === 'fireworks') fireworks(root);
   else if (kind === 'petals') petals(root);
+  else if (kind === 'hearts') hearts(root);
+  else if (kind === 'bubbles') bubbles(root);
+  else if (kind === 'shooting') shooting(root);
 }

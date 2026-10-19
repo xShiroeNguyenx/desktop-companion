@@ -611,6 +611,8 @@ fn milestone_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<St
         "streak" => lines::line(Key::StreakMilestone, a, &[("days", n)]),
         "bday" => lines::line(Key::Birthday, a, &[]),
         "level" => {
+            // Lên cấp thân thiết: mưa tim nếu đã mở.
+            crate::collection::fx(app, "hearts");
             let name = crate::bond::level_name(n.parse().ok()?, a.lang);
             lines::line(Key::LevelUp, a, &[("level", name)])
         }
@@ -900,6 +902,8 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
     let a = persona::address(&settings);
     match c.kind {
         Kind::Welcome if c.tag == "daily" => {
+            // Chào đầu ngày: bong bóng xà phòng nếu đã mở trong Bộ sưu tập.
+            crate::collection::fx(app, "bubbles");
             return Some((daily_greeting_line(app, &a, now_secs()), Some("happy".into())));
         }
         Kind::Milestone => {

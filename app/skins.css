@@ -92,3 +92,55 @@ body[data-skin="ocean"] .card {
   --w-line: rgba(255, 255, 255, 0.35);
   --w-shadow: 0 1px 2px rgba(0, 20, 40, 0.5);
 }
+
+body[data-skin="matcha"] .card {
+  --w-panel: rgba(255, 255, 255, 0.4);
+  --w-bg-a: rgba(214, 232, 196, 0.88);
+  --w-bg-b: rgba(178, 210, 160, 0.88);
+  --w-ink: #2f4a26;
+  --w-ink-soft: #5f7a52;
+  --w-accent: #6aa84f;
+  --w-gold: #a06b00;
+  --w-chip: rgba(255, 255, 255, 0.42);
+  --w-line: rgba(255, 255, 255, 0.8);
+  --w-shadow: none;
+}
+
+body[data-skin="cotton"] .card {
+  --w-panel: rgba(255, 255, 255, 0.42);
+  --w-bg-a: rgba(255, 206, 230, 0.88);
+  --w-bg-b: rgba(190, 226, 255, 0.88);
+  --w-ink: #4a3a6a;
+  --w-ink-soft: #7d6c9c;
+  --w-accent: #ff6fb2;
+  --w-gold: #b46b00;
+  --w-chip: rgba(255, 255, 255, 0.45);
+  --w-line: rgba(255, 255, 255, 0.85);
+  --w-shadow: none;
+}
+
+body[data-skin="latte"] .card {
+  --w-panel: rgba(255, 255, 255, 0.35);
+  --w-bg-a: rgba(236, 214, 190, 0.9);
+  --w-bg-b: rgba(204, 168, 132, 0.9);
+  --w-ink: #4a2f1e;
+  --w-ink-soft: #7a5a44;
+  --w-accent: #b0703c;
+  --w-gold: #8a4b00;
+  --w-chip: rgba(255, 255, 255, 0.38);
+  --w-line: rgba(255, 255, 255, 0.75);
+  --w-shadow: none;
+}
+
+body[data-skin="neon"] .card {
+  --w-panel: rgba(0, 0, 0, 0.35);
+  --w-bg-a: rgba(16, 12, 30, 0.9);
+  --w-bg-b: rgba(30, 14, 44, 0.9);
+  --w-ink: #f4f0ff;
+  --w-ink-soft: #a9a0cc;
+  --w-accent: #ff3fa4;
+  --w-gold: #39e6ff;
+  --w-chip: rgba(255, 255, 255, 0.07);
+  --w-line: rgba(255, 63, 164, 0.6);
+  --w-shadow: 0 0 6px rgba(255, 63, 164, 0.45);
+}

@@ -19,7 +19,8 @@
   // Nháy một ký tự lên bông hoa để báo kết quả, rồi trả lại 🌸.
   function flash(glyph) {
     btn.textContent = glyph;
-    setTimeout(() => { btn.textContent = '🌸'; }, 600);
+    // Trả lại biểu tượng đang dùng (Bộ sưu tập → Bông hoa; js/deco-apply.js).
+    setTimeout(() => { btn.textContent = window.__FLOWER_GLYPH__ || '🌸'; }, 600);
   }
 
   btn.addEventListener('mousedown', () => {

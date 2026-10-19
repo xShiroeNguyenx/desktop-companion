@@ -860,7 +860,8 @@ Settings.
 | **v0.8.0** ✅ (phát hành 2026-10-16) | Mục 13 (Phase 14 + 15 + 16): hiệu ứng thời tiết toàn màn hình, theo mùa & giờ, thời tiết thật (Open-Meteo), thẻ dự báo, widget ghim, pet nói về thời tiết + bản tin sáng; nhóm ☁️ Thời tiết trên menu tròn; Bunny Lounge thêm thẻ thời tiết + trang Mini Games | Xem CHANGELOG [0.8.0] |
 | **v0.9.0** ✅ (phát hành 2026-10-16) | Lịch tháng ghim trên desktop: âm lịch Việt Nam (múi +7), ngày lễ, chấm hạn chót task, thêm việc theo ngày, Miu mini; mở từ khay, 💞 → 📅, Cài đặt. Sửa pet nằm ngoài màn hình khi rút màn hình phụ, autostart trỏ nhầm bản dev; ảnh mới cho nhân vật thẻ thời tiết + Mini Games | Xem CHANGELOG [0.9.0] |
 | **v0.9.1** ✅ (phát hành 2026-10-16) | Pet nói về lịch (ngày lễ, Rằm, mùng 1, nhắc tối hôm trước; lunar.rs, calendar_talk.json); sinh nhật 🎂 trên lịch; đồng hồ ghim có giờ thế giới (tối đa 2 múi) + hàng 🍅 Tập trung; khung widget chung pin_widget.rs; nhóm 🧩 Widget trong Cài đặt + Xếp gọn; 4 biểu cảm Miu mới; test dịch thử mọi file JS | Xem CHANGELOG [0.9.1] |
-| **v0.9.2** (chuẩn bị phát hành 2026-10-19) | Mục 14 Phase 17: 🍬 kẹo (collection.json, cộng song song điểm thân thiết), cửa sổ Bộ sưu tập, 5 skin widget, 3 hiệu ứng (pháo hoa, mưa hoa anh đào, pháo giấy), đổi bộ nhân vật + bộ mặt Miu lúc chạy. Nội dung Phase 18: Bunny Lounge còn 2 cô thỏ; bộ nhân vật 🐱 Neko Lounge, 🦊 Hồ ly, ❄️ Xứ Tuyết; bộ Miu ❄️ tuyết, 🦇 Gothic (miu_sets.rs); giao diện ❄️ băng tuyết / 🦇 Gothic Lolita áp cho mọi khung (theme-apply.js, theme-snow/gothic/pages.css); nhân vật bám mép cả Bộ sưu tập; Miu trong game theo bộ đã chọn | Xem CHANGELOG [0.9.2] |
+| **v0.9.2** ✅ (phát hành 2026-10-19) | Mục 14 Phase 17: 🍬 kẹo (collection.json, cộng song song điểm thân thiết), cửa sổ Bộ sưu tập, 5 skin widget, 3 hiệu ứng (pháo hoa, mưa hoa anh đào, pháo giấy), đổi bộ nhân vật + bộ mặt Miu lúc chạy. Nội dung Phase 18: Bunny Lounge còn 2 cô thỏ; bộ nhân vật 🐱 Neko Lounge, 🦊 Hồ ly, ❄️ Xứ Tuyết; bộ Miu ❄️ tuyết, 🦇 Gothic (miu_sets.rs); giao diện ❄️ băng tuyết / 🦇 Gothic Lolita áp cho mọi khung (theme-apply.js, theme-snow/gothic/pages.css); nhân vật bám mép cả Bộ sưu tập; Miu trong game theo bộ đã chọn | Xem CHANGELOG [0.9.2] |
+| **v0.9.3** (chuẩn bị phát hành 2026-10-19) | Mục 14 Phase 19: 🎰 Candy Capsule (gacha.rs, collection_pull, js/gacha-fx.js: máy SVG, hoạt cảnh theo hạng), bảng giá v2 (giá ×10, kẹo ×10, `migrate` nhân kẹo cũ), 3 chế độ cửa sổ (Capsule · Cửa hàng · Lịch sử). Thêm món chỉ-code: 4 skin, 3 hiệu ứng (mưa tim, bong bóng, sao băng), nhóm 💬 Bong bóng thoại + 🌸 Bông hoa (deco-apply.js). Giao diện 🦊 đền hồ ly (theme-fox.css) | Xem CHANGELOG [0.9.3] |
 
 Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
 / "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).
@@ -1180,7 +1181,7 @@ Tất cả `#[serde(default = …)]`. Nhãn mới có đủ vi / ja / en.
 
 ## 14. 🍬 Kẹo · Bộ sưu tập · Gacha (Phase 17–19)
 
-> Kế hoạch duyệt ngày 2026-10-17. **Phase 17 đã code (2026-10-18), phát hành ở v0.9.2**, kèm 2 món đầu của Phase 18 (bộ nhân vật ❄️ Xứ Tuyết, 🐱 Neko Lounge (kèm giao diện Cài đặt Gothic Lolita) và 🦊 Hồ ly tách từ Bunny Lounge, bộ ❄️ Miu tuyết, bộ 🦇 Miu Gothic). Phase 19 (gacha) chưa làm. Thêm bộ Miu mới: xem hướng dẫn đầu file `src-tauri/src/miu_sets.rs`.
+> Kế hoạch duyệt ngày 2026-10-17. **Phase 17 đã code (2026-10-18), phát hành ở v0.9.2**, kèm 2 món đầu của Phase 18 (bộ nhân vật ❄️ Xứ Tuyết, 🐱 Neko Lounge (kèm giao diện Cài đặt Gothic Lolita) và 🦊 Hồ ly tách từ Bunny Lounge, bộ ❄️ Miu tuyết, bộ 🦇 Miu Gothic). **Phase 19 (gacha) đã code (2026-10-19), phát hành ở v0.9.3**, cùng bảng giá v2 (mục 14.2) và các món chỉ-code (skin, hiệu ứng, Bong bóng thoại, Bông hoa). Thêm bộ Miu mới: xem hướng dẫn đầu file `src-tauri/src/miu_sets.rs`.
 
 ### 14.1 Mục tiêu & nguyên tắc
 
@@ -1225,6 +1226,11 @@ Thưởng thêm chỉ bằng kẹo: mỗi **cột mốc** (`bond::Milestone`) **
 **Giá** (người dùng ~20 🍬/ngày): Thường **60** (~3 ngày, skin) · Hiếm **150** (~1 tuần, hiệu ứng,
 bộ mặt Miu, bộ câu) · Sử thi **300** (~2 tuần, bộ nhân vật 5 ảnh). 20 món đầu ≈ 3000 🍬 ≈ 5 tháng.
 Test chặn giá vô lý: `price ≤ 30 × max_daily_candy()`.
+
+**Bảng giá v2 (v0.9.3, khi thêm gacha):** mọi con số trên **×10**: hệ số kẹo ×10 (tối đa 350/ngày),
+cột mốc **+200**, giá **600 / 1500 / 3000**. Nhịp mở đồ khi đổi thẳng giữ nguyên; gacha 100 🍬/lượt
+thành đường rẻ. File cũ có `econ = 0` → `collection::migrate` nhân kẹo (cùng `earned_total`,
+`spent_total`) ×10 đúng một lần lúc đọc, để kẹo đang có giữ nguyên sức mua.
 
 **Không làm:** bán kẹo, quảng cáo, nhiệm vụ "mở app N lần", trừ kẹo khi bỏ bê, khoá chức năng.
 
@@ -1293,7 +1299,8 @@ pub struct Collection {          // mọi trường #[serde(default)]
     pub side_set: String,        // default "side.bunny"
     pub miu_set: String,         // default "miu.classic"
     pub effects_on: Vec<String>,
-    pub pity: u32, pub fragments: u32,   // Phase 19, vô hại từ bây giờ
+    pub pity: u32, pub epic_pity: u32, pub pulls: u32,   // Phase 19 (gacha.rs)
+    pub history: Vec<HistEntry>, pub econ: u32,           // lịch sử quay, phiên bản bảng giá
 }
 ```
 
@@ -1353,6 +1360,17 @@ Miu · Hiệu ứng; đầu trang 🍬 số dư + hôm nay + cách kiếm), `app
 `priceLabel`, `rarityClass`, `sortItems`) + test.
 
 ### 14.6 Gacha (Phase 19) — `gacha.rs` thuần, `rand` truyền vào
+
+> **Bản đã làm (v0.9.3) khác kế hoạch dưới đây:** 1 lượt **100 🍬**, 10 lượt **1000 🍬** (theo bảng
+> giá v2); tỉ lệ **65 / 25 / 10**; trùng **hoàn 10% giá bằng kẹo** (60 / 150 / 300), không có mảnh
+> và `craft`; thêm bảo hiểm Sử thi ở lượt **50**; lịch sử 50 lượt (`HistEntry`). Nguồn ngẫu nhiên
+> `gacha::rng()` (SplitMix64, không thêm crate). Hoạt cảnh ở `app/js/gacha-fx.js`: máy capsule thỏ
+> vẽ SVG; capsule bung theo hạng cao nhất (Thường lóe hồng · Hiếm tia tím + sao · Sử thi chớp trắng,
+> tia vàng, confetti, chữ "SỬ THI!"), món trúng bật ra; bấm để bỏ qua; tôn trọng
+> prefers-reduced-motion. Miu đứng cạnh máy dùng ảnh tĩnh, chưa đổi biểu cảm theo kết quả.
+
+Kế hoạch gốc:
+
 
 - 1 lượt **30 🍬** (rẻ hơn đổi thẳng 2–10 lần, đổi lại may rủi). Đổi thẳng vẫn luôn có.
 - Tỉ lệ Thường 70 · Hiếm 25 · Sử thi 5; quay trong toàn bộ catalog trừ món giá 0.

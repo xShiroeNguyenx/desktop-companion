@@ -130,10 +130,18 @@
 - **🍬 Candy & Collection** — finished tasks, focus sessions, chat, headpats
   and game wins also earn candy (same daily caps as friendship points). Trade it
   in the 🍬 Collection (💞 → 🍬 on the ring) for widget skins, reward effects
-  (fireworks, sakura shower, confetti), character sets (🐰 Bunny, 🐱 Neko,
-  🦊 Fox, ❄️ Snow Lounge) and Miu face sets (❄️ Snow, 🦇 Gothic). Snow Lounge
-  and Neko Lounge also restyle every panel (icy blue / gothic lolita).
-  Decorations only; never sold for real money.
+  (fireworks, sakura shower, confetti, heart shower, soap bubbles, shooting
+  star), speech-bubble styles, the flower shown when you select text,
+  character sets (🐰 Bunny, 🐱 Neko, 🦊 Fox, ❄️ Snow Lounge) and Miu face sets
+  (❄️ Snow, 🦇 Gothic). Snow, Neko and Fox Lounge also restyle every panel
+  (icy blue / gothic lolita / fox shrine). Decorations only; never sold for
+  real money.
+- **🎰 Candy Capsule** — spin the bunny capsule machine in the Collection:
+  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 65% ·
+  Rare 25% · Epic 10%). Every 10th spin without a Rare is a sure Rare, every
+  50th without an Epic a sure Epic, and duplicates refund candy. Rare and
+  Epic capsules burst open with their own light show. Trading directly in
+  the shop always stays available.
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
   calendar, the clock and the weather widget, picks the extra clocks, and
   🧹 tidies every pinned widget into a column on the right.

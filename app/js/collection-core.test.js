@@ -68,3 +68,37 @@ test('ô xem trước: mọi skin trong skins.css có swatch, ảnh đại diệ
   assert.equal(C.rarityClass('epic'), 'r-epic');
   assert.equal(C.rarityClass('zzz'), 'r-common');
 });
+
+test('nút quay: đủ kẹo / thiếu / máy khoá', () => {
+  assert.deepEqual(C.pullState(100, 250, true, 'vi'), { ok: true, label: '' });
+  assert.deepEqual(C.pullState(1000, 250, true, 'vi'), { ok: false, label: 'Thiếu 750 🍬' });
+  assert.equal(C.pullState(100, 9999, false, 'en').ok, false);
+});
+
+test('tóm tắt kết quả quay', () => {
+  const res = [
+    { rarity: 'common', dup: true, refund: 60 },
+    { rarity: 'epic', dup: false, refund: 0 },
+    { rarity: 'rare', dup: true, refund: 150 },
+  ];
+  assert.deepEqual(C.summarize(res), { fresh: 1, refund: 210, best: 'epic' });
+  assert.deepEqual(C.summarize([]), { fresh: 0, refund: 0, best: 'common' });
+});
+
+test('món nổi bật: chưa có trước, hiếm trước, có ảnh trước, bỏ món có sẵn', () => {
+  const items = [
+    item({ id: 'skin.a', price: 600 }),
+    item({ id: 'side.x', cat: 'side_set', rarity: 'epic', price: 3000, owned: true }),
+    item({ id: 'fx.a', cat: 'effect', rarity: 'rare', price: 1500 }),
+    item({ id: 'miu.a', cat: 'miu_set', rarity: 'rare', price: 1500 }),
+    item({ id: 'skin.free', price: 0 }),
+  ];
+  assert.deepEqual(C.featured(items, 3).map((i) => i.id), ['miu.a', 'fx.a', 'skin.a']);
+  assert.equal(C.featured(items).length, 4);
+});
+
+test('giờ trong lịch sử theo ngôn ngữ', () => {
+  const t = new Date(2026, 9, 19, 8, 5).getTime();
+  assert.equal(C.formatTime(t, 'vi'), '08:05 19/10');
+  assert.equal(C.formatTime(t, 'ja'), '10/19 08:05');
+});

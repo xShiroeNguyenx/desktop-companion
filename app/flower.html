@@ -23,12 +23,19 @@
     #flower:hover { transform: scale(1.14); }
     #flower:active { transform: scale(0.94); }
 
+    /* Màu nền theo biểu tượng chọn trong Bộ sưu tập (js/deco-apply.js). */
+    body[data-flower="star"] #flower { background: radial-gradient(circle at 50% 42%, #fff8d6 0%, #ffe27a 55%, #f5b800 100%); }
+    body[data-flower="clover"] #flower { background: radial-gradient(circle at 50% 42%, #e6ffe6 0%, #9be39b 55%, #4cb84c 100%); }
+    body[data-flower="paw"] #flower { background: radial-gradient(circle at 50% 42%, #f3e6ff 0%, #cfa8ff 55%, #9b6cff 100%); }
+    body[data-flower="snow"] #flower { background: radial-gradient(circle at 50% 42%, #f2f9ff 0%, #b8dcff 55%, #6fb2ff 100%); }
+
     @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
   <button id="flower" title="Click: dịch nhanh · Giữ: mở menu xoay tròn">🌸</button>
   <script src="js/tauri-api.js"></script>
+  <script src="js/deco-apply.js"></script>
   <script src="js/flower.js"></script>
 </body>
 </html>

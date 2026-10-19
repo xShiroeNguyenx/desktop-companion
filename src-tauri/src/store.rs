@@ -510,7 +510,12 @@ static COLLECTION_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub fn load_collection(app: &AppHandle) -> crate::collection::Collection {
     collection_path(app)
         .and_then(|p| std::fs::read_to_string(p).ok())
-        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .and_then(|raw| serde_json::from_str::<crate::collection::Collection>(&raw).ok())
+        .map(|mut c| {
+            // Bảng giá cũ → nhân kẹo 10 (ghi lại ở lần update_collection kế tiếp).
+            crate::collection::migrate(&mut c);
+            c
+        })
         .unwrap_or_default()
 }
 

@@ -117,9 +117,16 @@ duyệt, Word…).
 - **🍬 Kẹo & Bộ sưu tập** — xong việc, phiên Tập trung, chat, vuốt đầu, thắng
   game cũng được kẹo (cùng trần mỗi ngày với điểm thân thiết). Đổi kẹo trong 🍬 Bộ
   sưu tập (💞 → 🍬 trên menu tròn) lấy skin widget, hiệu ứng thưởng (pháo hoa, pháo
-  giấy, mưa hoa anh đào), bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết) và bộ
-  mặt Miu (❄️ tuyết, 🦇 Gothic). Xứ Tuyết và Neko Lounge còn đổi giao diện mọi khung
-  (băng tuyết / Gothic Lolita). Chỉ là đồ trang trí; không bán bằng tiền thật.
+  giấy, mưa hoa anh đào, mưa tim, bong bóng xà phòng, sao băng), kiểu bong bóng thoại,
+  bông hoa khi bôi chữ, bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết) và bộ
+  mặt Miu (❄️ tuyết, 🦇 Gothic). Xứ Tuyết, Neko Lounge và Hồ ly còn đổi giao diện mọi
+  khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí; không bán bằng
+  tiền thật.
+- **🎰 Candy Capsule** — quay máy kẹo thỏ trong Bộ sưu tập: 100 🍬 một lượt, 1000 🍬
+  mười lượt, tỉ lệ ghi ngay trên máy (Thường 65% · Hiếm 25% · Sử thi 10%). Lượt thứ 10
+  chưa ra Hiếm thì chắc chắn Hiếm, lượt thứ 50 chưa ra Sử thi thì chắc chắn Sử thi; trùng
+  món được hoàn kẹo. Capsule Hiếm và Sử thi bung ra với hiệu ứng riêng. Đổi thẳng trong
+  cửa hàng vẫn luôn có.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
   bên phải.

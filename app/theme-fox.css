@@ -1,0 +1,255 @@
+/*
+  Giao diện Cài đặt Đền Hồ ly, đi kèm bộ nhân vật 🦊 Hồ ly (collection.rs
+  side.fox). js/theme-apply.js đặt body[data-theme="fox"] khi đang chọn bộ này
+  VÀ Bunny Lounge đang bật. Cùng bố cục với theme-gothic.css: nền đỏ thẫm như
+  đền về đêm, mỗi nhóm là một thẻ giấy kem viền vàng, tiêu đề đỏ kèm dòng mô tả
+  (h3[data-sub]), 4 góc hồ ly + đèn lồng nổi trên nội dung (mờ 60%), nút Lưu đỏ
+  nổi trên lớp góc.
+*/
+
+body[data-theme="fox"] {
+  --bg: #3a0d14;
+  --panel: rgba(255, 248, 238, 0.94);
+  --panel-2: #fff3e6;
+  --border: rgba(201, 150, 70, 0.6);
+  --text: #4a1c1c;
+  --muted: #8a5a4e;
+  --accent: #c8283c;
+  --accent-2: #e8a33d;
+  color: var(--text);
+  background:
+    radial-gradient(55% 45% at 12% 0%, rgba(255, 140, 90, 0.35), transparent 65%),
+    radial-gradient(50% 40% at 90% 6%, rgba(255, 190, 120, 0.25), transparent 65%),
+    radial-gradient(85% 60% at 50% 115%, rgba(255, 110, 120, 0.3), transparent 65%),
+    linear-gradient(180deg, #4a0f18, #34090f 55%, #4d1219);
+}
+
+/* Cánh hoa anh đào và đốm đèn lồng trôi chậm phía sau, không chặn chuột. */
+body[data-theme="fox"]::before,
+body[data-theme="fox"]::after {
+  content: '';
+  position: fixed;
+  inset: -220px 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(3px 2px at 20px 30px, rgba(255, 190, 205, 0.9), transparent),
+    radial-gradient(2px 2px at 90px 120px, rgba(255, 220, 150, 0.85), transparent),
+    radial-gradient(3.5px 2.5px at 160px 60px, rgba(255, 170, 190, 0.85), transparent),
+    radial-gradient(1.5px 1.5px at 230px 170px, rgba(255, 235, 190, 0.8), transparent);
+  background-size: 260px 200px;
+  opacity: 0.7;
+  animation: fox-drift 30s linear infinite;
+}
+body[data-theme="fox"]::after {
+  background-size: 340px 260px;
+  opacity: 0.45;
+  animation-duration: 46s;
+}
+@keyframes fox-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(200px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme="fox"]::before,
+  body[data-theme="fox"]::after { animation: none; }
+}
+body[data-theme="fox"] > * { position: relative; z-index: 1; }
+
+/* ─── Đầu trang ────────────────────────────────────────────────────────── */
+body[data-theme="fox"] .set-head { padding: 12px 18px 10px; z-index: 3; }
+body[data-theme="fox"] .set-head h2 {
+  font-size: 20px;
+  color: #fff;
+  display: flex; flex-direction: column; line-height: 1.15;
+  text-shadow: 0 0 6px rgba(60, 5, 12, 0.95), 0 0 12px rgba(60, 5, 12, 0.9);
+}
+body[data-theme="fox"] .set-head h2::after {
+  content: 'Desktop Companion · 🦊 Đền Hồ ly';
+  font-size: 11.5px; font-weight: 600; color: #f5d9b8;
+}
+
+/* ─── Cột: trong suốt, mỗi nhóm là một thẻ giấy kem viền vàng ──────────── */
+body[data-theme="fox"] .set-col {
+  position: relative; z-index: 1;
+  gap: 14px;
+  padding: 8px 6px 10px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  scrollbar-color: rgba(232, 163, 61, 0.6) transparent;
+}
+body[data-theme="fox"] .set-col::-webkit-scrollbar-thumb { background: rgba(232, 163, 61, 0.55); }
+
+body[data-theme="fox"] .set-col > .set-group {
+  position: relative;
+  padding: 16px 14px 14px;
+  border-radius: 14px;
+  border: 2px solid #d9a54e;
+  background:
+    radial-gradient(70% 50% at 100% 0%, rgba(255, 205, 215, 0.45), transparent 70%),
+    linear-gradient(180deg, #fffaf2, #fdf0e2);
+  box-shadow:
+    0 6px 18px rgba(30, 0, 5, 0.5),
+    inset 0 0 0 3px #fffaf2,
+    inset 0 0 0 4px rgba(200, 40, 60, 0.35);
+}
+/* Dải đỏ mảnh trên mép thẻ, như dây shimenawa. */
+body[data-theme="fox"] .set-col > .set-group::before {
+  content: '';
+  position: absolute; left: 18px; right: 18px; top: -2px; height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, transparent, #c8283c 15%, #e8a33d 50%, #c8283c 85%, transparent);
+  pointer-events: none;
+}
+/* Hoa anh đào nhỏ ở góc thẻ (ký tự, không dùng emoji vì màu emoji khác nhau). */
+body[data-theme="fox"] .set-col > .set-group::after {
+  content: '✿';
+  position: absolute; right: 12px; top: 8px;
+  font-size: 17px;
+  color: #f07a93;
+  filter: drop-shadow(0 0 3px rgba(255, 160, 180, 0.8));
+  pointer-events: none;
+}
+
+body[data-theme="fox"] .set-group > h3 {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 0 24px 6px 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #a51d2f;
+  border-bottom: 1px dashed rgba(200, 40, 60, 0.3);
+}
+body[data-theme="fox"] .set-group > h3[data-sub]::after {
+  content: attr(data-sub);
+  flex-basis: 100%;
+  font-size: 11.5px; font-weight: 500; color: var(--muted);
+}
+
+body[data-theme="fox"] .set-toggle {
+  border-color: rgba(217, 165, 78, 0.5);
+  background: rgba(255, 255, 255, 0.75);
+}
+body[data-theme="fox"] .set-toggle--premium {
+  background: linear-gradient(135deg, rgba(255, 220, 225, 0.85), rgba(255, 236, 205, 0.85));
+  border-color: rgba(200, 40, 60, 0.4);
+}
+
+body[data-theme="fox"] input,
+body[data-theme="fox"] select,
+body[data-theme="fox"] textarea,
+body[data-theme="fox"] .set-col input[type="text"],
+body[data-theme="fox"] .set-col input[type="password"] {
+  background: #fffdf9;
+  color: var(--text);
+  border-color: rgba(201, 150, 70, 0.55);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 3px rgba(120, 60, 30, 0.12);
+}
+body[data-theme="fox"] input:focus,
+body[data-theme="fox"] select:focus,
+body[data-theme="fox"] textarea:focus { border-color: var(--accent); }
+
+body[data-theme="fox"] .set-col button.ghost {
+  background: rgba(200, 40, 60, 0.08);
+  border-color: rgba(200, 40, 60, 0.4);
+  color: #a51d2f;
+}
+body[data-theme="fox"] .set-col button.ghost:hover { background: rgba(200, 40, 60, 0.16); }
+
+/* ─── Khe giữa: bệ đèn lồng phát sáng dưới chân pet ─────────────────────── */
+body[data-theme="fox"] .set-grid { position: relative; z-index: 2; }
+body[data-theme="fox"] .set-grid::after {
+  content: '';
+  grid-column: 2; grid-row: 1;
+  align-self: end; justify-self: center;
+  width: 150px; height: 46px; margin-bottom: 32px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 210, 140, 0.8) 0%, rgba(230, 90, 70, 0.45) 45%, rgba(120, 20, 30, 0) 72%);
+  filter: drop-shadow(0 0 10px rgba(255, 150, 90, 0.6));
+  pointer-events: none;
+}
+
+/* ─── 4 góc hồ ly, đèn lồng, cổng torii (media/side/fox/deco/corner-*.webp,
+   ~45 KB mỗi ảnh). Nổi TRÊN nội dung nhưng mờ 60%, co theo cửa sổ (tối đa
+   210px, nhỏ hơn gothic vì góc dày hơn), chuột bấm xuyên qua. */
+html:has(body[data-theme="fox"])::after {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.6;
+  --corner: min(24vw, 210px);
+  background:
+    url('media/side/fox/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+
+/* ─── Chân trang: nút Lưu đỏ viền vàng, nổi trên lớp góc ────────────────── */
+body[data-theme="fox"] .set-foot {
+  padding-left: 14px;
+  background: linear-gradient(180deg, rgba(52, 9, 15, 0), rgba(52, 9, 15, 0.85) 45%);
+  border-top: none;
+  /* Không tạo lớp xếp chồng riêng, để nút Lưu (z-index 60) vượt lên trên lớp
+     góc (z-index 50). */
+  z-index: auto;
+}
+body[data-theme="fox"] .set-foot button.action {
+  position: relative;
+  z-index: 60;
+  color: #fff;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(222, 60, 72, 0.92), rgba(160, 20, 38, 0.92));
+  backdrop-filter: blur(3px);
+  border: 2px solid #e8b55e;
+  box-shadow: 0 0 14px rgba(255, 120, 90, 0.5);
+}
+
+/* ─── Khung Công việc (tasks.html) và Trợ lý văn bản (popup.html) ─────────── */
+body[data-theme="fox"] .tk-head h2,
+body[data-theme="fox"] .pp-head h2 {
+  font-size: 18px; color: #fff;
+  text-shadow: 0 0 6px rgba(60, 5, 12, 0.95), 0 0 12px rgba(60, 5, 12, 0.9);
+}
+body[data-theme="fox"] .tk-col,
+body[data-theme="fox"] .pp-card {
+  position: relative; z-index: 1;
+  border: 2px solid #d9a54e;
+  background:
+    radial-gradient(70% 50% at 100% 0%, rgba(255, 205, 215, 0.45), transparent 70%),
+    linear-gradient(180deg, #fffaf2, #fdf0e2);
+  box-shadow: 0 6px 18px rgba(30, 0, 5, 0.5), inset 0 0 0 3px #fffaf2, inset 0 0 0 4px rgba(200, 40, 60, 0.35);
+  scrollbar-color: rgba(232, 163, 61, 0.6) transparent;
+}
+body[data-theme="fox"] .tk-item {
+  border-color: rgba(217, 165, 78, 0.45);
+  background: rgba(255, 255, 255, 0.8);
+}
+body[data-theme="fox"] .tk-item:hover { border-color: var(--accent); }
+body[data-theme="fox"] .pp-section-head { border-bottom-color: rgba(200, 40, 60, 0.3); }
+body[data-theme="fox"] .pp-section-head .box-label { color: #a51d2f; }
+body[data-theme="fox"] .pp-card .selected-box,
+body[data-theme="fox"] .pp-card .result {
+  background: #fffdf9; color: var(--text); border-color: rgba(201, 150, 70, 0.55);
+}
+body[data-theme="fox"] .pp-card .tab { background: #fff; border-color: rgba(201, 150, 70, 0.5); color: var(--text); }
+body[data-theme="fox"] .pp-card .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Nút chính ở đầu khung Công việc ("Thêm") nổi trên lớp góc như nút Lưu. */
+body[data-theme="fox"] .tk-head { z-index: auto; }
+body[data-theme="fox"] .tk-head button.action { position: relative; z-index: 60; }
+
+/* Tiêu đề khung và ô nhập việc mới nằm ngay dưới góc trên: đưa lên trên lớp
+   góc để luôn đọc được (đầu trang không tạo lớp xếp chồng riêng). */
+body[data-theme="fox"] .set-head,
+body[data-theme="fox"] .pp-head { z-index: auto; }
+body[data-theme="fox"] .set-head h2,
+body[data-theme="fox"] .tk-head h2,
+body[data-theme="fox"] .pp-head h2,
+body[data-theme="fox"] .tk-head input { position: relative; z-index: 60; }

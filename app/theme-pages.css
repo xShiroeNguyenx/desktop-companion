@@ -3,7 +3,8 @@
   Mini Games, Bộ sưu tập, Oẳn tù tì, Đoán số, Gỡ bom. js/theme-apply.js đặt
   body[data-theme]. Chỉ đổi nền + viền khung, màu nhấn (--pink…) và thêm 4 góc
   trang trí (mờ, chuột bấm xuyên qua); thẻ và chữ bên trong giữ như cũ.
-  Cài đặt / Công việc / Trợ lý văn bản dùng theme-snow.css, theme-gothic.css.
+  Cài đặt / Công việc / Trợ lý văn bản dùng theme-snow.css, theme-gothic.css,
+  theme-fox.css.
 */
 
 /* ─── ❄️ Xứ Tuyết ──────────────────────────────────────────────────────── */
@@ -52,9 +53,32 @@ body[data-theme="gothic"] .window::after {
     url('media/side/neko/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
 }
 
+/* ─── 🦊 Đền Hồ ly ─────────────────────────────────────────────────────── */
+body[data-theme="fox"] {
+  --pink: #e0435a;
+  --pink-2: #f2b25c;
+  --line: rgba(232, 170, 90, 0.5);
+}
+body[data-theme="fox"] .window {
+  border-color: rgba(232, 181, 94, 0.85);
+  background:
+    radial-gradient(60% 50% at 12% 0%, rgba(255, 140, 90, 0.35), transparent 65%),
+    radial-gradient(55% 45% at 90% 8%, rgba(255, 190, 120, 0.22), transparent 65%),
+    linear-gradient(180deg, #5a1320, #400c15 55%, #571421);
+  box-shadow: 0 10px 30px rgba(40, 0, 8, 0.6), 0 0 18px rgba(255, 130, 90, 0.25);
+}
+body[data-theme="fox"] .window::after {
+  background:
+    url('media/side/fox/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/fox/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+
 /* ─── Chung: lớp góc trong khung, nổi trên nội dung nhưng mờ ───────────── */
 body[data-theme="snow"] .window::after,
-body[data-theme="gothic"] .window::after {
+body[data-theme="gothic"] .window::after,
+body[data-theme="fox"] .window::after {
   content: '';
   position: absolute; inset: 0;
   --corner: min(26%, 260px);

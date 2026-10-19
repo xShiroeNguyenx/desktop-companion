@@ -53,7 +53,8 @@
     .body { flex: 1; min-height: 0; display: flex; gap: 12px; }
 
     /* ─── Cột trái: Miu + bong bóng thoại ─────────────────────────────────── */
-    .side { flex: 0 0 200px; position: relative; }
+    /* .body > .side: không đụng ô xem trước bộ nhân vật (.pv.side). */
+    .body > .side { flex: 0 0 200px; position: relative; }
     .bubble {
       position: absolute; left: 10px; right: 6px; top: 40px;
       padding: 14px 16px;
@@ -67,7 +68,7 @@
       content: ''; position: absolute; left: 52%; bottom: -14px;
       border: 10px solid transparent; border-top: 14px solid #fff;
     }
-    .side img {
+    .body > .side > img {
       position: absolute; left: -6px; right: -10px; bottom: 0;
       width: calc(100% + 16px); height: 64%;
       object-fit: contain; object-position: center bottom;
@@ -115,7 +116,7 @@
 
     /* ─── Tab ──────────────────────────────────────────────────────────────── */
     .tabs {
-      display: flex; gap: 4px;
+      display: flex; gap: 2px;
       padding: 5px;
       border-radius: 16px;
       background: var(--card);
@@ -137,6 +138,10 @@
       padding: 1px 9px; border-radius: 999px;
       background: #f3e6f0; color: var(--ink-soft);
     }
+    /* 6 nhóm trên một hàng: tab co lại, icon và số đếm nhỏ hơn. */
+    .tab { flex: 1 1 auto; gap: 4px; padding: 8px 3px; font-size: 13.5px; overflow: hidden; }
+    .tab .ti { font-size: 17px; flex: 0 0 auto; }
+    .tab .n { font-size: 11.5px; padding: 1px 6px; flex: 0 0 auto; }
     .tab.on { background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff; box-shadow: 0 4px 10px rgba(255, 95, 162, 0.35); }
     .tab.on .n { background: rgba(255, 255, 255, 0.3); color: #fff; }
 
@@ -167,6 +172,28 @@
     .pv > img.full { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
     .pv.side > img.full { object-fit: cover; object-position: center 12%; }
     .pv .ic { font-size: 50px; align-self: center; }
+    /* Xem trước Bong bóng thoại / Bông hoa. ĐỒNG BỘ với media/companion.css, flower.html. */
+    .pv .bub {
+      align-self: center; position: relative;
+      padding: 10px 18px; border-radius: 16px; font-size: 15px; font-weight: 600;
+      background: linear-gradient(135deg, rgba(255, 228, 240, 0.95), rgba(255, 200, 225, 0.92));
+      color: #6b2547; border: 1.5px solid rgba(255, 150, 190, 0.6);
+    }
+    .pv .bub-cloud { background: #fff; color: #44506a; border: 2px solid #e6eef8; border-radius: 28px; box-shadow: -10px 6px 0 -4px #fff, 10px 8px 0 -4px #fff; }
+    .pv .bub-heart { background: linear-gradient(180deg, #fff0f6, #ffd9ea); color: #9a1f5c; border: 2px solid #ff5fa2; }
+    .pv .bub-heart::before { content: '💗'; position: absolute; left: 6px; top: -10px; font-size: 13px; }
+    .pv .bub-lace { background: #20152f; color: #f1e8ff; border: 1px solid rgba(196, 150, 255, 0.7); border-radius: 12px; box-shadow: 0 0 0 3px #20152f, 0 0 0 4px rgba(196, 150, 255, 0.45); }
+    .pv .bub-scroll { background: linear-gradient(180deg, #fbf1dc, #f1e0bb); color: #5a3a14; border: 1px solid #c9a774; border-radius: 6px; font-family: Georgia, serif; }
+    .pv .flw {
+      align-self: center; width: 64px; height: 64px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
+      background: radial-gradient(circle at 50% 42%, #ffe0ef 0%, #ff9ccb 55%, #ff73ab 100%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .pv .flw-star { background: radial-gradient(circle at 50% 42%, #fff8d6 0%, #ffe27a 55%, #f5b800 100%); }
+    .pv .flw-clover { background: radial-gradient(circle at 50% 42%, #e6ffe6 0%, #9be39b 55%, #4cb84c 100%); }
+    .pv .flw-paw { background: radial-gradient(circle at 50% 42%, #f3e6ff 0%, #cfa8ff 55%, #9b6cff 100%); }
+    .pv .flw-snow { background: radial-gradient(circle at 50% 42%, #f2f9ff 0%, #b8dcff 55%, #6fb2ff 100%); }
     /* Widget thu nhỏ đúng màu skin. */
     .mini {
       position: relative;
@@ -266,8 +293,338 @@
     }
     .toast.err { background: #ffe1e8; color: #8a2a48; }
     @keyframes pop { from { opacity: 0; transform: scale(0.9); } }
+    /* ─── Thanh chế độ: Candy Capsule · Cửa hàng · Lịch sử ─────────────────── */
+    .modes {
+      display: flex; gap: 6px; align-self: flex-start;
+      padding: 5px; border-radius: 18px;
+      background: var(--card); border: 1px solid var(--line);
+      box-shadow: 0 3px 10px rgba(200, 120, 170, 0.15);
+    }
+    .mode {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 20px; border: none; border-radius: 14px;
+      background: transparent; font-size: 16px; font-weight: 700; color: var(--ink);
+    }
+    .mode:hover { background: var(--pink-soft); }
+    .mode.on { background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff; box-shadow: 0 4px 10px rgba(255, 95, 162, 0.35); }
+    .view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+
+    /* ─── 🎰 Máy kẹo ───────────────────────────────────────────────────────── */
+    .view.gacha {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr 250px;
+      grid-template-rows: minmax(0, 1fr) 122px;
+    }
+    .view.gacha[hidden] { display: none; }
+    .stage {
+      position: relative; min-height: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 10px;
+      border-radius: 20px;
+      background:
+        radial-gradient(45% 60% at 50% 45%, rgba(255, 255, 255, 0.85), transparent 70%),
+        linear-gradient(180deg, rgba(255, 228, 242, 0.7), rgba(236, 222, 255, 0.7));
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      padding: 8px 12px 12px;
+    }
+    .sign {
+      position: absolute; right: 14px; top: 14px; width: 150px;
+      padding: 10px 12px; border-radius: 20px;
+      background: #4a2a5e; color: #fff; text-align: center;
+      box-shadow: 0 6px 14px rgba(74, 42, 94, 0.3);
+      transform: rotate(4deg);
+    }
+    .sign b { display: block; font-size: 19px; line-height: 1.1; font-family: "Segoe Print", "Segoe UI", sans-serif; }
+    .sign small { display: block; margin-top: 4px; font-size: 11.5px; color: #f3dcff; line-height: 1.25; }
+
+    /* Máy vẽ bằng SVG (js/gacha-fx.js). */
+    .machine { position: relative; width: 236px; height: 250px; flex: 0 0 auto; }
+    .machine svg { width: 100%; height: 100%; overflow: visible; }
+    .machine svg g { transform-box: fill-box; }
+    .machine .dome { transform-origin: 50% 90%; }
+    .machine .cap { transform-origin: 50% 50%; }
+    .machine .knob { transform-origin: 50% 50%; }
+    .machine .topper, .machine .sign { transform-origin: 50% 100%; }
+    .machine .ear-l { transform-origin: 70% 100%; animation: earL 5s ease-in-out infinite; }
+    .machine .ear-r { transform-origin: 30% 100%; animation: earR 5s ease-in-out infinite 0.4s; }
+    @keyframes earL { 0%, 86%, 100% { transform: none; } 90% { transform: rotate(-10deg); } 94% { transform: rotate(4deg); } }
+    @keyframes earR { 0%, 86%, 100% { transform: none; } 90% { transform: rotate(10deg); } 94% { transform: rotate(-4deg); } }
+    /* Capsule lơ lửng nhẹ khi đứng yên. */
+    .machine .cap { animation: capIdle 3.2s ease-in-out infinite; animation-delay: calc(var(--d) * 4); }
+    @keyframes capIdle { 50% { transform: translateY(-1.5px); } }
+    .m-sp {
+      position: absolute; font-size: 16px; color: #ff8fc0; pointer-events: none;
+      text-shadow: 0 0 6px rgba(255, 143, 192, 0.8);
+      animation: twinkle 2.6s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.15); } }
+    .m-drop {
+      position: absolute; left: 50%; top: 91.5%; z-index: 2;
+      width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+      background: linear-gradient(180deg, var(--dc, #ff8fc0) 50%, #fff 50%);
+      border: 2px solid #fff; opacity: 0; pointer-events: none;
+    }
+
+    /* Quay: vòm lắc, capsule nảy lộn xộn, núm xoay, khe tim sáng màu hạng, viên kẹo rơi ra. */
+    .machine.spin .dome { animation: domeShake 0.32s ease-in-out 3; }
+    .machine.spin .cap { animation: capJig 0.34s ease-in-out 3; animation-delay: var(--d); }
+    .machine.spin .knob { animation: knobTurn 0.9s cubic-bezier(.5, 0, .3, 1) 0.15s; }
+    .machine.spin .topper { animation: hop 0.5s ease-out 0.9s; }
+    .machine.spin .outlet { animation: outletGlow 0.6s ease-in-out 0.9s 2 alternate; }
+    .machine.spin .m-drop { animation: capDrop 0.7s 1s cubic-bezier(.34, 1.56, .64, 1) forwards; }
+    .machine.spin .m-sp { animation: twinkle 0.5s ease-in-out infinite; color: var(--dc); }
+    /* Hiếm / Sử thi: máy rung mạnh hơn và cả máy toả sáng. */
+    .machine.spin-rare svg { filter: drop-shadow(0 0 10px var(--dg)); }
+    .machine.spin-epic svg { animation: machineGlow 0.5s ease-in-out infinite alternate; }
+    .machine.spin-epic .dome { animation: domeShakeHard 0.26s ease-in-out 5; }
+    @keyframes domeShake { 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+    @keyframes domeShakeHard { 25% { transform: rotate(-5deg) scale(1.02); } 75% { transform: rotate(5deg) scale(1.02); } }
+    @keyframes capJig { 30% { transform: translate(-2px, -9px) rotate(-14deg); } 70% { transform: translate(2px, -4px) rotate(10deg); } }
+    @keyframes knobTurn { to { transform: rotate(360deg); } }
+    @keyframes hop { 40% { transform: translateY(-6px); } }
+    @keyframes outletGlow { to { filter: drop-shadow(0 0 8px var(--dg)) brightness(1.35); } }
+    @keyframes machineGlow { from { filter: drop-shadow(0 0 8px var(--dg)); } to { filter: drop-shadow(0 0 22px var(--dg)) brightness(1.08); } }
+    @keyframes capDrop {
+      0% { opacity: 1; transform: translateY(-26px) scale(0.5); }
+      65% { opacity: 1; transform: translateY(6px) scale(1.1); }
+      100% { opacity: 1; transform: translateY(0) scale(1); box-shadow: 0 0 18px 6px var(--dg); }
+    }
+
+    /* ─── Mở capsule (lớp phủ, js/gacha-fx.js reveal) ──────────────────────── */
+    .reveal {
+      position: absolute; inset: 0; z-index: 28; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at 50% 50%, rgba(90, 50, 110, 0.55), rgba(40, 20, 60, 0.82));
+      cursor: pointer;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .reveal.in { opacity: 1; }
+    .reveal.epic { background: radial-gradient(circle at 50% 50%, rgba(120, 70, 20, 0.55), rgba(40, 20, 50, 0.9)); }
+    .rv-rays {
+      position: absolute; left: 50%; top: 50%; width: 1500px; height: 1500px; margin: -750px 0 0 -750px;
+      background: repeating-conic-gradient(from 0deg, var(--rg) 0deg 7deg, transparent 7deg 22deg);
+      -webkit-mask: radial-gradient(circle, #000 10%, transparent 55%);
+              mask: radial-gradient(circle, #000 10%, transparent 55%);
+      opacity: 0; transform: scale(0.4);
+      transition: opacity 0.4s, transform 0.6s;
+      animation: raysTurn 9s linear infinite;
+    }
+    .reveal.common .rv-rays { display: none; }
+    .reveal.shake.rare .rv-rays, .reveal.shake.epic .rv-rays { opacity: 0.35; transform: scale(0.7); }
+    .reveal.open .rv-rays { opacity: 0.6; transform: scale(1); }
+    .reveal.epic.open .rv-rays { opacity: 0.75; }
+    .reveal.epic .rv-rays { animation-duration: 5s; }
+    @keyframes raysTurn { to { rotate: 360deg; } }
+    .rv-glow {
+      position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px;
+      border-radius: 50%; background: radial-gradient(circle, var(--rg), transparent 65%);
+      opacity: 0.35; transform: scale(0.6); transition: transform 0.5s, opacity 0.5s;
+    }
+    .reveal.shake .rv-glow { animation: glowPulse 0.5s ease-in-out infinite alternate; }
+    .reveal.open .rv-glow { opacity: 1; transform: scale(1.8); }
+    @keyframes glowPulse { to { opacity: 0.75; transform: scale(0.85); } }
+    /* Chớp sáng lúc bung: Thường nhẹ, Hiếm vừa, Sử thi trắng xoá. */
+    .reveal::after { content: ''; position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+    .reveal.open::after { animation: flash 0.7s ease-out; }
+    .reveal.common.open::after { --fl: 0.35; }
+    .reveal.rare.open::after { --fl: 0.6; }
+    .reveal.epic.open::after { --fl: 1; animation-duration: 1s; }
+    @keyframes flash { 10% { opacity: var(--fl, 0.5); } 100% { opacity: 0; } }
+
+    .rv-cap {
+      position: relative; width: 170px; height: 170px;
+      transform: scale(0.2) translateY(260px); opacity: 0;
+      transition: transform 0.45s cubic-bezier(.34, 1.56, .64, 1), opacity 0.3s;
+      filter: drop-shadow(0 0 24px var(--rg));
+    }
+    .reveal.in .rv-cap { transform: none; opacity: 1; }
+    .rv-cap i { position: absolute; left: 0; right: 0; height: 50%; border: 4px solid #fff; }
+    .rv-cap .top {
+      top: 0; border-radius: 85px 85px 0 0; border-bottom-width: 2px;
+      background: radial-gradient(70% 90% at 35% 30%, #fff, var(--rc) 55%);
+    }
+    .rv-cap .bot { bottom: 0; border-radius: 0 0 85px 85px; border-top-width: 2px; background: linear-gradient(180deg, #fff, #f3e9f7); }
+    .rv-cap .top::after {
+      content: ''; position: absolute; left: 22%; top: 18%; width: 26%; height: 22%;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.85); transform: rotate(-30deg);
+    }
+    .reveal.epic .rv-cap .top { background: radial-gradient(70% 90% at 35% 30%, #fffbe8, #ffd76a 45%, #f0a020); }
+    .reveal.shake .rv-cap { animation: capShake 0.5s ease-in-out infinite; }
+    .reveal.shake.rare .rv-cap { animation-duration: 0.36s; }
+    .reveal.shake.epic .rv-cap { animation: capShakeHard 0.24s ease-in-out infinite; }
+    @keyframes capShake { 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+    @keyframes capShakeHard { 25% { transform: rotate(-16deg) scale(1.06); } 75% { transform: rotate(16deg) scale(1.06); } }
+    .reveal.open .rv-cap .top { transition: transform 0.55s cubic-bezier(.2, .8, .3, 1), opacity 0.6s 0.25s; transform: translate(-40px, -150px) rotate(-40deg); opacity: 0; }
+    .reveal.open .rv-cap .bot { transition: transform 0.55s cubic-bezier(.2, .8, .3, 1), opacity 0.6s 0.25s; transform: translate(30px, 140px) rotate(25deg); opacity: 0; }
+
+    /* Món trúng bật ra từ capsule. */
+    .rv-item {
+      position: absolute; left: 50%; top: 52%; width: 230px; margin-left: -115px; transform: translateY(-50%) scale(0.2);
+      opacity: 0; pointer-events: none;
+    }
+    .rv-item .pv { height: 170px; border-radius: 22px; border: 4px solid #fff; box-shadow: 0 0 30px var(--rg); background: linear-gradient(160deg, #fff4fa, #efe4ff); }
+    .rv-item .pv .lock, .rv-item .pv .badge { display: none; }
+    .reveal.open .rv-item { opacity: 1; transform: translateY(-50%) scale(1); transition: transform 0.6s cubic-bezier(.34, 1.56, .64, 1) 0.15s, opacity 0.3s 0.15s; }
+    .rv-parts { position: absolute; inset: 0; pointer-events: none; }
+    .rv-parts .pt {
+      position: absolute; left: 50%; top: 50%; font-size: 26px; line-height: 1; color: var(--rc);
+      text-shadow: 0 0 10px var(--rg);
+      animation: burst 1.1s cubic-bezier(.15, .7, .3, 1) forwards; opacity: 0;
+    }
+    @keyframes burst {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3); }
+      70% { opacity: 1; }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(var(--s)) rotate(var(--r)); }
+    }
+    .rv-parts .cf {
+      position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 2px;
+      animation: confetti 2s linear forwards; opacity: 0;
+    }
+    @keyframes confetti {
+      0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+      100% { opacity: 0.9; transform: translate(var(--x), 760px) rotate(var(--r)); }
+    }
+    .rv-label {
+      position: absolute; left: 0; right: 0; top: 16%; text-align: center;
+      font: 900 64px/1 "Segoe UI", sans-serif; letter-spacing: 4px; color: #fff;
+      opacity: 0; transform: scale(2.2);
+      -webkit-text-stroke: 2px var(--rc);
+      text-shadow: 0 0 14px var(--rg), 0 0 30px var(--rg);
+    }
+    .reveal.common .rv-label { font-size: 44px; }
+    .reveal.open .rv-label { opacity: 1; transform: none; transition: transform 0.45s cubic-bezier(.34, 1.56, .64, 1) 0.1s, opacity 0.2s 0.1s; }
+    .reveal.open.epic .rv-label { animation: labelGlow 0.6s ease-in-out 0.5s infinite alternate; }
+    @keyframes labelGlow { to { text-shadow: 0 0 22px var(--rg), 0 0 50px var(--rg), 0 0 80px #fff; } }
+    .rv-skip { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: rgba(255, 255, 255, 0.75); font-size: 14px; }
+
+    .pulls { display: flex; gap: 14px; }
+    .pull {
+      position: relative; min-width: 200px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 6px 18px; border-radius: 18px;
+      border: 3px solid #fff; color: #fff;
+      box-shadow: 0 6px 14px rgba(200, 80, 140, 0.35);
+    }
+    .pull b { font-size: 19px; }
+    .pull small { display: flex; gap: 6px; font-size: 15px; font-weight: 700; opacity: 0.95; }
+    .pull.p1 { background: linear-gradient(180deg, #ff9cc8, #ff5fa2); }
+    .pull.p10 { background: linear-gradient(180deg, #c6a8ff, #8e62f2); box-shadow: 0 6px 14px rgba(120, 80, 220, 0.35); }
+    .pull:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+    .pull:disabled { filter: grayscale(0.55) opacity(0.75); cursor: default; }
+    .lockmsg { position: absolute; left: 12px; top: 12px; max-width: 220px; padding: 8px 12px; border-radius: 12px; background: #fff4d6; color: #8a5600; font-size: 13.5px; font-weight: 600; }
+
+    .rates {
+      min-height: 0; overflow: hidden;
+      display: flex; flex-direction: column; gap: 7px;
+      padding: 12px; border-radius: 20px;
+      background: var(--card); border: 1px solid var(--line);
+    }
+    .rates h3, .feat h3, .hist h3 { margin: 0; font-size: 16px; color: var(--ink); }
+    .rate { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 14px; background: #fff; border: 1px solid #f1e2ef; }
+    .rate .st { font-size: 22px; }
+    .rate div { flex: 1; min-width: 0; }
+    .rate b { display: block; font-size: 14.5px; }
+    .rate small { display: block; font-size: 11.5px; color: var(--ink-soft); }
+    .rate em { font-style: normal; font-size: 19px; font-weight: 800; }
+    .rate.common b, .rate.common em { color: #c0569a; }
+    .rate.rare { background: #f1eeff; } .rate.rare b, .rate.rare em { color: #5b3fc4; }
+    .rate.epic { background: #fff6e0; } .rate.epic b, .rate.epic em { color: #b26a00; }
+    .pity { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; font-weight: 700; color: var(--ink); }
+    .pity span { padding: 4px 8px; border-radius: 10px; background: #fff0f7; }
+    .dupnote { font-size: 11.5px; color: var(--ink-soft); line-height: 1.3; }
+
+    .feat { grid-column: 1 / -1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 10px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); }
+    .feat-head { display: flex; align-items: center; justify-content: space-between; }
+    .link { border: none; background: none; color: var(--pink); font-weight: 700; font-size: 14px; }
+    .feat-row { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .fc { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 3px; border: none; padding: 0; background: none; text-align: left; }
+    .fc .pv { height: 58px; border-radius: 12px; }
+    .fc .pv .mini { height: 52px; margin-bottom: 4px; }
+    .fc .pv .mini .t { font-size: 18px; }
+    .fc .pv .ic { font-size: 36px; }
+    .fc .pv .bub { font-size: 12px; padding: 6px 10px; }
+    .fc .pv .flw { width: 46px; height: 46px; font-size: 26px; }
+    .fc .rar { position: absolute; left: 6px; top: 38px; z-index: 3; font-size: 11px; padding: 1px 8px; }
+    .fc .fn { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+    .fc .lock, .fc .badge { display: none; }
+    .fc.owned .pv::after { content: '✔'; position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: #4cc08c; color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+    .r-common.solid { background: #ff8fc0; color: #fff; }
+    .r-rare.solid { background: #8e72f2; color: #fff; }
+    .r-epic.solid { background: #f0a020; color: #fff; }
+
+    /* ─── 📜 Lịch sử ───────────────────────────────────────────────────────── */
+    .hist-head { display: flex; align-items: baseline; gap: 12px; }
+    .hist-head span { color: var(--ink-soft); font-size: 14px; }
+    .hist-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+    .hist-list::-webkit-scrollbar { width: 8px; }
+    .hist-list::-webkit-scrollbar-thumb { background: rgba(255, 95, 162, 0.35); border-radius: 4px; }
+    .hrow { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 14px; background: var(--card); border: 1px solid #f1e2ef; font-size: 15px; }
+    .hrow time { width: 96px; color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .hrow .hn { flex: 1; min-width: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hrow .hs { font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+    .hrow .hs.new { background: #dff7ea; color: #23845a; }
+    .hrow .hs.dup { background: #f3e6f0; color: var(--ink-soft); }
+
+    /* ─── Kết quả quay ─────────────────────────────────────────────────────── */
+    .gres {
+      position: absolute; inset: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(74, 42, 94, 0.45); backdrop-filter: blur(4px);
+    }
+    .gres-card {
+      width: min(960px, 94%); max-height: 94%;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      padding: 18px 22px; border-radius: 26px;
+      background: linear-gradient(180deg, #fff7fb, #f6ecff);
+      border: 3px solid #fff;
+      box-shadow: 0 20px 40px rgba(74, 42, 94, 0.4);
+      animation: pop 0.3s cubic-bezier(.34, 1.56, .64, 1);
+    }
+    .gres-card h2 { margin: 0; font-size: 26px; color: var(--ink); }
+    .gres-grid { display: grid; grid-template-columns: repeat(5, 160px); gap: 12px; justify-content: center; }
+    .gres-grid.one { grid-template-columns: 240px; }
+    .rc {
+      position: relative; display: flex; flex-direction: column; gap: 5px;
+      padding: 7px 7px 9px; border-radius: 16px; background: #fff;
+      border: 3px solid #f6cfe2;
+      opacity: 0; animation: rcIn 0.45s cubic-bezier(.34, 1.56, .64, 1) forwards;
+      animation-delay: calc(var(--i) * 90ms);
+    }
+    .rc.rare { border-color: #a58cff; box-shadow: 0 0 14px rgba(142, 114, 242, 0.45); }
+    .rc.epic { border-color: #f5b52e; box-shadow: 0 0 20px rgba(245, 181, 46, 0.7); background: linear-gradient(180deg, #fffaf0, #fff); }
+    .rc .pv { height: 92px; }
+    .gres-grid.one .rc .pv { height: 150px; }
+    .rc .pv .mini { height: 60px; }
+    .rc .lock, .rc .badge { display: none; }
+    .rc .rn { font-size: 14px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc .tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    .rc .tg { font-size: 11.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; }
+    .rc .tg.new { background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff; }
+    .rc .tg.dup { background: #f3e6f0; color: var(--ink-soft); }
+    .rc .tg.pity { background: #fff0c2; color: #8a5600; }
+    .rc.rare { animation: rcIn 0.45s cubic-bezier(.34, 1.56, .64, 1) forwards, rarePulse 1.6s ease-in-out infinite alternate; animation-delay: calc(var(--i) * 90ms), calc(var(--i) * 90ms + 0.5s); }
+    @keyframes rarePulse { to { box-shadow: 0 0 22px rgba(142, 114, 242, 0.75); } }
+    .rc.epic { overflow: hidden; animation: rcInEpic 0.7s cubic-bezier(.34, 1.56, .64, 1) forwards; animation-delay: calc(var(--i) * 90ms); }
+    .rc.epic::after {
+      content: ''; position: absolute; inset: -20%; pointer-events: none;
+      background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.85) 50%, transparent 60%);
+      transform: translateX(-120%); animation: shine 2.2s ease-in-out infinite; animation-delay: calc(var(--i) * 90ms + 0.6s);
+    }
+    .rc.epic::before { content: '✦'; position: absolute; right: 8px; top: 4px; z-index: 3; color: #f5b52e; font-size: 18px; text-shadow: 0 0 8px #ffd76a; animation: twinkle 1.2s ease-in-out infinite; }
+    @keyframes shine { 60%, 100% { transform: translateX(120%); } }
+    @keyframes rcInEpic { 0% { opacity: 0; transform: scale(0.4) rotate(-8deg); } 60% { opacity: 1; transform: scale(1.12) rotate(2deg); } 100% { opacity: 1; transform: none; } }
+    @keyframes rcIn { from { opacity: 0; transform: translateY(14px) scale(0.85); } to { opacity: 1; transform: none; } }
+    .gres-sum { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-soft); }
+    .gres-acts { display: flex; gap: 10px; }
+    .gres-acts .act { flex: 0 0 auto; min-width: 170px; padding: 10px 18px; }
+
     [hidden] { display: none !important; }
-    @media (prefers-reduced-motion: reduce) { .toast { animation: none; } .bar i { transition: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .toast, .gres-card { animation: none; }
+      .bar i { transition: none; }
+      .machine *, .machine svg, .m-sp { animation: none !important; }
+      .reveal { display: none !important; }
+      .rc { animation: none; opacity: 1; }
+    }
   </style>
   <!-- Giao diện theo bộ nhân vật (js/theme-apply.js đặt body[data-theme]). -->
   <link rel="stylesheet" href="theme-pages.css" />
@@ -293,8 +650,40 @@
           </div>
           <button class="close" id="closeBtn" type="button">✕</button>
         </div>
-        <div class="tabs" id="tabs"></div>
-        <div class="grid" id="grid"></div>
+        <nav class="modes" id="modes"></nav>
+        <!-- 🛍️ Cửa hàng kẹo: đổi thẳng theo nhóm. -->
+        <section class="view shop" id="shopView" hidden>
+          <div class="tabs" id="tabs"></div>
+          <div class="grid" id="grid"></div>
+        </section>
+        <!-- 🎰 Candy Capsule (Rust gacha.rs). Máy vẽ bằng CSS, dựng một lần (không
+             render lại giữa hoạt cảnh). -->
+        <section class="view gacha" id="gachaView" hidden>
+          <div class="stage">
+            <div class="sign"><b id="gSign"></b><small id="gSignSub"></small></div>
+            <div class="machine" id="machine" aria-hidden="true"></div>
+            <div class="pulls">
+              <button class="pull p1" id="pull1" type="button"><b id="pull1Label"></b><small><span>🍬</span><span id="pull1Cost"></span></small></button>
+              <button class="pull p10" id="pull10" type="button"><b id="pull10Label"></b><small><span>🍬</span><span id="pull10Cost"></span></small></button>
+            </div>
+            <div class="lockmsg" id="gLocked" hidden></div>
+          </div>
+          <aside class="rates">
+            <h3 id="ratesTitle"></h3>
+            <div id="rates"></div>
+            <div class="pity" id="pity"></div>
+            <div class="dupnote" id="dupNote"></div>
+          </aside>
+          <div class="feat">
+            <div class="feat-head"><h3 id="featTitle"></h3><button class="link" id="seeAll" type="button"></button></div>
+            <div class="feat-row" id="featRow"></div>
+          </div>
+        </section>
+        <!-- 📜 Lịch sử quay (50 lượt gần nhất). -->
+        <section class="view hist" id="histView" hidden>
+          <div class="hist-head"><h3 id="histTitle"></h3><span id="histTotal"></span></div>
+          <div class="hist-list" id="histList"></div>
+        </section>
       </div>
     </div>
     <div class="foot">
@@ -307,12 +696,35 @@
       <div class="nomoney"><span>🚫</span><div id="noMoney"></div></div>
     </div>
     <div class="toast" id="toast" hidden></div>
+    <!-- Mở capsule (js/gacha-fx.js). Bấm để bỏ qua. -->
+    <div class="reveal" id="reveal" hidden>
+      <div class="rv-rays"></div>
+      <div class="rv-glow"></div>
+      <div class="rv-cap"><i class="top"></i><i class="bot"></i></div>
+      <div class="rv-item"></div>
+      <div class="rv-parts"></div>
+      <div class="rv-label"></div>
+      <div class="rv-skip"></div>
+    </div>
+    <!-- Kết quả quay: phủ cả cửa sổ. -->
+    <div class="gres" id="gres" hidden>
+      <div class="gres-card">
+        <h2 id="gresTitle"></h2>
+        <div class="gres-grid" id="gresGrid"></div>
+        <p class="gres-sum" id="gresSum"></p>
+        <div class="gres-acts">
+          <button class="act ghost" id="gresAgain" type="button"></button>
+          <button class="act" id="gresOk" type="button"></button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="js/tauri-api.js"></script>
   <script src="js/theme-apply.js"></script>
   <script src="js/miu-skin.js"></script>
   <script src="js/collection-core.js"></script>
+  <script src="js/gacha-fx.js"></script>
   <script src="js/collection.js"></script>
 </body>
 </html>

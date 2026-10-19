@@ -26,6 +26,7 @@ mod rewards;
 mod selection;
 mod sidegirl;
 mod fx;
+mod gacha;
 mod weather;
 mod weather_net;
 mod store;
@@ -281,7 +282,11 @@ fn pet_command(app: AppHandle, payload: Value) {
         // Pet vừa nạp (lại) trang: hỏi trạng thái DND để menu tròn hiện đúng.
         "dnd:sync" => companion::sync_dnd(&app),
         // Vuốt đầu pet: cộng điểm thân thiết (có trần mỗi ngày).
-        "headpat" => companion::bond_award(&app, bond::Event::Headpat),
+        "headpat" => {
+            companion::bond_award(&app, bond::Event::Headpat);
+            // Mưa tim nếu đã mở trong Bộ sưu tập.
+            collection::fx(&app, "hearts");
+        }
         // Menu tròn 💗: bảng mức thân thiết.
         "bond:show" => companion::show_bond_card(&app),
         // Menu tròn 🎮: mở trang Mini Games; từ đó mỗi trò mở cửa sổ riêng (open_mini_game).
@@ -631,6 +636,7 @@ fn main() {
             commands::collection_preview_fx,
             commands::open_collection,
             commands::collection_close,
+            commands::collection_pull,
             commands::collection_debug,
         ])
         .setup(move |app| {

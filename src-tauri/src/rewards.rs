@@ -93,8 +93,14 @@ fn react(app: &AppHandle, reward: Reward, source: Source, text: &str, done_today
     if matches!(reward, Reward::AllDone) {
         crate::collection::fx(app, "fireworks");
     } else {
-        // Xong một việc (chưa phải việc cuối ngày): mưa hoa anh đào nếu đã mở.
-        crate::collection::fx(app, "petals");
+        // Xong một việc (chưa phải việc cuối ngày): sau 22 giờ là sao băng, còn lại
+        // là mưa hoa anh đào (mỗi cái chỉ chạy nếu đã mở và đang bật).
+        let (_, hour) = companion::today_and_hour(now_ms() as u64 / 1000);
+        if hour >= 22 || hour < 5 {
+            crate::collection::fx(app, "shooting");
+        } else {
+            crate::collection::fx(app, "petals");
+        }
     }
     if source == Source::Chat {
         return;

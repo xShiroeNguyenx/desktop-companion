@@ -43,7 +43,7 @@ pub const SETS: &[MiuSet] = &[
             id: "miu.snow",
             cat: Category::MiuSet,
             rarity: Rarity::Rare,
-            price: 150,
+            price: 1500,
             name: ["Miu tuyết", "雪のミウ", "Snow Miu"],
             desc: [
                 "Miu tai mèo áo len trắng, 9 biểu cảm mùa đông.",
@@ -59,7 +59,7 @@ pub const SETS: &[MiuSet] = &[
             id: "miu.gothic",
             cat: Category::MiuSet,
             rarity: Rarity::Rare,
-            price: 150,
+            price: 1500,
             name: ["Miu Gothic", "ゴシックのミウ", "Gothic Miu"],
             desc: [
                 "Miu tai mèo váy gothic lolita tím đen, 9 biểu cảm.",

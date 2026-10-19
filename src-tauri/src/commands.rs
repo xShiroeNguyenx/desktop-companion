@@ -722,7 +722,7 @@ pub async fn collection_preview_fx(app: AppHandle, kind: String) -> Result<(), S
     Ok(())
 }
 
-/// Chỉ bản dev (npm run dev): "candy" = +1000 kẹo, "unlock" = mở hết. Bản phát hành từ chối.
+/// Chỉ bản dev (npm run dev): "candy" = +10000 kẹo, "unlock" = mở hết. Bản phát hành từ chối.
 #[tauri::command]
 pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, String> {
     if !cfg!(debug_assertions) {
@@ -730,7 +730,7 @@ pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, S
     }
     store::update_collection(&app, |c| match action.as_str() {
         "candy" => {
-            crate::collection::grant(c, 1000);
+            crate::collection::grant(c, 10_000);
             Ok(())
         }
         "unlock" => {
@@ -741,6 +741,37 @@ pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, S
     })??;
     crate::collection::changed(&app);
     Ok(crate::collection::view(&app))
+}
+
+/// 🎰 Candy Capsule: quay `count` lượt (1 hoặc 10). Trả kết quả từng lượt + view mới.
+#[tauri::command]
+pub async fn collection_pull(app: AppHandle, count: u32) -> Result<Value, String> {
+    let now = now_millis() as u64;
+    let mut rand = crate::gacha::rng();
+    let pulls = store::update_collection(&app, |c| crate::gacha::pull_many(c, count, now, &mut rand))?
+        .map_err(|e| e.code())?;
+    let a = persona::address(&store::load_settings(&app));
+    let idx = crate::collection::lang_index(a.lang);
+    let results: Vec<Value> = pulls
+        .iter()
+        .map(|p| {
+            serde_json::json!({
+                "id": p.item.id,
+                "dup": p.dup,
+                "refund": p.refund,
+                "pity": p.pity_hit,
+                "rarity": p.item.rarity.code(),
+            })
+        })
+        .collect();
+    // Pet khoe món mới hiếm nhất (nếu có), như khi đổi thẳng.
+    if let Some(best) = pulls.iter().filter(|p| !p.dup).max_by_key(|p| p.item.rarity) {
+        let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", best.item.name[idx])]);
+        let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
+        let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+    }
+    crate::collection::changed(&app);
+    Ok(serde_json::json!({ "results": results, "view": crate::collection::view(&app) }))
 }
 
 #[tauri::command]
