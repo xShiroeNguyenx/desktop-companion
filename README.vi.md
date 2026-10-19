@@ -83,6 +83,12 @@ duyệt, Word…).
 - **🕐 Đồng hồ có giờ thế giới** — giờ máy kèm ngày âm, thêm tối đa 2 đồng hồ
   (Tokyo, Seoul, New York, London…) ghi chênh giờ và "ngày mai" / "hôm qua"; tự
   tính giờ mùa hè. Hàng 🍅 bắt đầu phiên Tập trung và đếm lùi.
+- **🍬 Kẹo & Bộ sưu tập** — xong việc, phiên Tập trung, chat, vuốt đầu, thắng
+  game cũng được kẹo (cùng trần mỗi ngày với điểm thân thiết). Đổi kẹo trong 🍬 Bộ
+  sưu tập (💞 → 🍬 trên menu tròn) lấy skin widget, hiệu ứng thưởng (pháo hoa, pháo
+  giấy, mưa hoa anh đào), bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết) và bộ
+  mặt Miu (❄️ tuyết, 🦇 Gothic). Xứ Tuyết và Neko Lounge còn đổi giao diện mọi khung
+  (băng tuyết / Gothic Lolita). Chỉ là đồ trang trí; không bán bằng tiền thật.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
   bên phải.

@@ -4,17 +4,36 @@
 // Cửa sổ này là "owned window" của bảng (builder.parent): luôn nằm ngay trên
 // bảng nhưng không nổi lên trên app khác, và ẩn theo khi bảng thu nhỏ. Nó cho
 // click xuyên qua và không nhận focus, nên không chặn gì cả.
+//
+// Cửa sổ (HOSTS) cố định; ảnh đi theo BỘ (SETS, chọn trong Bộ sưu tập —
+// collection.rs). Bộ đang chọn giữ trong SET_IDX, đổi lúc chạy bằng set_side_set:
+// side.html nhận đường dẫn ảnh mới trong sự kiện side-layout.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
 
-/// Một nhân vật gắn với một bảng.
-pub struct Spec {
+/// Cửa sổ nhân vật của một bảng.
+pub struct Host {
     /// Label cửa sổ nhân vật.
     pub label: &'static str,
     /// Label bảng mà nhân vật bám vào.
+    pub host: &'static str,
+}
+
+pub const HOSTS: [Host; 6] = [
+    Host { label: "side_settings", host: "settings" },
+    Host { label: "side_tasks", host: "tasks" },
+    Host { label: "side_popup", host: "popup" },
+    Host { label: "side_weather", host: "weather" },
+    Host { label: "side_arcade", host: "arcade" },
+    Host { label: "side_collection", host: "collection" },
+];
+
+/// Một ảnh nhân vật trong một bộ.
+pub struct Girl {
+    /// Label bảng (khớp HOSTS).
     pub host: &'static str,
     pub img: &'static str,
     /// Mép trái bảng cắt ngang nhân vật ở đâu theo chiều ngang ảnh (0..1, tính
@@ -24,48 +43,74 @@ pub struct Spec {
     pub hand_right: bool,
 }
 
-/// Đo từ ảnh gốc 1024×1536 (app/media/side/).
-pub const SPECS: [Spec; 5] = [
-    Spec {
-        label: "side_settings",
-        host: "settings",
-        img: "media/side/settings-girl.png",
+/// Một bộ nhân vật. `id` = `asset` của món SideSet trong collection::CATALOG.
+pub struct Set {
+    pub id: &'static str,
+    pub girls: &'static [Girl],
+}
+
+/// SETS[0] là bộ mặc định (Bunny Lounge); bộ khác thiếu ảnh cho bảng nào thì
+/// bảng đó dùng ảnh của SETS[0]. Đo từ ảnh gốc 1024×1536 (app/media/side/).
+pub const SETS: &[Set] = &[
+// Bunny Lounge: 2 cô thỏ (tóc hồng, tóc tím nhạt) xen kẽ trên 5 bảng.
+Set {
+    id: "bunny",
+    girls: &[
         // Chỉnh theo ảnh chụp của người dùng: mép bảng cắt qua cạnh phải thân người.
-        edge_frac: 0.60,
-        hand_right: true,
-    },
-    Spec {
-        label: "side_tasks",
-        host: "tasks",
-        img: "media/side/tasks-girl.png",
-        edge_frac: 0.60,
-        hand_right: false,
-    },
-    // Cô mèo tóc xanh ở cửa sổ Trợ lý văn bản ("Mở đầy đủ" từ bông hoa).
-    Spec {
-        label: "side_popup",
-        host: "popup",
-        img: "media/side/popup-girl.png",
-        edge_frac: 0.62,
-        hand_right: true,
-    },
-    // Cô hồ ly steampunk ở thẻ dự báo thời tiết (ảnh tay vươn sẵn sang phải).
-    Spec {
-        label: "side_weather",
-        host: "weather",
-        img: "media/side/weather-girl.png",
-        edge_frac: 0.6,
-        hand_right: true,
-    },
-    // Miêu nữ gothic tím ở trang Mini Games (ảnh tay vươn sẵn sang phải).
-    Spec {
-        label: "side_arcade",
-        host: "arcade",
-        img: "media/side/arcade-girl.png",
-        edge_frac: 0.6,
-        hand_right: true,
-    },
-];
+        Girl { host: "settings", img: "media/side/settings-girl.png", edge_frac: 0.60, hand_right: true },
+        Girl { host: "tasks", img: "media/side/tasks-girl.png", edge_frac: 0.60, hand_right: false },
+        Girl { host: "popup", img: "media/side/settings-girl.png", edge_frac: 0.60, hand_right: true },
+        Girl { host: "weather", img: "media/side/tasks-girl.png", edge_frac: 0.60, hand_right: false },
+        Girl { host: "arcade", img: "media/side/settings-girl.png", edge_frac: 0.60, hand_right: true },
+        Girl { host: "collection", img: "media/side/tasks-girl.png", edge_frac: 0.60, hand_right: false },
+    ],
+},
+// Neko Lounge: cô mèo gothic tím và cô mèo punk áo hoodie tai mèo (ảnh tay vươn sẵn sang phải).
+Set {
+    id: "neko",
+    girls: &[
+        // Cô gothic tím ở bảng Cài đặt: cũng là ảnh đại diện của bộ trong Bộ sưu tập.
+        Girl { host: "settings", img: "media/side/arcade-girl.png", edge_frac: 0.6, hand_right: true },
+        Girl { host: "tasks", img: "media/side/neko/punk.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "popup", img: "media/side/arcade-girl.png", edge_frac: 0.6, hand_right: true },
+        Girl { host: "weather", img: "media/side/neko/punk.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "arcade", img: "media/side/arcade-girl.png", edge_frac: 0.6, hand_right: true },
+        Girl { host: "collection", img: "media/side/neko/punk.webp", edge_frac: 0.6, hand_right: true },
+    ],
+},
+// Hồ ly: cô hồ ly miko (áo trắng đỏ, chuông vàng; ảnh tay vươn sang trái → lật)
+// và cô hồ ly steampunk (trước ở thẻ Thời tiết của Bunny Lounge).
+Set {
+    id: "fox",
+    girls: &[
+        // Cô miko ở bảng Cài đặt: cũng là ảnh đại diện của bộ.
+        Girl { host: "settings", img: "media/side/fox/miko.webp", edge_frac: 0.6, hand_right: false },
+        Girl { host: "tasks", img: "media/side/weather-girl.png", edge_frac: 0.6, hand_right: true },
+        Girl { host: "popup", img: "media/side/fox/miko.webp", edge_frac: 0.6, hand_right: false },
+        Girl { host: "weather", img: "media/side/weather-girl.png", edge_frac: 0.6, hand_right: true },
+        Girl { host: "arcade", img: "media/side/fox/miko.webp", edge_frac: 0.6, hand_right: false },
+        Girl { host: "collection", img: "media/side/weather-girl.png", edge_frac: 0.6, hand_right: true },
+    ],
+},
+// Xứ Tuyết: 3 ảnh trải cho 5 bảng (cô mèo băng pha lê, cô thỏ tuyết, cáo tuyết).
+// Ảnh 1024×1536 WebP trong suốt, cả ba tay vươn sẵn sang phải; khung hình giống
+// cô mèo gothic nên dùng chung mốc mép 0.6.
+Set {
+    id: "snow",
+    girls: &[
+        Girl { host: "settings", img: "media/side/snow/ice.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "tasks", img: "media/side/snow/bunny.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "popup", img: "media/side/snow/fox.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "weather", img: "media/side/snow/bunny.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "arcade", img: "media/side/snow/ice.webp", edge_frac: 0.6, hand_right: true },
+        Girl { host: "collection", img: "media/side/snow/fox.webp", edge_frac: 0.6, hand_right: true },
+    ],
+}];
+
+/// Ảnh đại diện của một bộ (ảnh ở bảng Cài đặt) cho trang Bộ sưu tập.
+pub fn thumb(set_id: &str) -> &'static str {
+    girl_in(set_index(set_id), "settings").map_or("", |g| g.img)
+}
 
 /// Tỉ lệ ảnh (rộng / cao).
 const ASPECT: f64 = 2.0 / 3.0;
@@ -110,26 +155,59 @@ pub fn flip(hand_right: bool) -> bool {
 /// Công tắc trong Cài đặt (Settings.side_girls). Giữ trong RAM vì sync chạy
 /// mỗi lần bảng bị kéo — không đọc file settings mỗi lần.
 static ENABLED: AtomicBool = AtomicBool::new(false);
+/// Bộ đang chọn (chỉ số trong SETS). Cũng giữ trong RAM vì lý do trên.
+static SET_IDX: AtomicUsize = AtomicUsize::new(0);
 
-/// Bật / tắt nhân vật, áp dụng ngay cho cả hai bảng.
+/// Chỉ số bộ theo id; id lạ → bộ mặc định.
+pub fn set_index(id: &str) -> usize {
+    SETS.iter().position(|s| s.id == id).unwrap_or(0)
+}
+
+/// Ảnh cho bảng `host` trong bộ `idx`; bộ thiếu bảng đó (hoặc idx lạ) thì ảnh của SETS[0].
+fn girl_in(idx: usize, host: &str) -> Option<&'static Girl> {
+    SETS.get(idx)
+        .and_then(|s| s.girls.iter().find(|g| g.host == host))
+        .or_else(|| SETS[0].girls.iter().find(|g| g.host == host))
+}
+
+fn girl_for(host: &str) -> Option<&'static Girl> {
+    girl_in(SET_IDX.load(Ordering::SeqCst), host)
+}
+
+fn label_for(host: &str) -> Option<&'static str> {
+    HOSTS.iter().find(|h| h.host == host).map(|h| h.label)
+}
+
+/// Bật / tắt nhân vật, áp dụng ngay cho mọi bảng.
 pub fn set_enabled(app: &AppHandle, on: bool) {
     ENABLED.store(on, Ordering::SeqCst);
-    for s in &SPECS {
-        sync(app, s.host, false);
+    for h in &HOSTS {
+        sync(app, h.host, false);
     }
 }
 
-fn spec_for_host(host: &str) -> Option<&'static Spec> {
-    SPECS.iter().find(|s| s.host == host)
+/// Đổi bộ nhân vật (collection::effective_side_set). Không đổi thì không làm gì.
+pub fn set_side_set(app: &AppHandle, id: &str) {
+    let idx = set_index(id);
+    if SET_IDX.swap(idx, Ordering::SeqCst) == idx {
+        return;
+    }
+    for h in &HOSTS {
+        sync(app, h.host, false);
+    }
 }
 
 /// Dựng sẵn (ẩn) cửa sổ nhân vật. Gọi trong setup(), SAU khi bảng đã dựng.
 pub fn precreate(app: &AppHandle) {
     ENABLED.store(crate::store::load_settings(app).side_girls, Ordering::SeqCst);
-    for s in &SPECS {
-        let Some(host) = app.get_webview_window(s.host) else { continue };
-        let builder = WebviewWindowBuilder::new(app, s.label, WebviewUrl::App("side.html".into()))
-            .initialization_script(&format!("window.__SIDE_IMG__ = {:?};", s.img))
+    let idx = set_index(crate::collection::effective_side_set(&crate::store::load_collection(app)));
+    SET_IDX.store(idx, Ordering::SeqCst);
+    for h in &HOSTS {
+        let Some(host) = app.get_webview_window(h.host) else { continue };
+        // Ảnh lúc dựng; đổi bộ sau đó đi qua sự kiện side-layout.
+        let img = girl_in(idx, h.host).map_or("", |g| g.img);
+        let builder = WebviewWindowBuilder::new(app, h.label, WebviewUrl::App("side.html".into()))
+            .initialization_script(&format!("window.__SIDE_IMG__ = {:?};", img))
             .inner_size(300.0, 450.0)
             .transparent(true)
             .decorations(false)
@@ -144,7 +222,7 @@ pub fn precreate(app: &AppHandle) {
                 let _ = w.set_ignore_cursor_events(true);
                 crate::windows::set_no_activate(&w);
             }
-            Err(e) => eprintln!("[sidegirl] dựng {} lỗi: {e}", s.label),
+            Err(e) => eprintln!("[sidegirl] dựng {} lỗi: {e}", h.label),
         }
     }
 }
@@ -153,8 +231,8 @@ pub fn precreate(app: &AppHandle) {
 /// thu nhỏ thì ẩn theo. `nudge` = vừa mở bảng: nếu bên trái không đủ chỗ cho
 /// nhân vật thì dịch bảng sang phải. Lúc người dùng tự kéo bảng thì không.
 pub fn sync(app: &AppHandle, host: &str, nudge: bool) {
-    let Some(spec) = spec_for_host(host) else { return };
-    let (Some(h), Some(girl)) = (app.get_webview_window(host), app.get_webview_window(spec.label)) else {
+    let (Some(label), Some(spec)) = (label_for(host), girl_for(host)) else { return };
+    let (Some(h), Some(girl)) = (app.get_webview_window(host), app.get_webview_window(label)) else {
         return;
     };
     let shown = ENABLED.load(Ordering::SeqCst)
@@ -183,17 +261,18 @@ pub fn sync(app: &AppHandle, host: &str, nudge: bool) {
     let _ = girl.set_size(PhysicalSize::new(w.max(1) as u32, hh.max(1) as u32));
     let _ = girl.set_position(PhysicalPosition::new(x, y));
     // "edge": mép bảng ở đâu trong cửa sổ nhân vật (0..1 từ trái), để side.html
-    // làm mờ phần người đè lên bảng cho thấy nội dung bên dưới.
+    // làm mờ phần người đè lên bảng cho thấy nội dung bên dưới. "img": ảnh của
+    // bộ đang chọn (side.html chỉ đổi src khi khác).
     let _ = app.emit_to(
-        spec.label,
+        label,
         "side-layout",
-        json!({ "flip": flip(spec.hand_right), "edge": spec.edge_frac }),
+        json!({ "flip": flip(spec.hand_right), "edge": spec.edge_frac, "img": spec.img }),
     );
     let _ = girl.show();
 }
 
 pub fn hide(app: &AppHandle, host: &str) {
-    if let Some(girl) = spec_for_host(host).and_then(|s| app.get_webview_window(s.label)) {
+    if let Some(girl) = label_for(host).and_then(|l| app.get_webview_window(l)) {
         let _ = girl.hide();
     }
 }
@@ -256,10 +335,51 @@ mod tests {
     }
 
     #[test]
-    fn every_panel_has_one_girl() {
-        for host in ["settings", "tasks", "popup", "weather", "arcade"] {
-            assert_eq!(SPECS.iter().filter(|s| s.host == host).count(), 1);
+    fn every_panel_has_one_girl_in_the_default_set() {
+        for h in &HOSTS {
+            assert_eq!(SETS[0].girls.iter().filter(|g| g.host == h.host).count(), 1, "{}", h.host);
+            assert!(h.label.starts_with("side_"));
         }
-        assert!(SPECS.iter().all(|s| (0.0..=1.0).contains(&s.edge_frac) && s.label.starts_with("side_")));
+        for s in SETS {
+            for g in s.girls {
+                assert!(HOSTS.iter().any(|h| h.host == g.host), "{}: host lạ {}", s.id, g.host);
+                assert!((0.0..=1.0).contains(&g.edge_frac), "{}/{}", s.id, g.host);
+                assert!(g.img.starts_with("media/side/"), "{}/{}", s.id, g.host);
+            }
+        }
+    }
+
+    #[test]
+    fn missing_girl_falls_back_to_bunny() {
+        // Bộ không tồn tại (idx lạ) → ảnh Bunny cho mọi bảng.
+        for h in &HOSTS {
+            assert_eq!(girl_in(99, h.host).map(|g| g.img), girl_in(0, h.host).map(|g| g.img));
+        }
+        assert_eq!(girl_in(0, "nope").map(|g| g.img), None);
+        assert_eq!(set_index("bunny"), 0);
+        assert_eq!(set_index("lạ"), 0);
+    }
+
+    #[test]
+    fn every_set_image_exists() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../app");
+        for s in SETS {
+            for g in s.girls {
+                assert!(root.join(g.img).is_file(), "{}/{}: thiếu {}", s.id, g.host, g.img);
+            }
+            assert!(!thumb(s.id).is_empty(), "{}", s.id);
+        }
+        assert_eq!(thumb("snow"), "media/side/snow/ice.webp");
+    }
+
+    #[test]
+    fn sets_match_the_collection_catalog() {
+        use crate::collection::{items, Category};
+        for it in items().filter(|i| i.cat == Category::SideSet) {
+            assert!(SETS.iter().any(|s| s.id == it.asset), "catalog {} không có trong SETS", it.id);
+        }
+        for s in SETS {
+            assert!(items().any(|i| i.cat == Category::SideSet && i.asset == s.id), "SETS {} không có trong catalog", s.id);
+        }
     }
 }

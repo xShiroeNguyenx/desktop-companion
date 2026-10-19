@@ -65,14 +65,30 @@ pub fn start(app: &AppHandle) {
     let s = store::load_settings(app);
     for spec in specs() {
         if (spec.state)(&s).pinned {
-            open_on_main(app, spec);
+            open_on_main(app, spec, false);
         }
     }
 }
 
-fn open_on_main(app: &AppHandle, spec: &'static Spec) {
+/// Đưa widget lên trên mọi cửa sổ một lần. set_focus từ luồng nền bị Windows chặn
+/// (chống cửa sổ tự nhảy lên), nên bật "luôn nổi" trong chốc lát rồi trả về như cũ:
+/// z-order đổi ngay mà không cần quyền giành focus.
+fn raise(w: &tauri::WebviewWindow, keep_top: bool) {
+    let _ = w.set_always_on_top(true);
+    if !keep_top {
+        let _ = w.set_always_on_top(false);
+    }
+}
+
+/// `front` = người dùng vừa bấm ghim: đưa widget lên trước một lần, không thì
+/// widget tắt 📍 sẽ mở NGAY SAU bảng Cài đặt / cửa sổ đang dùng và trông như chưa mở.
+/// Lúc khởi động (front = false) thì không giành focus.
+fn open_on_main(app: &AppHandle, spec: &'static Spec, front: bool) {
     if let Some(w) = app.get_webview_window(spec.label) {
         let _ = w.show();
+        if front {
+            raise(&w, (spec.state)(&store::load_settings(app)).top);
+        }
         (spec.broadcast)(app);
         return;
     }
@@ -108,6 +124,9 @@ fn open_on_main(app: &AppHandle, spec: &'static Spec) {
     let _ = w.set_position(PhysicalPosition::new(pos.0, pos.1));
     crate::pins::set_tool_window(&w);
     let _ = w.show();
+    if front {
+        raise(&w, st.top);
+    }
     crate::windows::force_repaint(app, spec.label);
 }
 
@@ -127,7 +146,7 @@ pub fn set_pinned(app: &AppHandle, spec: &'static Spec, on: bool) -> Result<(), 
     let app2 = app.clone();
     app.run_on_main_thread(move || {
         if on {
-            open_on_main(&app2, spec);
+            open_on_main(&app2, spec, true);
         } else if let Some(w) = app2.get_webview_window(spec.label) {
             let _ = w.destroy();
         }

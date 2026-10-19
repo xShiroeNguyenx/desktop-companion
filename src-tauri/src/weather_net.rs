@@ -176,6 +176,7 @@ pub fn view(app: &AppHandle) -> Value {
     let c = if has_city(&s) { cache(app, &s) } else { Cache::default() };
     let (error, failed_at) = NET.lock().map(|n| (n.error.clone(), n.failed_at)).unwrap_or_default();
     let now = now_secs();
+    let col = store::load_collection(app);
     json!({
         "city": s.weather_city,
         "hasCity": has_city(&s),
@@ -194,6 +195,10 @@ pub fn view(app: &AppHandle) -> Value {
         "pet": a.pet,
         "you": a.you,
         "me": a.me,
+        // Skin màu + thư mục ảnh Miu của widget ghim (Bộ sưu tập).
+        "skin": crate::collection::effective_skin(&col),
+        "miuDir": crate::collection::effective_miu_dir(&col),
+        "miuExt": crate::collection::effective_miu_ext(&col),
     })
 }
 

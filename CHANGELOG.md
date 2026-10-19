@@ -6,6 +6,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-19
+
+### Added
+- **🍬 Candy and a Collection.** Everything that already earns friendship
+  points (finished tasks, focus sessions, chat, headpats, game wins, being
+  around) now also earns candy, with the same daily caps, and every friendship
+  milestone adds 20 more. Spend it in the new **🍬 Collection** window — open
+  it from 💞 → 🍬 on the ring, the 🎁 tile on the Mini Games page, or Settings →
+  *🎨 Diện mạo*. Candy is only for decorations: nothing useful is ever locked,
+  and nothing is sold for real money.
+- **Widget skins.** Five new colour themes (Sakura, Night sky, Mint, Sunset,
+  Ocean) for the pinned calendar, clock and weather widgets, applied to all
+  three at once the moment you pick one. The weather widget still tints with
+  the sky (rain, night, sunshine) on top of any skin.
+- **Reward effects.** Fireworks when you finish every task of the day, a
+  sakura shower each time you finish a task, and confetti when a focus session
+  ends; turn each one on or off after unlocking,
+  and preview them before you buy.
+- **❄️ Snow Lounge**, a new character set for Bunny Lounge (Epic, 300 🍬): an
+  ice-crystal cat girl, a snow bunny and a snow fox lean on Settings, Tasks,
+  the text assistant, the weather card and Mini Games. While it is in use,
+  the Settings panel turns icy blue: each group becomes a frozen glass card with
+  snow on top, snow falls gently, see-through ice-and-snow corners (a snow
+  bunny, a snowman and a snowy cottage) frame the panel, and a Christmas tree
+  stands behind the pet.
+- **🐱 Neko Lounge**, a new character set (Epic, 300 🍬): the gothic purple cat
+  girl from the old Bunny Lounge and a new punk cat girl in a cat-ear hoodie. While
+  it is in use, the Settings panel turns gothic lolita: dark glass cards with
+  purple trim, drifting violet sparkles and see-through amethyst corners (a
+  black bunny, a snowman and a gothic cottage).
+- **🦊 Fox Lounge**, a new character set (Epic, 300 🍬): a shrine-maiden fox
+  with golden bells and the steampunk fox girl from the old Bunny Lounge.
+- **🦇 Gothic Miu**, a new face set for Miu (Rare, 150 🍬): a cat-eared Miu
+  in a purple-and-black gothic lolita dress with nine expressions.
+- **❄️ Snow Miu**, a new face set for Miu (Rare, 150 🍬): a cat-eared Miu in
+  a white knit coat with nine winter expressions. The chosen face set shows on
+  the pinned widgets, the Mini Games page and inside every game.
+- Miu cheers when you unlock something, and the 💗 friendship card shows how
+  much candy you have.
+
+### Changed
+- Every panel follows the character set in use: Settings, Tasks, the text
+  assistant, the weather card, the Collection, the Mini Games page and all three
+  games turn icy blue with Snow Lounge and gothic lolita with Neko Lounge, with
+  matching corner decorations, and switch the moment you change sets.
+- Bunny Lounge is now just its two bunny girls (pink and lilac), taking turns
+  on the five panels; the cat girls moved to Neko Lounge and the steampunk fox
+  to Fox Lounge.
+- Bunny Lounge characters and the mini Miu faces on the widgets can now be
+  swapped while the app runs, ready for new character and face sets.
+
+### Fixed
+- Pinning a widget from Settings, the ring or the tray brings it to the front,
+  so a widget with 📍 off no longer opens hidden behind the window you are
+  using (it looked as if the calendar would not open).
+- The "LIVE2D" label under the pet is readable on light backgrounds.
+
 ## [0.9.1] - 2026-10-16
 
 ### Added
@@ -480,6 +537,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.9.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.2
 [0.9.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.1
 [0.9.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.0
 [0.8.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.8.0

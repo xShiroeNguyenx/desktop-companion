@@ -255,6 +255,17 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    // 🍬 Bộ sưu tập (menu tròn 💞 → 🍬, ô 🎁 Mini Games, Cài đặt → Diện mạo).
+    let _ = WebviewWindowBuilder::new(app, "collection", WebviewUrl::App("collection.html".into()))
+        .title("Bộ sưu tập")
+        .inner_size(COLLECTION_W, COLLECTION_H)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+        .build();
+
     // Cửa sổ Gỡ mìn: cùng kiểu, to hơn một chút cho bàn 16×16.
     let _ = WebviewWindowBuilder::new(app, "mines", WebviewUrl::App("mines.html".into()))
         .title("Gỡ mìn")
@@ -466,6 +477,10 @@ const MINES_H: f64 = 448.0;
 // `html { zoom: 0.66 }` trong arcade.html.
 const ARCADE_W: f64 = 726.0;
 const ARCADE_H: f64 = 475.0;
+// Bộ sưu tập: collection.html vẽ theo khổ 1100×720, zoom 0.66 — ĐỒNG BỘ với
+// `html { zoom: 0.66 }` trong collection.html.
+const COLLECTION_W: f64 = 726.0;
+const COLLECTION_H: f64 = 475.0;
 
 // Thẻ dự báo: weather.html vẽ theo khổ 720×600, zoom 0.66 — ĐỒNG BỘ với
 // `html { zoom: 0.66 }` trong weather.html.
@@ -505,6 +520,22 @@ pub fn open_arcade(app: &AppHandle) {
     crate::sidegirl::sync(app, "arcade", true);
     let _ = app.emit_to("arcade", "arcade-refresh", ());
     force_repaint(app, "arcade");
+}
+
+/// 🍬 Bộ sưu tập: hiện giữa màn hình, trang đọc lại dữ liệu (collection-refresh).
+pub fn open_collection(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("collection") else {
+        dbg_log("[windows] collection window missing (precreate failed?)");
+        return;
+    };
+    let _ = w.center();
+    let _ = w.show();
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    // Nhân vật bám mép trái như các khung khác; thiếu chỗ thì dịch khung sang phải.
+    crate::sidegirl::sync(app, "collection", true);
+    let _ = app.emit_to("collection", "collection-refresh", ());
+    force_repaint(app, "collection");
 }
 
 /// Bảng mini game trên pet → Oẳn tù tì: hiện cửa sổ game giữa màn hình, bắt

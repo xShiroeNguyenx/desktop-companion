@@ -62,7 +62,7 @@
 
     const f = data.focus || { phase: 'idle' };
     const face = K.face(f.phase, local.hour);
-    const src = `media/game/rps-${face}.png`;
+    const src = `${data.miuDir || 'media/game'}/rps-${face}.${data.miuExt || 'png'}`;
     if ($('miu').getAttribute('src') !== src) $('miu').setAttribute('src', src);
     const btn = $('focusBtn');
     const left = K.countdown((f.remaining || 0) - (now - receivedAt) / 1000);
@@ -79,6 +79,8 @@
     if (!v) return;
     data = v;
     receivedAt = Date.now();
+    // Skin màu chọn trong Bộ sưu tập (app/skins.css).
+    document.body.dataset.skin = data.skin || 'lavender';
     renderStatic();
     tick();
   }

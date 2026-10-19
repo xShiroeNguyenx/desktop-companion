@@ -105,7 +105,7 @@
     // Miu mini: ngày lễ / sinh nhật thì reo, có việc quá hạn thì giật mình,
     // có việc tới hạn thì "cố lên", còn lại nháy mắt.
     const face = fest.length ? 'cheer' : due.some((t) => t.over) ? 'surprised' : due.length ? 'fight' : 'wink';
-    const src = `media/game/rps-${face}.png`;
+    const src = `${data.miuDir || 'media/game'}/rps-${face}.${data.miuExt || 'png'}`;
     if ($('miu').getAttribute('src') !== src) $('miu').setAttribute('src', src);
     // Chừa chỗ cho dòng lễ và ô thêm việc: tối đa 2 việc, còn lại gộp "+n".
     const room = fest.length ? 1 : 2;
@@ -140,6 +140,8 @@
   function receive(v) {
     if (!v) return;
     data = v;
+    // Skin màu chọn trong Bộ sưu tập (app/skins.css).
+    document.body.dataset.skin = data.skin || 'lavender';
     render();
   }
 

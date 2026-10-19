@@ -6,12 +6,14 @@ mod awareness;
 mod bond;
 mod calendar_pin;
 mod clock_pin;
+mod collection;
 mod chat;
 mod commands;
 mod companion;
 mod focus;
 mod lines;
 mod links;
+mod miu_sets;
 mod lunar;
 mod llm;
 mod naming;
@@ -284,6 +286,8 @@ fn pet_command(app: AppHandle, payload: Value) {
         "bond:show" => companion::show_bond_card(&app),
         // Menu tròn 🎮: mở trang Mini Games; từ đó mỗi trò mở cửa sổ riêng (open_mini_game).
         "games:show" => companion::show_games(&app),
+        // Menu tròn 💞 → 🍬: Bộ sưu tập (kẹo, skin, hiệu ứng, bộ nhân vật).
+        "shop:show" => windows::open_collection(&app),
         // Menu tròn 💞 → 🌦: bật / tắt hiệu ứng thời tiết (loại chọn trong Cài đặt).
         "weather:toggle" => {
             fx::toggle(&app);
@@ -620,6 +624,14 @@ fn main() {
             commands::open_weather,
             commands::weather_close,
             commands::arcade_close,
+            commands::collection_get,
+            commands::collection_buy,
+            commands::collection_select,
+            commands::collection_toggle_effect,
+            commands::collection_preview_fx,
+            commands::open_collection,
+            commands::collection_close,
+            commands::collection_debug,
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
@@ -897,6 +909,8 @@ fn main() {
                     "weather" => sidegirl::sync(window.app_handle(), "weather", false),
                     // Cô mèo gothic bám mép trang Mini Games.
                     "arcade" => sidegirl::sync(window.app_handle(), "arcade", false),
+                    // Nhân vật bám mép Bộ sưu tập.
+                    "collection" => sidegirl::sync(window.app_handle(), "collection", false),
                     label if label == weather_net::PIN_LABEL => {
                         if let (WindowEvent::Moved(pos), true) =
                             (event, window.is_visible().unwrap_or(false))

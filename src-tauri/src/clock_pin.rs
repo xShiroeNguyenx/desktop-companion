@@ -58,6 +58,7 @@ pub fn clean_zones(zones: &[String]) -> Vec<String> {
 pub fn view(app: &AppHandle) -> Value {
     let s = store::load_settings(app);
     let a = crate::persona::address(&s);
+    let c = store::load_collection(app);
     let (phase, remaining, length) = crate::companion::focus_info(app);
     json!({
         "pinTop": s.clock_pin.top,
@@ -65,6 +66,9 @@ pub fn view(app: &AppHandle) -> Value {
         "zones": clean_zones(&s.clock_zones),
         "focus": { "phase": phase, "remaining": remaining, "length": length },
         "focusMin": s.focus_min,
+        "skin": crate::collection::effective_skin(&c),
+        "miuDir": crate::collection::effective_miu_dir(&c),
+        "miuExt": crate::collection::effective_miu_ext(&c),
     })
 }
 

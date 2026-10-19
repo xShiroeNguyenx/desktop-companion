@@ -1,0 +1,370 @@
+/*
+  Giao diện Cài đặt đi kèm bộ nhân vật ❄️ Xứ Tuyết (collection.rs side.snow).
+  settings.js đặt body[data-theme="snow"] khi đang chọn bộ này VÀ Bunny Lounge
+  đang bật. Chỉ ghi đè màu / chất liệu của ui.css và settings.html: mỗi nhóm
+  thành một thẻ kính sương có lớp tuyết đọng, tiêu đề to kèm dòng mô tả
+  (h3[data-sub], giao diện mặc định không hiện). Bố cục giữ nguyên.
+*/
+
+body[data-theme="snow"] {
+  --bg: #dce9f8;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-2: #f3f8ff;
+  --border: #c9dcf2;
+  --text: #24385a;
+  --muted: #6b82a3;
+  --accent: #4f8fe6;
+  --accent-2: #8fb8f5;
+  color: var(--text);
+  background:
+    radial-gradient(70% 55% at 10% 0%, rgba(255, 255, 255, 0.95), transparent 60%),
+    radial-gradient(60% 50% at 95% 8%, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(90% 60% at 50% 110%, rgba(255, 255, 255, 0.9), transparent 60%),
+    linear-gradient(180deg, #b9d3f1, #d6e6f8 45%, #eaf2fc);
+}
+
+/* Tuyết rơi: hai lớp chấm trắng trượt xuống, không chặn chuột. */
+body[data-theme="snow"]::before,
+body[data-theme="snow"]::after {
+  content: '';
+  position: fixed;
+  inset: -220px 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(2.5px 2.5px at 20px 30px, #fff, transparent),
+    radial-gradient(3.5px 3.5px at 90px 120px, #fff, transparent),
+    radial-gradient(2px 2px at 160px 60px, #fff, transparent),
+    radial-gradient(3px 3px at 230px 170px, #fff, transparent);
+  background-size: 260px 200px;
+  opacity: 0.9;
+  animation: snow-fall 18s linear infinite;
+}
+body[data-theme="snow"]::after {
+  background-size: 340px 260px;
+  opacity: 0.6;
+  animation-duration: 28s;
+}
+@keyframes snow-fall {
+  from { transform: translateY(0); }
+  to { transform: translateY(200px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme="snow"]::before,
+  body[data-theme="snow"]::after { animation: none; }
+}
+body[data-theme="snow"] > * { position: relative; z-index: 1; }
+
+/* ─── Đầu trang: tiêu đề to + dòng phụ, viền băng nhũ phía dưới ─────────── */
+body[data-theme="snow"] .set-head { padding: 12px 18px 10px; }
+body[data-theme="snow"] .set-head h2 {
+  font-size: 20px;
+  color: #1f3355;
+  display: flex; flex-direction: column; line-height: 1.15;
+}
+body[data-theme="snow"] .set-head h2::after {
+  content: 'Desktop Companion · ❄ Xứ Tuyết';
+  font-size: 11.5px; font-weight: 600; color: var(--muted);
+}
+
+/* ─── Cột: trong suốt, mỗi nhóm là một thẻ riêng ───────────────────────── */
+body[data-theme="snow"] .set-col {
+  gap: 14px;
+  padding: 8px 6px 10px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  scrollbar-color: rgba(79, 143, 230, 0.45) transparent;
+}
+body[data-theme="snow"] .set-col::-webkit-scrollbar-thumb { background: rgba(79, 143, 230, 0.4); }
+
+body[data-theme="snow"] .set-col > .set-group {
+  position: relative;
+  padding: 16px 14px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 247, 255, 0.86));
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 18px rgba(70, 120, 190, 0.18), inset 0 1px 0 #fff;
+}
+/* Lớp tuyết đọng gợn sóng trên mép thẻ. */
+body[data-theme="snow"] .set-col > .set-group::before {
+  content: '';
+  position: absolute; left: 10px; right: 10px; top: -6px; height: 12px;
+  border-radius: 10px;
+  background:
+    radial-gradient(10px 7px at 12% 60%, #fff 95%, transparent),
+    radial-gradient(14px 8px at 35% 55%, #fff 95%, transparent),
+    radial-gradient(11px 7px at 62% 60%, #fff 95%, transparent),
+    radial-gradient(15px 8px at 86% 55%, #fff 95%, transparent),
+    linear-gradient(#fff, #fff) 0 70% / 100% 50% no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(120, 160, 220, 0.25));
+}
+/* Bông tuyết ở góc thẻ. */
+body[data-theme="snow"] .set-col > .set-group::after {
+  content: '❄';
+  position: absolute; right: 14px; top: 12px;
+  font-size: 18px; color: #b8d4f6;
+  pointer-events: none;
+}
+
+body[data-theme="snow"] .set-group > h3 {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 0 24px 6px 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #1f3355;
+  border-bottom: 1px dashed rgba(79, 143, 230, 0.3);
+}
+body[data-theme="snow"] .set-group > h3[data-sub]::after {
+  content: attr(data-sub);
+  flex-basis: 100%;
+  font-size: 11.5px; font-weight: 500; color: var(--muted);
+}
+
+body[data-theme="snow"] .set-toggle {
+  border-color: #d6e5f6;
+  background: #fff;
+}
+body[data-theme="snow"] .set-toggle--premium {
+  background: linear-gradient(135deg, #e4f0ff, #f3ecff);
+  border-color: #c9dcf2;
+}
+
+body[data-theme="snow"] input,
+body[data-theme="snow"] select,
+body[data-theme="snow"] textarea,
+body[data-theme="snow"] .set-col input[type="text"],
+body[data-theme="snow"] .set-col input[type="password"] {
+  background: #f7fbff;
+  color: var(--text);
+  border-color: #cfe0f4;
+  border-radius: 10px;
+}
+body[data-theme="snow"] input:focus,
+body[data-theme="snow"] select:focus,
+body[data-theme="snow"] textarea:focus { border-color: var(--accent); }
+
+body[data-theme="snow"] .set-col button.ghost {
+  background: rgba(79, 143, 230, 0.1);
+  border-color: rgba(79, 143, 230, 0.35);
+  color: #2f6fc8;
+}
+body[data-theme="snow"] .set-col button.ghost:hover { background: rgba(79, 143, 230, 0.18); }
+
+/* ─── Khe giữa: bệ tuyết dưới chân pet ─────────────────────────────────── */
+body[data-theme="snow"] .set-grid::after {
+  content: '';
+  grid-column: 2; grid-row: 1;
+  align-self: end; justify-self: center;
+  width: 150px; height: 46px; margin-bottom: 40px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, #fff 0%, #eef5ff 55%, rgba(220, 235, 252, 0) 72%);
+  filter: drop-shadow(0 6px 8px rgba(90, 140, 210, 0.25));
+  pointer-events: none;
+}
+
+/* ─── Chân trang: dải tuyết, nút Lưu hồng như ảnh mẫu ─────────────────── */
+body[data-theme="snow"] .set-foot {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85) 45%);
+  border-top: none;
+}
+body[data-theme="snow"] .set-foot button.action {
+  background: linear-gradient(180deg, #ff8fc0, #e85f99);
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 14px rgba(232, 95, 153, 0.35);
+}
+
+/* ─── Đồ trang trí (media/side/snow/deco/*.webp, ~30 KB mỗi ảnh) ──────────
+   Đặt bằng pseudo-element ở chỗ không che chữ; không chặn chuột. */
+
+/* Cây thông + cụm bông tuyết: góc phải đầu trang. */
+body[data-theme="snow"] .set-head { position: relative; }
+body[data-theme="snow"] .set-head::after {
+  content: '';
+  position: absolute; right: 16px; top: 2px;
+  width: 150px; height: 62px;
+  background:
+    url('media/side/snow/deco/tree.webp') right bottom / auto 62px no-repeat;
+  pointer-events: none;
+}
+
+/* Nhà tuyết góc dưới trái, người tuyết cạnh nút Lưu. Chữ trạng thái dịch
+   sang phải để không nằm dưới ngôi nhà. */
+body[data-theme="snow"] .set-foot { position: relative; padding-left: 128px; }
+body[data-theme="snow"] .set-foot::before,
+body[data-theme="snow"] .set-foot::after {
+  content: '';
+  position: absolute; bottom: 4px;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  pointer-events: none;
+}
+body[data-theme="snow"] .set-foot::before {
+  left: 10px; width: 112px; height: 100px;
+}
+body[data-theme="snow"] .set-foot::after {
+  right: 152px; width: 70px; height: 84px;
+}
+
+/* Thỏ bông ngồi bên bệ tuyết dưới chỗ pet đứng. */
+body[data-theme="snow"] .set-grid::after {
+  width: 190px; height: 92px; margin-bottom: 20px;
+  border-radius: 0;
+  background:
+    url('media/side/snow/deco/bunny.webp') 4px bottom / auto 66px no-repeat,
+    radial-gradient(ellipse 75px 22px at 58% 78%, #fff 0%, #eef5ff 55%, rgba(220, 235, 252, 0) 100%);
+}
+
+/* Đồ trang trí hiện TRỌN (không bị thẻ cắt ngang), nằm trên thẻ nhưng mờ 45%
+   để chữ bên dưới vẫn đọc được; chuột bấm xuyên qua. */
+body[data-theme="snow"] .set-grid { z-index: 2; }
+body[data-theme="snow"] .set-foot { z-index: 3; }
+body[data-theme="snow"] .set-head { z-index: 3; }
+body[data-theme="snow"] .set-col { position: relative; z-index: 1; }
+body[data-theme="snow"] .set-head::after,
+body[data-theme="snow"] .set-foot::before,
+body[data-theme="snow"] .set-foot::after { opacity: 0.45; }
+body[data-theme="snow"] .set-grid::after {
+  position: relative; z-index: 2;
+  opacity: 0.45;
+  background:
+    url('media/side/snow/deco/bunny.webp') 22px bottom / auto 62px no-repeat,
+    radial-gradient(ellipse 75px 22px at 58% 78%, #fff 0%, #eef5ff 55%, rgba(220, 235, 252, 0) 100%);
+}
+
+/* ─── Đóng băng nhẹ: mặt kính băng, sương giá góc khung, ô nhập ──────────── */
+
+/* Mặt kính băng: viền xanh lạnh, ánh băng ở mép trong, vệt bóng chéo. */
+body[data-theme="snow"] .set-col > .set-group {
+  border-color: rgba(190, 220, 255, 0.95);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.55) 38%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.93), rgba(236, 245, 255, 0.88));
+  box-shadow:
+    0 6px 18px rgba(70, 120, 190, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 0 22px rgba(170, 210, 255, 0.45);
+}
+
+/* Sương giá bám 4 góc khung: các đốm trắng mờ chồng lên nhau. */
+body[data-theme="snow"] .set-grid { position: relative; }
+body[data-theme="snow"] .set-grid::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(160px 120px at 0 0, rgba(255, 255, 255, 0.85), transparent 70%),
+    radial-gradient(160px 120px at 100% 0, rgba(255, 255, 255, 0.8), transparent 70%),
+    radial-gradient(200px 140px at 0 100%, rgba(255, 255, 255, 0.9), transparent 70%),
+    radial-gradient(200px 140px at 100% 100%, rgba(255, 255, 255, 0.9), transparent 70%),
+    radial-gradient(4px 4px at 30px 40px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(3px 3px at 70px 18px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(3px 3px at calc(100% - 50px) 30px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(4px 4px at calc(100% - 26px) 70px, rgba(255, 255, 255, 0.9), transparent);
+}
+
+/* Ô nhập như phủ một lớp băng mỏng. */
+body[data-theme="snow"] input,
+body[data-theme="snow"] select,
+body[data-theme="snow"] .set-col input[type="text"],
+body[data-theme="snow"] .set-col input[type="password"] {
+  box-shadow: inset 0 1px 3px rgba(150, 195, 245, 0.35);
+}
+
+/* Đầu trang không còn đồ trang trí; cây thông đứng ở khe giữa, sau lưng pet
+   (cửa sổ pet luôn nằm trên bảng Cài đặt), cạnh thỏ bông và bệ tuyết. */
+body[data-theme="snow"] .set-head::after { content: none; }
+body[data-theme="snow"] .set-grid::after {
+  width: 200px; height: 250px; margin-bottom: 18px;
+  background:
+    url('media/side/snow/deco/bunny.webp') 30% bottom / auto 46px no-repeat,
+    url('media/side/snow/deco/tree.webp') center calc(100% - 14px) / auto 190px no-repeat,
+    radial-gradient(ellipse 78px 22px at 50% calc(100% - 12px), #fff 0%, #eef5ff 55%, rgba(220, 235, 252, 0) 100%);
+}
+
+/* ─── 4 góc băng tuyết (media/side/snow/deco/corner-*.webp, ~35 KB mỗi ảnh) ──
+   Chìm DƯỚI nội dung: các thẻ Cài đặt đè lên trên. Co theo cửa sổ (tối đa
+   240px), chuột bấm xuyên qua. Góc dưới trái có người tuyết, dưới phải có nhà
+   tuyết, trên phải có thỏ. */
+html:has(body[data-theme="snow"])::after {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  --corner: min(28vw, 240px);
+  background:
+    url('media/side/snow/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+body[data-theme="snow"] .set-foot::before,
+body[data-theme="snow"] .set-foot::after { content: none; }
+body[data-theme="snow"] .set-foot { padding-left: 14px; }
+
+/* Tiêu đề nằm trên hoạ tiết góc trên trái: viền sáng quanh chữ cho dễ đọc. */
+body[data-theme="snow"] .set-head h2 {
+  text-shadow: 0 0 4px #fff, 0 0 8px #fff, 0 0 12px rgba(255, 255, 255, 0.9);
+}
+
+/* 4 góc nổi lên TRÊN nội dung nhưng mờ 60% độ đậm: rõ hơn khi chìm dưới,
+   chữ / nút bên dưới vẫn đọc được. Chuột bấm xuyên qua. */
+html:has(body[data-theme="snow"])::after {
+  z-index: 50;
+  opacity: 0.6;
+}
+
+/* Nút Lưu nổi trên lớp góc băng (z-index 50), nền hồng hơi trong suốt.
+   Chân trang bỏ stacking context riêng để nút vượt lên được trên lớp góc. */
+body[data-theme="snow"] .set-foot { z-index: auto; }
+body[data-theme="snow"] .set-foot button.action {
+  position: relative;
+  z-index: 60;
+  background: linear-gradient(180deg, rgba(255, 143, 192, 0.82), rgba(232, 95, 153, 0.82));
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Khung Công việc (tasks.html) và Trợ lý văn bản (popup.html) ───────────
+   Cùng chất liệu với thẻ Cài đặt; biến màu ở body đã đổi chữ / ô nhập / nút. */
+body[data-theme="snow"] .tk-head h2,
+body[data-theme="snow"] .pp-head h2 {
+  font-size: 18px; color: #1f3355;
+  text-shadow: 0 0 4px #fff, 0 0 8px #fff;
+}
+body[data-theme="snow"] .tk-col,
+body[data-theme="snow"] .pp-card {
+  position: relative; z-index: 1;
+  border: 1px solid rgba(190, 220, 255, 0.95);
+  border-top: 3px solid #fff;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.55) 38%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.93), rgba(236, 245, 255, 0.88));
+  box-shadow: 0 6px 18px rgba(70, 120, 190, 0.18), inset 0 0 22px rgba(170, 210, 255, 0.45);
+  scrollbar-color: rgba(79, 143, 230, 0.45) transparent;
+}
+body[data-theme="snow"] .tk-item {
+  border-color: #d6e5f6;
+  background: #fff;
+}
+body[data-theme="snow"] .tk-item:hover { border-color: var(--accent); }
+body[data-theme="snow"] .pp-section-head { border-bottom-color: rgba(79, 143, 230, 0.3); }
+body[data-theme="snow"] .pp-section-head .box-label { color: #3f7fd6; }
+body[data-theme="snow"] .pp-card .selected-box,
+body[data-theme="snow"] .pp-card .result {
+  background: #f7fbff; color: var(--text); border-color: #cfe0f4;
+}
+body[data-theme="snow"] .pp-card .tab { background: #fff; border-color: #cfe0f4; color: var(--text); }
+body[data-theme="snow"] .pp-card .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Nút chính ở đầu khung Công việc ("Thêm") nổi trên lớp góc như nút Lưu. */
+body[data-theme="snow"] .tk-head { z-index: auto; }
+body[data-theme="snow"] .tk-head button.action { position: relative; z-index: 60; }

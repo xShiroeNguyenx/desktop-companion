@@ -170,6 +170,10 @@
     .set-foot .status { flex: 1; margin: 0; }
     .set-foot button.action { flex: 0 0 auto; padding: 9px 24px; }
   </style>
+  <!-- Giao diện đi kèm bộ nhân vật ❄️ Xứ Tuyết (settings.js đặt body[data-theme]). -->
+  <link rel="stylesheet" href="theme-snow.css" />
+  <!-- Giao diện Gothic Lolita đi kèm bộ 🐱 Neko Lounge. -->
+  <link rel="stylesheet" href="theme-gothic.css" />
 </head>
 <body>
   <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; margin:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
@@ -196,7 +200,7 @@
     <!-- ─── Cột trái: AI + hệ thống ─────────────────────────────────── -->
     <div class="set-col set-col--left">
       <div class="set-group">
-        <h3>🤖 Trí tuệ nhân tạo</h3>
+        <h3 data-sub="Nhà cung cấp AI và mô hình trò chuyện">🤖 Trí tuệ nhân tạo</h3>
         <div class="set-field">
           <label for="provider">Nhà cung cấp AI</label>
           <select id="provider">
@@ -248,7 +252,7 @@
 
       <!-- Tạm ẩn: giọng hiện có chưa khớp nhân vật (xem TTS_ENABLED trong tts.rs). -->
       <div class="set-group" style="display:none">
-        <h3>🔊 Giọng nói</h3>
+        <h3 data-sub="Giọng đọc của em">🔊 Giọng nói</h3>
         <div class="set-field">
           <label for="ttsEngine">Em đọc thành tiếng</label>
           <select id="ttsEngine">
@@ -269,7 +273,7 @@
       </div>
 
       <div class="set-group">
-        <h3>⏰ Nhắc nhở</h3>
+        <h3 data-sub="Nghỉ mắt, uống nước, vận động">⏰ Nhắc nhở</h3>
         <div class="set-field">
           <label for="remindEyes">Nhắc nghỉ mắt</label>
           <select id="remindEyes" class="remind-select"></select>
@@ -305,7 +309,7 @@
       </div>
 
       <div class="set-group">
-        <h3>🧩 Widget</h3>
+        <h3 data-sub="Lịch, đồng hồ, thời tiết ghim trên màn hình">🧩 Widget</h3>
         <div class="set-toggle">
           <label for="wCalendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
           <input type="checkbox" id="wCalendar" />
@@ -338,7 +342,7 @@
       </div>
 
       <div class="set-group">
-        <h3>🍅 Tập trung</h3>
+        <h3 data-sub="Phiên tập trung và giờ nghỉ">🍅 Tập trung</h3>
         <div class="set-field">
           <label for="focusMin">Mỗi phiên tập trung</label>
           <select id="focusMin">
@@ -364,7 +368,7 @@
       </div>
 
       <div class="set-group">
-        <h3>🖥️ Nhận biết máy tính</h3>
+        <h3 data-sub="Chào khi quay lại, cảnh báo máy nóng">🖥️ Nhận biết máy tính</h3>
         <div class="set-field">
           <label for="sleepyIdle">Em ngủ gật khi bạn rời máy</label>
           <select id="sleepyIdle">
@@ -401,7 +405,7 @@
       </div>
 
       <div class="set-group">
-        <h3>⚙️ Hệ thống</h3>
+        <h3 data-sub="Khởi động, phím tắt, cập nhật">⚙️ Hệ thống</h3>
         <div class="set-toggle">
           <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
           <input type="checkbox" id="autoFlower" />
@@ -445,7 +449,7 @@
     <!-- ─── Cột phải: dịch + diện mạo ───────────────────────────────── -->
     <div class="set-col set-col--right">
       <div class="set-group">
-        <h3>🌸 Bạn đồng hành</h3>
+        <h3 data-sub="Tên và cách xưng hô">🌸 Bạn đồng hành</h3>
         <div class="set-field">
           <label for="petName">Tên của em</label>
           <input type="text" id="petName" maxlength="20" placeholder="Chưa đặt tên" />
@@ -499,7 +503,7 @@
       </div>
 
       <div class="set-group">
-        <h3>🌐 Dịch thuật</h3>
+        <h3 data-sub="Ngôn ngữ và ngữ cảnh dịch">🌐 Dịch thuật</h3>
         <div class="set-field">
           <label for="target">Ngôn ngữ dịch mặc định</label>
           <select id="target">
@@ -526,7 +530,7 @@
       </div>
 
       <div class="set-group">
-        <h3>🌦 Thời tiết</h3>
+        <h3 data-sub="Hiệu ứng và dự báo">🌦 Thời tiết</h3>
         <div class="set-field">
           <label for="weatherMode">Hiệu ứng thời tiết trên toàn màn hình</label>
           <select id="weatherMode">
@@ -582,13 +586,19 @@
       </div>
 
       <div class="set-group">
-        <h3>🎨 Diện mạo</h3>
+        <h3 data-sub="Nhân vật, bộ sưu tập, model">🎨 Diện mạo</h3>
         <div class="set-toggle set-toggle--premium">
           <label for="sideGirls">
             <span class="premium-title">🌸 Bunny Lounge</span>
             <span class="premium-sub">Các cô nàng tựa bên khung Cài đặt, Công việc, Trợ lý văn bản, Thời tiết &amp; Mini Games</span>
           </label>
           <input type="checkbox" id="sideGirls" />
+        </div>
+        <div class="set-field">
+          <div class="row tight">
+            <button class="ghost" id="openCollection" type="button" style="flex:1;">🍬 Bộ sưu tập: skin widget, hiệu ứng, bộ nhân vật</button>
+          </div>
+          <div class="status">Kẹo kiếm được từ việc đã xong, phiên Tập trung, chat, vuốt đầu, thắng game. Đổi kẹo lấy đồ trang trí; không mua bằng tiền thật.</div>
         </div>
         <div class="set-field">
           <label for="addModelFolder">Model Live2D tự thêm</label>
@@ -607,6 +617,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/theme-apply.js"></script>
   <script src="js/clock-core.js"></script>
   <script src="js/settings.js"></script>
 </body>

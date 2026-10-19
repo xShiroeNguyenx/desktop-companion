@@ -1,0 +1,254 @@
+/*
+  Giao diện Cài đặt Gothic Lolita, đi kèm bộ nhân vật 🐱 Neko Lounge
+  (collection.rs side.neko). settings.js đặt body[data-theme="gothic"] khi đang
+  chọn bộ này VÀ Bunny Lounge đang bật. Cùng bố cục với theme-snow.css: mỗi nhóm
+  là một thẻ kính tối viền tím, tiêu đề to kèm dòng mô tả (h3[data-sub]), 4 góc
+  pha lê tím nổi trên nội dung (mờ 60%), nút Lưu nổi trên lớp góc.
+*/
+
+body[data-theme="gothic"] {
+  --bg: #1a1226;
+  --panel: rgba(28, 18, 42, 0.86);
+  --panel-2: #241836;
+  --border: rgba(186, 140, 255, 0.35);
+  --text: #f1e8ff;
+  --muted: #b9a5d6;
+  --accent: #b77cff;
+  --accent-2: #e1b8ff;
+  color: var(--text);
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(150, 90, 220, 0.35), transparent 65%),
+    radial-gradient(55% 45% at 90% 10%, rgba(200, 120, 255, 0.22), transparent 65%),
+    radial-gradient(80% 60% at 50% 110%, rgba(120, 60, 180, 0.35), transparent 65%),
+    linear-gradient(180deg, #1c1229, #150e20 55%, #1d1330);
+}
+
+/* Bụi lấp lánh tím trôi chậm phía sau, không chặn chuột. */
+body[data-theme="gothic"]::before,
+body[data-theme="gothic"]::after {
+  content: '';
+  position: fixed;
+  inset: -220px 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(225, 184, 255, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 90px 120px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(2.5px 2.5px at 160px 60px, rgba(190, 130, 255, 0.85), transparent),
+    radial-gradient(1.5px 1.5px at 230px 170px, rgba(255, 220, 255, 0.8), transparent);
+  background-size: 260px 200px;
+  opacity: 0.7;
+  animation: gothic-drift 30s linear infinite;
+}
+body[data-theme="gothic"]::after {
+  background-size: 340px 260px;
+  opacity: 0.45;
+  animation-duration: 46s;
+}
+@keyframes gothic-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(200px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-theme="gothic"]::before,
+  body[data-theme="gothic"]::after { animation: none; }
+}
+body[data-theme="gothic"] > * { position: relative; z-index: 1; }
+
+/* ─── Đầu trang ────────────────────────────────────────────────────────── */
+body[data-theme="gothic"] .set-head { padding: 12px 18px 10px; z-index: 3; }
+body[data-theme="gothic"] .set-head h2 {
+  font-size: 20px;
+  color: #fff;
+  display: flex; flex-direction: column; line-height: 1.15;
+  text-shadow: 0 0 6px rgba(20, 10, 35, 0.95), 0 0 12px rgba(20, 10, 35, 0.9);
+}
+body[data-theme="gothic"] .set-head h2::after {
+  content: 'Desktop Companion · 🦇 Gothic Lolita';
+  font-size: 11.5px; font-weight: 600; color: var(--muted);
+}
+
+/* ─── Cột: trong suốt, mỗi nhóm là một thẻ kính tối viền tím ─────────────── */
+body[data-theme="gothic"] .set-col {
+  position: relative; z-index: 1;
+  gap: 14px;
+  padding: 8px 6px 10px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  scrollbar-color: rgba(183, 124, 255, 0.5) transparent;
+}
+body[data-theme="gothic"] .set-col::-webkit-scrollbar-thumb { background: rgba(183, 124, 255, 0.45); }
+
+body[data-theme="gothic"] .set-col > .set-group {
+  position: relative;
+  padding: 16px 14px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(196, 150, 255, 0.55);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(225, 184, 255, 0.08) 38%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, rgba(40, 26, 60, 0.9), rgba(24, 16, 38, 0.9));
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 22px rgba(150, 90, 220, 0.25);
+}
+/* Viền ren mảnh trên mép thẻ. */
+body[data-theme="gothic"] .set-col > .set-group::before {
+  content: '';
+  position: absolute; left: 14px; right: 14px; top: -1px; height: 6px;
+  background:
+    radial-gradient(4px 4px at 50% 0, rgba(225, 184, 255, 0.85) 95%, transparent) 0 0 / 12px 6px repeat-x;
+  opacity: 0.7;
+  pointer-events: none;
+}
+/* Bướm nhỏ ở góc thẻ. */
+body[data-theme="gothic"] .set-col > .set-group::after {
+  content: '🦋';
+  position: absolute; right: 12px; top: 10px;
+  font-size: 16px;
+  filter: hue-rotate(55deg) saturate(1.4) drop-shadow(0 0 4px rgba(200, 130, 255, 0.7));
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+body[data-theme="gothic"] .set-group > h3 {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 0 24px 6px 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #fff;
+  border-bottom: 1px dashed rgba(196, 150, 255, 0.35);
+}
+body[data-theme="gothic"] .set-group > h3[data-sub]::after {
+  content: attr(data-sub);
+  flex-basis: 100%;
+  font-size: 11.5px; font-weight: 500; color: var(--muted);
+}
+
+body[data-theme="gothic"] .set-toggle {
+  border-color: rgba(196, 150, 255, 0.3);
+  background: rgba(20, 12, 32, 0.7);
+}
+body[data-theme="gothic"] .set-toggle--premium {
+  background: linear-gradient(135deg, rgba(90, 50, 140, 0.55), rgba(60, 30, 100, 0.55));
+  border-color: rgba(196, 150, 255, 0.45);
+}
+
+body[data-theme="gothic"] input,
+body[data-theme="gothic"] select,
+body[data-theme="gothic"] textarea,
+body[data-theme="gothic"] .set-col input[type="text"],
+body[data-theme="gothic"] .set-col input[type="password"] {
+  background: rgba(14, 8, 24, 0.85);
+  color: var(--text);
+  border-color: rgba(196, 150, 255, 0.4);
+  border-radius: 10px;
+  box-shadow: inset 0 0 8px rgba(150, 90, 220, 0.18);
+}
+body[data-theme="gothic"] input:focus,
+body[data-theme="gothic"] select:focus,
+body[data-theme="gothic"] textarea:focus { border-color: var(--accent); }
+
+body[data-theme="gothic"] .set-col button.ghost {
+  background: rgba(183, 124, 255, 0.14);
+  border-color: rgba(196, 150, 255, 0.45);
+  color: #e6d2ff;
+}
+body[data-theme="gothic"] .set-col button.ghost:hover { background: rgba(183, 124, 255, 0.26); }
+
+/* ─── Khe giữa: bệ phát sáng tím dưới chân pet ──────────────────────────── */
+body[data-theme="gothic"] .set-grid { position: relative; z-index: 2; }
+body[data-theme="gothic"] .set-grid::after {
+  content: '';
+  grid-column: 2; grid-row: 1;
+  align-self: end; justify-self: center;
+  width: 150px; height: 46px; margin-bottom: 32px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 45%, rgba(225, 184, 255, 0.75) 0%, rgba(150, 90, 220, 0.4) 45%, rgba(80, 40, 130, 0) 72%);
+  filter: drop-shadow(0 0 10px rgba(183, 124, 255, 0.6));
+  pointer-events: none;
+}
+
+/* ─── 4 góc pha lê tím (media/side/neko/deco/corner-*.webp, ~44 KB mỗi ảnh) ──
+   Nổi TRÊN nội dung nhưng mờ 60%, co theo cửa sổ (tối đa 240px), chuột bấm
+   xuyên qua. Trên phải có thỏ đen, dưới trái người tuyết, dưới phải lâu đài. */
+html:has(body[data-theme="gothic"])::after {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.6;
+  --corner: min(28vw, 240px);
+  background:
+    url('media/side/neko/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+
+/* ─── Chân trang: nút Lưu tím, nổi trên lớp góc, hơi trong suốt ─────────── */
+body[data-theme="gothic"] .set-foot {
+  padding-left: 14px;
+  background: linear-gradient(180deg, rgba(20, 12, 32, 0), rgba(20, 12, 32, 0.85) 45%);
+  border-top: none;
+}
+body[data-theme="gothic"] .set-foot button.action {
+  position: relative;
+  z-index: 60;
+  color: #fff;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(196, 130, 255, 0.85), rgba(130, 60, 210, 0.85));
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(240, 220, 255, 0.6);
+  box-shadow: 0 0 14px rgba(183, 124, 255, 0.55);
+}
+
+/* Chân trang không tạo lớp xếp chồng riêng, để nút Lưu (z-index 60) vượt lên
+   trên lớp góc (z-index 50). */
+body[data-theme="gothic"] .set-foot { z-index: auto; }
+/* Góc thẻ: sao lấp lánh tím thay cho emoji bướm (emoji ra màu cam trên Windows). */
+body[data-theme="gothic"] .set-col > .set-group::after {
+  content: '✦';
+  font-size: 15px;
+  color: #d9a8ff;
+  filter: drop-shadow(0 0 4px rgba(200, 130, 255, 0.8));
+}
+
+/* ─── Khung Công việc (tasks.html) và Trợ lý văn bản (popup.html) ─────────── */
+body[data-theme="gothic"] .tk-head h2,
+body[data-theme="gothic"] .pp-head h2 {
+  font-size: 18px; color: #fff;
+  text-shadow: 0 0 6px rgba(20, 10, 35, 0.95), 0 0 12px rgba(20, 10, 35, 0.9);
+}
+body[data-theme="gothic"] .tk-col,
+body[data-theme="gothic"] .pp-card {
+  position: relative; z-index: 1;
+  border: 1px solid rgba(196, 150, 255, 0.55);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(225, 184, 255, 0.08) 38%, rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, rgba(40, 26, 60, 0.9), rgba(24, 16, 38, 0.9));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 22px rgba(150, 90, 220, 0.25);
+  scrollbar-color: rgba(183, 124, 255, 0.5) transparent;
+}
+body[data-theme="gothic"] .tk-item {
+  border-color: rgba(196, 150, 255, 0.3);
+  background: rgba(20, 12, 32, 0.7);
+}
+body[data-theme="gothic"] .tk-item:hover { border-color: var(--accent); }
+body[data-theme="gothic"] .pp-section-head { border-bottom-color: rgba(196, 150, 255, 0.35); }
+body[data-theme="gothic"] .pp-section-head .box-label { color: #d9a8ff; }
+body[data-theme="gothic"] .pp-card .selected-box,
+body[data-theme="gothic"] .pp-card .result {
+  background: rgba(14, 8, 24, 0.85); color: var(--text); border-color: rgba(196, 150, 255, 0.4);
+}
+body[data-theme="gothic"] .pp-card .tab { background: rgba(20, 12, 32, 0.7); border-color: rgba(196, 150, 255, 0.35); color: var(--text); }
+body[data-theme="gothic"] .pp-card .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Nút chính ở đầu khung Công việc ("Thêm") nổi trên lớp góc như nút Lưu. */
+body[data-theme="gothic"] .tk-head { z-index: auto; }
+body[data-theme="gothic"] .tk-head button.action { position: relative; z-index: 60; }

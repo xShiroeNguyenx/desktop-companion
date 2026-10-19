@@ -96,6 +96,13 @@
   to two more clocks (Tokyo, Seoul, New York, London…) with the time
   difference and "tomorrow" / "yesterday"; summer time is handled. Its 🍅 row
   starts a focus session and counts down.
+- **🍬 Candy & Collection** — finished tasks, focus sessions, chat, headpats
+  and game wins also earn candy (same daily caps as friendship points). Trade it
+  in the 🍬 Collection (💞 → 🍬 on the ring) for widget skins, reward effects
+  (fireworks, sakura shower, confetti), character sets (🐰 Bunny, 🐱 Neko,
+  🦊 Fox, ❄️ Snow Lounge) and Miu face sets (❄️ Snow, 🦇 Gothic). Snow Lounge
+  and Neko Lounge also restyle every panel (icy blue / gothic lolita).
+  Decorations only; never sold for real money.
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
   calendar, the clock and the weather widget, picks the extra clocks, and
   🧹 tidies every pinned widget into a column on the right.

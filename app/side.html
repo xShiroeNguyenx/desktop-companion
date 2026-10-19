@@ -72,6 +72,8 @@
       if (T.event && T.event.listen) {
         T.event.listen('side-layout', (e) => {
           const p = e.payload || {};
+          // Đổi bộ nhân vật trong Bộ sưu tập: Rust gửi ảnh mới, chỉ đổi khi khác.
+          if (p.img && img.getAttribute('src') !== p.img) img.src = p.img;
           img.classList.toggle('flip', !!p.flip);
           const edge = Number(p.edge);
           if (edge > 0 && edge < 1) frame.style.setProperty('--edge', (edge * 100).toFixed(1) + '%');

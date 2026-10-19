@@ -20,7 +20,7 @@
 
   // Đổi ảnh Miu chỉ khi khác, để khỏi nháy ảnh mỗi phút.
   function setFace(face) {
-    const src = 'media/game/rps-' + face + '.png';
+    const src = ((data && data.miuDir) || 'media/game') + '/rps-' + face + '.' + ((data && data.miuExt) || 'png');
     if ($('miu').getAttribute('src') !== src) $('miu').setAttribute('src', src);
   }
 
@@ -80,6 +80,8 @@
     if (!v) return;
     data = v;
     receivedAt = Date.now();
+    // Skin màu chọn trong Bộ sưu tập (app/skins.css).
+    document.body.dataset.skin = data.skin || 'lavender';
     render();
   }
 

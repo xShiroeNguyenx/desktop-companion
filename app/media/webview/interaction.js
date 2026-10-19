@@ -1104,6 +1104,9 @@ function setupCompactContextMenu() {
     } else if (action === 'toggle-weather') {
       // Rust bật / tắt lớp phủ hiệu ứng thời tiết (fx.rs).
       vscode.postMessage({ command: 'weather:toggle' });
+    } else if (action === 'show-shop') {
+      // Rust mở 🍬 Bộ sưu tập (collection.html).
+      vscode.postMessage({ command: 'shop:show' });
     } else if (action === 'show-games') {
       // Rust mở trang Mini Games (arcade.html).
       vscode.postMessage({ command: 'games:show' });
@@ -1225,6 +1228,7 @@ function setupCompactContextMenu() {
               : { icon: '🍅', label: 'Tập trung', action: 'toggle-focus' },
             { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
             { icon: '🎮', label: 'Chơi', action: 'show-games' },
+            { icon: '🍬', label: 'Bộ sưu tập', action: 'show-shop' },
             { icon: '📅', label: 'Lịch tháng', action: 'toggle-calendar-pin' },
             window.__DND__
               ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }

@@ -859,7 +859,8 @@ Settings.
 | **v0.7.0** ✅ (phát hành 2026-10-16) | Trang Mini Games, oẳn tù tì và đoán số thành cửa sổ riêng, game mới Gỡ bom, ⚙ Cài đặt xuống ô dưới cùng của menu tròn | Xem CHANGELOG [0.7.0] |
 | **v0.8.0** ✅ (phát hành 2026-10-16) | Mục 13 (Phase 14 + 15 + 16): hiệu ứng thời tiết toàn màn hình, theo mùa & giờ, thời tiết thật (Open-Meteo), thẻ dự báo, widget ghim, pet nói về thời tiết + bản tin sáng; nhóm ☁️ Thời tiết trên menu tròn; Bunny Lounge thêm thẻ thời tiết + trang Mini Games | Xem CHANGELOG [0.8.0] |
 | **v0.9.0** ✅ (phát hành 2026-10-16) | Lịch tháng ghim trên desktop: âm lịch Việt Nam (múi +7), ngày lễ, chấm hạn chót task, thêm việc theo ngày, Miu mini; mở từ khay, 💞 → 📅, Cài đặt. Sửa pet nằm ngoài màn hình khi rút màn hình phụ, autostart trỏ nhầm bản dev; ảnh mới cho nhân vật thẻ thời tiết + Mini Games | Xem CHANGELOG [0.9.0] |
-| **v0.9.1** (chuẩn bị phát hành 2026-10-16) | Pet nói về lịch (ngày lễ, Rằm, mùng 1, nhắc tối hôm trước; lunar.rs, calendar_talk.json); sinh nhật 🎂 trên lịch; đồng hồ ghim có giờ thế giới (tối đa 2 múi) + hàng 🍅 Tập trung; khung widget chung pin_widget.rs; nhóm 🧩 Widget trong Cài đặt + Xếp gọn; 4 biểu cảm Miu mới; test dịch thử mọi file JS | Xem CHANGELOG [0.9.1] |
+| **v0.9.1** ✅ (phát hành 2026-10-16) | Pet nói về lịch (ngày lễ, Rằm, mùng 1, nhắc tối hôm trước; lunar.rs, calendar_talk.json); sinh nhật 🎂 trên lịch; đồng hồ ghim có giờ thế giới (tối đa 2 múi) + hàng 🍅 Tập trung; khung widget chung pin_widget.rs; nhóm 🧩 Widget trong Cài đặt + Xếp gọn; 4 biểu cảm Miu mới; test dịch thử mọi file JS | Xem CHANGELOG [0.9.1] |
+| **v0.9.2** (chuẩn bị phát hành 2026-10-19) | Mục 14 Phase 17: 🍬 kẹo (collection.json, cộng song song điểm thân thiết), cửa sổ Bộ sưu tập, 5 skin widget, 3 hiệu ứng (pháo hoa, mưa hoa anh đào, pháo giấy), đổi bộ nhân vật + bộ mặt Miu lúc chạy. Nội dung Phase 18: Bunny Lounge còn 2 cô thỏ; bộ nhân vật 🐱 Neko Lounge, 🦊 Hồ ly, ❄️ Xứ Tuyết; bộ Miu ❄️ tuyết, 🦇 Gothic (miu_sets.rs); giao diện ❄️ băng tuyết / 🦇 Gothic Lolita áp cho mọi khung (theme-apply.js, theme-snow/gothic/pages.css); nhân vật bám mép cả Bộ sưu tập; Miu trong game theo bộ đã chọn | Xem CHANGELOG [0.9.2] |
 
 Toàn bộ mục 12 (Phase 9 → 13) đã xong ở v0.5.0 + v0.6.0. Việc còn treo nằm ở ghi chú "Chưa làm"
 / "Còn hạn chế" của từng phase, và mục 11 (giọng nói nhân bản, việc nhỏ còn tồn).
@@ -1174,3 +1175,273 @@ Tất cả `#[serde(default = …)]`. Nhãn mới có đủ vi / ja / en.
 3. ~~Thẻ dự báo: cửa sổ riêng hay tab trong bảng Công việc?~~ **Đã chốt (2026-10-16): cửa sổ
    riêng, kèm ghim thời tiết lên desktop** (13.7b).
 4. ~~Chia bản phát hành?~~ **Đã chốt:** gộp cả ba phase vào **v0.8.0**.
+
+---
+
+## 14. 🍬 Kẹo · Bộ sưu tập · Gacha (Phase 17–19)
+
+> Kế hoạch duyệt ngày 2026-10-17. **Phase 17 đã code (2026-10-18), phát hành ở v0.9.2**, kèm 2 món đầu của Phase 18 (bộ nhân vật ❄️ Xứ Tuyết, 🐱 Neko Lounge (kèm giao diện Cài đặt Gothic Lolita) và 🦊 Hồ ly tách từ Bunny Lounge, bộ ❄️ Miu tuyết, bộ 🦇 Miu Gothic). Phase 19 (gacha) chưa làm. Thêm bộ Miu mới: xem hướng dẫn đầu file `src-tauri/src/miu_sets.rs`.
+
+### 14.1 Mục tiêu & nguyên tắc
+
+App đã có vòng lặp thưởng: **điểm thân thiết** (`bond.rs`) cộng khi có mặt, xong việc, xong phiên
+Tập trung, chat, vuốt đầu, thắng game, đặt tên; có trần mỗi ngày; lên cấp 50/200/500/1000. Nhưng
+điểm này **không tiêu được**. Đồng thời đồ trang trí đã có (Bunny Lounge, 9 biểu cảm Miu, 3 widget
+cùng màu tím) mà **chưa chọn được**: ảnh nhân vật bám mép nằm cứng trong `sidegirl::SPECS`, màu
+widget nằm cứng trong CSS.
+
+Mục tiêu: lớp "làm việc → được thưởng → mở đồ mới" đặt lên trên những gì đã có. Ba nguyên tắc:
+
+1. **Chỉ mở khoá đồ trang trí.** Lịch, đồng hồ, nhắc hạn, dịch… luôn miễn phí. Gacha chỉ vui khi
+   thứ quay ra là thứ *thích có*, không phải thứ *cần có*.
+2. **Kẹo đi song song điểm thân thiết**, cùng nguồn, cùng trần mỗi ngày. Không có nguồn kẹo mới
+   tạo động cơ cày.
+3. **Không bao giờ bán bằng tiền thật.** Gacha trả tiền vướng luật nhiều nước (Bỉ, Hà Lan cấm loot
+   box; Nhật cấm kompu gacha). Miễn phí hoàn toàn thì không vướng.
+
+Thứ tự: **Phase 17** kẹo + bộ sưu tập (đổi thẳng) + hạ tầng chọn bộ → **Phase 18** nội dung (ảnh
+mới) → **Phase 19** gacha. Gacha đặt cuối vì chỉ vui khi có ≥ 15–20 món.
+
+### 14.2 Kinh tế kẹo
+
+**Nguồn.** `companion::bond_award` hiện gọi `bond::award` rồi vứt số điểm thực cộng. Sửa để lấy
+`gain` và cộng kẹo `gain × candy_mult(ev)` (bảng hệ số, mặc định ×1). Trần kế thừa từ bond. Chỉ
+đụng file khi `gain > 0` (sự kiện Có mặt bắn mỗi 30 giây).
+
+| `bond::Event` | Điểm/lần · trần/ngày | Kẹo tối đa/ngày |
+|---|---|---|
+| Present | 5 · 5 | 5 |
+| TaskDone | 2 · 10 | 10 |
+| FocusDone | 3 · 9 | 9 |
+| Chat | 1 · 5 | 5 |
+| Headpat | 1 · 3 | 3 |
+| Game (thắng) | 1 · 3 | 3 |
+| Named (một lần) | 10 · 10 | 10 |
+| **Tổng ngày thường** | | **35** (thực tế 15–25) |
+
+Thưởng thêm chỉ bằng kẹo: mỗi **cột mốc** (`bond::Milestone`) **+20 🍬**, móc ở
+`companion::milestone_line`. Không thưởng chuỗi ngày riêng (tránh áp lực mở app mỗi ngày).
+
+**Giá** (người dùng ~20 🍬/ngày): Thường **60** (~3 ngày, skin) · Hiếm **150** (~1 tuần, hiệu ứng,
+bộ mặt Miu, bộ câu) · Sử thi **300** (~2 tuần, bộ nhân vật 5 ảnh). 20 món đầu ≈ 3000 🍬 ≈ 5 tháng.
+Test chặn giá vô lý: `price ≤ 30 × max_daily_candy()`.
+
+**Không làm:** bán kẹo, quảng cáo, nhiệm vụ "mở app N lần", trừ kẹo khi bỏ bê, khoá chức năng.
+
+### 14.3 Danh mục món (catalog tĩnh trong `collection.rs`)
+
+Mỗi món: `id`, `cat` (Skin · SideSet · MiuSet · Effect · LinePack), `rarity` (Common · Rare ·
+Epic), `price`, tên `[vi, ja, en]`, `asset`. Test: id không trùng; mỗi nhóm Skin/SideSet/MiuSet có
+**đúng một** món giá 0; giá khớp hạng; mọi skin có khối `[data-skin="…"]` trong `app/skins.css`;
+mọi bộ Miu có đủ 9 file.
+
+**Phase 17 — không cần ảnh mới (7 món mua được + 3 mặc định):**
+
+| id | Nhóm | Hạng · giá | Ghi chú |
+|---|---|---|---|
+| `skin.lavender` | Skin | mặc định | tím hiện tại |
+| `skin.sakura` · `skin.night` · `skin.mint` · `skin.sunset` · `skin.ocean` | Skin | Thường 60 | hồng đào · chàm/tím than · bạc hà · hoàng hôn · biển |
+| `fx.fireworks` | Effect | Hiếm 150 | pháo hoa khi xong hết việc trong ngày (`Reward::AllDone`) |
+| `fx.confetti` | Effect | Hiếm 150 | pháo giấy khi xong phiên Tập trung |
+| `side.bunny` | SideSet | mặc định | Bunny Lounge, 5 ảnh đang có |
+| `miu.classic` | MiuSet | mặc định | 9 biểu cảm đang có (`media/game/`) |
+
+Skin áp cho **cả 3 widget** một lúc. Hiệu ứng mở rồi bật/tắt được từng cái.
+
+**Phase 18 — cần ảnh / nội dung:** `side.<tên>` (Sử thi 300, 5 ảnh; gợi ý Neko Café ☕, Fox Shrine
+⛩️, Winter Lodge ❄️, Beach Day 🏖️; bộ thiếu ảnh bảng nào thì bảng đó dùng tạm ảnh Bunny) ·
+`miu.<tên>` (Hiếm 150, 9 ảnh; gợi ý áo dài, yukata, pyjama) · `lines.praise` (Hiếm 150, +3 biến
+thể vi/ja/en cho `TaskDone`/`FocusDone`/`DailyGreeting`, cần cờ cho `lines::line` nên để Phase 18).
+Gacha cần ≥ 15 món: tối thiểu 2 bộ nhân vật + 2 bộ mặt + 1 bộ câu, thiếu thì thêm skin.
+
+**Dung lượng:** `media/side` 2,7 MB, `media/game` 4,3 MB hiện tại. Mỗi bộ nhân vật ≈ 2,5–3 MB; bộ
+mặt Miu ≈ 1,5 MB (300px) / 4,5 MB (520px). **Trần đóng gói: 2 bộ nhân vật + 2 bộ mặt** (≈ +8 MB);
+vượt thì tải khi mở khoá (GitHub Release assets + checksum), chỉ làm khi cần.
+
+### 14.4 Khuôn ảnh (Phase 18, người dùng tự tạo)
+
+**Bộ nhân vật bám mép** — 5 ảnh, `media/side/<set-id>/{settings,tasks,popup,weather,arcade}.png`:
+- **1024 × 1536** PNG, nền trong suốt, không bóng đổ xuống sàn; ≤ 650 KB/ảnh.
+- Từ hông trở lên hoặc toàn thân; **đỉnh đầu ở 8–15% chiều cao** (y ≈ 120–230); chân/vạt áo chạm đáy.
+- **Một tay vươn hẳn sang một bên** như tựa mép bảng; ghi rõ từng ảnh tay vươn trái hay phải →
+  `hand_right`. Thân nằm trong **35–65% chiều ngang**; mép bảng cắt ở ~60% (`edge_frac`).
+- Anime pastel, viền mềm, cùng tông bộ hiện có; mỗi bảng một nhân vật/trang phục cùng chủ đề.
+- Ảnh tạo riêng cho app; repo có thể public nên **không** dùng nhân vật từ game/anime.
+- Prompt gợi ý: *anime girl, pastel soft shading, [theme outfit], upper body, leaning to the right
+  with one arm stretched out resting on an invisible ledge, looking at viewer, smiling, transparent
+  background, no ground shadow, full character visible, 2:3 portrait*.
+- Có ảnh rồi: chạy script đo cột pixel đặc để tính `edge_frac` thật, chỉnh lại bằng ảnh chụp.
+
+**Bộ mặt Miu mini** — 9 ảnh, `media/miu/<set-id>/rps-<face>.png`:
+- Cao **520 px** (game hiện tới ~360 px; màn 150% cần ~540), rộng 440–620, PNG trong suốt, ≤ 600 KB.
+- Chibi từ ngực trở lên, mặt ≈ 45% chiều cao. Cùng trang phục, tóc, phụ kiện cả 9 ảnh.
+- Đúng 9 tên: `wink` nháy mắt · `cheer` reo · `think` chống cằm · `draw` bối rối · `pout` phụng
+  phịu · `sleepy` ngáp · `surprised` giật mình · `shy` ngại · `fight` nắm tay cố lên.
+- Một sheet 3×3 nền trong suốt cũng được, cắt tự động như lần cắt 4 biểu cảm.
+
+### 14.5 Kiến trúc
+
+**Lưu trữ: `collection.json` riêng, KHÔNG nằm trong Settings.** `commands::settings_set` chép lại
+các trường "không có trên form" từ bản cũ; thêm trường mà quên là mất đồ đã mở. File riêng theo đúng
+khuôn `store::update_bond`: `COLLECTION_LOCK`, hỏng → mặc định, không đổi thì không ghi (`PartialEq`).
+
+```rust
+pub struct Collection {          // mọi trường #[serde(default)]
+    pub candy: u32, pub earned_total: u32, pub spent_total: u32,
+    pub owned: Vec<String>,      // id đã mua; món giá 0 KHÔNG lưu
+    pub skin: String,            // default "skin.lavender"
+    pub side_set: String,        // default "side.bunny"
+    pub miu_set: String,         // default "miu.classic"
+    pub effects_on: Vec<String>,
+    pub pity: u32, pub fragments: u32,   // Phase 19, vô hại từ bây giờ
+}
+```
+
+Hàm thuần có test: `candy_mult`, `earn`, `item`, `owns`, `can_afford`,
+`buy → Result<&Item, BuyError{NotFound|AlreadyOwned|NotEnough{need}}>`,
+`select(cat, id) → Result<(), SelectError{NotFound|WrongCategory|NotOwned}>`, `set_effect`,
+`effective_skin / effective_miu_dir / effective_side_set` (id lạ hoặc chưa sở hữu → mặc định;
+**không bao giờ** đẩy chuỗi từ file JSON thẳng ra webview, chỉ `&'static str` từ catalog),
+`max_daily_candy()`. `Settings.side_girls` vẫn là công tắc bật/tắt; *chọn bộ nào* ở `collection.json`.
+
+**Luồng kẹo & lời pet.** `bond_award` → `gain > 0` → `collection::earn_from` →
+`collection::changed` (phát `collection-changed` toàn app). Pet **không nói** khi được kẹo. Nói khi
+**mở khoá**: `Key::ItemUnlocked` (biến `{item}`, 3 ngôn ngữ, ≥ 2 biến thể), gửi thẳng `showMessage`
+vì do người dùng bấm (như `say_now`). `show_bond_card` và `game_info` thêm `"candy"`; `bond.js` thêm
+ô 🍬; ô 🎁 trên trang Mini Games hiện "🍬 N".
+
+**Nhân vật bám mép đổi được lúc chạy (`sidegirl.rs`).** Hiện ảnh nạp một lần qua
+`initialization_script("window.__SIDE_IMG__ = …")`. Tách `SPECS` thành `HOSTS: [Host{label, host}; 5]`
+(cửa sổ) và `SETS: &[Set{id, girls: &[Girl{host, img, edge_frac, hand_right}]}]` (ảnh; `SETS[0]` =
+bunny); `SET_IDX: AtomicUsize` như `ENABLED`; `girl_for(host)` lấy từ bộ đang chọn, thiếu thì rơi về
+bunny. `sync` phát `side-layout {flip, edge, img}`; `side.html` đổi `img.src` khi khác (trước khi
+thêm `.ready`). Test `every_panel_has_one_girl` viết lại: `SETS[0]` đủ 5 host; mọi girl trỏ host có
+thật; `edge_frac` ∈ 0..=1; fallback bunny.
+
+**Skin widget: biến CSS dùng chung, trời vẫn hiện.** File mới `app/skins.css` nạp sau style của 3
+trang ghim. Màu cứng (`#ff73ab`, `#ffd27a`, `#c9b6d6`, `rgba(255,255,255,.08)`, gradient nền) đổi
+thành biến `--w-bg-a/--w-bg-b/--w-ink/--w-ink-soft/--w-accent/--w-gold/--w-chip/--w-line/--w-sky`
+khai trên `.card`; `body[data-skin="…"] .card` ghi đè. Widget thời tiết: `.sky-*` **không đặt
+`background`** nữa, chỉ đặt `--w-sky` làm lớp tint xếp lên gradient skin
+(`background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b))`).
+Không làm vậy thì `body[data-skin] .card` (0,2,1) luôn thắng `.card.sky-rain` (0,2,0). Rust:
+`calendar_pin::view`, `clock_pin::view`, `weather_net::view` thêm `"skin"` và `"miuDir"`; trang đặt
+`document.body.dataset.skin` trong `receive()`.
+
+**Bộ mặt Miu.** Ba chỗ chọn ảnh (`calendar-pin.js`, `clock-pin.js`, `weather-pin.js` `setFace`) thành
+`${data.miuDir || 'media/game'}/rps-${face}.png`. Tên mặt giữ nguyên nên test hiện có vẫn xanh. Game
+(`<img>` tĩnh) ngoài phạm vi Phase 17.
+
+**Hiệu ứng trên pet.** Pet đã có `createSparkle` (ui.js). Thêm `app/media/webview/fx-pet.js`:
+`playFx('confetti' | 'fireworks')`, tự xoá, tôn trọng `prefers-reduced-motion`; CSS trong
+`companion.css`; `main.js` thêm `case 'fx'`. Rust `collection::fx(app, kind)`: đã mua **và** đang bật
+**và** pet đang hiện → `emit_to("main","pet-message",{command:"fx",kind})`. Kích hoạt:
+`rewards::react` khi `Reward::AllDone`; `focus_loop` nhánh `FocusDone`. `collection_preview_fx`
+(không kiểm sở hữu) cho nút "Xem thử".
+
+**Cửa sổ "🍬 Bộ sưu tập".** `windows.rs`: `COLLECTION_W/H` 726×475 + `html{zoom:.66}` như arcade;
+`precreate("collection")`; `open_collection` chép từ `open_arcade`. `capabilities/default.json` thêm
+`"collection"`. Lệnh (`commands.rs`, async khi đụng cửa sổ): `collection_get`, `collection_buy{id}`,
+`collection_select{category,id}`, `collection_toggle_effect{id,on}`, `collection_preview_fx{kind}`,
+`open_collection`, `collection_close`. `collection::changed`: `app.emit("collection-changed")` + áp
+dụng ngay (skin/miu → `calendar_pin/clock_pin/weather_net::broadcast`; side_set →
+`sidegirl::set_side_set`). Lối vào: menu tròn 💞 `{🍬 Bộ sưu tập, 'show-shop'}` → `shop:show` →
+`pet_command` → `windows::open_collection`; ô 🎁 `#tileReward` trên Mini Games (đang trống); nút
+trong Cài đặt → 🎨 Diện mạo. Front-end: `app/collection.html` (bảng màu arcade; tab Skin · Nhân vật ·
+Miu · Hiệu ứng; đầu trang 🍬 số dư + hôm nay + cách kiếm), `app/js/collection.js`,
+`app/js/collection-core.js` thuần (`T` vi/ja/en, `groupByCategory`, `isOwned`, `canAfford`,
+`priceLabel`, `rarityClass`, `sortItems`) + test.
+
+### 14.6 Gacha (Phase 19) — `gacha.rs` thuần, `rand` truyền vào
+
+- 1 lượt **30 🍬** (rẻ hơn đổi thẳng 2–10 lần, đổi lại may rủi). Đổi thẳng vẫn luôn có.
+- Tỉ lệ Thường 70 · Hiếm 25 · Sử thi 5; quay trong toàn bộ catalog trừ món giá 0.
+- Trùng → **mảnh** 5 / 15 / 30 theo hạng; **100 mảnh = chọn bất kỳ món** (`craft`). Không bao giờ
+  nhận trùng vào `owned`.
+- Bảo hiểm: **10 lượt** không ra Hiếm+ → lượt kế chắc chắn Hiếm+; `pity` về 0 khi ra Hiếm+.
+- Quay 10 lượt trừ `10 × 30` một lần, tất cả hoặc không.
+- API: `pull(&mut c, &rules, rand) -> Result<Pull{item, dup, fragments, pity_hit}, BuyError>`,
+  `pull_many`, `craft`. Test với `rand` cố định như `games-core.js`: ngưỡng tích luỹ đơn điệu;
+  `rand=0.0` luôn ra món đầu nhóm thấp nhất; bảo hiểm nổ đúng lượt 10 rồi reset; trùng → mảnh;
+  `NotEnough` không đổi `candy/pity`.
+- Hoạt cảnh: máy capsule, Miu cạnh máy `think → surprised → cheer`, trùng → `pout`. Tỉ lệ hiện
+  công khai ngay trên máy. Chỉ bật khi catalog ≥ 15 (hằng số có test).
+
+### 14.7 Các phase & thứ tự Phase 17
+
+| Phase | Nội dung | Bản (đề xuất) | Cỡ |
+|---|---|---|---|
+| **17** | Kẹo, `collection.json`, catalog 7 món + 3 mặc định, cửa sổ Bộ sưu tập (đổi thẳng), hạ tầng chọn bộ nhân vật / bộ mặt, skin 3 widget, 2 hiệu ứng, kẹo trên thẻ 💗, câu "mở khoá" | v0.10.0 | ≈ bản lịch ghim |
+| **18** | 2 bộ nhân vật + 2 bộ mặt Miu theo khuôn 14.4, đo `edge_frac`; bộ câu hiếm; (tuỳ) tải bộ khi mở khoá | v0.10.x | phần lớn là làm ảnh |
+| **19** | Máy kẹo "Candy Capsule": quay 1 / 10 lượt, mảnh, bảo hiểm, hoạt cảnh | v0.11.0 | nhỏ–vừa |
+
+**Điều kiện hoàn thành** (khi nào một phase được coi là xong):
+
+- **Phase 17:** người dùng kiếm được kẹo, tiêu được, và món đã mua **được áp dụng ổn định** (skin
+  đổi màu widget, hiệu ứng chạy đúng lúc); kẹo + đồ đã mua **giữ nguyên qua lần khởi động lại** và
+  qua lần Lưu Cài đặt; trần kẹo mỗi ngày đúng bảng 14.2. Chưa cần gacha. Về bộ nhân vật / bộ mặt
+  Miu: chỉ có bộ mặc định để chọn, nên điều kiện là **hạ tầng chọn chạy được** (đổi bộ không cần
+  khởi động lại), nội dung để Phase 18.
+- **Phase 18:** catalog đủ ≥ 15 món; **mọi món mua được và trang bị đúng** (mỗi bộ nhân vật đủ 5
+  bảng hoặc rơi về Bunny đúng chỗ, mỗi bộ mặt đủ 9 file, test catalog xanh); dung lượng bộ cài trong
+  trần 14.3 hoặc đã có tải khi mở khoá.
+- **Phase 19:** tỉ lệ đúng và hiện công khai; **không trừ kẹo sai** (quay 10 lượt là tất cả hoặc
+  không); **không nhận trùng** vào `owned`, trùng luôn thành mảnh; bảo hiểm nổ đúng lượt; trạng
+  thái `pity`/`fragments` **khôi phục đúng sau khi khởi động lại** và sau lỗi ghi file.
+
+Thứ tự Phase 17 (mỗi bước `cargo test` + `npm test` xanh):
+
+1. `collection.rs` (kiểu, catalog, hàm thuần, test) + `mod collection;` +
+   `store::load_collection/update_collection`; `app/skins.css` khung với `[data-skin]` cho mọi skin.
+2. Móc kẹo vào `companion::bond_award`; +20 ở `milestone_line`; `"candy"` trong
+   `show_bond_card`/`game_info`; `bond.js` ô 🍬; `arcade.js` ô 🎁 hiện kẹo.
+3. `lines.rs` `Key::ItemUnlocked` (enum, `ALL`, `vars`, 3 ngôn ngữ).
+4. Widget: `skin` + `miuDir` trong 3 `view()`; màu cứng → biến CSS; `sky-*` → `--w-sky`; trang đặt
+   `data-skin` và ghép đường dẫn Miu (mặc định → không đổi hình thức).
+5. `sidegirl.rs` `HOSTS/SETS/SET_IDX`, `side-layout.img`, `side.html` đổi ảnh, viết lại test.
+6. Hiệu ứng: `fx-pet.js`, `companion.css`, `main.js` `case 'fx'`; Rust `collection::fx` + kích hoạt.
+7. Cửa sổ + lệnh: `windows.rs`; `capabilities`; 7 lệnh + `invoke_handler`; `pet_command`
+   `shop:show`; `collection.html/.js/-core.js(+test)`.
+8. Lối vào: menu tròn, ô 🎁 arcade + `listen('collection-changed')`, nút trong Cài đặt.
+9. Tài liệu: CHANGELOG, bump version, cập nhật bảng bản phát hành ở mục 12.
+
+**Nơi phải đăng ký thứ mới:** `mod collection;` · `invoke_handler` (+7) · `pet_command "shop:show"` ·
+`capabilities/default.json` windows · `windows::precreate` + `open_collection` · `main.js case 'fx'` ·
+menu tròn. **`settings_set` không đụng** (thêm chú thích: trạng thái mở khoá cố ý không nằm trong
+Settings).
+
+**Bẫy:** `Present` mỗi 30 giây → chặn `gain > 0` trước khi đụng file; mọi chuỗi ra webview qua
+`effective_*`; lệnh show/hide cửa sổ phải `async` (WebView2 treo); `app.emit` trên `AppHandle` khi
+phát toàn app; `precreate` đọc collection.json **trước** `sidegirl::precreate` để `__SIDE_IMG__` khớp
+`SET_IDX`; skin thời tiết phải đổi `sky-*` thành tint; chữ trợ giúp `rewardHelp` trên arcade (giờ có
+kẹo) đủ 3 ngôn ngữ.
+
+### 14.8 Rủi ro
+
+| Rủi ro | Giảm bằng |
+|---|---|
+| Hết đồ sớm, gacha nhàm | Gacha chỉ bật khi catalog ≥ 15 món (test) |
+| Bộ cài phình | Trần 2+2 bộ đóng gói; vượt thì tải khi mở khoá |
+| Mất đồ đã mở khi lưu Cài đặt | File riêng có khoá, không nằm trong Settings |
+| Cảm giác bị "dụ" | Không tiền thật, đổi thẳng luôn có, giá và tỉ lệ công khai |
+| Ảnh lệch mép | Đo tự động + chỉnh bằng ảnh chụp như Bunny Lounge |
+| Câu thoại thiếu ngôn ngữ | `every_key_has_all_languages` bắt |
+| Bộ Miu thiếu ảnh | Test catalog kiểm đủ 9 file theo `CARGO_MANIFEST_DIR` |
+
+### 14.9 Kiểm thử
+
+- `cargo test`: catalog hợp lệ; `earn` theo hệ số và `gain=0`; `buy` → `owned` → `AlreadyOwned`;
+  `NotEnough` không đổi gì; `select` từ chối sai nhóm / chưa có; `effective_*` rơi về mặc định với
+  dữ liệu rác; sidegirl fallback; (19) phân phối + bảo hiểm với rand cố định.
+- `npm test`: `collection-core.js`; test cú pháp bắt trang mới; test "mọi biểu cảm có file" mở rộng
+  theo `miuDir`.
+- Bằng tay (`npm run dev`): tick xong một việc → thẻ 💗 tăng 🍬; đổi skin → 3 widget đổi màu ngay,
+  widget thời tiết lúc mưa vẫn ám xanh; chọn bộ nhân vật → mở Cài đặt thấy nhân vật mới không cần
+  khởi động lại; bật pháo hoa → tick việc cuối ngày thấy hiệu ứng; Alt+F4 cửa sổ Bộ sưu tập chỉ ẩn;
+  Lưu Cài đặt không làm mất đồ đã mở.
+
+### 14.10 Câu hỏi cần chốt trước khi code
+
+1. Bắt đầu Phase 17 khi nào, và có ra bản ổn định (dùng thật, sửa lỗi) trước không?
+2. Chủ đề cho 2 bộ nhân vật đầu tiên của Phase 18 (để làm ảnh theo khuôn 14.4).
+3. Có làm "tải bộ khi mở khoá" ở Phase 18 không, hay chấp nhận bộ cài nặng thêm ≈ 8 MB?

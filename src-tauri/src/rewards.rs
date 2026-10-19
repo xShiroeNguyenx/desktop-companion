@@ -89,6 +89,13 @@ fn react(app: &AppHandle, reward: Reward, source: Source, text: &str, done_today
         "pet-message",
         json!({ "command": "setExpression", "expression": expression, "duration": EXPRESSION_MS }),
     );
+    // Xong hết việc trong ngày: pháo hoa nếu đã mở và đang bật trong Bộ sưu tập.
+    if matches!(reward, Reward::AllDone) {
+        crate::collection::fx(app, "fireworks");
+    } else {
+        // Xong một việc (chưa phải việc cuối ngày): mưa hoa anh đào nếu đã mở.
+        crate::collection::fx(app, "petals");
+    }
     if source == Source::Chat {
         return;
     }

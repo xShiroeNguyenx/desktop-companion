@@ -116,6 +116,8 @@ pub enum Key {
     /// Mai Rằm / mai mùng 1.
     CalTomorrowFull,
     CalTomorrowNew,
+    // ── Bộ sưu tập (collection.rs): vừa đổi kẹo lấy một món. Biến: {item}.
+    ItemUnlocked,
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -188,6 +190,7 @@ impl Key {
         Key::CalTomorrowHoliday,
         Key::CalTomorrowFull,
         Key::CalTomorrowNew,
+        Key::ItemUnlocked,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -260,6 +263,7 @@ impl Key {
             Key::LevelUp => &["level"],
             Key::WeatherBrief | Key::WeatherBriefRain => &["min", "max", "rain"],
             Key::CalHoliday | Key::CalTomorrowHoliday => &["holiday"],
+            Key::ItemUnlocked => &["item"],
             _ => &[],
         }
     }
@@ -1199,6 +1203,22 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (CalTomorrowNew, En) => &[
             "Tomorrow is the 1st of the lunar month~ 🌙 If your family makes offerings, get ready",
             "Reminder: a new lunar month starts tomorrow 🌙 Flowers and fruit are best bought today~",
+        ],
+
+        (ItemUnlocked, Vi) => &[
+            "Mở khoá {item} rồi nè {you}! 🍬 {Me} thích lắm luôn~",
+            "Tèn ten~ {item} là của {you} rồi đó! Xứng đáng với công sức mà 💕",
+            "{You} đổi được {item} rồi! Kẹo tiêu vậy là đáng nha 🍬✨",
+        ],
+        (ItemUnlocked, Ja) => &[
+            "{item}をアンロックしたよ、{you}！🍬 わたしもうれしい～",
+            "じゃーん！{item}は{you}のもの！がんばったごほうびだね💕",
+            "{item}と交換できたね！キャンディの使いどころ、ばっちり🍬✨",
+        ],
+        (ItemUnlocked, En) => &[
+            "You unlocked {item}, {you}! 🍬 I love it~",
+            "Ta-da~ {item} is yours now! You earned it 💕",
+            "{item} is all yours! Candy well spent 🍬✨",
         ],
     }
 }

@@ -23,13 +23,19 @@
     }
     .wrap { position: absolute; inset: 0; padding: 6px; }
     .card {
+      /* Màu theo skin (app/skins.css ghi đè qua body[data-skin]); đây là Oải hương. */
+      --w-bg-a: rgba(56, 44, 84, 0.72); --w-bg-b: rgba(84, 50, 92, 0.72);
+      --w-ink: #f6eaf4; --w-ink-soft: #c9b6d6; --w-accent: #ff73ab; --w-gold: #ffd27a;
+      --w-chip: rgba(255, 255, 255, 0.08); --w-line: rgba(255, 255, 255, 0.35);
+      --w-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); --w-sky: transparent;
+      color: var(--w-ink);
       position: relative;
       height: 100%;
       padding: 8px 12px 8px;
       border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: linear-gradient(160deg, rgba(56, 44, 84, 0.72), rgba(84, 50, 92, 0.72));
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--w-line);
+      background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b));
+      text-shadow: var(--w-shadow);
       box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
       cursor: grab;
       animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
@@ -48,7 +54,7 @@
     .card > :not(.miu):not(.tools) { position: relative; z-index: 1; }
 
     .time { font: 800 38px/1 "Segoe UI", sans-serif; letter-spacing: -1px; }
-    .date { font-size: 11.5px; color: #e2d3ea; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .date { font-size: 11.5px; color: var(--w-ink-soft); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .zones { display: flex; flex-direction: column; margin-top: 6px; }
     .zone {
       height: 30px;
@@ -58,18 +64,18 @@
     }
     .zone .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
     .zone .t { font-weight: 800; font-size: 15px; }
-    .zone .d { font-size: 10.5px; color: #c9b6d6; min-width: 44px; text-align: right; }
-    .zone .d.shift { color: #ffd27a; }
+    .zone .d { font-size: 10.5px; color: var(--w-ink-soft); min-width: 44px; text-align: right; }
+    .zone .d.shift { color: var(--w-gold); }
     .focus {
       margin-top: auto;
       align-self: flex-start;
       border: none; border-radius: 9px;
       padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.12);
+      background: var(--w-chip);
       font-size: 12px; font-weight: 700; cursor: pointer;
     }
     .focus:hover { background: rgba(255, 255, 255, 0.22); }
-    .focus.on { background: #ff73ab; }
+    .focus.on { background: var(--w-accent); color: #fff; }
     .focus.brk { background: #57b894; }
 
     .tools {
@@ -84,9 +90,10 @@
       font-size: 12px; cursor: pointer;
     }
     .tools button:hover { background: rgba(90, 70, 120, 0.95); }
-    .tools button.on { background: #ff73ab; }
+    .tools button.on { background: var(--w-accent); }
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
   </style>
+  <link rel="stylesheet" href="skins.css" />
 </head>
 <body>
   <div class="wrap" id="wrap">

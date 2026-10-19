@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<!--
+  🍬 Bộ sưu tập (PLAN.md mục 14, Phase 17): số kẹo, các món đổi được (skin widget,
+  hiệu ứng, bộ nhân vật bám mép, bộ mặt Miu) và món đang dùng. Mở từ menu tròn
+  💞 → 🍬, ô 🎁 trên trang Mini Games, Cài đặt → 🎨 Diện mạo. Dữ liệu: Rust
+  collection_get / sự kiện collection-changed. Luồng ở js/collection.js, hàm
+  thuần ở js/collection-core.js.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bộ sưu tập</title>
+  <style>
+    :root {
+      --ink: #4a2a5e;
+      --ink-soft: #8a6a9a;
+      --pink: #ff5fa2;
+      --pink-2: #ff8fc0;
+      --pink-soft: #ffe4f0;
+      --line: rgba(255, 150, 200, 0.45);
+      --card: #fffafd;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Vẽ theo khổ 1100×720 rồi thu về 66% (726×475). ĐỒNG BỘ với COLLECTION_W /
+       COLLECTION_H trong windows.rs. */
+    html { zoom: 0.66; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    .window {
+      position: absolute;
+      inset: 6px;
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 12px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background:
+        radial-gradient(50% 45% at 12% 18%, rgba(255, 200, 225, 0.9), transparent 70%),
+        radial-gradient(45% 40% at 85% 0%, rgba(230, 210, 255, 0.85), transparent 70%),
+        linear-gradient(160deg, #f6dcef, #e9d4f3 55%, #f3d8ea);
+      box-shadow: 0 10px 30px rgba(120, 60, 120, 0.35);
+    }
+    .body { flex: 1; min-height: 0; display: flex; gap: 12px; }
+
+    /* ─── Cột trái: Miu + bong bóng thoại ─────────────────────────────────── */
+    .side { flex: 0 0 200px; position: relative; }
+    .bubble {
+      position: absolute; left: 10px; right: 6px; top: 40px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 15px; font-weight: 600; line-height: 1.4; text-align: center;
+      box-shadow: 0 6px 16px rgba(160, 80, 140, 0.25);
+    }
+    .bubble::after {
+      content: ''; position: absolute; left: 52%; bottom: -14px;
+      border: 10px solid transparent; border-top: 14px solid #fff;
+    }
+    .side img {
+      position: absolute; left: -6px; right: -10px; bottom: 0;
+      width: calc(100% + 16px); height: 64%;
+      object-fit: contain; object-position: center bottom;
+      filter: drop-shadow(0 8px 16px rgba(160, 80, 140, 0.3));
+      pointer-events: none;
+    }
+
+    /* ─── Bảng chính ───────────────────────────────────────────────────────── */
+    .panel {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .head { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 46px; line-height: 1; filter: drop-shadow(0 3px 6px rgba(255, 95, 162, 0.35)); }
+    .titles { flex: 1; min-width: 0; }
+    .titles h1 { margin: 0; font-size: 30px; color: var(--ink); letter-spacing: -0.5px; }
+    .titles p { margin: 2px 0 0; font-size: 13px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: 0 3px 10px rgba(200, 120, 170, 0.15);
+    }
+    .stat .ic { font-size: 34px; line-height: 1; }
+    .stat small { display: block; font-size: 12.5px; color: var(--ink-soft); }
+    .stat b { font-size: 26px; color: var(--ink); line-height: 1.1; }
+    .stat b em { font-style: normal; font-size: 16px; color: var(--pink); margin-left: 4px; }
+    .stat.today { min-width: 220px; flex-direction: column; align-items: stretch; gap: 6px; }
+    .stat.today .row { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+    .bar { flex: 1; height: 10px; border-radius: 6px; background: #f1dcea; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #7fe0b0, #4cc08c); transition: width 0.4s; }
+    .close {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 2px solid var(--pink-2);
+      background: #fff; color: var(--pink); font-size: 20px; font-weight: 800;
+      flex: 0 0 auto; align-self: flex-start;
+    }
+    .close:hover { background: var(--pink-soft); }
+
+    /* ─── Tab ──────────────────────────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 4px;
+      padding: 5px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+    .tab {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 8px 10px;
+      border: none; border-radius: 12px;
+      background: transparent;
+      font-size: 15px; font-weight: 700; color: var(--ink);
+      white-space: nowrap; min-width: 0;
+    }
+    .tab:hover { background: var(--pink-soft); }
+    .tab .ti { font-size: 20px; }
+    .tab .n {
+      font-size: 13px; font-weight: 700;
+      padding: 1px 9px; border-radius: 999px;
+      background: #f3e6f0; color: var(--ink-soft);
+    }
+    .tab.on { background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff; box-shadow: 0 4px 10px rgba(255, 95, 162, 0.35); }
+    .tab.on .n { background: rgba(255, 255, 255, 0.3); color: #fff; }
+
+    /* ─── Lưới món ─────────────────────────────────────────────────────────── */
+    .grid {
+      flex: 1; min-height: 0;
+      overflow-y: auto; padding: 2px 4px 4px 2px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      align-content: start;
+    }
+    .grid::-webkit-scrollbar { width: 8px; }
+    .grid::-webkit-scrollbar-thumb { background: rgba(255, 95, 162, 0.35); border-radius: 4px; }
+    .item {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 8px 10px;
+      border-radius: 18px;
+      background: var(--card);
+      border: 2px solid transparent;
+      box-shadow: 0 4px 12px rgba(200, 120, 170, 0.18);
+    }
+    .item.selected { border-color: var(--pink-2); box-shadow: 0 0 0 3px rgba(255, 143, 192, 0.25), 0 4px 12px rgba(200, 120, 170, 0.18); }
+    .pv {
+      position: relative;
+      height: 96px; border-radius: 13px; overflow: hidden;
+      background: linear-gradient(160deg, #f7e3f1, #ead8f6);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .pv > img.full { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+    .pv.side > img.full { object-fit: cover; object-position: center 12%; }
+    .pv .ic { font-size: 50px; align-self: center; }
+    /* Widget thu nhỏ đúng màu skin. */
+    .mini {
+      position: relative;
+      width: 80%; height: 66px; margin-bottom: 8px;
+      border-radius: 12px;
+      padding: 8px 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(60, 30, 80, 0.25);
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .mini .t { font: 800 24px/1 "Segoe UI", sans-serif; position: relative; z-index: 1; }
+    .mini .cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; position: relative; z-index: 1; }
+    .mini .cells i { height: 9px; border-radius: 3px; }
+    .mini img { position: absolute; right: -4px; bottom: -6px; height: 70%; opacity: 0.35; }
+    .badge {
+      position: absolute; left: 8px; top: 8px; z-index: 2;
+      display: flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px;
+      background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff;
+      font-size: 12.5px; font-weight: 700;
+    }
+    .lock {
+      position: absolute; right: 8px; top: 8px; z-index: 2;
+      width: 26px; height: 26px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: #ffcf4d; font-size: 14px;
+      box-shadow: 0 2px 6px rgba(120, 80, 0, 0.3);
+    }
+    .name { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; padding: 0 4px; }
+    .rar { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    .r-common { background: #f1e6f3; color: #7a5a8a; }
+    .r-rare { background: #e2dbff; color: #5b3fc4; }
+    .r-epic { background: #ffecc2; color: #8a5600; }
+    .desc {
+      font-size: 13px; color: var(--ink-soft); line-height: 1.3; padding: 0 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .acts { display: flex; gap: 6px; margin-top: auto; }
+    .act {
+      flex: 1;
+      padding: 8px 8px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff;
+      font-size: 15px; font-weight: 800;
+    }
+    .act:hover { filter: brightness(1.05); }
+    .act:disabled { cursor: default; filter: none; }
+    .act.using { background: #efe3f7; color: #8a6aa8; }
+    .act.short { background: #fff; color: var(--pink); border-color: var(--line); }
+    .act.use { background: linear-gradient(180deg, #b9a4ff, #8e72f2); }
+    .act.on { background: linear-gradient(180deg, #7fe0b0, #4cc08c); }
+    .act.off { background: linear-gradient(180deg, #ffd77a, #ffb347); color: #5a3600; }
+    .act.ghost { flex: 0 0 auto; background: #fff; color: var(--ink); border-color: var(--line); }
+    .empty { grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--ink-soft); font-size: 16px; }
+    .note {
+      grid-column: 1 / -1;
+      padding: 8px 12px; border-radius: 12px;
+      background: #fff4d6; color: #8a5600; font-size: 13.5px; font-weight: 600;
+    }
+
+    /* ─── Dải dưới: cách nhận kẹo ─────────────────────────────────────────── */
+    .foot {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+    }
+    .foot h2 { margin: 0 6px 0 0; font-size: 17px; white-space: nowrap; }
+    .chips { flex: 1; min-width: 0; display: flex; gap: 5px; flex-wrap: nowrap; overflow: hidden; }
+    .chip {
+      padding: 4px 8px; border-radius: 10px;
+      background: #fff; border: 1px solid #ecdcef;
+      font-size: 12px; white-space: nowrap;
+    }
+    .nomoney {
+      display: flex; align-items: center; gap: 8px;
+      padding-left: 12px; border-left: 1px solid #ecdcef;
+      font-size: 12px; color: var(--ink-soft); line-height: 1.3; max-width: 160px;
+    }
+    .nomoney span { font-size: 26px; }
+    /* Chỉ bản dev: nút thử. */
+    .dev { display: flex; gap: 6px; }
+    .dev button {
+      padding: 6px 10px; border-radius: 10px; border: 1px dashed #b58ad0;
+      background: #f6eefc; color: #6b3f8a; font-size: 12.5px; font-weight: 700;
+    }
+
+    .toast {
+      position: absolute; left: 55%; bottom: 76px; translate: -50% 0;
+      padding: 10px 18px; border-radius: 14px;
+      background: #fff; color: var(--ink); font-weight: 700; font-size: 16px;
+      box-shadow: 0 10px 24px rgba(120, 60, 120, 0.35);
+      animation: pop 0.3s cubic-bezier(.34, 1.56, .64, 1);
+      z-index: 9;
+    }
+    .toast.err { background: #ffe1e8; color: #8a2a48; }
+    @keyframes pop { from { opacity: 0; transform: scale(0.9); } }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .toast { animation: none; } .bar i { transition: none; } }
+  </style>
+  <!-- Giao diện theo bộ nhân vật (js/theme-apply.js đặt body[data-theme]). -->
+  <link rel="stylesheet" href="theme-pages.css" />
+</head>
+<body>
+  <div class="window">
+    <div class="body">
+      <div class="side">
+        <div class="bubble" id="bubble"></div>
+        <img src="media/game/rps-wink.png" alt="" draggable="false" />
+      </div>
+      <div class="panel">
+        <div class="head">
+          <div class="logo">🛍️</div>
+          <div class="titles"><h1 id="title">Bộ sưu tập</h1><p id="subtitle"></p></div>
+          <div class="stat">
+            <span class="ic">🍬</span>
+            <div><small id="candyLabel"></small><b><span id="candy">0</span><em id="candyWord"></em></b></div>
+          </div>
+          <div class="stat today">
+            <small id="todayLabel"></small>
+            <div class="row"><div class="bar"><i id="todayBar"></i></div><span id="todayNums"></span><span>🎁</span></div>
+          </div>
+          <button class="close" id="closeBtn" type="button">✕</button>
+        </div>
+        <div class="tabs" id="tabs"></div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+    <div class="foot">
+      <h2 id="howTitle">Cách nhận kẹo</h2>
+      <div class="chips" id="chips"></div>
+      <div class="dev" id="devTools" hidden>
+        <button id="devCandy" type="button">🛠 +1000 🍬</button>
+        <button id="devUnlock" type="button">🛠 Mở hết</button>
+      </div>
+      <div class="nomoney"><span>🚫</span><div id="noMoney"></div></div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/theme-apply.js"></script>
+  <script src="js/miu-skin.js"></script>
+  <script src="js/collection-core.js"></script>
+  <script src="js/collection.js"></script>
+</body>
+</html>

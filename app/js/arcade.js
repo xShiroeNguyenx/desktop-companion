@@ -27,7 +27,7 @@
       wins: 'Đã thắng', streak: 'Chuỗi thắng', fastest: 'Nhanh nhất', winsN: '{n} ván',
       play: 'Chơi ngay',
       achTitle: 'Thành tích', achSub: 'Xem thống kê và kỷ lục của {you}',
-      rewardTitle: 'Phần thưởng', rewardSub: 'Hôm nay: {got}/{cap} điểm thân thiết',
+      rewardTitle: 'Phần thưởng', rewardSub: 'Hôm nay: {got}/{cap} điểm · 🍬 {candy} kẹo',
       dailyTitle: 'Thử thách hằng ngày', dailySub: 'Hôm nay chơi {game} nha!',
       colPlays: 'Số ván', colWins: 'Thắng', colBest: 'Kỷ lục',
       rewardHelp: [
@@ -57,7 +57,7 @@
       wins: '勝った数', streak: '連勝', fastest: '最速', winsN: '{n}回',
       play: '遊ぶ',
       achTitle: '成績', achSub: '記録と統計を見る',
-      rewardTitle: 'ごほうび', rewardSub: '今日：なかよし {got}/{cap}',
+      rewardTitle: 'ごほうび', rewardSub: '今日：なかよし {got}/{cap} · 🍬 {candy}',
       dailyTitle: '今日のチャレンジ', dailySub: '今日は{game}で遊ぼう！',
       colPlays: '回数', colWins: '勝ち', colBest: '記録',
       rewardHelp: [
@@ -87,7 +87,7 @@
       wins: 'Wins', streak: 'Best streak', fastest: 'Fastest', winsN: '{n}',
       play: 'Play now',
       achTitle: 'Achievements', achSub: 'See your stats and records',
-      rewardTitle: 'Rewards', rewardSub: 'Today: {got}/{cap} friendship points',
+      rewardTitle: 'Rewards', rewardSub: 'Today: {got}/{cap} points · 🍬 {candy} candy',
       dailyTitle: 'Daily challenge', dailySub: "Today's pick: {game}!",
       colPlays: 'Games', colWins: 'Wins', colBest: 'Record',
       rewardHelp: [
@@ -162,7 +162,7 @@
     $('todayPoints').textContent = `${got}/${capPts}`;
     const pick = daily();
     $('todayGame').textContent = L.names[pick];
-    $('rewardSub').textContent = fill(L.rewardSub, { got, cap: capPts });
+    $('rewardSub').textContent = fill(L.rewardSub, { got, cap: capPts, candy: info.candy || 0 });
     $('dailySub').textContent = fill(L.dailySub, { game: L.names[pick] });
 
     const level = info.level_name || '';
@@ -257,9 +257,10 @@
   $('statsBtn').addEventListener('click', () => sheet('statsSheet'));
   $('tileStats').addEventListener('click', () => sheet('statsSheet'));
   $('helpBtn').addEventListener('click', () => sheet('helpSheet', L.help.map((l) => fill(l, words())), true));
+  // Ô 🎁: mở 🍬 Bộ sưu tập (kẹo đổi skin, hiệu ứng, bộ nhân vật).
   $('tileReward').addEventListener('click', () => {
-    const vars = words({ got: info.points_today || 0, cap: info.points_cap || 3 });
-    sheet('helpSheet', L.rewardHelp.map((l) => fill(l, vars)));
+    closeSheets();
+    invoke('open_collection').catch((e) => log('[arcade] open_collection: ' + e));
   });
   $('tileDaily').addEventListener('click', () => play(daily()));
   window.addEventListener('keydown', (e) => {
@@ -287,5 +288,7 @@
   }
 
   listen('arcade-refresh', open);
+  // Kẹo đổi (xong việc, mua đồ…) → cập nhật ô 🎁.
+  listen('collection-changed', open);
   open();
 })();

@@ -23,26 +23,34 @@
     }
     .wrap { position: absolute; inset: 0; padding: 6px; }
     .card {
+      /* Màu theo skin (app/skins.css ghi đè qua body[data-skin]); đây là Oải hương. */
+      --w-bg-a: rgba(56, 44, 84, 0.72); --w-bg-b: rgba(84, 50, 92, 0.72);
+      --w-ink: #f6eaf4; --w-ink-soft: #c9b6d6; --w-accent: #ff73ab; --w-gold: #ffd27a;
+      --w-chip: rgba(255, 255, 255, 0.08); --w-line: rgba(255, 255, 255, 0.35);
+      --w-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); --w-sky: transparent;
+      color: var(--w-ink);
       position: relative;
       height: 100%;
       padding: 10px 12px 8px;
       border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: linear-gradient(160deg, rgba(48, 46, 78, 0.94), rgba(74, 48, 92, 0.94));
+      border: 1px solid var(--w-line);
+      /* Lớp tint theo trời (--w-sky, .sky-*) xếp LÊN gradient skin: skin nào cũng còn thấy trời. */
+      background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b));
+      text-shadow: var(--w-shadow);
       box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
       cursor: grab;
       animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
       display: flex; flex-direction: column; gap: 4px;
       overflow: hidden;
     }
-    .card.sky-sun { background: linear-gradient(160deg, rgba(86, 64, 96, 0.94), rgba(122, 78, 96, 0.94)); }
-    .card.sky-rain { background: linear-gradient(160deg, rgba(38, 52, 78, 0.94), rgba(52, 52, 92, 0.94)); }
-    .card.sky-night { background: linear-gradient(160deg, rgba(28, 30, 62, 0.95), rgba(46, 36, 78, 0.95)); }
+    .card.sky-sun { --w-sky: rgba(160, 100, 70, 0.3); }
+    .card.sky-rain { --w-sky: rgba(20, 50, 110, 0.38); }
+    .card.sky-night { --w-sky: rgba(8, 8, 46, 0.45); }
     .card.old { opacity: 0.72; }
     @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
 
     .city { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
-    .ago { font-size: 10.5px; color: #c9b6d6; margin-top: auto; }
+    .ago { font-size: 10.5px; color: var(--w-ink-soft); margin-top: auto; }
     /* Hàng nhiệt độ: icon + số bên trái, Miu bên phải (không đè lên chữ nào). */
     .now { display: flex; align-items: center; gap: 6px; min-height: 64px; }
     .now .ic { font-size: 36px; line-height: 1; }
@@ -55,15 +63,15 @@
       pointer-events: none;
       filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
     }
-    .meta { font-size: 12px; color: #e2d3ea; line-height: 1.45; }
-    .meta b { color: #fff; }
+    .meta { font-size: 12px; color: var(--w-ink); line-height: 1.45; }
+    .meta b { color: var(--w-ink); }
     .rain { color: #8fc0ff; font-weight: 700; }
     .days { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
-    .days div { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.07); }
+    .days div { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 6px; border-radius: 8px; background: var(--w-chip); }
     .days .n { flex: 1; font-weight: 700; white-space: nowrap; }
     .days .i { font-size: 15px; }
-    .days .lo { color: #c9b6d6; }
-    .empty { font-size: 12px; color: #e2d3ea; line-height: 1.4; }
+    .days .lo { color: var(--w-ink-soft); }
+    .empty { font-size: 12px; color: var(--w-ink-soft); line-height: 1.4; }
     .small .city, .small .ago, .small .days { display: none; }
     .large .now .miu { width: 84px; height: 84px; }
 
@@ -79,9 +87,10 @@
       font-size: 12px; cursor: pointer;
     }
     .tools button:hover { background: rgba(90, 70, 120, 0.95); }
-    .tools button.on { background: #ff73ab; }
+    .tools button.on { background: var(--w-accent); }
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
   </style>
+  <link rel="stylesheet" href="skins.css" />
 </head>
 <body>
   <div class="wrap" id="wrap">

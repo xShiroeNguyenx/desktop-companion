@@ -425,6 +425,8 @@ fn focus_loop(app: AppHandle) {
                 hold_expression(&app, "happy");
                 // Sang pha nghỉ: đồng hồ ghim đổi sang đếm giờ nghỉ.
                 crate::clock_pin::broadcast(&app);
+                // Pháo giấy nếu đã mở và đang bật trong Bộ sưu tập.
+                crate::collection::fx(&app, "confetti");
                 "focus:done"
             }
             FocusEvent::BreakDone => {
@@ -449,7 +451,7 @@ pub fn kick(app: &AppHandle) {
 
 // ─── Thân thiết (bond.rs) ────────────────────────────────────────────────────
 
-fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
+pub(crate) fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
     let offset = reminders::local_offset_min();
     let now_ms = now as i64 * 1000;
     let local = now_ms + offset as i64 * reminders::MIN_MS;
@@ -460,8 +462,12 @@ fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
 /// file chỉ ghi log: điểm thân thiết không đáng làm hỏng việc đang làm.
 pub fn bond_award(app: &AppHandle, ev: crate::bond::Event) {
     let (today, _) = today_and_hour(now_secs());
-    if let Err(e) = store::update_bond(app, |b| crate::bond::award(b, ev, today)) {
-        eprintln!("[bond] lưu điểm lỗi: {e}");
+    match store::update_bond(app, |b| crate::bond::award(b, ev, today)) {
+        // Kẹo đi song song điểm thân thiết (collection.rs). gain = 0 (đã chạm
+        // trần, hay "có mặt" mỗi 30 giây) thì không đụng tới collection.json.
+        Ok(gain) if gain > 0 => crate::collection::earn_from(app, ev, gain),
+        Ok(_) => {}
+        Err(e) => eprintln!("[bond] lưu điểm lỗi: {e}"),
     }
 }
 
@@ -510,6 +516,8 @@ pub fn show_bond_card(app: &AppHandle) {
             "days": days,
             "streak": b.streak,
             "milestones": b.milestones_shown.len(),
+            // Kẹo (collection.rs): tiêu được ở Bộ sưu tập.
+            "candy": store::load_collection(app).candy,
         }),
     );
 }
@@ -521,6 +529,7 @@ pub fn game_info(app: &AppHandle) -> serde_json::Value {
     let a = persona::address(&store::load_settings(app));
     let (today, _) = today_and_hour(now_secs());
     let b = store::load_bond(app);
+    let col = store::load_collection(app);
     json!({
         "lang": a.lang.code(),
         "pet": a.pet,
@@ -533,6 +542,11 @@ pub fn game_info(app: &AppHandle) -> serde_json::Value {
         "level_name": level_name(level(b.points), a.lang),
         // Điểm trong mức hiện tại / điểm cần để lên mức kế; mức cao nhất thì null.
         "progress": progress(b.points).map(|(have, need)| json!({ "have": have, "need": need })),
+        // Kẹo đang có (ô 🎁 trên trang Mini Games mở Bộ sưu tập).
+        "candy": col.candy,
+        // Bộ mặt Miu chọn trong Bộ sưu tập (js/miu-skin.js đổi ảnh trong game).
+        "miuDir": crate::collection::effective_miu_dir(&col),
+        "miuExt": crate::collection::effective_miu_ext(&col),
     })
 }
 
@@ -603,11 +617,18 @@ fn milestone_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<St
         _ => return None,
     };
     let shown = inner.to_string();
-    let _ = store::update_bond(app, |b| {
-        if !b.milestones_shown.contains(&shown) {
-            b.milestones_shown.push(shown);
+    let fresh = store::update_bond(app, |b| {
+        if b.milestones_shown.contains(&shown) {
+            return false;
         }
-    });
+        b.milestones_shown.push(shown);
+        true
+    })
+    .unwrap_or(false);
+    // Mỗi cột mốc thưởng thêm kẹo (chỉ kẹo, không đụng điểm thân thiết).
+    if fresh {
+        crate::collection::grant_bonus(app, crate::collection::MILESTONE_BONUS);
+    }
     Some(line)
 }
 

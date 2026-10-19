@@ -1,6 +1,7 @@
 ﻿import { state, vscode, debugLog } from './core.js';
 import { setExpression } from './expression.js';
 import { updateMoodIndicator } from './expression.js';
+import { playFx } from './fx-pet.js';
 import { initAmbientAudio, playAudio, setAmbientPreset, setGlobalAudioMuted, speakText } from './audio.js';
 import {
   showBubble,
@@ -170,6 +171,10 @@ window.addEventListener('message', (event) => {
       break;
     case 'setExpression':
       setExpression(event.data.expression, event.data.duration);
+      break;
+    case 'fx':
+      // Hiệu ứng thưởng đã mở trong Bộ sưu tập (collection.rs): pháo giấy / pháo hoa.
+      playFx(event.data.kind);
       break;
     case 'pomodoroStart':
       setExpression('focus', null);

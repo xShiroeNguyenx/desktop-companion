@@ -673,6 +673,90 @@ pub async fn arcade_close(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// ─── 🍬 Bộ sưu tập (collection.rs) ──────────────────────────────────────────
+// Lỗi trả về là MÃ (not_found | already_owned | not_enough:<n> | wrong_category |
+// not_owned) để collection-core.js dịch ra 3 thứ tiếng.
+
+#[tauri::command]
+pub fn collection_get(app: AppHandle) -> Value {
+    crate::collection::view(&app)
+}
+
+#[tauri::command]
+pub async fn collection_buy(app: AppHandle, id: String) -> Result<Value, String> {
+    let item = store::update_collection(&app, |c| crate::collection::buy(c, &id))?.map_err(|e| e.code())?;
+    // Pet khoe món mới: hành động do người dùng bấm, nói ngay không qua trọng tài.
+    let a = persona::address(&store::load_settings(&app));
+    let idx = crate::collection::lang_index(a.lang);
+    let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", item.name[idx])]);
+    let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
+    let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+    crate::collection::changed(&app);
+    Ok(crate::collection::view(&app))
+}
+
+#[tauri::command]
+pub async fn collection_select(app: AppHandle, category: String, id: String) -> Result<Value, String> {
+    let cat = crate::collection::Category::from_code(&category).ok_or("wrong_category")?;
+    store::update_collection(&app, |c| crate::collection::select(c, cat, &id))?.map_err(|e| e.code().to_string())?;
+    crate::collection::changed(&app);
+    Ok(crate::collection::view(&app))
+}
+
+#[tauri::command]
+pub async fn collection_toggle_effect(app: AppHandle, id: String, on: bool) -> Result<Value, String> {
+    store::update_collection(&app, |c| crate::collection::set_effect(c, &id, on))?.map_err(|e| e.code().to_string())?;
+    let _ = app.emit("collection-changed", crate::collection::view(&app));
+    Ok(crate::collection::view(&app))
+}
+
+/// Nút "Xem thử" một hiệu ứng (không cần sở hữu). Chỉ loại có trong catalog.
+#[tauri::command]
+pub async fn collection_preview_fx(app: AppHandle, kind: String) -> Result<(), String> {
+    let known = crate::collection::items()
+        .any(|i| i.cat == crate::collection::Category::Effect && i.asset == kind);
+    if !known {
+        return Err("not_found".into());
+    }
+    crate::collection::preview_fx(&app, &kind);
+    Ok(())
+}
+
+/// Chỉ bản dev (npm run dev): "candy" = +1000 kẹo, "unlock" = mở hết. Bản phát hành từ chối.
+#[tauri::command]
+pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, String> {
+    if !cfg!(debug_assertions) {
+        return Err("Chỉ dùng được ở bản dev.".into());
+    }
+    store::update_collection(&app, |c| match action.as_str() {
+        "candy" => {
+            crate::collection::grant(c, 1000);
+            Ok(())
+        }
+        "unlock" => {
+            crate::collection::unlock_all(c);
+            Ok(())
+        }
+        _ => Err(format!("Lệnh lạ: {action}")),
+    })??;
+    crate::collection::changed(&app);
+    Ok(crate::collection::view(&app))
+}
+
+#[tauri::command]
+pub async fn open_collection(app: AppHandle) {
+    windows::open_collection(&app);
+}
+
+/// Nút × / Esc trên Bộ sưu tập: chỉ ẩn (cửa sổ dựng sẵn, dùng lại).
+#[tauri::command]
+pub async fn collection_close(app: AppHandle) -> Result<(), String> {
+    let w = app.get_webview_window("collection").ok_or("không thấy Bộ sưu tập")?;
+    w.hide().map_err(|e| e.to_string())?;
+    crate::sidegirl::hide(&app, "collection");
+    Ok(())
+}
+
 /// Nút × / Esc trên thẻ dự báo.
 #[tauri::command]
 pub async fn weather_close(app: AppHandle) -> Result<(), String> {
@@ -700,6 +784,8 @@ pub fn set_side_girls(app: AppHandle, enabled: bool) -> Result<(), String> {
     s.side_girls = enabled;
     store::save_settings(&app, &s)?;
     crate::sidegirl::set_enabled(&app, enabled);
+    // Giao diện Cài đặt theo bộ nhân vật (theme-snow.css) chỉ bật khi Bunny Lounge bật.
+    let _ = app.emit("collection-changed", crate::collection::view(&app));
     Ok(())
 }
 

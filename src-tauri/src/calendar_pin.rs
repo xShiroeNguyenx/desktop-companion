@@ -44,6 +44,7 @@ pub static SPEC: Spec = Spec {
 pub fn view(app: &AppHandle) -> Value {
     let s = store::load_settings(app);
     let a = crate::persona::address(&s);
+    let c = store::load_collection(app);
     json!({
         "pinned": s.calendar_pin,
         "pinTop": s.calendar_pin_top,
@@ -51,6 +52,10 @@ pub fn view(app: &AppHandle) -> Value {
         // "MM-DD" hoặc rỗng (Cài đặt → Bạn đồng hành). Ô ngày đó có 🎂.
         "birthday": s.birthday,
         "you": a.you,
+        // Skin màu (app/skins.css) và thư mục ảnh Miu mini, chọn trong Bộ sưu tập.
+        "skin": crate::collection::effective_skin(&c),
+        "miuDir": crate::collection::effective_miu_dir(&c),
+        "miuExt": crate::collection::effective_miu_ext(&c),
     })
 }
 

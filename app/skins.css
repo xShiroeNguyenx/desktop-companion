@@ -1,0 +1,94 @@
+/*
+  Skin màu cho 3 widget ghim (calendar-pin, clock-pin, weather-pin). Mỗi trang khai
+  bộ biến --w-* mặc định (Oải hương) trên .card; ở đây ghi đè theo
+  body[data-skin] do Rust gửi (collection::effective_skin). Phải có một khối
+  [data-skin="<asset>"] cho MỌI skin trong collection.rs CATALOG — test
+  every_skin_exists_in_css kiểm tra.
+
+  --w-bg-a / --w-bg-b : gradient nền thẻ
+  --w-ink / --w-ink-soft : chữ chính / chữ phụ
+  --w-accent : ô hôm nay, nút chính, 📍 đang bật
+  --w-gold : ngày mùng 1 âm, ngày lễ, "ngày mai"
+  --w-chip / --w-line : nền ô ngày / viền thẻ
+  --w-shadow : bóng chữ (skin sáng thì tắt)
+  --w-sky : lớp tint của widget thời tiết (sky-*), xếp LÊN gradient skin
+  --w-panel : nền khung ngày đang chọn trên lịch (skin sáng dùng nền trắng mờ)
+*/
+
+body[data-skin="lavender"] .card {
+  --w-panel: rgba(0, 0, 0, 0.2);
+  --w-bg-a: rgba(56, 44, 84, 0.72);
+  --w-bg-b: rgba(84, 50, 92, 0.72);
+  --w-ink: #f6eaf4;
+  --w-ink-soft: #c9b6d6;
+  --w-accent: #ff73ab;
+  --w-gold: #ffd27a;
+  --w-chip: rgba(255, 255, 255, 0.08);
+  --w-line: rgba(255, 255, 255, 0.35);
+  --w-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+body[data-skin="sakura"] .card {
+  --w-panel: rgba(255, 255, 255, 0.38);
+  --w-bg-a: rgba(255, 218, 232, 0.84);
+  --w-bg-b: rgba(255, 186, 216, 0.84);
+  --w-ink: #5b2f47;
+  --w-ink-soft: #9a6a84;
+  --w-accent: #ff5fa2;
+  --w-gold: #c97a00;
+  --w-chip: rgba(255, 255, 255, 0.38);
+  --w-line: rgba(255, 255, 255, 0.8);
+  --w-shadow: none;
+}
+
+body[data-skin="night"] .card {
+  --w-panel: rgba(0, 0, 10, 0.28);
+  --w-bg-a: rgba(22, 26, 66, 0.84);
+  --w-bg-b: rgba(44, 30, 90, 0.84);
+  --w-ink: #eef0ff;
+  --w-ink-soft: #aab0dd;
+  --w-accent: #8da2ff;
+  --w-gold: #ffe08a;
+  --w-chip: rgba(255, 255, 255, 0.08);
+  --w-line: rgba(170, 180, 255, 0.35);
+  --w-shadow: 0 1px 2px rgba(0, 0, 20, 0.6);
+}
+
+body[data-skin="mint"] .card {
+  --w-panel: rgba(255, 255, 255, 0.4);
+  --w-bg-a: rgba(208, 244, 230, 0.86);
+  --w-bg-b: rgba(176, 232, 212, 0.86);
+  --w-ink: #1f4d3f;
+  --w-ink-soft: #4f8572;
+  --w-accent: #2fb58a;
+  --w-gold: #b87a00;
+  --w-chip: rgba(255, 255, 255, 0.4);
+  --w-line: rgba(255, 255, 255, 0.8);
+  --w-shadow: none;
+}
+
+body[data-skin="sunset"] .card {
+  --w-panel: rgba(60, 10, 40, 0.22);
+  --w-bg-a: rgba(255, 166, 118, 0.82);
+  --w-bg-b: rgba(198, 86, 140, 0.84);
+  --w-ink: #fff4ec;
+  --w-ink-soft: #ffdcc8;
+  --w-accent: #ffcf5a;
+  --w-gold: #ffeaa8;
+  --w-chip: rgba(255, 255, 255, 0.14);
+  --w-line: rgba(255, 255, 255, 0.45);
+  --w-shadow: 0 1px 2px rgba(90, 20, 40, 0.45);
+}
+
+body[data-skin="ocean"] .card {
+  --w-panel: rgba(0, 20, 50, 0.25);
+  --w-bg-a: rgba(24, 72, 122, 0.82);
+  --w-bg-b: rgba(18, 108, 150, 0.82);
+  --w-ink: #eaf6ff;
+  --w-ink-soft: #a9cfe6;
+  --w-accent: #4fd1ff;
+  --w-gold: #ffd27a;
+  --w-chip: rgba(255, 255, 255, 0.1);
+  --w-line: rgba(255, 255, 255, 0.35);
+  --w-shadow: 0 1px 2px rgba(0, 20, 40, 0.5);
+}

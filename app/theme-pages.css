@@ -1,0 +1,65 @@
+/*
+  Giao diện theo bộ nhân vật cho các trang có khung gốc .window: thẻ dự báo,
+  Mini Games, Bộ sưu tập, Oẳn tù tì, Đoán số, Gỡ bom. js/theme-apply.js đặt
+  body[data-theme]. Chỉ đổi nền + viền khung, màu nhấn (--pink…) và thêm 4 góc
+  trang trí (mờ, chuột bấm xuyên qua); thẻ và chữ bên trong giữ như cũ.
+  Cài đặt / Công việc / Trợ lý văn bản dùng theme-snow.css, theme-gothic.css.
+*/
+
+/* ─── ❄️ Xứ Tuyết ──────────────────────────────────────────────────────── */
+body[data-theme="snow"] {
+  --pink: #4f8fe6;
+  --pink-2: #8fb8f5;
+  --line: rgba(120, 170, 235, 0.5);
+}
+body[data-theme="snow"] .window {
+  border-color: rgba(255, 255, 255, 0.95);
+  background:
+    /* Xanh băng ĐẬM (không sáng như Cài đặt): các trang này vốn chữ trắng trên nền tối. */
+    radial-gradient(60% 50% at 12% 0%, rgba(200, 228, 255, 0.45), transparent 65%),
+    radial-gradient(55% 45% at 92% 8%, rgba(255, 255, 255, 0.25), transparent 65%),
+    radial-gradient(90% 60% at 50% 115%, rgba(230, 242, 255, 0.35), transparent 65%),
+    linear-gradient(180deg, #2f5f9a, #3e74b0 50%, #4a82bd);
+  box-shadow: 0 10px 30px rgba(60, 110, 180, 0.35);
+}
+body[data-theme="snow"] .window::after {
+  background:
+    url('media/side/snow/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/snow/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+
+/* ─── 🦇 Gothic Lolita (Neko Lounge) ──────────────────────────────────── */
+body[data-theme="gothic"] {
+  --pink: #b77cff;
+  --pink-2: #d9a8ff;
+  --line: rgba(196, 150, 255, 0.5);
+}
+body[data-theme="gothic"] .window {
+  border-color: rgba(196, 150, 255, 0.7);
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(150, 90, 220, 0.4), transparent 65%),
+    radial-gradient(55% 45% at 90% 10%, rgba(200, 120, 255, 0.25), transparent 65%),
+    linear-gradient(180deg, #1c1229, #150e20 55%, #1d1330);
+  box-shadow: 0 10px 30px rgba(20, 8, 40, 0.6), 0 0 18px rgba(183, 124, 255, 0.25);
+}
+body[data-theme="gothic"] .window::after {
+  background:
+    url('media/side/neko/deco/corner-tl.webp') left top / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-tr.webp') right top / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-bl.webp') left bottom / var(--corner) auto no-repeat,
+    url('media/side/neko/deco/corner-br.webp') right bottom / var(--corner) auto no-repeat;
+}
+
+/* ─── Chung: lớp góc trong khung, nổi trên nội dung nhưng mờ ───────────── */
+body[data-theme="snow"] .window::after,
+body[data-theme="gothic"] .window::after {
+  content: '';
+  position: absolute; inset: 0;
+  --corner: min(26%, 260px);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0.5;
+}

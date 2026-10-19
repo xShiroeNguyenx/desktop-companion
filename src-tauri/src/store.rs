@@ -496,6 +496,42 @@ pub fn update_bond<R>(app: &AppHandle, f: impl FnOnce(&mut crate::bond::Bond) ->
     Ok(out)
 }
 
+// ─── collection.json (kẹo + đồ đã mở, collection.rs) ─────────────────────────
+// Cố ý KHÔNG nằm trong Settings: settings_set chép lại các trường không có trên
+// form từ bản cũ, thêm trường mà quên là mất đồ đã mở. Cùng khuôn với bond.json.
+
+fn collection_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("collection.json"))
+}
+
+static COLLECTION_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// File thiếu hoặc hỏng → bộ sưu tập trống, không lỗi.
+pub fn load_collection(app: &AppHandle) -> crate::collection::Collection {
+    collection_path(app)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Đọc collection.json, cho `f` sửa, ghi lại — trong một khoá. Không đổi thì không ghi.
+pub fn update_collection<R>(
+    app: &AppHandle,
+    f: impl FnOnce(&mut crate::collection::Collection) -> R,
+) -> Result<R, String> {
+    let _guard = COLLECTION_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut c = load_collection(app);
+    let before = c.clone();
+    let out = f(&mut c);
+    if c == before {
+        return Ok(out);
+    }
+    let path = collection_path(app).ok_or("no config dir")?;
+    let json = serde_json::to_string_pretty(&c).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())?;
+    Ok(out)
+}
+
 fn pin_avatar_path(app: &AppHandle) -> Option<PathBuf> {
     Some(config_dir(app)?.join("pin_avatar.png"))
 }

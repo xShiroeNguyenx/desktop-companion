@@ -48,7 +48,8 @@
 
   // Ảnh Miu theo trời (W.face); chỉ đổi khi khác để khỏi nháy ảnh.
   function setMiu(face) {
-    const src = 'media/game/rps-' + face + '.png';
+    // Bộ mặt Miu chọn trong Bộ sưu tập (weather_net::view gửi miuDir / miuExt).
+    const src = ((data && data.miuDir) || 'media/game') + '/rps-' + face + '.' + ((data && data.miuExt) || 'png');
     if ($('miuImg').getAttribute('src') !== src) $('miuImg').setAttribute('src', src);
   }
 

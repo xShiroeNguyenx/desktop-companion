@@ -75,7 +75,7 @@
       const span = document.createElement('span');
       span.textContent = m.name;
       span.title = m.dir;
-      span.style.cssText = 'flex:1; font-size:12.5px; background:#272935; border:1px solid #3a3d4d; border-radius:6px; padding:5px 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      span.style.cssText = 'flex:1; font-size:12.5px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
       const del = document.createElement('button');
       del.className = 'task-del'; del.textContent = '🗑'; del.title = 'Xoá'; del.type = 'button';
       del.style.flex = '0 0 auto';
@@ -168,7 +168,8 @@
       row.style.alignItems = 'center';
       const span = document.createElement('span');
       span.textContent = c;
-      span.style.cssText = 'flex:1; font-size:12.5px; background:#272935; border:1px solid #3a3d4d; border-radius:6px; padding:5px 8px;';
+      // Màu theo biến của ui.css để giao diện Xứ Tuyết (theme-snow.css) cũng đổi theo.
+      span.style.cssText = 'flex:1; font-size:12.5px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 8px;';
       const del = document.createElement('button');
       del.className = 'task-del'; del.textContent = '🗑'; del.title = 'Xoá'; del.type = 'button';
       del.style.flex = '0 0 auto';
@@ -343,6 +344,7 @@
     $('weatherModeHint').textContent = WEATHER_MODE_HINT[mode] || '';
   }
   $('weatherOpen').addEventListener('click', () => invoke('open_weather').catch((e) => log('open_weather: ' + e)));
+  $('openCollection').addEventListener('click', () => invoke('open_collection').catch((e) => log('open_collection: ' + e)));
 
   // Nhóm 🧩 Widget: tick = ghim / gỡ ngay (không chờ Lưu). Trạng thái đọc lại
   // mỗi lần bảng được focus, vì widget có thể đã gỡ bằng ✕ trên chính nó.
@@ -717,5 +719,10 @@
   });
 
   if (window.DC.listen) window.DC.listen('settings-refresh', load);
+
+  // Giao diện theo bộ nhân vật: js/theme-apply.js. Bật / tắt Bunny Lounge ngay
+  // trên trang này cũng đổi giao diện (Rust phát collection-changed; gọi lại cho chắc).
+  $('sideGirls').addEventListener('change', () => window.ThemeApply && window.ThemeApply.refresh());
+
   load();
 })();

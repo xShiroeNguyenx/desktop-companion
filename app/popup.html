@@ -144,6 +144,9 @@
     .pp-card .status { font-size: 11px; min-height: 0; }
     .pp-card .status:empty { display: none; }
   </style>
+  <!-- Giao diện theo bộ nhân vật (js/theme-apply.js đặt body[data-theme]). -->
+  <link rel="stylesheet" href="theme-snow.css" />
+  <link rel="stylesheet" href="theme-gothic.css" />
 </head>
 <body>
   <div id="bootErr" style="display:none; background:#5a1f1f; color:#ffd; padding:8px; margin:8px; border-radius:6px; font-size:12px; white-space:pre-wrap;"></div>
@@ -224,6 +227,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/theme-apply.js"></script>
   <script src="js/popup.js"></script>
 </body>
 </html>
