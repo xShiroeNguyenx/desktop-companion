@@ -11,6 +11,37 @@
 
 ---
 
+## スクリーンショット
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/landing/img/arcade.webp" alt="ミニゲーム" /><br /><sub>ミニゲーム</sub></td>
+    <td width="50%"><img src="docs/landing/img/widgets.webp" alt="カレンダー・時計・天気ウィジェット" /><br /><sub>カレンダー・時計・天気ウィジェット</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/rps.webp" alt="じゃんけん" /><br /><sub>じゃんけん</sub></td>
+    <td><img src="docs/landing/img/mines.webp" alt="ボム処理班（マインスイーパー）" /><br /><sub>ボム処理班（マインスイーパー）</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/collection.webp" alt="🍬 コレクション" /><br /><sub>🍬 コレクション</sub></td>
+    <td><img src="docs/landing/img/weather.webp" alt="天気予報カード" /><br /><sub>天気予報カード</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/settings-snow.webp" alt="設定 — ❄️ 雪の国テーマ" /><br /><sub>設定 — ❄️ 雪の国テーマ</sub></td>
+    <td><img src="docs/landing/img/settings-neko.webp" alt="設定 — 🦇 ゴシックロリータテーマ" /><br /><sub>設定 — 🦇 ゴシックロリータテーマ</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/landing/img/girl-bunny.webp" height="180" alt="Bunny Lounge" />
+  <img src="docs/landing/img/girl-neko.webp" height="180" alt="Neko Lounge" />
+  <img src="docs/landing/img/girl-fox.webp" height="180" alt="Fox Lounge" />
+  <img src="docs/landing/img/girl-snow.webp" height="180" alt="Snow Lounge" />
+  <br /><sub>キャラクターセット：🐰 バニー・🐱 ネコ・🦊 狐・❄️ 雪の国</sub>
+</p>
+
+---
+
 ## 機能
 
 - **Live2D デスクトップペット** — 透明・最前面・ドラッグ可能なコンパニオン。Windows

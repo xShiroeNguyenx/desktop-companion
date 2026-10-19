@@ -11,6 +11,37 @@
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/landing/img/arcade.webp" alt="Mini Games page" /><br /><sub>Mini Games page</sub></td>
+    <td width="50%"><img src="docs/landing/img/widgets.webp" alt="Calendar, clock &amp; weather widgets" /><br /><sub>Calendar, clock &amp; weather widgets</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/rps.webp" alt="Rock paper scissors" /><br /><sub>Rock paper scissors</sub></td>
+    <td><img src="docs/landing/img/mines.webp" alt="Bomb Squad (minesweeper)" /><br /><sub>Bomb Squad (minesweeper)</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/collection.webp" alt="🍬 Collection" /><br /><sub>🍬 Collection</sub></td>
+    <td><img src="docs/landing/img/weather.webp" alt="Weather forecast card" /><br /><sub>Weather forecast card</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/settings-snow.webp" alt="Settings — ❄️ Snow Lounge theme" /><br /><sub>Settings — ❄️ Snow Lounge theme</sub></td>
+    <td><img src="docs/landing/img/settings-neko.webp" alt="Settings — 🦇 Gothic Lolita theme" /><br /><sub>Settings — 🦇 Gothic Lolita theme</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/landing/img/girl-bunny.webp" height="180" alt="Bunny Lounge" />
+  <img src="docs/landing/img/girl-neko.webp" height="180" alt="Neko Lounge" />
+  <img src="docs/landing/img/girl-fox.webp" height="180" alt="Fox Lounge" />
+  <img src="docs/landing/img/girl-snow.webp" height="180" alt="Snow Lounge" />
+  <br /><sub>Character sets: 🐰 Bunny · 🐱 Neko · 🦊 Fox · ❄️ Snow Lounge</sub>
+</p>
+
+---
+
 ## Features
 
 - **Live2D desktop pet** — a transparent, always-on-top, draggable companion that

@@ -12,6 +12,37 @@ duyệt, Word…).
 
 ---
 
+## Hình ảnh
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/landing/img/arcade.webp" alt="Trang Mini Games" /><br /><sub>Trang Mini Games</sub></td>
+    <td width="50%"><img src="docs/landing/img/widgets.webp" alt="Widget lịch, đồng hồ &amp; thời tiết" /><br /><sub>Widget lịch, đồng hồ &amp; thời tiết</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/rps.webp" alt="Oẳn tù tì" /><br /><sub>Oẳn tù tì</sub></td>
+    <td><img src="docs/landing/img/mines.webp" alt="Gỡ bom" /><br /><sub>Gỡ bom</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/collection.webp" alt="🍬 Bộ sưu tập" /><br /><sub>🍬 Bộ sưu tập</sub></td>
+    <td><img src="docs/landing/img/weather.webp" alt="Thẻ dự báo thời tiết" /><br /><sub>Thẻ dự báo thời tiết</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/landing/img/settings-snow.webp" alt="Cài đặt — giao diện ❄️ Xứ Tuyết" /><br /><sub>Cài đặt — giao diện ❄️ Xứ Tuyết</sub></td>
+    <td><img src="docs/landing/img/settings-neko.webp" alt="Cài đặt — giao diện 🦇 Gothic Lolita" /><br /><sub>Cài đặt — giao diện 🦇 Gothic Lolita</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/landing/img/girl-bunny.webp" height="180" alt="Bunny Lounge" />
+  <img src="docs/landing/img/girl-neko.webp" height="180" alt="Neko Lounge" />
+  <img src="docs/landing/img/girl-fox.webp" height="180" alt="Fox Lounge" />
+  <img src="docs/landing/img/girl-snow.webp" height="180" alt="Snow Lounge" />
+  <br /><sub>Bộ nhân vật: 🐰 Bunny · 🐱 Neko · 🦊 Hồ ly · ❄️ Xứ Tuyết</sub>
+</p>
+
+---
+
 ## Tính năng
 
 - **Pet Live2D trên desktop** — nhân vật trong suốt, luôn nổi trên cùng, kéo-thả
