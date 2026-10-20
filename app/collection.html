@@ -138,10 +138,13 @@
       padding: 1px 9px; border-radius: 999px;
       background: #f3e6f0; color: var(--ink-soft);
     }
-    /* 6 nhóm trên một hàng: tab co lại, icon và số đếm nhỏ hơn. */
-    .tab { flex: 1 1 auto; gap: 4px; padding: 8px 3px; font-size: 13.5px; overflow: hidden; }
+    /* 7–8 nhóm không vừa một hàng (chữ bị chen, số đếm dính tab bên cạnh): lưới 4 cột,
+       mỗi tab đủ chỗ cho icon + tên + số đếm. Tên quá dài thì cắt "…", không đè sang tab khác. */
+    .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+    .tab { gap: 6px; padding: 7px 8px; font-size: 14px; overflow: hidden; }
+    .tab > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .tab .ti { font-size: 17px; flex: 0 0 auto; }
-    .tab .n { font-size: 11.5px; padding: 1px 6px; flex: 0 0 auto; }
+    .tab .n { font-size: 11.5px; padding: 1px 7px; flex: 0 0 auto; }
     .tab.on { background: linear-gradient(180deg, #ff8fc0, #ff5fa2); color: #fff; box-shadow: 0 4px 10px rgba(255, 95, 162, 0.35); }
     .tab.on .n { background: rgba(255, 255, 255, 0.3); color: #fff; }
 
@@ -223,7 +226,8 @@
       box-shadow: 0 2px 6px rgba(120, 80, 0, 0.3);
     }
     .name { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; padding: 0 4px; }
-    .rar { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    /* Nhãn hạng không bao giờ gãy dòng ("Huyền thoại" cạnh tên dài): tên co lại, nhãn giữ nguyên. */
+    .rar { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto; }
     .r-common { background: #f1e6f3; color: #7a5a8a; }
     .r-rare { background: #e2dbff; color: #5b3fc4; }
     .r-epic { background: #ffecc2; color: #8a5600; }
@@ -613,6 +617,36 @@
     @keyframes shine { 60%, 100% { transform: translateX(120%); } }
     @keyframes rcInEpic { 0% { opacity: 0; transform: scale(0.4) rotate(-8deg); } 60% { opacity: 1; transform: scale(1.12) rotate(2deg); } 100% { opacity: 1; transform: none; } }
     @keyframes rcIn { from { opacity: 0; transform: translateY(14px) scale(0.85); } to { opacity: 1; transform: none; } }
+
+    /* ─── 🌈 Huyền thoại (model Live2D): cầu vồng trên nền Sử thi ─────────── */
+    .r-legendary { background: linear-gradient(90deg, #ffd6e8, #fff1c2, #d6f5ff, #e8dcff); color: #7a2fa0; }
+    .r-legendary.solid { background: linear-gradient(90deg, #ff6fb2, #ffb84d, #4fc8ff, #9b7bff); color: #fff; }
+    .pv.model { background: linear-gradient(160deg, #2a1838, #4a2350 55%, #1c1430); }
+    /* Ảnh toàn thân: cắt lấy nửa người trên cho vừa ô như bộ nhân vật. */
+    .pv.model > img.full { object-fit: cover; object-position: center 6%; }
+    .rate.legendary { background: linear-gradient(90deg, #fff0f7, #fff9e6, #eefaff, #f4efff); }
+    .rate.legendary b, .rate.legendary em { color: #a0329a; }
+    .rate-item { margin: -3px 0 0 42px; font-size: 11.5px; color: var(--ink-soft); }
+    .machine.spin-legendary svg { animation: machineGlow 0.4s ease-in-out infinite alternate; filter: hue-rotate(0deg); }
+    .machine.spin-legendary .dome { animation: domeShakeHard 0.22s ease-in-out 7; }
+    .reveal.legendary { background: radial-gradient(circle at 50% 50%, rgba(110, 40, 120, 0.6), rgba(20, 10, 40, 0.92)); }
+    .reveal.legendary .rv-rays {
+      background: repeating-conic-gradient(from 0deg, #ff6fb2 0deg 5deg, transparent 5deg 15deg, #ffd04d 15deg 20deg, transparent 20deg 30deg, #4fc8ff 30deg 35deg, transparent 35deg 45deg);
+      animation-duration: 4s;
+    }
+    .reveal.legendary.open .rv-rays { opacity: 0.85; }
+    .reveal.legendary.open::after { --fl: 1; animation-duration: 1.3s; }
+    .reveal.legendary .rv-cap .top { background: conic-gradient(from 200deg at 40% 40%, #ff8fc0, #ffd76a, #7fe0ff, #b39bff, #ff8fc0); }
+    .reveal.shake.legendary .rv-cap { animation: capShakeHard 0.2s ease-in-out infinite; }
+    .reveal.open.legendary .rv-label { animation: labelGlow 0.5s ease-in-out 0.5s infinite alternate, rainbowInk 2s linear infinite; }
+    @keyframes rainbowInk { to { filter: hue-rotate(360deg); } }
+    .rc.legendary { overflow: hidden; border-color: #ff8fc0; box-shadow: 0 0 24px rgba(255, 111, 178, 0.6), 0 0 34px rgba(79, 200, 255, 0.45); background: linear-gradient(180deg, #fff6fb, #f3fbff); animation: rcInEpic 0.8s cubic-bezier(.34, 1.56, .64, 1) forwards; animation-delay: calc(var(--i) * 90ms); }
+    .rc.legendary::after {
+      content: ''; position: absolute; inset: -20%; pointer-events: none;
+      background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.9) 50%, transparent 62%);
+      transform: translateX(-120%); animation: shine 1.8s ease-in-out infinite; animation-delay: calc(var(--i) * 90ms + 0.6s);
+    }
+    .rc.legendary::before { content: '🌈'; position: absolute; right: 6px; top: 2px; z-index: 3; font-size: 18px; animation: twinkle 1.2s ease-in-out infinite; }
     .gres-sum { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-soft); }
     .gres-acts { display: flex; gap: 10px; }
     .gres-acts .act { flex: 0 0 auto; min-width: 170px; padding: 10px 18px; }

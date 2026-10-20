@@ -15,3 +15,7 @@ Thumbs.db
 # Updater signing private key — NEVER commit this
 updater-private.key
 *.key
+
+# Gói model Live2D tải riêng (cargo run --example pack_model): chỉ đăng lên
+# release `models`, không commit. models/manifest.json thì commit.
+dist-models/

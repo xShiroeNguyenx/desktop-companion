@@ -33,6 +33,8 @@ pub enum Category {
     Bubble,
     /// Biểu tượng hiện khi bôi chữ (thay 🌸, flower.html).
     Flower,
+    /// Model Live2D (models.rs). Model đang dùng lưu ở `Settings.pet_model`, không ở đây.
+    Model,
 }
 
 impl Category {
@@ -45,6 +47,7 @@ impl Category {
             Category::LinePack => "line_pack",
             Category::Bubble => "bubble",
             Category::Flower => "flower",
+            Category::Model => "model",
         }
     }
 
@@ -57,6 +60,7 @@ impl Category {
             Category::LinePack,
             Category::Bubble,
             Category::Flower,
+            Category::Model,
         ]
             .into_iter()
             .find(|c| c.code() == s)
@@ -73,18 +77,22 @@ pub enum Rarity {
     Common,
     Rare,
     Epic,
+    /// Model Live2D (PLAN.md 16.4): giá theo từng món, tỉ lệ gacha theo từng món (gacha.rs).
+    Legendary,
 }
 
 impl Rarity {
     /// Giá đổi thẳng: ~3 ngày / ~1 tuần / ~2 tuần với ~200 kẹo/ngày. Đắt gấp 6–30
     /// lượt gacha (gacha.rs) để quay là đường rẻ, đổi thẳng là đường chắc.
-    /// Chỉ test dùng: kiểm mọi món trong CATALOG có giá khớp hạng.
+    /// Chỉ test dùng: kiểm mọi món trong CATALOG có giá khớp hạng. Huyền thoại
+    /// không có một giá chung, mỗi món một giá trong khoảng này.
     #[cfg(test)]
-    pub fn price(self) -> u32 {
+    pub fn prices(self) -> std::ops::RangeInclusive<u32> {
         match self {
-            Rarity::Common => 600,
-            Rarity::Rare => 1500,
-            Rarity::Epic => 3000,
+            Rarity::Common => 600..=600,
+            Rarity::Rare => 1500..=1500,
+            Rarity::Epic => 3000..=3000,
+            Rarity::Legendary => 5000..=10000,
         }
     }
 
@@ -93,6 +101,7 @@ impl Rarity {
             Rarity::Common => "common",
             Rarity::Rare => "rare",
             Rarity::Epic => "epic",
+            Rarity::Legendary => "legendary",
         }
     }
 }
@@ -107,7 +116,8 @@ pub struct Item {
     /// Tên theo thứ tự vi, ja, en (lang_index).
     pub name: [&'static str; 3],
     pub desc: [&'static str; 3],
-    /// Skin: id trong skins.css · MiuSet: thư mục ảnh · SideSet: id bộ (sidegirl::SETS) · Effect: loại fx.
+    /// Skin: id trong skins.css · MiuSet: thư mục ảnh · SideSet: id bộ (sidegirl::SETS) · Effect: loại fx
+    /// · Model: id trong models::BUILTIN.
     pub asset: &'static str,
 }
 
@@ -478,6 +488,19 @@ pub const CATALOG: &[Item] = &[
         ],
         asset: "snow",
     },
+    Item {
+        id: "model.gothic-aristocrat",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 10000,
+        name: ["Gothic Aristocrat", "ゴシック・アリストクラット", "Gothic Aristocrat"],
+        desc: [
+            "Tiểu thư gothic quý tộc thay nhân vật chính trên màn hình: váy ren đen, đủ biểu cảm và động tác.",
+            "黒レースのドレスをまとうゴシックな令嬢。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A gothic young noble in black lace becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "gothic-aristocrat",
+    },
 ];
 
 /// Mọi món: CATALOG ở trên + các bộ Miu (miu_sets.rs). Dùng hàm này thay vì CATALOG.
@@ -803,8 +826,9 @@ pub fn effective_side_set(c: &Collection) -> &'static str {
     selected(c, Category::SideSet).asset
 }
 
-/// Catalog + trạng thái cho trang Bộ sưu tập (JSON).
-pub fn catalog_json(c: &Collection, lang_idx: usize) -> Value {
+/// Catalog + trạng thái cho trang Bộ sưu tập (JSON). `pet_model`: model đang dùng
+/// (đã qua models::effective), để đánh dấu "Đang dùng" ở nhóm Model.
+pub fn catalog_json(c: &Collection, lang_idx: usize, pet_model: &str) -> Value {
     let items: Vec<Value> = items()
         .map(|it| {
             json!({
@@ -819,10 +843,15 @@ pub fn catalog_json(c: &Collection, lang_idx: usize) -> Value {
                 "thumb": match it.cat {
                     Category::SideSet => crate::sidegirl::thumb(it.asset).to_string(),
                     Category::MiuSet => format!("{}/rps-cheer.{}", it.asset, miu_ext(it.asset)),
+                    Category::Model => crate::models::preview_url(it.asset),
                     _ => String::new(),
                 },
                 "owned": owns(c, it),
-                "selected": it.cat.selectable() && selected(c, it.cat).id == it.id,
+                "selected": if it.cat == Category::Model {
+                    it.asset == pet_model
+                } else {
+                    it.cat.selectable() && selected(c, it.cat).id == it.id
+                },
                 "on": it.cat == Category::Effect && c.effects_on.iter().any(|e| e == it.id),
             })
         })
@@ -859,7 +888,10 @@ mod glue {
             // Kiểu bong bóng thoại (cửa sổ pet) và biểu tượng khi bôi chữ (bông hoa).
             "bubble": effective_bubble(&c),
             "flower": effective_flower(&c),
-            "items": catalog_json(&c, lang_idx),
+            "items": with_model_status(
+                app,
+                catalog_json(&c, lang_idx, &crate::models::effective(&s.pet_model, &c, &s.custom_models, &crate::model_dl::installed_ids(app))),
+            ),
             // 🎰 Candy Capsule: giá, tỉ lệ, bảo hiểm, lịch sử.
             "gacha": crate::gacha::view_json(&c, lang_idx),
             // Bunny Lounge đang tắt thì trang nhắc bật trong Cài đặt.
@@ -871,6 +903,20 @@ mod glue {
             "you": a.you,
             "me": a.me,
         })
+    }
+
+    /// Thẻ model: đã tải chưa, đang tải bao nhiêu %, dung lượng, có bản mới không (model_dl.rs).
+    fn with_model_status(app: &AppHandle, mut items: Value) -> Value {
+        for it in items.as_array_mut().into_iter().flatten() {
+            if it["cat"] != "model" {
+                continue;
+            }
+            let st = crate::model_dl::status_json(app, it["asset"].as_str().unwrap_or(""));
+            if let (Some(obj), Some(st)) = (it.as_object_mut(), st.as_object()) {
+                obj.extend(st.clone());
+            }
+        }
+        items
     }
 
     /// Kẹo / đồ vừa đổi: báo mọi cửa sổ và áp dụng ngay (widget đổi màu, nhân
@@ -944,7 +990,8 @@ mod tests {
             assert_eq!(free, 1, "{cat:?} phải có đúng một món mặc định");
         }
         for it in items() {
-            assert!(it.price == 0 || it.price == it.rarity.price(), "{}: giá không khớp hạng", it.id);
+            assert!(it.price == 0 || it.rarity.prices().contains(&it.price), "{}: giá không khớp hạng", it.id);
+            assert_eq!(it.cat == Category::Model, it.rarity == Rarity::Legendary, "{}: Huyền thoại chỉ dành cho model", it.id);
             assert!(it.price <= 30 * max_daily_candy(), "{}: quá 30 ngày kẹo", it.id);
             assert!(it.name.iter().all(|n| !n.is_empty()) && it.desc.iter().all(|d| !d.is_empty()), "{}", it.id);
             assert!(it.id.starts_with(match it.cat {
@@ -955,6 +1002,7 @@ mod tests {
                 Category::LinePack => "lines.",
                 Category::Bubble => "bubble.",
                 Category::Flower => "flower.",
+                Category::Model => "model.",
             }));
             assert_eq!(Category::from_code(it.cat.code()), Some(it.cat));
         }
@@ -1093,7 +1141,7 @@ mod tests {
         let mut c = Collection::default();
         c.candy = 600;
         buy(&mut c, "skin.sakura").unwrap();
-        let v = catalog_json(&c, 2);
+        let v = catalog_json(&c, 2, "hiyori");
         let items = v.as_array().unwrap();
         assert_eq!(items.len(), super::items().count());
         let sakura = items.iter().find(|i| i["id"] == "skin.sakura").unwrap();
@@ -1103,5 +1151,10 @@ mod tests {
         assert_eq!(lav["selected"], true);
         let fx = items.iter().find(|i| i["id"] == "fx.confetti").unwrap();
         assert_eq!((&fx["owned"], &fx["on"]), (&json!(false), &json!(false)));
+        let model = |v: &Value| v.as_array().unwrap().iter().find(|i| i["id"] == "model.gothic-aristocrat").unwrap()["selected"].clone();
+        assert_eq!(model(&v), json!(false));
+        assert_eq!(model(&catalog_json(&c, 2, "gothic-aristocrat")), json!(true));
+        let thumb = v.as_array().unwrap().iter().find(|i| i["id"] == "model.gothic-aristocrat").unwrap()["thumb"].clone();
+        assert_eq!(thumb, json!("media/model-previews/gothic-aristocrat.png"));
     }
 }

@@ -3,7 +3,8 @@
 //   GachaFx.spin(machine, rarity)   lắc máy, capsule nhảy, núm xoay, viên kẹo rơi ra
 //   GachaFx.reveal(layer, rarity, strings)  phủ cửa sổ: capsule to rung rồi bung ra;
 //       Thường: lóe hồng · Hiếm: tia tím xoay + sao · Sử thi: chớp sáng, tia vàng,
-//       mưa sao + confetti, chữ "SỬ THI!". Bấm vào lớp phủ để bỏ qua.
+//       mưa sao + confetti, chữ "SỬ THI!" · Huyền thoại (model Live2D): tia cầu vồng,
+//       rung lâu hơn, confetti dày, chữ "HUYỀN THOẠI!". Bấm vào lớp phủ để bỏ qua.
 // Tôn trọng prefers-reduced-motion: không chạy hoạt cảnh, trả về ngay.
 (function () {
   const NS = 'http://www.w3.org/2000/svg';
@@ -22,7 +23,12 @@
     common: { cap: '#ff8fc0', glow: 'rgba(255, 143, 192, 0.85)', parts: ['💗', '✦', '🌸', '✧'], count: 16 },
     rare: { cap: '#9b7bff', glow: 'rgba(155, 123, 255, 0.9)', parts: ['✦', '⭐', '💜', '✧', '💠'], count: 26 },
     epic: { cap: '#ffc53d', glow: 'rgba(255, 197, 61, 0.95)', parts: ['🌟', '⭐', '✦', '💛', '✨'], count: 34, confetti: 36 },
+    legendary: { cap: '#ff6fb2', glow: 'rgba(255, 140, 220, 0.95)', parts: ['🌈', '🌟', '💖', '✦', '💎', '✨'], count: 44, confetti: 70 },
   };
+  /** Độ dài từng nhịp theo hạng [rung, mở] (ms) và độ toả hạt. */
+  const TIMING = { common: [650, 800, 0.38], rare: [1050, 1200, 0.5], epic: [1500, 1700, 0.62], legendary: [2000, 2300, 0.7] };
+  const timing = (rarity) => TIMING[rarity] || TIMING.common;
+  const LABEL = { common: 'rvCommon', rare: 'rvRare', epic: 'rvEpic', legendary: 'rvLegendary' };
 
   // ─── Máy kẹo ───────────────────────────────────────────────────────────────
 
@@ -169,7 +175,7 @@
     const R = RARITY[rarity] || RARITY.common;
     machine.style.setProperty('--dc', R.cap);
     machine.style.setProperty('--dg', R.glow);
-    machine.classList.remove('spin', 'spin-rare', 'spin-epic');
+    machine.classList.remove('spin', 'spin-rare', 'spin-epic', 'spin-legendary');
     void machine.offsetWidth; // chạy lại hoạt cảnh khi quay liên tiếp
     machine.classList.add('spin');
     if (rarity !== 'common') machine.classList.add('spin-' + rarity);
@@ -182,7 +188,7 @@
     box.textContent = '';
     const W = box.clientWidth || 900;
     const H = box.clientHeight || 600;
-    const spread = Math.min(W, H) * (rarity === 'epic' ? 0.62 : rarity === 'rare' ? 0.5 : 0.38);
+    const spread = Math.min(W, H) * timing(rarity)[2];
     for (let i = 0; i < R.count; i++) {
       const a = (Math.PI * 2 * i) / R.count + Math.random() * 0.4;
       const d = spread * (0.55 + Math.random() * 0.5);
@@ -196,7 +202,7 @@
       p.style.animationDelay = Math.round(Math.random() * 120) + 'ms';
       box.append(p);
     }
-    // Sử thi: confetti rơi từ trên xuống phủ cả cửa sổ.
+    // Sử thi, Huyền thoại: confetti rơi từ trên xuống phủ cả cửa sổ.
     const colors = ['#ffc53d', '#ff7fb6', '#9b7bff', '#6fd3ff', '#7fe0b0', '#fff'];
     for (let i = 0; i < (R.confetti || 0); i++) {
       const c = document.createElement('i');
@@ -213,7 +219,7 @@
 
   /**
    * Lớp phủ mở capsule. `layer` là #reveal trong collection.html.
-   * @param {{rvCommon:string, rvRare:string, rvEpic:string, rvSkip:string}} s
+   * @param {{rvCommon:string, rvRare:string, rvEpic:string, rvLegendary:string, rvSkip:string}} s
    * @param {Node} [prize] ô xem trước món trúng (hiếm nhất), hiện ra lúc capsule bung.
    */
   async function reveal(layer, rarity, s, prize) {
@@ -222,7 +228,7 @@
     layer.className = 'reveal ' + (RARITY[rarity] ? rarity : 'common');
     layer.style.setProperty('--rc', R.cap);
     layer.style.setProperty('--rg', R.glow);
-    layer.querySelector('.rv-label').textContent = rarity === 'epic' ? s.rvEpic : rarity === 'rare' ? s.rvRare : s.rvCommon;
+    layer.querySelector('.rv-label').textContent = s[LABEL[rarity] || 'rvCommon'] || s.rvCommon;
     layer.querySelector('.rv-skip').textContent = s.rvSkip;
     layer.querySelector('.rv-parts').textContent = '';
     const slot = layer.querySelector('.rv-item');
@@ -235,11 +241,11 @@
       layer.classList.add('in');
       await pause(450);
       layer.classList.add('shake');
-      await pause(rarity === 'epic' ? 1500 : rarity === 'rare' ? 1050 : 650);
+      await pause(timing(rarity)[0]);
       layer.classList.remove('shake');
       layer.classList.add('open');
       particles(layer.querySelector('.rv-parts'), R, rarity);
-      await pause(rarity === 'epic' ? 1700 : rarity === 'rare' ? 1200 : 800);
+      await pause(timing(rarity)[1]);
     } finally {
       layer.removeEventListener('click', onClick);
       layer.hidden = true;

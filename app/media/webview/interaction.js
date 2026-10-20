@@ -1635,9 +1635,11 @@ function modelRows() {
     ? window.__VISIBLE_MODELS__
     : [{ id: 'hiyori', name: 'Hiyori', description: 'Live2D Sample' }];
   const current = window.__MODEL_ID__ || 'hiyori';
+  // Model còn khoá trong Bộ sưu tập: vẫn bấm được, Rust mở Bộ sưu tập thay vì đổi.
+  const locked = Array.isArray(window.__LOCKED_MODELS__) ? window.__LOCKED_MODELS__ : [];
   return models.map((m) =>
     `<button class="companion-model-option${m.id === current ? ' active' : ''}" data-model="${escapeHtml(m.id)}" title="${escapeHtml(m.description || '')}">` +
-    `<span class="companion-model-label">${escapeHtml(m.name)}</span>` +
+    `<span class="companion-model-label">${locked.includes(m.id) ? '🔒 ' : ''}${escapeHtml(m.name)}</span>` +
     (m.description ? `<span class="companion-model-desc">${escapeHtml(m.description)}</span>` : '') +
     `</button>`
   );

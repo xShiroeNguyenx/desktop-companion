@@ -82,6 +82,11 @@
     } else if (item.cat === 'side_set' || item.cat === 'miu_set') {
       if (item.cat === 'side_set') pv.classList.add('side');
       pv.append(img(C.thumb(item), 'full', true));
+    } else if (item.cat === 'model') {
+      // Model Live2D: ảnh preview khi có, chưa có thì biểu tượng trên nền cầu vồng.
+      pv.classList.add('model');
+      if (C.thumb(item)) pv.append(img(C.thumb(item), 'full', true));
+      else pv.append(el('span', 'ic', '🎭'));
     } else {
       pv.append(el('span', 'ic', '💬'));
     }
@@ -103,6 +108,12 @@
     b.disabled = st.disabled;
     b.addEventListener('click', () => act(item, st.kind));
     acts.append(b);
+    if (item.cat === 'model' && item.owned && item.update && item.progress == null) {
+      const u = el('button', 'act ghost', C.fill(S().update, { v: item.update }));
+      u.type = 'button';
+      u.addEventListener('click', () => act(item, 'download'));
+      acts.append(u);
+    }
     if (item.cat === 'effect') {
       const p = el('button', 'act ghost', S().preview);
       p.type = 'button';
@@ -114,10 +125,26 @@
   }
 
   async function act(item, kind) {
+    if (kind === 'download') {
+      // Tải có thể lâu: không chờ ở đây, tiến độ tới qua sự kiện model-install.
+      item.progress = 0;
+      renderShop();
+      invoke('model_install', { id: item.asset })
+        .then(() => toast(C.fill(S().installed, { item: item.name })))
+        .catch((e) => {
+          toast(C.errorText(String(e), data.lang), true);
+          log('[collection] model_install ' + item.asset + ': ' + e);
+        })
+        .finally(refresh);
+      return;
+    }
     try {
       if (kind === 'buy') {
         await invoke('collection_buy', { id: item.id });
         toast(C.fill(S().bought, { item: item.name, you: data.you || '' }));
+      } else if (kind === 'use' && item.cat === 'model') {
+        // Đổi model của pet: Rust lưu pet_model và báo cửa sổ pet nạp lại.
+        await invoke('pet_set_model', { id: item.asset });
       } else if (kind === 'use') {
         await invoke('collection_select', { category: item.cat, id: item.id });
       } else if (kind === 'on' || kind === 'off') {
@@ -210,13 +237,17 @@
     $('ratesTitle').textContent = s.g.ratesTitle;
     const rates = $('rates');
     rates.textContent = '';
-    const star = { common: '🌸', rare: '💜', epic: '🌟' };
+    const star = { common: '🌸', rare: '💜', epic: '🌟', legendary: '🌈' };
     for (const r of g.rates || []) {
       const row = el('div', 'rate ' + r.rarity);
       const txt = el('div');
       txt.append(el('b', null, s.rarity[r.rarity] || r.rarity), el('small', null, s.g.rateDesc[r.rarity] || ''));
       row.append(el('span', 'st', star[r.rarity] || '⭐'), txt, el('em', null, r.pct + '%'));
       rates.append(row);
+    }
+    // Huyền thoại: mỗi model một tỉ lệ riêng, ghi rõ từng cái.
+    for (const l of g.legendary || []) {
+      rates.append(el('div', 'rate-item', C.fill(s.g.legendItem, { name: l.name, pct: l.pct, c: l.refund })));
     }
     const pity = $('pity');
     pity.textContent = '';
@@ -287,14 +318,14 @@
     try {
       await FX.spin(m, sum.best);
       // Món hiếm nhất (ưu tiên món mới) hiện ra lúc capsule bung.
-      const rank = { common: 0, rare: 1, epic: 2 };
+      const rank = C.RARITY_RANK;
       const best = [...res.results].sort((x, y) => (rank[y.rarity] || 0) - (rank[x.rarity] || 0) || Number(x.dup) - Number(y.dup))[0];
       const bestItem = best && findItem(best.id);
       await FX.reveal($('reveal'), sum.best, S().g, bestItem ? preview(bestItem) : null);
     } catch (e) {
       log('[collection] fx: ' + e);
     }
-    m.classList.remove('spin', 'spin-rare', 'spin-epic');
+    m.classList.remove('spin', 'spin-rare', 'spin-epic', 'spin-legendary');
     busy = false;
     receive(res.view);
     showResults(res.results, sum);
@@ -400,6 +431,23 @@
   });
   listen('collection-changed', (e) => receive(e && e.payload));
   listen('collection-refresh', refresh);
+  // Tiến độ tải model (model_dl.rs): cập nhật % trên thẻ, không đọc lại cả trang.
+  listen('model-install', (e) => {
+    const p = (e && e.payload) || {};
+    const it = (data.items || []).find((i) => i.cat === 'model' && i.asset === p.id);
+    if (!it || p.state !== 'progress') return;
+    it.progress = p.pct;
+    if (mode === 'shop') renderShop();
+  });
+  // Bấm model còn khoá ở menu Diện mạo của pet → mở thẳng tab của nó trong cửa hàng.
+  listen('collection-focus', (e) => {
+    const t = e && e.payload && e.payload.tab;
+    if (!t || !C.CATS.includes(t)) return;
+    tab = t;
+    try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
+    closeResults();
+    setMode('shop');
+  });
   FX.buildMachine($('machine'));
   renderHead();
   refresh();

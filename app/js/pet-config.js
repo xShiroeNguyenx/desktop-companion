@@ -2,13 +2,13 @@
 // extension these were injected by VS Code; here they are plain defaults that
 // later phases will override from the persisted settings store.
 (function () {
-  // id → model3.json path (relative to the bundled /media tree).
-  const MODELS = {
-    hiyori: '/media/live2d/Hiyori/Hiyori.model3.json',
-    haru: '/media/live2d/Haru/haru_greeter_t05.model3.json',
-    mao: '/media/live2d/Mao/mao_pro.model3.json',
-    miara: '/media/live2d/Miara/miara_pro_t03.model3.json',
-  };
+  // id → model3.json path (relative to the bundled /media tree). The list comes
+  // from Rust (models.rs BUILTIN), the one place bundled models are declared.
+  const builtin = Array.isArray(window.__BUILTIN_MODELS__) && window.__BUILTIN_MODELS__.length
+    ? window.__BUILTIN_MODELS__
+    : [{ id: 'hiyori', url: '/media/live2d/Hiyori/Hiyori.model3.json', name: 'Hiyori', description: '' }];
+  const MODELS = {};
+  for (const m of builtin) MODELS[m.id] = m.url;
   // Merge user's custom models (served via the petmodel:// scheme). A fresh
   // list from a recent "models-changed" reload (sessionStorage) wins over the
   // list injected at window-creation time.
@@ -75,10 +75,9 @@
     },
   };
   window.__VISIBLE_MODELS__ = [
-    { id: 'hiyori', name: 'Hiyori', description: 'Cô gái học sinh dễ thương' },
-    { id: 'haru', name: 'Haru', description: 'Cô gái chào đón' },
-    { id: 'mao', name: 'Mao', description: 'Cô gái tai mèo' },
-    { id: 'miara', name: 'Miara', description: 'Phép thuật thiếu nữ' },
+    ...builtin.map((m) => ({ id: m.id, name: m.name, description: m.description })),
     ...custom.map((m) => ({ id: m.id, name: m.name, description: 'Model tự thêm' })),
   ];
+  // Bundled models still locked in the Collection (bridge.js fills this from Rust).
+  window.__LOCKED_MODELS__ = [];
 })();

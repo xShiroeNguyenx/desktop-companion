@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "models": [
+    {
+      "id": "gothic-aristocrat",
+      "version": 1,
+      "file": "gothic-aristocrat-1.zip",
+      "sha256": "864b690ac9afb47728c0e2b043d0a478993b0b94bc01e14a465302c1fedb4393",
+      "size": 2912765
+    }
+  ]
+}

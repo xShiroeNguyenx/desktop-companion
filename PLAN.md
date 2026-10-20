@@ -1463,3 +1463,285 @@ kẹo) đủ 3 ngôn ngữ.
 1. Bắt đầu Phase 17 khi nào, và có ra bản ổn định (dùng thật, sửa lỗi) trước không?
 2. Chủ đề cho 2 bộ nhân vật đầu tiên của Phase 18 (để làm ảnh theo khuôn 14.4).
 3. Có làm "tải bộ khi mở khoá" ở Phase 18 không, hay chấp nhận bộ cài nặng thêm ≈ 8 MB?
+
+---
+
+## 15. Roadmap sau v0.9.3 (Phase 20+)
+
+Lập 2026-10-19. Phase 0–19 đã phát hành tới v0.9.3. Mục này gom các ý "Chưa làm" / "Còn hạn chế"
+rải rác ở mục 11–14 cùng các điểm yếu kỹ thuật tìm được khi rà code. Mỗi đợt có plan chi tiết riêng
+khi bắt đầu làm; số version là đề xuất, đánh theo patch.
+
+**Thứ tự:** nền móng trước (thứ gây mất dữ liệu hoặc làm mỗi tính năng mới phải sửa 6–8 chỗ), rồi
+giữ chân người dùng, rồi mới mở rộng tầm với (i18n, onboarding, nền tảng khác).
+
+### 15.1 Đợt A: Nền móng & an toàn (Phase 20, v0.9.4 – v0.9.5)
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| A1 | `settings_set` đổi sang **merge patch** | `commands.rs` đang chép tay ~20 trường không có trên form; quên trường mới thì Lưu Cài đặt xoá nó. Form chỉ gửi trường nó sở hữu, Rust ghi đè đúng các key đó. Hàm merge thuần trong `store.rs`, có test. |
+| A2 | API key vào **Windows Credential Manager** (crate `keyring`) | `settings.json` chỉ còn cờ `has_api_key` / `has_gemini_key`, UI không nhận lại key. Migrate một lần: key plaintext → keychain → xoá khỏi JSON. |
+| A3 | Bật **CSP** | `tauri.conf.json` đang `"csp": null`; whitelist Open-Meteo + endpoint LLM. Kiểm từng cửa sổ còn chạy (Live2D, PIXI, ảnh `asset:`). |
+| A4 | Phiên Tập trung **sống qua lần tắt app** | Mục 12.6: hiện chỉ giữ trong RAM. Ghi `focus.json` lúc đổi pha, khôi phục lúc mở. Sửa luôn biểu cảm chat 8 giây đè mất "focus" / "sleepy". |
+| A5 | **Widget registry** | Gom `pin_widget::specs()`, ghim thời tiết, tờ note task về một bảng khai báo (id, html, cỡ, mục tray, mục menu tròn, nhóm Cài đặt). Tạo cửa sổ, tray, xử lý window event và Cài đặt đọc từ bảng (thay danh sách "Nơi phải đăng ký thứ mới" ở 14.7). |
+| A6 | Gom **CSS chung cho game**, Gỡ bom có bộ ảnh riêng | Mục 12.8. |
+
+**Xong khi:** thêm một trường Settings mới không cần sửa `settings_set`; `settings.json` không còn
+key; tắt/mở app giữa phiên 🍅 vẫn đếm tiếp; thêm một widget chỉ sửa bảng registry + file trang.
+
+### 15.2 Đợt B: Giữ chân & cảm xúc (Phase 21–22, v0.9.6 – v0.9.8)
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| B1 | Bấm toast mở bảng Công việc đúng task | Mục 12.5. Kèm hiệu ứng "mở khoá thành tựu" lớn, tái dùng `gacha-fx.js`. |
+| B2 | Câu thoại mở khoá theo cấp thân thiết + gói câu hiếm `lines.praise` | Mục 12.7 và 14.3. Cờ mới cho `lines::line`, đi qua trọng tài `companion.rs`, đủ vi/ja/en. |
+| B3 | Miu phản ứng kết quả gacha | Mục 14.6: `think → surprised → cheer`, trùng → `pout`; hiện cửa sổ Bộ sưu tập chỉ có ảnh tĩnh. |
+| B4 | Nhiệm vụ ngày / tuần thưởng kẹo | Ví dụ xong 3 việc, 2 phiên 🍅, chơi 1 ván. Lưu trong `collection.json`, logic thuần có test, theo trần kẹo 14.2. |
+| B5 | Thống kê tuần | Việc xong, phút tập trung, chuỗi ngày; thẻ trong bảng Công việc hoặc widget mới (qua registry A5). |
+| B6 | Sắp lại menu tròn | Mục 12.7: vòng đầu đang chật. Nhóm thành menu con, cho ghim mục hay dùng. |
+| B7 | Trò "bắt chuột" (+ trò chơi chữ bằng AI nếu có key) | Mục 12.8. |
+
+### 15.3 Đợt C: Mở rộng tầm với (Phase 23–24, v0.9.9 – v0.10.x)
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| C1 | **i18n toàn giao diện** | Mục 12.4b: menu, Cài đặt, Công việc, tờ note mới chỉ tiếng Việt. Thêm khoá vi/ja/en cùng lúc, có test "mọi khoá đủ ngôn ngữ" như `every_key_has_all_languages`. |
+| C2 | Onboarding lần đầu | Tour ngắn sau thẻ đặt tên: tính năng mặc định tắt (thời tiết, side girl, cảnh báo CPU), cách nhập key AI. |
+| C3 | Accessibility | ARIA / `role` cho Công việc, Arcade, widget, Cài đặt; menu tròn đi được bằng bàn phím; nhãn cho nút chỉ có emoji. |
+| C4 | Widget và tờ note không bị Win+D che | Mục 12.4c, 13.9: gắn vào lớp `WorkerW`. |
+| C5 | Tiếng sấm, mưa / tuyết xiên theo gió | Mục 13.9 Phase 16. |
+
+### 15.4 Đợt D: Hiệu năng & chất lượng (làm xen kẽ, không chặn bản nào)
+
+- Đo CPU / GPU / RAM trên máy thật: lớp phủ `fx` (canvas ~30 fps mỗi màn hình, vòng `fx.rs` 500 ms
+  đưa pet lên topmost), ~25 cửa sổ WebView2 dựng sẵn. Mục 13.9 Phase 14 ghi là chưa kiểm. Cân nhắc
+  dựng lười cửa sổ ít dùng.
+- Tách file lớn khi đằng nào cũng phải sửa: `interaction.js` (~2.500 dòng), `companion.css`,
+  `chat.js`, `lines.rs`.
+- Test cho `store.rs` (file hỏng → mặc định, migrate) và phần merge settings của A1.
+
+### 15.5 Để sau / bị chặn
+
+- Giọng nhân vật nhân bản làm engine TTS thứ 3 (mục 11.1): chặn vì quyền giọng, model tiếng Việt, GPU.
+- Tải bộ ảnh khi mở khoá (mục 14.3): chỉ cần khi vượt trần đóng gói ≈ 8 MB.
+- macOS / Linux: phải port thật selection hook, click-through, idle / fullscreen, TTS WinRT (~38 chỗ
+  `cfg(windows)`). Chỉ làm khi có nhu cầu rõ.
+- Model Live2D mẫu theo Free Material License: cần model riêng nếu định thương mại hoá.
+
+### 15.6 Kiểm thử chung cho mỗi đợt
+
+`cargo test` + `npm test` + `npm run build` xanh; chạy `npm run dev` thử bằng tay phần giao diện
+(ghi rõ phần nào chưa thử GUI). A1/A2 thử thêm: Lưu Cài đặt nhiều lần không mất trường nào, nâng
+cấp từ v0.9.3 có key cũ vẫn chat được.
+
+---
+
+## 16. 🎭 Bộ sưu tập model Live2D
+
+Lập 2026-10-20. Đưa **model Live2D** (nhân vật chính trên màn hình) vào Bộ sưu tập ở mục 14 như
+một nhóm món mới, mở bằng kẹo hoặc gacha, ở hạng mới **🌈 Huyền thoại** trên Sử thi. Hai model đầu,
+do người dùng tự làm, cùng chủ đề với bộ 🦇 Miu Gothic và giao diện Cài đặt Gothic Lolita đã có:
+
+| id | Model | Giá | Tỉ lệ gacha | Trạng thái |
+|---|---|---|---|---|
+| `model.gothic-aristocrat` | **Gothic Aristocrat** | **10000 🍬** | **1%** | Đã code 2026-10-20, ship ở v0.9.4 |
+| `model.gothic-loli` | **Gothic Aristocrat bản loli** | **5000 🍬** | **3%** | Chưa có model, theo khuôn 16.3 |
+
+### 16.1 Nguyên tắc
+
+1. **4 model đang có (Hiyori, Haru, Mao, Miara) giữ miễn phí.** Người dùng đang chọn chúng; khoá
+   lại là lấy mất thứ đã cho. Chỉ model **mới** mới là món trong catalog.
+2. **Model người dùng tự thêm từ thư mục** (`add_model_folder`) luôn miễn phí và **nằm ngoài**
+   catalog. Bộ sưu tập chỉ quản model đóng gói theo app.
+3. Vẫn theo 14.1: chỉ trang trí, không tiền thật, đổi thẳng luôn có bên cạnh gacha.
+4. Chỉ đóng gói model **tự làm hoặc có quyền phân phối**. Model riêng còn gỡ được vướng ở 15.5
+   (model mẫu theo Free Material License).
+
+### 16.2 Rà model `Gothic_Aristocrat` (2026-10-20, lần 2)
+
+Kiểm bằng script node đọc file (chưa nạp vào app, **CHƯA test GUI**). Lần 1 (bản
+`Miu_Gothic_Aristocrat`) thiếu 5 tham số cảm xúc; bản sửa đã thêm đủ.
+
+| Hạng mục | Kết quả |
+|---|---|
+| File | `model3.json`, `moc3` (433 KB, MOC3 phiên bản 3 = Cubism 4.0), `physics3.json`, 1 texture 2048×2048 RGBA (1,7 MB), 9 motion, 6 expression. Mọi file `model3.json` trỏ tới đều có. Tổng ≈ 2,4 MB (nhẹ nhất trong các model: Haru 3,6 · Hiyori 4,8 · Mao 9 · Miara 14 MB). |
+| Tham số | 36 `Param*`, đủ cả bộ bắt buộc lẫn bộ "nên có" ở 16.3: thêm `ParamEyeL/RSmile`, `ParamCheek`, `ParamBrowL/RAngle` → mọi preset trong `expression.js` (happy, shy, love…) có tác dụng đầy đủ. Có thêm tóc, ngực, tay, chân, váy. |
+| Expression | 6 file (Smile, Sad, Angry, Surprised, Shy, Wink), mọi Id có trong moc3. |
+| Motion | `Idle` (2, lặp), `TapHead`, `TapBody`, `Step`, `Shake`, `Tilt`, `Surprised`, `Sad`. Mọi Id có trong moc3; `TotalSegmentCount` / `TotalPointCount` khớp số đếm lại; không đoạn nào vượt `Duration`. App gọi `Idle` / `TapHead` / `TapBody` (`interaction.js`, `ui.js`) → có đủ. |
+| Physics | 8 nhóm, khớp `Meta.PhysicsSettingCount`; mọi Id vào/ra có trong moc3. |
+| Groups | `EyeBlink` (`ParamEyeL/ROpen`), `LipSync` (`ParamMouthOpenY`) đúng → chớp mắt và khẩu hình khi nói chạy được. |
+| `HitAreas` | Rỗng. Không sao: app không dùng `hitTest`, tự chia vùng đầu/thân theo vị trí. |
+
+**Cần xem bằng mắt:** texture **giống hệt từng byte** bản lần 1. Nếu `ParamCheek` cần nét vẽ má hồng
+riêng thì chưa có hình để hiện; tham số chỉ biến dạng lưới thì không sao. Chỉ biết khi chạy thật.
+
+**Thử ngay không cần code:** Cài đặt → 🎨 Diện mạo → thêm thư mục model → chọn
+`Gothic_Aristocrat`. Cần xem: khung hình có cắt đầu/chân không, đầu quay theo chuột, chạm
+đầu/thân ra motion, chớp mắt, khẩu hình khi TTS nói, má hồng khi `shy`/`love`, ảnh avatar ghim
+(`pins.rs`) chụp đúng.
+
+### 16.3 Khuôn model cho các model tự làm sau này
+
+Điều kiện để một model được đóng gói (test ở 16.5 bắt tự động phần đo được):
+- Thư mục `app/media/live2d/<Tên>/`, một `<Tên>.model3.json`; Cubism 4.x hoặc 5.x.
+- Texture ≤ 2048 px, tổng thư mục **≤ 6 MB**.
+- Tham số bắt buộc: `ParamAngleX/Y/Z`, `ParamBodyAngleX`, `ParamEyeBallX/Y`, `ParamEyeL/ROpen`,
+  `ParamMouthOpenY`, `ParamMouthForm`, `ParamBrowL/RY`. Nên có: `ParamEyeL/RSmile`, `ParamCheek`,
+  `ParamBrowL/RAngle`, `ParamBreath`.
+- Nhóm motion bắt buộc: `Idle` (lặp), `TapHead`, `TapBody`. Group `EyeBlink` và `LipSync`.
+- Expression tên theo bộ: `Smile`, `Sad`, `Angry`, `Surprised` (thêm tuỳ ý).
+- Ảnh xem trước `preview.png` 512×512 nền trong suốt, nửa người trên, cho thẻ trong Bộ sưu tập.
+- **Bản loli** (`model.gothic-loli`): cùng trang phục và bảng màu với bản gốc, tỉ lệ đầu/thân
+  khác nên khung hình và điểm neo phải thử lại riêng; vẫn đủ tham số, motion, expression như trên.
+
+### 16.4 Kiến trúc
+
+**Hạng mới 🌈 Huyền thoại (`Rarity::Legendary`, code `"legendary"`).**
+- **Giá theo từng món**, không theo hạng: `model.gothic-aristocrat` **10000 🍬**,
+  `model.gothic-loli` **5000 🍬**. Test catalog dùng `Rarity::prices()`: ba hạng cũ một giá, Huyền
+  thoại trong `5000..=10000`; Huyền thoại chỉ dành cho nhóm Model. Test chặn giá vô lý
+  `price ≤ 30 × max_daily_candy()` = 10500 vẫn qua. 10000 🍬 ≈ 29 ngày nếu kiếm tối đa 350/ngày,
+  thực tế 150–250/ngày ≈ **40–65 ngày**; bản loli bằng nửa.
+- **Tỉ lệ gacha theo từng model** (`gacha::LEGENDARY_PCT`): Gothic Aristocrat **1%**, bản loli
+  **3%** (model rẻ hơn ra dễ hơn). Tổng phần Huyền thoại trừ vào Thường để Hiếm 25 / Sử thi 10
+  người dùng đã quen không đổi: hiện **64 / 25 / 10 / 1**, khi có bản loli **61 / 25 / 10 / 4**.
+  `gacha::rates()` tính từ các món có thật trong catalog; chưa có món Huyền thoại thì về 65/25/10.
+- **Bảo hiểm:** Huyền thoại **không có** bảo hiểm riêng (giữ hiếm; muốn chắc thì đổi thẳng). Bảo
+  hiểm Hiếm+ (lượt 10) chia theo tỉ lệ các hạng ≥ Hiếm (25 : 10 : 1); bảo hiểm Sử thi+ (lượt 50)
+  chia 10 : 1. Ra Huyền thoại reset cả `pity` lẫn `epic_pity`.
+- **Hoàn kẹo khi trùng:** `gacha::refund(item)` = 10% **giá món** → 1000 / 500 🍬. Các hạng cũ
+  không đổi con số (60/150/300 đúng bằng 10% giá).
+- **Hoạt cảnh** (`gacha-fx.js`): capsule và tia cầu vồng, rung và mở lâu hơn Sử thi, confetti
+  dày, chữ "HUYỀN THOẠI!" đổi màu. Ô tỉ lệ trên máy ghi từng model: tên, %, kẹo hoàn khi trùng.
+
+**Catalog.** `collection::Category::Model`, `asset` = id model (`"gothic-aristocrat"`,
+`"gothic-loli"`). Model chỉ ở hạng Huyền thoại, nên không làm loãng tỉ lệ ra bộ nhân vật bám mép.
+Bản loli thêm vào khi có model: đóng gói và đăng lên release (16.9) + dòng `models::BUILTIN` + món
+trong `CATALOG` + `("model.gothic-loli", 3)` trong `LEGENDARY_PCT` + ảnh xem trước.
+
+**Ảnh xem trước:** `models::Builtin.preview` (đường dẫn so với `app/`, ở
+`app/media/model-previews/`, luôn đóng gói để thẻ có hình trước khi tải), `catalog_json` gửi ở
+`thumb`; thẻ cắt lấy nửa người trên. Gothic Aristocrat dùng tạm ảnh thiết kế nhân vật, thu từ
+1024×1536 (2,2 MB) xuống 342×512 PNG (307 KB); test chặn ảnh > 650 KB. Model chưa có ảnh hiện 🎭.
+
+**Đăng ký model đóng gói ở một chỗ.** Hiện danh sách nằm 3 nơi (`pet-config.js` `MODELS` +
+`__VISIBLE_MODELS__`, `store::default_model_id`). Thêm `src-tauri/src/models.rs`:
+`BUILTIN: &[Model{ id, dir, entry, name: [vi, ja, en], item: Option<&str> }]` (`item = None` →
+miễn phí). Rust tiêm `window.__BUILTIN_MODELS__` (chỉ chuỗi `&'static str`), `pet-config.js` đọc từ
+đó thay vì chép tay.
+
+**Lựa chọn vẫn ở `Settings.pet_model`, quyền sở hữu ở `collection.json`.** Không thêm nguồn thứ
+hai cho "đang dùng model nào". Hàm thuần `models::effective(pet_model, &collection, &custom)` →
+id hợp lệ: model miễn phí, model custom, hoặc món đã sở hữu; còn lại → `hiyori`. Gọi ở **mọi**
+chỗ đọc `pet_model` để tiêm `__INIT_MODEL__` và ở lệnh đổi model, để sửa tay `settings.json` hay
+`sessionStorage` cũng không dùng được model chưa mở.
+
+**Menu đổi model** (`interaction.js` `modelRows`, Cài đặt): model chưa mở hiện 🔒 + giá, bấm mở
+cửa sổ Bộ sưu tập ở tab Model thay vì đổi model.
+
+**Cửa sổ Bộ sưu tập.** Tab mới **🎭 Model**: thẻ `preview.png`, tên, hạng, nút Mua / Dùng ngay.
+"Dùng ngay" ghi `pet_model` (đi qua `settings_set` hoặc lệnh riêng `pet_set_model`, không gửi cả
+form) rồi phát `setModel` cho cửa sổ pet. Mở khoá → câu `Key::ItemUnlocked` như món khác.
+
+**Sửa kèm: id model custom có thể trùng.** `add_model_folder` đặt
+`custom-{custom_models.len() + 1}`: có `custom-1`, `custom-2`, xoá `custom-1` rồi thêm mới → lại
+ra `custom-2`, hai model cùng id. Đổi sang `max(số hiện có) + 1`, có test.
+
+### 16.5 Các bước (mỗi bước `cargo test` + `npm test` xanh)
+
+1. `models.rs`: `BUILTIN`, `effective`, test; sửa id custom trùng. Chưa đổi hành vi.
+2. ~~Chép model vào `app/media/live2d/`~~ → đổi thành tải riêng (16.9); chỉ ảnh xem trước đóng gói.
+3. Test Rust đọc thư mục theo `CARGO_MANIFEST_DIR`: mọi model trong `BUILTIN` có `model3.json`,
+   mọi file nó trỏ tới tồn tại, có nhóm `Idle`/`TapHead`/`TapBody`, group `EyeBlink`/`LipSync`,
+   dung lượng ≤ trần 16.3. (Kiểm Id trong moc3 để script ngoài repo, như lần rà 16.2.)
+4. `Rarity::Legendary`: giá theo món, `LEGENDARY_PCT` + `rates()` (Thường nhường phần Huyền
+   thoại), bảo hiểm chia theo tỉ lệ các hạng đủ cao, `refund` theo giá món. Test `roll_rarity` giữ
+   ngưỡng cũ với `BASE_RATES`, thêm ngưỡng 64/25/10/1.
+5. `Category::Model` + món `model.gothic-aristocrat`; test catalog kiểm id, giá trong khoảng của
+   hạng.
+6. Tiêm `__BUILTIN_MODELS__`; `pet-config.js` đọc từ đó; `effective` ở chỗ tiêm `__INIT_MODEL__`
+   và lệnh đổi model.
+7. Menu model + Cài đặt: 🔒 và lối sang Bộ sưu tập; i18n vi/ja/en cùng lúc.
+8. `collection.html`: tab 🎭 Model, nhãn và màu hạng Huyền thoại; `collection-core.js` nhóm và
+   hạng mới (+ test); `gacha-fx.js` hoạt cảnh Huyền thoại.
+9. CHANGELOG, bump version mọi `package.json` / `tauri.conf.json` / `Cargo.toml`.
+10. Sau, khi có file: bản loli làm lại bước 2–3 và thêm món `model.gothic-loli` (5000 🍬).
+
+**Nơi phải đăng ký thứ mới:** `mod models;` · `Category::Model` và `Rarity::Legendary` (mọi `match`
+trong `collection.rs`, `gacha.rs`, `collection-core.js`, `gacha-fx.js`, CSS hạng) ·
+`invoke_handler` nếu thêm `pet_set_model` · chuỗi i18n.
+
+### 16.6 Rủi ro
+
+| Rủi ro | Giảm bằng |
+|---|---|
+| Người dùng đang dùng model rồi món đó bị khoá | Chỉ khoá model mới; 4 model cũ miễn phí mãi |
+| `pet_model` trỏ model chưa sở hữu (sửa tay file) | `effective` ở mọi chỗ đọc, rơi về `hiyori` |
+| Bộ cài phình | Model Bộ sưu tập tải riêng (16.9), không nằm trong bộ cài |
+| Cảm xúc nhạt trên model thiếu tham số | Khuôn 16.3 bắt buộc bộ "nên có" cho model đóng gói |
+| Model cắt khung hoặc lệch tâm | Thử bằng tay qua "thêm thư mục" trước khi đóng gói |
+| 10000 🍬 quá xa, người dùng nản | Bản loli 5000 làm mốc giữa; gacha 3% là đường tắt; giá hiện công khai |
+| Đổi `RATES` làm sai lịch sử / bảo hiểm đang đếm | `pity`, `epic_pity` giữ nguyên ý nghĩa; `HistEntry` cũ không có `legendary` vẫn đọc được |
+
+### 16.7 Kiểm thử bằng tay
+
+Thêm model qua thư mục trước (16.2); sau khi đóng gói: chưa đủ kẹo → menu hiện 🔒; mua → "Dùng
+ngay" đổi model không cần khởi động lại; khởi động lại vẫn giữ; Lưu Cài đặt không mất; sửa tay
+`pet_model` thành `gothic-aristocrat` khi chưa mua → mở app ra Hiyori; quay gacha trúng model →
+hoạt cảnh Huyền thoại; trúng lần 2 → hoàn 1000 🍬; chat/TTS → khẩu hình; vuốt đầu, chạm thân ra
+motion; `shy`/`love` có má hồng; avatar ghim đổi theo model.
+
+### 16.8 Đã chốt / còn hỏi
+
+Đã chốt (2026-10-20):
+- Cảm xúc nhạt: sửa trong model (cách a). Bản `Gothic_Aristocrat` đã có đủ tham số; app không
+  cần dùng `exp3`.
+- Giá: hạng mới Huyền thoại trên Sử thi; Gothic Aristocrat **10000 🍬**, bản loli **5000 🍬**.
+- Tỉ lệ: Gothic Aristocrat **1%**, bản loli **3%**.
+- Làm ngay, trước Đợt A (mục 15.1). Bước 1–9 ở 16.5 đã code 2026-10-20 (ship ở v0.9.4); bước 10
+  (bản loli) chờ model.
+- Quyền phân phối: model do người dùng tự dựng bằng tool riêng, phác thảo hình bằng ChatGPT, không
+  lấy hình trên mạng → đăng lên release công khai được.
+- Tách model ra tải riêng ngay trong v0.9.4 (16.9), không đóng gói vào bộ cài.
+
+### 16.9 Model tải riêng (code 2026-10-20, ship ở v0.9.4)
+
+Model Bộ sưu tập **không nằm trong bộ cài**. Mở khoá rồi mới tải; cập nhật model không cần ra bản
+app. Quy trình đăng model: RELEASE.md → "Releasing a Live2D model".
+
+**Nơi chứa.** Một GitHub Release cố định tag `models` (cùng repo), **prerelease, không "latest"**:
+updater của app đọc `releases/latest/download/latest.json`, release `models` mà thành latest là mọi
+app ngừng thấy bản cập nhật. Tag không bắt đầu bằng `v` nên workflow release không chạy. Trong release:
+`manifest.json`, `manifest.json.sig`, `<id>-<version>.zip` (tên có phiên bản, bản cũ không bị ghi đè
+khi app khác đang tải).
+
+**Tin cậy.** `manifest.json` liệt kê `{id, version, file, sha256, size}`, ký bằng **khoá updater**
+(`tauri signer sign`, cùng định dạng `.sig` với updater). App lấy khoá công khai từ
+`plugins.updater.pubkey`, chỉ tải từ `RELEASE_BASE` cố định (manifest chỉ nêu tên file, kiểm
+`[a-z0-9.-]+.zip`), kiểm SHA-256 + dung lượng, giải nén chặn `../`, đường dẫn tuyệt đối, `C:`,
+> 500 file, > 20 MB, rồi `check_model_dir` (khuôn 16.3) trước khi thay bản cũ.
+
+**Code.**
+- `model_pack.rs` (thuần, có test): `check_model_dir`, `zip_model` (chỉ gói file `model3.json` trỏ
+  tới, Stored, thời gian cố định → cùng nội dung cùng SHA; file chính luôn lưu thành
+  `PACK_ENTRY` = `model.model3.json`, nên tác giả đổi tên file giữa các bản, vd.
+  `Gothic_Aristocrat_2.model3.json`, app cũ vẫn mở đúng), `unzip_to`, `parse_manifest`,
+  `verify_signature`. Dùng chung với công cụ `examples/pack_model.rs`.
+- `model_dl.rs` (Tauri): manifest nhớ 10 phút; `install` (sở hữu → manifest mới nhất → tải có tiến
+  độ `model-install` → kiểm → giải nén vào `.<id>.tmp` → đổi tên thay `<id>`, hỏng giữa chừng bản
+  cũ vẫn nguyên) → `<app_data>/models/<id>/` + `installed.json`; `sync_on_start` (đã mở khoá mà
+  chưa có / có bản mới → tải nền; không có model nào thì không gọi mạng); `status_json` cho thẻ.
+- `models.rs`: `usable` = sở hữu **và** đã cài; URL model tải riêng là
+  `http://petmodel.localhost/<id>/<entry>`, giao thức `petmodel` (main.rs) tìm thư mục đã cài sau
+  model tự thêm. Test chặn model tải riêng lọt vào `app/media/live2d/`.
+- Tự tải: mua (`collection_buy`) hoặc trúng gacha (`collection_pull`) model → `install` nền. Bấm
+  Dùng / chọn ở menu khi đã mua mà chưa tải → bắt đầu tải, ghi `pet_model`, tải xong tự đổi.
+- Thẻ model: Tải về (dung lượng) · Đang tải N% · Dùng / Đang dùng · nút phụ "Cập nhật vN"; lỗi
+  dịch 3 thứ tiếng (offline, no_package, bad_signature, bad_manifest, bad_checksum, bad_package, busy).
+
+**Chưa kiểm được trước khi đăng release `models`:** đường tải thật (mạng, redirect GitHub, chữ ký
+`tauri signer` thật). Test chỉ phủ phần thuần (ký/kiểm bằng khoá sinh lúc chạy, zip, manifest).
+
+**Kiểm bằng tay sau khi đăng:** bản dev → +kẹo → mua Gothic Aristocrat → thẻ hiện % rồi "Dùng"; pet
+đổi model; tắt mạng rồi bấm Tải về → câu "không kết nối được"; xoá `<app_data>/models` rồi mở app
+→ tự tải lại; đăng v2 → mở app → tự cập nhật; release `models` không thành "Latest" trên GitHub.

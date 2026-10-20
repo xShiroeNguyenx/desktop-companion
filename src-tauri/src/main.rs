@@ -14,6 +14,9 @@ mod focus;
 mod lines;
 mod links;
 mod miu_sets;
+mod model_dl;
+mod model_pack;
+mod models;
 mod lunar;
 mod llm;
 mod naming;
@@ -339,10 +342,13 @@ fn pet_command(app: AppHandle, payload: Value) {
             selection::set_lookat_enabled(v);
         }
         "setModel" => {
+            // Đường cũ; bridge.js giờ gọi lệnh pet_set_model. Vẫn chặn model còn khoá.
             if let Some(id) = payload.get("modelId").and_then(|m| m.as_str()) {
                 let mut s = store::load_settings(&app);
-                s.pet_model = id.to_string();
-                let _ = store::save_settings(&app, &s);
+                if models::usable(id, &store::load_collection(&app), &s.custom_models, &model_dl::installed_ids(&app)) {
+                    s.pet_model = id.to_string();
+                    let _ = store::save_settings(&app, &s);
+                }
             }
         }
         "runCommand" => {
@@ -522,15 +528,18 @@ fn main() {
             let id = segs.next().unwrap_or("");
             let rel = segs.next().unwrap_or("");
             let settings = store::load_settings(app);
-            let resp = settings
+            // Model tự thêm (thư mục người dùng chọn) hoặc model tải riêng đã cài.
+            let base_dir = settings
                 .custom_models
                 .iter()
                 .find(|m| m.id == id)
-                .and_then(|m| {
-                    let full = std::path::Path::new(&m.dir).join(rel.replace('\\', "/"));
+                .map(|m| std::path::PathBuf::from(&m.dir))
+                .or_else(|| model_dl::installed_dir(app, id));
+            let resp = base_dir
+                .and_then(|base| {
+                    let full = base.join(rel.replace('\\', "/"));
                     // Guard against path traversal outside the model dir.
-                    let base = std::path::Path::new(&m.dir);
-                    let canon_base = std::fs::canonicalize(base).ok()?;
+                    let canon_base = std::fs::canonicalize(&base).ok()?;
                     let canon_full = std::fs::canonicalize(&full).ok()?;
                     if !canon_full.starts_with(&canon_base) {
                         return None;
@@ -630,6 +639,9 @@ fn main() {
             commands::weather_close,
             commands::arcade_close,
             commands::collection_get,
+            commands::pet_set_model,
+            commands::models_locked,
+            commands::model_install,
             commands::collection_buy,
             commands::collection_select,
             commands::collection_toggle_effect,
@@ -659,15 +671,26 @@ fn main() {
                 }
             }
 
+            // Model tải riêng đã mở khoá mà chưa có trên máy (cài lại máy) hoặc có
+            // bản mới trên release → tải nền. Không có model nào thì không gọi mạng.
+            tauri::async_runtime::spawn(model_dl::sync_on_start(app_handle.clone()));
+
             let custom_json = serde_json::to_string(&settings.custom_models)
                 .unwrap_or_else(|_| "[]".to_string());
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("pet.html".into()))
                 .title("Desktop Companion")
                 .initialization_script(&format!(
                     "window.__INIT_MODEL__ = {:?}; window.__CUSTOM_MODELS__ = {}; \
-                     window.__INIT_MESSAGE_LANGUAGE__ = {:?};",
-                    settings.pet_model,
+                     window.__BUILTIN_MODELS__ = {}; window.__INIT_MESSAGE_LANGUAGE__ = {:?};",
+                    // Model chưa mở khoá (sửa tay settings.json…) thì về mặc định.
+                    models::effective(
+                        &settings.pet_model,
+                        &store::load_collection(&app_handle),
+                        &settings.custom_models,
+                        &model_dl::installed_ids(&app_handle),
+                    ),
                     custom_json,
+                    models::builtin_json(),
                     persona::Lang::from_code(&settings.message_language).code()
                 ))
                 .inner_size(300.0, 420.0)

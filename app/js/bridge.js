@@ -17,15 +17,15 @@
   window.__VS_CODE_BRIDGE__ = {
     postMessage(message) {
       try {
-        // setModel switches the displayed Live2D model. Persist via Rust and
-        // reload the pet page with the new model id baked into __INIT_MODEL__.
+        // setModel switches the displayed Live2D model. Rust checks the model is
+        // unlocked, saves it and answers with "model-chosen" (reload below); a
+        // locked model opens the Collection instead and nothing changes here.
         if (message && message.command === 'setModel' && message.modelId) {
           const map = window.__MODELS_MAP__ || {};
           if (map[message.modelId]) {
-            invoke('pet_command', { payload: message });
-            window.__INIT_MODEL__ = message.modelId;
-            sessionStorage.setItem('petModel', message.modelId);
-            location.reload();
+            invoke('pet_set_model', { id: message.modelId }).catch((e) => {
+              if (!['locked', 'downloading'].includes(String(e))) console.error('[bridge] pet_set_model failed', e);
+            });
             return;
           }
         }
@@ -68,6 +68,24 @@
         }));
       } catch (_) { /* ignore */ }
     });
+
+    // A model was chosen (here or in the Collection) → reload the pet page with
+    // the new model id baked into __INIT_MODEL__.
+    TAURI.event.listen('model-chosen', (event) => {
+      const id = event.payload;
+      if (!id || !(window.__MODELS_MAP__ || {})[id]) return;
+      window.__INIT_MODEL__ = id;
+      try { sessionStorage.setItem('petModel', id); } catch (_) { /* ignore */ }
+      location.reload();
+    });
+
+    // Which bundled models are still locked: now, and again whenever the
+    // Collection changes (a model bought or won in the capsule machine).
+    const refreshLocked = () => invoke('models_locked')
+      .then((ids) => { window.__LOCKED_MODELS__ = Array.isArray(ids) ? ids : []; })
+      .catch(() => { /* keep the last list */ });
+    refreshLocked();
+    TAURI.event.listen('collection-changed', refreshLocked);
 
     // Custom model list changed in Settings → refresh the cached list and reload
     // so the Appearance menu shows the new models.

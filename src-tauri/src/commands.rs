@@ -413,7 +413,7 @@ pub fn add_model_folder(app: AppHandle, dir: String) -> Result<store::CustomMode
     if let Some(existing) = settings.custom_models.iter().find(|m| m.dir == model_dir) {
         return Ok(existing.clone());
     }
-    let id = format!("custom-{}", settings.custom_models.len() + 1);
+    let id = crate::models::next_custom_id(&settings.custom_models);
     let model = store::CustomModel {
         id,
         name,
@@ -679,6 +679,8 @@ pub async fn arcade_close(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn collection_get(app: AppHandle) -> Value {
+    // Thẻ model hiện dung lượng tải và nút Cập nhật: đọc lại manifest nếu đã cũ.
+    tauri::async_runtime::spawn(crate::model_dl::refresh_manifest(app.clone()));
     crate::collection::view(&app)
 }
 
@@ -692,6 +694,7 @@ pub async fn collection_buy(app: AppHandle, id: String) -> Result<Value, String>
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
     crate::collection::changed(&app);
+    install_if_model(&app, item);
     Ok(crate::collection::view(&app))
 }
 
@@ -771,7 +774,59 @@ pub async fn collection_pull(app: AppHandle, count: u32) -> Result<Value, String
         let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
     }
     crate::collection::changed(&app);
+    for p in pulls.iter().filter(|p| !p.dup) {
+        install_if_model(&app, p.item);
+    }
     Ok(serde_json::json!({ "results": results, "view": crate::collection::view(&app) }))
+}
+
+/// Đổi model Live2D của pet (menu Diện mạo, nút "Dùng" ở tab 🎭 Model). Chưa dùng
+/// được thì không đổi: mở Bộ sưu tập ở tab Model; đã mua mà chưa tải thì bắt đầu
+/// tải (xong sẽ tự đổi, model_dl::install) và trả "downloading", chưa mua thì
+/// "locked". Đổi được thì lưu `pet_model` và báo cửa sổ pet nạp lại
+/// (bridge.js nghe "model-chosen").
+#[tauri::command]
+pub async fn pet_set_model(app: AppHandle, id: String) -> Result<(), String> {
+    let mut s = store::load_settings(&app);
+    let c = store::load_collection(&app);
+    let installed = crate::model_dl::installed_ids(&app);
+    if !crate::models::usable(&id, &c, &s.custom_models, &installed) {
+        windows::open_collection(&app);
+        let _ = app.emit_to("collection", "collection-focus", serde_json::json!({ "tab": "model" }));
+        let owned_not_installed = crate::models::builtin(&id).is_some_and(|m| m.downloadable() && crate::models::owned(m, &c));
+        if !owned_not_installed {
+            return Err("locked".into());
+        }
+        // Nhớ lựa chọn: tải xong model_dl::install thấy pet_model trùng thì đổi luôn.
+        s.pet_model = id.clone();
+        store::save_settings(&app, &s)?;
+        tauri::async_runtime::spawn(crate::model_dl::install(app.clone(), id));
+        return Err("downloading".into());
+    }
+    s.pet_model = id.clone();
+    store::save_settings(&app, &s)?;
+    let _ = app.emit_to("main", "model-chosen", id);
+    Ok(())
+}
+
+/// Id model đóng gói còn khoá (menu Diện mạo hiện 🔒).
+#[tauri::command]
+pub fn models_locked(app: AppHandle) -> Vec<&'static str> {
+    crate::models::locked(&store::load_collection(&app), &crate::model_dl::installed_ids(&app))
+}
+
+/// Nút "Tải về" / "Cập nhật" / "Thử lại" trên thẻ model. Tiến độ qua sự kiện
+/// `model-install`; trả phiên bản đã cài hoặc mã lỗi (model_dl.rs).
+#[tauri::command]
+pub async fn model_install(app: AppHandle, id: String) -> Result<u32, String> {
+    crate::model_dl::install(app, id).await
+}
+
+/// Món vừa có là model tải riêng → tải luôn, không bắt người dùng bấm thêm.
+fn install_if_model(app: &AppHandle, item: &crate::collection::Item) {
+    if item.cat == crate::collection::Category::Model {
+        tauri::async_runtime::spawn(crate::model_dl::install(app.clone(), item.asset.to_string()));
+    }
 }
 
 #[tauri::command]

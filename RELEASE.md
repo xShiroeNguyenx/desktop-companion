@@ -70,6 +70,54 @@ The site is served at **https://desktop.techdecoded.net/** (custom domain):
 That's it. Every running app on an older version will detect the new release on
 its next launch and offer to update.
 
+## Releasing a Live2D model (separate download)
+
+Collection models (e.g. Gothic Aristocrat) are **not** in the installer. The app
+downloads one after the user unlocks it, from a fixed GitHub Release tagged
+`models`, and only trusts it if `manifest.json` is signed with the updater key
+and the zip matches the SHA-256 listed there. Installed models also update
+themselves at launch when the manifest has a higher version. So a model update
+does **not** need an app release.
+
+> ⚠️ The `models` release must be a **prerelease and not "latest"**. The app
+> updater reads `releases/latest/download/latest.json`; if `models` became the
+> latest release, every running app would stop finding updates.
+
+**First time only:** create the release (after packing and signing, steps 1–2):
+```powershell
+gh release create models --prerelease --latest=false --title "Live2D models" --notes "Downloadable Live2D models for the Collection. Do not mark as latest." dist-models/gothic-aristocrat-1.zip models/manifest.json models/manifest.json.sig
+```
+
+**Every model release (new model or update):**
+
+1. **Pack** (from `src-tauri/`). The version must be higher than the one in
+   `models/manifest.json`; a new model starts at 1:
+   ```powershell
+   cargo run --example pack_model -- <model folder> <id> <version>
+   ```
+   This checks the model (required motions and groups, every referenced file,
+   ≤ 6 MB), writes `dist-models/<id>-<version>.zip` (git-ignored) with only the
+   files `model3.json` references, and updates `models/manifest.json`. Name the
+   model files however you like: inside the package the main `*.model3.json` is
+   always stored as `model.model3.json`, which is the name the app opens.
+2. **Sign the manifest** (from the repo root). It prompts for the key password;
+   don't pass it with `-p`, since command lines are visible to other processes:
+   ```powershell
+   npx tauri signer sign -f updater-private.key models/manifest.json
+   ```
+3. **Upload** the zip, manifest and signature (replacing the old manifest):
+   ```powershell
+   gh release upload models dist-models/<id>-<version>.zip models/manifest.json models/manifest.json.sig --clobber
+   ```
+4. **Commit** `models/manifest.json` and `models/manifest.json.sig` so the repo
+   records which version is live.
+
+A **new** model also needs an app release, because the app has to know it: a
+`BUILTIN` row in `src-tauri/src/models.rs`, a `model.<id>` item in
+`collection.rs`, a drop rate in `gacha::LEGENDARY_PCT` and a preview image in
+`app/media/model-previews/`. Publish the model (steps 1–3) **before** that app
+release goes out, or buyers get "not published yet" until you do.
+
 ## How the updater finds releases
 
 `src-tauri/tauri.conf.json` → `plugins.updater.endpoints` points at:

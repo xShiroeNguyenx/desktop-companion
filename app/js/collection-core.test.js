@@ -102,3 +102,23 @@ test('giờ trong lịch sử theo ngôn ngữ', () => {
   assert.equal(C.formatTime(t, 'vi'), '08:05 19/10');
   assert.equal(C.formatTime(t, 'ja'), '10/19 08:05');
 });
+
+test('model Live2D: tab riêng, hạng Huyền thoại, nút Dùng / Đang dùng', () => {
+  const m = item({ id: 'model.gothic-aristocrat', cat: 'model', rarity: 'legendary', price: 10000, asset: 'gothic-aristocrat' });
+  assert.deepEqual(C.groupByCategory([m, item()]).map(([c]) => c), ['skin', 'model']);
+  assert.equal(C.buttonState(m, 9000, 'vi').label, '🍬 Thiếu 1000');
+  // Đã mua: chưa tải → Tải về (kèm dung lượng nếu biết) · đang tải → % · đã tải → Dùng / Đang dùng.
+  assert.deepEqual(C.buttonState({ ...m, owned: true, size: 2912773 }, 0, 'vi'), { kind: 'download', label: '⬇ Tải về (2,8 MB)', disabled: false });
+  assert.equal(C.buttonState({ ...m, owned: true }, 0, 'en').label, '⬇ Download');
+  assert.deepEqual(C.buttonState({ ...m, owned: true, progress: 42 }, 0, 'ja'), { kind: 'busy', label: 'ダウンロード中 42%', disabled: true });
+  assert.equal(C.buttonState({ ...m, owned: true, installed: true }, 0, 'vi').kind, 'use');
+  assert.equal(C.buttonState({ ...m, owned: true, installed: true, selected: true }, 0, 'en').label, 'In use');
+  assert.equal(C.sizeLabel(0, 'vi'), '');
+  assert.equal(C.errorText('bad_checksum', 'en'), "The downloaded file didn't match, so it was discarded. Try again.");
+  assert.equal(C.rarityClass('legendary'), 'r-legendary');
+  assert.equal(C.thumb(m), '', 'chưa có preview.png thì trang hiện 🎭');
+  assert.equal(C.thumb({ ...m, thumb: 'media/model-previews/gothic-aristocrat.png' }), 'media/model-previews/gothic-aristocrat.png');
+  assert.equal(C.errorText('locked', 'ja'), 'このモデルはまだロックされています。');
+  assert.equal(C.summarize([{ rarity: 'epic' }, { rarity: 'legendary' }, { rarity: 'rare' }]).best, 'legendary');
+  assert.equal(C.featured([item({ id: 'side.a', cat: 'side_set', rarity: 'epic', price: 3000 }), m], 1)[0].id, m.id, 'hiếm nhất lên đầu');
+});

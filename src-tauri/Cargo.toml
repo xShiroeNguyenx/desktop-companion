@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.9.3"
+version = "0.9.4"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -32,6 +32,15 @@ tungstenite = { version = "0.30.0", features = ["rustls-tls-webpki-roots"] }
 sha2 = "0.10"
 # Audio TTS gửi sang webview dạng base64.
 base64 = "0.22"
+# Gói model Live2D tải riêng (model_pack.rs): zip Stored (không nén, không kéo
+# thêm crate nén) và kiểm chữ ký manifest bằng khoá updater. Cùng bản với
+# tauri-plugin-updater nên không thêm gì vào lockfile.
+zip = { version = "4", default-features = false }
+minisign-verify = "0.2"
+
+[dev-dependencies]
+# Test chữ ký manifest: sinh khoá lúc chạy, ký, rồi kiểm bằng minisign-verify.
+minisign = "0.7"
 
 # Win32 access: click-through refresh, the WH_MOUSE_LL global hook, SendInput
 # (simulated Ctrl+C), and cursor position.

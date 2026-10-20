@@ -4,9 +4,12 @@
 //! - 1 lượt 100 🍬, 10 lượt 1000 🍬 (rẻ hơn đổi thẳng nhiều lần, đổi lại may rủi).
 //!   Đổi thẳng trong cửa hàng vẫn luôn có.
 //! - Tỉ lệ Thường 65 · Hiếm 25 · Sử thi 10 (%), quay trong mọi món giá > 0.
+//!   Hạng Huyền thoại (model Live2D) có tỉ lệ riêng từng món (`LEGENDARY_PCT`),
+//!   lấy từ phần của Thường để tỉ lệ Hiếm / Sử thi giữ nguyên.
 //! - Bảo hiểm: 9 lượt liền không ra Hiếm+ thì lượt thứ 10 chắc chắn Hiếm+;
-//!   49 lượt liền không ra Sử thi thì lượt thứ 50 chắc chắn Sử thi.
-//! - Trùng món đã có → hoàn 10% giá đổi thẳng bằng kẹo. Không bao giờ nhận trùng vào `owned`.
+//!   49 lượt liền không ra Sử thi+ thì lượt thứ 50 chắc chắn Sử thi+. Huyền thoại
+//!   không có bảo hiểm riêng, chỉ có phần của nó trong hai lần bảo hiểm trên.
+//! - Trùng món đã có → hoàn 10% giá đổi thẳng của món bằng kẹo. Không bao giờ nhận trùng vào `owned`.
 //! - Không bán kẹo bằng tiền thật: gacha hoàn toàn miễn phí nên không vướng luật loot box.
 
 use serde::{Deserialize, Serialize};
@@ -16,8 +19,11 @@ use crate::collection::{items, owns, BuyError, Collection, Item, Rarity};
 
 pub const PULL_COST: u32 = 100;
 pub const TEN_COST: u32 = 1000;
-/// Tỉ lệ theo phần trăm, cộng lại đúng 100.
-pub const RATES: [(Rarity, u32); 3] = [(Rarity::Common, 65), (Rarity::Rare, 25), (Rarity::Epic, 10)];
+/// Tỉ lệ theo phần trăm khi chưa có món Huyền thoại, cộng lại đúng 100.
+pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 65), (Rarity::Rare, 25), (Rarity::Epic, 10)];
+/// Tỉ lệ (%) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
+/// Món chưa có trong catalog thì bỏ qua (bản loli 3% thêm vào khi có model).
+pub const LEGENDARY_PCT: &[(&str, u32)] = &[("model.gothic-aristocrat", 1)];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
 pub const PITY_RARE: u32 = 10;
 /// Lượt thứ N kể từ lần cuối ra Sử thi chắc chắn Sử thi.
@@ -56,13 +62,47 @@ pub fn cost(n: u32) -> Option<u32> {
     }
 }
 
-/// Kẹo hoàn lại khi quay trùng: 10% giá đổi thẳng của hạng.
-pub fn refund(r: Rarity) -> u32 {
-    match r {
-        Rarity::Common => 60,
-        Rarity::Rare => 150,
-        Rarity::Epic => 300,
+/// Kẹo hoàn lại khi quay trùng: 10% giá đổi thẳng của món (60 / 150 / 300 với
+/// ba hạng giá chung; model Huyền thoại theo giá riêng).
+pub fn refund(it: &Item) -> u32 {
+    it.price / 10
+}
+
+/// Các món Huyền thoại quay được kèm tỉ lệ (%).
+fn legendary() -> impl Iterator<Item = (&'static Item, u32)> {
+    LEGENDARY_PCT.iter().filter_map(|&(id, pct)| {
+        crate::collection::item(id)
+            .filter(|i| i.price > 0 && i.rarity == Rarity::Legendary)
+            .map(|i| (i, pct))
+    })
+}
+
+/// Tỉ lệ đang áp dụng (cộng lại đúng 100). Không có món Huyền thoại thì không có hạng đó.
+pub fn rates() -> Vec<(Rarity, u32)> {
+    let legend: u32 = legendary().map(|(_, p)| p).sum();
+    let mut v: Vec<(Rarity, u32)> = BASE_RATES
+        .iter()
+        .map(|&(r, p)| (r, if r == Rarity::Common { p.saturating_sub(legend) } else { p }))
+        .collect();
+    if legend > 0 {
+        v.push((Rarity::Legendary, legend));
     }
+    v
+}
+
+/// Chọn theo trọng số với `x` trong [0, 1). So bằng số nguyên để ngưỡng không lệch
+/// vì làm tròn dấu phẩy động.
+fn pick_weighted<T: Copy>(list: &[(T, u32)], x: f64) -> Option<T> {
+    let total: u32 = list.iter().map(|(_, w)| w).sum();
+    let v = ((x.clamp(0.0, 1.0) * total as f64) as u32).min(total.saturating_sub(1));
+    let mut acc = 0;
+    for &(t, w) in list {
+        acc += w;
+        if v < acc {
+            return Some(t);
+        }
+    }
+    list.last().map(|&(t, _)| t)
 }
 
 /// Mọi món quay được: món giá > 0.
@@ -76,26 +116,13 @@ pub fn enabled() -> bool {
 
 /// Chọn hạng cho một lượt. `r` cho hạng tự nhiên; khi bảo hiểm nổ mà ra thấp
 /// hơn thì `r2` chia lại giữa các hạng đủ cao theo đúng tỉ lệ của chúng.
-fn roll_rarity(r: f64, r2: f64, min: Rarity) -> (Rarity, bool) {
-    // So bằng số nguyên (phần trăm) để ngưỡng không lệch vì làm tròn dấu phẩy động.
-    let pick = |list: &[(Rarity, u32)], x: f64| {
-        let total: u32 = list.iter().map(|(_, p)| p).sum();
-        let v = ((x.clamp(0.0, 1.0) * total as f64) as u32).min(total.saturating_sub(1));
-        let mut acc = 0;
-        for (rar, pct) in list {
-            acc += pct;
-            if v < acc {
-                return *rar;
-            }
-        }
-        list.last().map(|(r, _)| *r).unwrap_or(min)
-    };
-    let natural = pick(&RATES, r);
+fn roll_rarity(rates: &[(Rarity, u32)], r: f64, r2: f64, min: Rarity) -> (Rarity, bool) {
+    let natural = pick_weighted(rates, r).unwrap_or(min);
     if natural >= min {
         return (natural, false);
     }
-    let allowed: Vec<(Rarity, u32)> = RATES.iter().copied().filter(|(rar, _)| *rar >= min).collect();
-    (pick(&allowed, r2), true)
+    let allowed: Vec<(Rarity, u32)> = rates.iter().copied().filter(|(rar, _)| *rar >= min).collect();
+    (pick_weighted(&allowed, r2).unwrap_or(min), true)
 }
 
 /// Một lượt (đã trừ kẹo ở `pull_many`). Cập nhật bảo hiểm, `owned`, lịch sử.
@@ -108,19 +135,28 @@ fn pull_one(c: &mut Collection, now_ms: u64, rand: &mut impl FnMut() -> f64) -> 
         Rarity::Common
     };
     let (r, r2) = (rand(), rand());
-    let (rarity, pity_hit) = roll_rarity(r, r2, min);
-    let mut bucket: Vec<&'static Item> = pool().filter(|i| i.rarity == rarity).collect();
-    if bucket.is_empty() {
-        bucket = pool().collect();
+    let (rarity, pity_hit) = roll_rarity(&rates(), r, r2, min);
+    let x = rand();
+    let item = if rarity == Rarity::Legendary {
+        // Mỗi model một tỉ lệ riêng (LEGENDARY_PCT), không chia đều.
+        let list: Vec<(&'static Item, u32)> = legendary().collect();
+        pick_weighted(&list, x)
+    } else {
+        None
     }
-    let idx = ((rand() * bucket.len() as f64) as usize).min(bucket.len() - 1);
-    let item = bucket[idx];
+    .unwrap_or_else(|| {
+        let mut bucket: Vec<&'static Item> = pool().filter(|i| i.rarity == rarity).collect();
+        if bucket.is_empty() {
+            bucket = pool().collect();
+        }
+        bucket[((x * bucket.len() as f64) as usize).min(bucket.len() - 1)]
+    });
 
     c.pity = if item.rarity >= Rarity::Rare { 0 } else { c.pity + 1 };
-    c.epic_pity = if item.rarity == Rarity::Epic { 0 } else { c.epic_pity + 1 };
+    c.epic_pity = if item.rarity >= Rarity::Epic { 0 } else { c.epic_pity + 1 };
     c.pulls = c.pulls.saturating_add(1);
     let dup = owns(c, item);
-    let back = if dup { refund(item.rarity) } else { 0 };
+    let back = if dup { refund(item) } else { 0 };
     if dup {
         c.candy = c.candy.saturating_add(back);
         c.spent_total = c.spent_total.saturating_sub(back);
@@ -190,9 +226,17 @@ pub fn view_json(c: &Collection, lang_idx: usize) -> Value {
         "minPool": MIN_POOL,
         "cost1": PULL_COST,
         "cost10": TEN_COST,
-        "rates": RATES.iter().map(|(r, p)| json!({ "rarity": r.code(), "pct": p })).collect::<Vec<_>>(),
-        "refund": RATES.iter().map(|(r, _)| json!({ "rarity": r.code(), "candy": refund(*r) })).collect::<Vec<_>>(),
-        // Còn bao nhiêu lượt nữa thì chắc chắn Hiếm+ / Sử thi (tính cả lượt đó).
+        "rates": rates().iter().map(|(r, p)| json!({ "rarity": r.code(), "pct": p })).collect::<Vec<_>>(),
+        // Hoàn khi trùng theo hạng (món rẻ nhất của hạng; ba hạng đầu mỗi hạng một giá).
+        "refund": rates()
+            .iter()
+            .map(|(r, _)| json!({ "rarity": r.code(), "candy": pool().filter(|i| i.rarity == *r).map(refund).min().unwrap_or(0) }))
+            .collect::<Vec<_>>(),
+        // Từng món Huyền thoại: tên, tỉ lệ, kẹo hoàn khi trùng (ô tỉ lệ trên máy kẹo).
+        "legendary": legendary()
+            .map(|(it, pct)| json!({ "id": it.id, "name": it.name[li], "pct": pct, "refund": refund(it) }))
+            .collect::<Vec<_>>(),
+        // Còn bao nhiêu lượt nữa thì chắc chắn Hiếm+ / Sử thi+ (tính cả lượt đó).
         "rareIn": PITY_RARE - c.pity.min(PITY_RARE - 1),
         "epicIn": PITY_EPIC - c.epic_pity.min(PITY_EPIC - 1),
         "pityRare": PITY_RARE,
@@ -218,12 +262,20 @@ mod tests {
 
     #[test]
     fn rules_are_sane() {
-        assert_eq!(RATES.iter().map(|(_, p)| p).sum::<u32>(), 100);
+        assert_eq!(BASE_RATES.iter().map(|(_, p)| p).sum::<u32>(), 100);
+        assert_eq!(rates().iter().map(|(_, p)| p).sum::<u32>(), 100);
         assert!(enabled(), "catalog phải có ≥ {MIN_POOL} món mua được");
         assert_eq!(cost(10), Some(10 * PULL_COST));
         assert_eq!(cost(3), None);
-        for (r, _) in RATES {
+        for (r, _) in rates() {
             assert!(pool().any(|i| i.rarity == r), "{r:?} không có món nào để quay");
+        }
+        // Mỗi món Huyền thoại có tỉ lệ riêng, không thì gacha không bao giờ ra nó.
+        for it in pool().filter(|i| i.rarity == Rarity::Legendary) {
+            assert!(LEGENDARY_PCT.iter().any(|(id, p)| *id == it.id && *p > 0), "{}: thiếu tỉ lệ", it.id);
+        }
+        for (id, _) in LEGENDARY_PCT {
+            assert!(crate::collection::item(id).is_some_and(|i| i.rarity == Rarity::Legendary), "{id}: không phải món Huyền thoại");
         }
         // Quay rẻ hơn đổi thẳng: món rẻ nhất phải đắt hơn ít nhất 5 lượt.
         assert!(pool().all(|i| i.price >= 5 * PULL_COST));
@@ -231,18 +283,50 @@ mod tests {
 
     #[test]
     fn rarity_thresholds() {
-        assert_eq!(roll_rarity(0.0, 0.0, Rarity::Common), (Rarity::Common, false));
-        assert_eq!(roll_rarity(0.649, 0.0, Rarity::Common), (Rarity::Common, false));
-        assert_eq!(roll_rarity(0.65, 0.0, Rarity::Common), (Rarity::Rare, false));
-        assert_eq!(roll_rarity(0.899, 0.0, Rarity::Common), (Rarity::Rare, false));
-        assert_eq!(roll_rarity(0.9, 0.0, Rarity::Common), (Rarity::Epic, false));
-        assert_eq!(roll_rarity(0.9999, 0.0, Rarity::Common), (Rarity::Epic, false));
+        let b = &BASE_RATES;
+        assert_eq!(roll_rarity(b, 0.0, 0.0, Rarity::Common), (Rarity::Common, false));
+        assert_eq!(roll_rarity(b, 0.649, 0.0, Rarity::Common), (Rarity::Common, false));
+        assert_eq!(roll_rarity(b, 0.65, 0.0, Rarity::Common), (Rarity::Rare, false));
+        assert_eq!(roll_rarity(b, 0.899, 0.0, Rarity::Common), (Rarity::Rare, false));
+        assert_eq!(roll_rarity(b, 0.9, 0.0, Rarity::Common), (Rarity::Epic, false));
+        assert_eq!(roll_rarity(b, 0.9999, 0.0, Rarity::Common), (Rarity::Epic, false));
         // Bảo hiểm Hiếm+: Thường bị đổi, chia 25:10 giữa Hiếm và Sử thi.
-        assert_eq!(roll_rarity(0.1, 0.0, Rarity::Rare), (Rarity::Rare, true));
-        assert_eq!(roll_rarity(0.1, 0.71, Rarity::Rare), (Rarity::Rare, true));
-        assert_eq!(roll_rarity(0.1, 0.72, Rarity::Rare), (Rarity::Epic, true));
-        assert_eq!(roll_rarity(0.95, 0.0, Rarity::Rare), (Rarity::Epic, false), "tự nhiên ra cao thì không tính bảo hiểm");
-        assert_eq!(roll_rarity(0.1, 0.0, Rarity::Epic), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(b, 0.1, 0.0, Rarity::Rare), (Rarity::Rare, true));
+        assert_eq!(roll_rarity(b, 0.1, 0.71, Rarity::Rare), (Rarity::Rare, true));
+        assert_eq!(roll_rarity(b, 0.1, 0.72, Rarity::Rare), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(b, 0.95, 0.0, Rarity::Rare), (Rarity::Epic, false), "tự nhiên ra cao thì không tính bảo hiểm");
+        assert_eq!(roll_rarity(b, 0.1, 0.0, Rarity::Epic), (Rarity::Epic, true));
+    }
+
+    #[test]
+    fn legendary_comes_out_of_common_share() {
+        let r = rates();
+        assert_eq!(r, vec![(Rarity::Common, 64), (Rarity::Rare, 25), (Rarity::Epic, 10), (Rarity::Legendary, 1)]);
+        assert_eq!(roll_rarity(&r, 0.639, 0.0, Rarity::Common), (Rarity::Common, false));
+        assert_eq!(roll_rarity(&r, 0.64, 0.0, Rarity::Common), (Rarity::Rare, false));
+        assert_eq!(roll_rarity(&r, 0.989, 0.0, Rarity::Common), (Rarity::Epic, false));
+        assert_eq!(roll_rarity(&r, 0.99, 0.0, Rarity::Common), (Rarity::Legendary, false));
+        // Bảo hiểm Hiếm+ chia 25:10:1; bảo hiểm Sử thi+ chia 10:1.
+        assert_eq!(roll_rarity(&r, 0.1, 0.98, Rarity::Rare), (Rarity::Legendary, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.9, Rarity::Epic), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.95, Rarity::Epic), (Rarity::Legendary, true));
+    }
+
+    #[test]
+    fn legendary_pull_resets_both_pities_and_refunds_ten_percent() {
+        let mut c = Collection::default();
+        c.candy = 200;
+        c.pity = 5;
+        c.epic_pity = 30;
+        // r = 0.995 → Huyền thoại; r2, chọn món = 0.
+        let got = pull_many(&mut c, 1, 1, &mut seq(&[0.995, 0.0, 0.0])).unwrap();
+        assert_eq!(got[0].item.id, "model.gothic-aristocrat");
+        assert!(!got[0].dup && !got[0].pity_hit);
+        assert_eq!((c.pity, c.epic_pity), (0, 0));
+        let again = pull_many(&mut c, 1, 2, &mut seq(&[0.995, 0.0, 0.0])).unwrap();
+        assert!(again[0].dup);
+        assert_eq!(again[0].refund, 1000);
+        assert_eq!(c.candy, 1000);
     }
 
     #[test]
@@ -291,9 +375,9 @@ mod tests {
         let b = pull_many(&mut c, 1, 2, &mut seq(&[0.0])).unwrap();
         assert_eq!(a[0].item.id, b[0].item.id);
         assert!(!a[0].dup && b[0].dup);
-        assert_eq!(b[0].refund, refund(Rarity::Common));
+        assert_eq!(b[0].refund, refund(a[0].item));
         assert_eq!(c.owned.iter().filter(|o| *o == a[0].item.id).count(), 1);
-        assert_eq!(c.candy, refund(Rarity::Common));
+        assert_eq!(c.candy, refund(a[0].item));
         assert_eq!(c.history.len(), 2);
         assert_eq!((c.history[0].t, c.history[0].dup), (2, true), "mới nhất lên đầu");
     }

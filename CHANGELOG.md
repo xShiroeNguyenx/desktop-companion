@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-10-20
+
+### Added
+- **🎭 Live2D models in the Collection.** A new Models tab. The first one is
+  **Gothic Aristocrat**, a gothic young noble in black lace with smile, sad,
+  angry, surprised, shy and wink expressions and her own idle, nod, tilt,
+  shake and happy motions. Trade 10000 🍬 for her or win her in the Candy
+  Capsule, then press Use and she replaces the character on screen right away.
+  Hiyori, Haru, Mao and Miara stay free, and so do models you add from a folder.
+- **Collection models download on unlock.** They are not in the installer: once
+  you unlock one, the app downloads it (about 3 MB, progress shown on its card)
+  and checks it against a signed list before installing. Models update on their
+  own when a newer version is published, without an app update. If the
+  download fails, the card says why and offers to try again.
+- **🌈 Legendary rarity**, above Epic and only for Live2D models. Each model has
+  its own drop rate (Gothic Aristocrat 1%), taken from the Common share, so Rare
+  stays 25% and Epic 10% (Common is now 64%). The rates panel lists every model
+  with its rate and refund. A Legendary spin gets its own reveal: rainbow rays,
+  a longer shake, heavy confetti and a colour-shifting "LEGENDARY!".
+
+### Changed
+- The Appearance menu marks locked models with 🔒. Choosing one opens the
+  Collection on the Models tab instead of switching.
+- The 50-spin guarantee is now Epic or better, so it can also land a Legendary.
+- Duplicates refund 10% of the item's own price (1000 🍬 for Gothic
+  Aristocrat). Common, Rare and Epic refunds are unchanged.
+
+### Fixed
+- Removing a model you added from a folder and then adding another no longer
+  gives two models the same id, which made one of them show the other's model.
+
 ## [0.9.3] - 2026-10-19
 
 ### Added
