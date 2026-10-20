@@ -3,10 +3,10 @@
   "models": [
     {
       "id": "gothic-aristocrat",
-      "version": 1,
-      "file": "gothic-aristocrat-1.zip",
-      "sha256": "864b690ac9afb47728c0e2b043d0a478993b0b94bc01e14a465302c1fedb4393",
-      "size": 2912765
+      "version": 2,
+      "file": "gothic-aristocrat-2.zip",
+      "sha256": "681da6185d2498a9d723d15432e7e8ff99be247a700fa88221292d1a53bc7b19",
+      "size": 3111118
     }
   ]
 }
