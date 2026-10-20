@@ -221,4 +221,6 @@ cd src-tauri && cargo test   # Rust ユニットテスト
 
 ## ライセンス
 
-MIT — [LICENSE](LICENSE) を参照。
+- **コード:** MIT — [LICENSE](LICENSE) を参照。
+- **オリジナルアート**（Gothic Aristocrat モデル、サイドキャラクター、ミウの表情、アーケードの絵）: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.ja) — クレジット表記で共有・改変可、商用利用は不可。[ASSETS-LICENSE.md](ASSETS-LICENSE.md) を参照。
+- **Live2D サンプルモデル**（Hiyori、Haru、Mao、Miara）: © Live2D Inc.、Free Material License。

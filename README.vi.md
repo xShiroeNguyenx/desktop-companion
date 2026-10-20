@@ -236,4 +236,6 @@ cd src-tauri && cargo test   # test Rust
 
 ## Giấy phép
 
-MIT — xem [LICENSE](LICENSE).
+- **Mã nguồn:** MIT — xem [LICENSE](LICENSE).
+- **Art gốc** (model Gothic Aristocrat, nhân vật bám mép, bộ mặt Miu, ảnh Arcade): [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.vi) — được chia sẻ và chỉnh sửa nếu ghi tên tác giả, không dùng thương mại. Xem [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
+- **Model mẫu Live2D** (Hiyori, Haru, Mao, Miara): © Live2D Inc., Free Material License.
