@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Artwork license.** The original artwork (the Gothic Aristocrat Live2D model,
+  model previews, side characters, Miu faces and Arcade art) is now licensed
+  under CC BY-NC 4.0: free to share and remix with credit, not for commercial
+  use. The code stays MIT. See ASSETS-LICENSE.md.
+
+### Fixed
+- **Selection flower.** The icon chosen in the Collection (paw, star, clover,
+  snowflake) now shows every time you select text, with its own colour. Before,
+  the flower switched back to 🌸 each time it appeared.
+
 ## [0.9.4] - 2026-10-20
 
 ### Added

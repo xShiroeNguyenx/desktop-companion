@@ -52,8 +52,14 @@
     setTimeout(() => invoke('close_flower').catch((e) => log('close_flower: ' + e)), 650);
   });
 
-  // Reset the glyph on each fresh show.
-  listen('flower-shown', () => { btn.textContent = '🌸'; scheduleHide(5000); });
+  // Mỗi lần hiện: Rust gửi kèm biểu tượng đang chọn trong Bộ sưu tập (windows.rs);
+  // áp lại biểu tượng + màu nền, cũng xoá dấu ✓ / ✕ còn sót từ lần trước.
+  listen('flower-shown', (event) => {
+    const id = event && event.payload;
+    if (typeof id === 'string' && window.__applyFlower__) window.__applyFlower__(id);
+    else btn.textContent = window.__FLOWER_GLYPH__ || '🌸';
+    scheduleHide(5000);
+  });
   scheduleHide(5000);
   log('flower.js ready');
 })();

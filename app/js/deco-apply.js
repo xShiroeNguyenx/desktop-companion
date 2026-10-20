@@ -11,13 +11,21 @@
     return fn ? fn(cmd) : Promise.reject(new Error('Tauri chưa sẵn sàng'));
   };
 
+  /** Áp biểu tượng + màu nền bông hoa. flower.js gọi lại mỗi lần bông hoa hiện ra. */
+  function applyFlower(id) {
+    if (!document.body) return;
+    const key = FLOWERS[id] ? id : 'sakura';
+    document.body.dataset.flower = key;
+    window.__FLOWER_GLYPH__ = FLOWERS[key];
+    const btn = document.getElementById('flower');
+    if (btn) btn.textContent = window.__FLOWER_GLYPH__;
+  }
+  window.__applyFlower__ = applyFlower;
+
   function apply(v) {
     if (!v || !document.body) return;
     document.body.dataset.bubble = v.bubble || 'classic';
-    document.body.dataset.flower = v.flower || 'sakura';
-    window.__FLOWER_GLYPH__ = FLOWERS[v.flower] || FLOWERS.sakura;
-    const btn = document.getElementById('flower');
-    if (btn) btn.textContent = window.__FLOWER_GLYPH__;
+    applyFlower(v.flower);
   }
 
   function refresh() {

@@ -92,7 +92,11 @@ fn show_flower_inner(app: &AppHandle, x: i32, y: i32) {
         // nó luôn nổi trên cùng.
         let _ = w.show();
         crate::set_copy_hotkey(app, true);
-        let _ = w.emit("flower-shown", ());
+        // Gửi kèm biểu tượng đang chọn (Bộ sưu tập → Bông hoa): cửa sổ này dựng sẵn
+        // lúc mở app và nằm ẩn, có thể đã lỡ sự kiện collection-changed lúc người
+        // dùng đổi món, nên mỗi lần hiện đều áp lại cho đúng.
+        let flower = crate::collection::effective_flower(&crate::store::load_collection(app));
+        let _ = w.emit("flower-shown", flower);
         dbg_log("[windows] flower reused+shown");
         return;
     }
