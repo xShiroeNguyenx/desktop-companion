@@ -68,7 +68,10 @@ windows = { version = "0.61", features = [
 
 [profile.release]
 opt-level = "s"
-lto = true
+# Thin LTO trên 16 codegen unit (mặc định của release): đo 2026-10-20, chỉ sửa code
+# app thì build 2 phút 52 giây thay vì 7 phút 15 giây với `lto = true` +
+# `codegen-units = 1` (fat LTO chạy một luồng trên cả chương trình), exe lớn hơn
+# ~1 MB / 50 MB vì phần lớn exe là ảnh, model nhúng vào.
+lto = "thin"
 strip = true
 panic = "abort"
-codegen-units = 1

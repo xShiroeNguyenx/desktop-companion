@@ -3,6 +3,8 @@ node_modules/
 
 # Rust / Tauri build output
 src-tauri/target/
+# Thư mục build thử (CARGO_TARGET_DIR riêng), không commit.
+src-tauri/target-*/
 
 # OS / editor
 Thumbs.db
