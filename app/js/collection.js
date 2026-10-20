@@ -238,22 +238,27 @@
     const rates = $('rates');
     rates.textContent = '';
     const star = { common: '🌸', rare: '💜', epic: '🌟', legendary: '🌈' };
+    const legend = g.legendary || [];
     for (const r of g.rates || []) {
       const row = el('div', 'rate ' + r.rarity);
       const txt = el('div');
-      txt.append(el('b', null, s.rarity[r.rarity] || r.rarity), el('small', null, s.g.rateDesc[r.rarity] || ''));
+      // Huyền thoại: dòng nhỏ ghi từng model + tỉ lệ ("Gothic Aristocrat 1%"); rê chuột
+      // xem đủ (cả kẹo hoàn khi trùng). Không thêm dòng riêng: ô tỉ lệ cao cố định.
+      const desc = r.rarity === 'legendary' && legend.length
+        ? legend.map((l) => l.name + ' ' + l.pct + '%').join(' · ')
+        : s.g.rateDesc[r.rarity] || '';
+      txt.append(el('b', null, s.rarity[r.rarity] || r.rarity), el('small', null, desc));
+      row.title = r.rarity === 'legendary' && legend.length
+        ? [s.g.rateDesc.legendary, ...legend.map((l) => C.fill(s.g.legendItem, { name: l.name, pct: l.pct, c: l.refund }))].join('\n')
+        : desc;
       row.append(el('span', 'st', star[r.rarity] || '⭐'), txt, el('em', null, r.pct + '%'));
       rates.append(row);
-    }
-    // Huyền thoại: mỗi model một tỉ lệ riêng, ghi rõ từng cái.
-    for (const l of g.legendary || []) {
-      rates.append(el('div', 'rate-item', C.fill(s.g.legendItem, { name: l.name, pct: l.pct, c: l.refund })));
     }
     const pity = $('pity');
     pity.textContent = '';
     pity.append(el('span', null, C.fill(s.g.pityRare, { n: g.rareIn })), el('span', null, C.fill(s.g.pityEpic, { n: g.epicIn })));
     const ref = Object.fromEntries((g.refund || []).map((x) => [x.rarity, x.candy]));
-    $('dupNote').textContent = C.fill(s.g.dupNote, { c: ref.common, r: ref.rare, e: ref.epic });
+    $('dupNote').textContent = C.fill(s.g.dupNote, { c: ref.common, r: ref.rare, e: ref.epic }) + (legend.length ? s.g.dupNoteLegend : '');
 
     $('featTitle').textContent = '⭐ ' + s.g.featured;
     $('seeAll').textContent = s.g.seeAll;

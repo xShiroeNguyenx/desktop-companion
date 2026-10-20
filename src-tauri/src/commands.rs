@@ -451,6 +451,9 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     // Form Cài đặt không có các trường này; giữ giá trị cũ thay vì để serde xoá
     // về mặc định.
     settings.skip_update_version = old.skip_update_version.clone();
+    // Model đổi ở menu Diện mạo / Bộ sưu tập (pet_set_model), form không có ô chọn
+    // model: lấy từ form thì Lưu Cài đặt sau khi đổi model sẽ ghi đè về model cũ.
+    settings.pet_model = old.pet_model.clone();
     settings.name_asks = old.name_asks;
     settings.name_asked_at = old.name_asked_at;
     settings.address_asked = old.address_asked;

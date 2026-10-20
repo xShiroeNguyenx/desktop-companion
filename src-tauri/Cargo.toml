@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.9.4"
+version = "0.9.5"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -65,6 +65,12 @@ windows = { version = "0.61", features = [
     "Media_SpeechSynthesis",
     "Storage_Streams",
 ] }
+
+# Bản debug (cargo test, npm run dev) không lưu thông tin gỡ lỗi cho thư viện bên
+# ngoài, chỉ cho code app: target/debug từng phình tới ~58 GB. Gỡ lỗi code app
+# vẫn đủ; backtrace trong thư viện chỉ còn tên hàm, không có số dòng.
+[profile.dev.package."*"]
+debug = false
 
 [profile.release]
 opt-level = "s"

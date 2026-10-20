@@ -10,7 +10,6 @@
     $('geminiBlock').style.display = p === 'gemini' ? '' : 'none';
   }
 
-  let petModel = 'hiyori';
   let contexts = [];
   let customModels = [];
   // Giọng đã chọn cho từng engine — đổi engine qua lại không mất lựa chọn.
@@ -419,7 +418,6 @@
   async function load() {
     try {
       const s = await invoke('settings_get');
-      petModel = s.pet_model || 'hiyori';
       $('provider').value = s.provider || 'anthropic';
       $('apiKey').value = s.api_key || '';
       // Saved Claude model may come from a dynamic fetch — add it if missing.
@@ -630,7 +628,6 @@
       tts_voice_windows: ttsVoices.windows,
       tts_voice_edge: ttsVoices.edge,
       hotkey: hotkeyValue,
-      pet_model: petModel,
       custom_models: customModels,
       pet_name: $('petName').value.trim(),
       user_name: $('userName').value.trim(),

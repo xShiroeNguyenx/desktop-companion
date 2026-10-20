@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-10-20
+
 ### Changed
 - **Artwork license.** The original artwork (the Gothic Aristocrat Live2D model,
   model previews, side characters, Miu faces and Arcade art) is now licensed
@@ -16,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Selection flower.** The icon chosen in the Collection (paw, star, clover,
   snowflake) now shows every time you select text, with its own colour. Before,
   the flower switched back to 🌸 each time it appeared.
+- **Saving Settings no longer undoes a model change.** If you switched the
+  character from the Appearance menu or the Collection while Settings was open,
+  pressing Save put the old model back the next time the app started.
+- **Candy Capsule drop rates fit their panel again.** With the Legendary row
+  added, the pity counters and the refund note were cut off. Each Legendary
+  model's rate now sits on the Legendary row (hover for the refund), and the
+  panel scrolls if it ever runs out of room.
 
 ## [0.9.4] - 2026-10-20
 
@@ -613,6 +622,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.9.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.5
+[0.9.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.4
+[0.9.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.3
 [0.9.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.2
 [0.9.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.1
 [0.9.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.0
