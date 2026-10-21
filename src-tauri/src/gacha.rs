@@ -6,6 +6,7 @@
 //! - Tỉ lệ Thường 65 · Hiếm 25 · Sử thi 10 (%), quay trong mọi món giá > 0.
 //!   Hạng Huyền thoại (model Live2D) có tỉ lệ riêng từng món (`LEGENDARY_PCT`),
 //!   lấy từ phần của Thường để tỉ lệ Hiếm / Sử thi giữ nguyên.
+//! - Tỉ lệ tính bằng phần nghìn (‰) để chia được 1% cho nhiều model; JSON gửi UI đổi lại %.
 //! - Bảo hiểm: 9 lượt liền không ra Hiếm+ thì lượt thứ 10 chắc chắn Hiếm+;
 //!   49 lượt liền không ra Sử thi+ thì lượt thứ 50 chắc chắn Sử thi+. Huyền thoại
 //!   không có bảo hiểm riêng, chỉ có phần của nó trong hai lần bảo hiểm trên.
@@ -19,11 +20,13 @@ use crate::collection::{items, owns, BuyError, Collection, Item, Rarity};
 
 pub const PULL_COST: u32 = 100;
 pub const TEN_COST: u32 = 1000;
-/// Tỉ lệ theo phần trăm khi chưa có món Huyền thoại, cộng lại đúng 100.
-pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 65), (Rarity::Rare, 25), (Rarity::Epic, 10)];
-/// Tỉ lệ (%) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
-/// Món chưa có trong catalog thì bỏ qua (bản loli 3% thêm vào khi có model).
-pub const LEGENDARY_PCT: &[(&str, u32)] = &[("model.gothic-aristocrat", 1)];
+/// Tỉ lệ theo phần nghìn khi chưa có món Huyền thoại, cộng lại đúng `RATE_TOTAL`.
+pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 650), (Rarity::Rare, 250), (Rarity::Epic, 100)];
+/// Mẫu số của mọi tỉ lệ: phần nghìn.
+pub const RATE_TOTAL: u32 = 1000;
+/// Tỉ lệ (‰) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
+/// Cả hạng giữ 1%, chia đều cho các model. Món chưa có trong catalog thì bỏ qua.
+pub const LEGENDARY_PCT: &[(&str, u32)] = &[("model.gothic-aristocrat", 5), ("model.pink-angel", 5)];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
 pub const PITY_RARE: u32 = 10;
 /// Lượt thứ N kể từ lần cuối ra Sử thi chắc chắn Sử thi.
@@ -68,16 +71,16 @@ pub fn refund(it: &Item) -> u32 {
     it.price / 10
 }
 
-/// Các món Huyền thoại quay được kèm tỉ lệ (%).
+/// Các món Huyền thoại quay được kèm tỉ lệ (‰).
 fn legendary() -> impl Iterator<Item = (&'static Item, u32)> {
-    LEGENDARY_PCT.iter().filter_map(|&(id, pct)| {
+    LEGENDARY_PCT.iter().filter_map(|&(id, p)| {
         crate::collection::item(id)
             .filter(|i| i.price > 0 && i.rarity == Rarity::Legendary)
-            .map(|i| (i, pct))
+            .map(|i| (i, p))
     })
 }
 
-/// Tỉ lệ đang áp dụng (cộng lại đúng 100). Không có món Huyền thoại thì không có hạng đó.
+/// Tỉ lệ đang áp dụng (‰, cộng lại đúng `RATE_TOTAL`). Không có món Huyền thoại thì không có hạng đó.
 pub fn rates() -> Vec<(Rarity, u32)> {
     let legend: u32 = legendary().map(|(_, p)| p).sum();
     let mut v: Vec<(Rarity, u32)> = BASE_RATES
@@ -88,6 +91,11 @@ pub fn rates() -> Vec<(Rarity, u32)> {
         v.push((Rarity::Legendary, legend));
     }
     v
+}
+
+/// ‰ → % cho UI (5 → 0.5).
+fn pct(permille: u32) -> f64 {
+    permille as f64 * 100.0 / RATE_TOTAL as f64
 }
 
 /// Chọn theo trọng số với `x` trong [0, 1). So bằng số nguyên để ngưỡng không lệch
@@ -226,7 +234,7 @@ pub fn view_json(c: &Collection, lang_idx: usize) -> Value {
         "minPool": MIN_POOL,
         "cost1": PULL_COST,
         "cost10": TEN_COST,
-        "rates": rates().iter().map(|(r, p)| json!({ "rarity": r.code(), "pct": p })).collect::<Vec<_>>(),
+        "rates": rates().iter().map(|(r, p)| json!({ "rarity": r.code(), "pct": pct(*p) })).collect::<Vec<_>>(),
         // Hoàn khi trùng theo hạng (món rẻ nhất của hạng; ba hạng đầu mỗi hạng một giá).
         "refund": rates()
             .iter()
@@ -234,7 +242,7 @@ pub fn view_json(c: &Collection, lang_idx: usize) -> Value {
             .collect::<Vec<_>>(),
         // Từng món Huyền thoại: tên, tỉ lệ, kẹo hoàn khi trùng (ô tỉ lệ trên máy kẹo).
         "legendary": legendary()
-            .map(|(it, pct)| json!({ "id": it.id, "name": it.name[li], "pct": pct, "refund": refund(it) }))
+            .map(|(it, p)| json!({ "id": it.id, "name": it.name[li], "pct": pct(p), "refund": refund(it) }))
             .collect::<Vec<_>>(),
         // Còn bao nhiêu lượt nữa thì chắc chắn Hiếm+ / Sử thi+ (tính cả lượt đó).
         "rareIn": PITY_RARE - c.pity.min(PITY_RARE - 1),
@@ -262,8 +270,8 @@ mod tests {
 
     #[test]
     fn rules_are_sane() {
-        assert_eq!(BASE_RATES.iter().map(|(_, p)| p).sum::<u32>(), 100);
-        assert_eq!(rates().iter().map(|(_, p)| p).sum::<u32>(), 100);
+        assert_eq!(BASE_RATES.iter().map(|(_, p)| p).sum::<u32>(), RATE_TOTAL);
+        assert_eq!(rates().iter().map(|(_, p)| p).sum::<u32>(), RATE_TOTAL);
         assert!(enabled(), "catalog phải có ≥ {MIN_POOL} món mua được");
         assert_eq!(cost(10), Some(10 * PULL_COST));
         assert_eq!(cost(3), None);
@@ -301,7 +309,7 @@ mod tests {
     #[test]
     fn legendary_comes_out_of_common_share() {
         let r = rates();
-        assert_eq!(r, vec![(Rarity::Common, 64), (Rarity::Rare, 25), (Rarity::Epic, 10), (Rarity::Legendary, 1)]);
+        assert_eq!(r, vec![(Rarity::Common, 640), (Rarity::Rare, 250), (Rarity::Epic, 100), (Rarity::Legendary, 10)]);
         assert_eq!(roll_rarity(&r, 0.639, 0.0, Rarity::Common), (Rarity::Common, false));
         assert_eq!(roll_rarity(&r, 0.64, 0.0, Rarity::Common), (Rarity::Rare, false));
         assert_eq!(roll_rarity(&r, 0.989, 0.0, Rarity::Common), (Rarity::Epic, false));
@@ -310,6 +318,10 @@ mod tests {
         assert_eq!(roll_rarity(&r, 0.1, 0.98, Rarity::Rare), (Rarity::Legendary, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.9, Rarity::Epic), (Rarity::Epic, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.95, Rarity::Epic), (Rarity::Legendary, true));
+        // Hai model chia đều 1%: mỗi model 0.5%.
+        let x = |v: f64| { let l: Vec<_> = legendary().collect(); pick_weighted(&l, v).unwrap().id };
+        assert_eq!((x(0.49), x(0.5)), ("model.gothic-aristocrat", "model.pink-angel"));
+        assert!(legendary().all(|(_, p)| pct(p) == 0.5));
     }
 
     #[test]

@@ -7,6 +7,13 @@
       "file": "gothic-aristocrat-2.zip",
       "sha256": "681da6185d2498a9d723d15432e7e8ff99be247a700fa88221292d1a53bc7b19",
       "size": 3111118
+    },
+    {
+      "id": "pink-angel",
+      "version": 1,
+      "file": "pink-angel-1.zip",
+      "sha256": "5ab811809d1b3d6eac3663e46b1c2d20f146f0789d49469cff73e3f0e89b9f4b",
+      "size": 1800130
     }
   ]
 }

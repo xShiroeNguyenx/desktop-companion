@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-10-21
+
+### Added
+- **🎭 Pink Angel**, a second Live2D model in the Collection: a pink-haired
+  cat girl in glasses and a frilly dress of hearts and plush bunnies, with
+  smile, sad, angry, surprised, shy and wink expressions and her own idle, nod,
+  tilt, shake and happy motions. Trade 10000 🍬 for her or win her in the Candy
+  Capsule; like Gothic Aristocrat she downloads once unlocked.
+
+### Changed
+- **The Legendary rate stays at 1%, now shared by both models.** Each Legendary
+  pull is Gothic Aristocrat or Pink Angel with equal odds (0.5% each); the
+  Candy Capsule rates are still 64 / 25 / 10 / 1.
+
 ## [0.9.5] - 2026-10-20
 
 ### Changed

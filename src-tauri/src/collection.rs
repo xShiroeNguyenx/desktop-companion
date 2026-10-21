@@ -501,6 +501,19 @@ pub const CATALOG: &[Item] = &[
         ],
         asset: "gothic-aristocrat",
     },
+    Item {
+        id: "model.pink-angel",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 10000,
+        name: ["Pink Angel", "ピンク・エンジェル", "Pink Angel"],
+        desc: [
+            "Cô gái tai mèo tóc hồng đeo kính, váy bèo nơ tim và thỏ bông, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "ハートとうさぎで飾ったフリルドレスの、眼鏡をかけたピンク髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A pink-haired cat girl in glasses and a frilly dress of hearts and plush bunnies becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "pink-angel",
+    },
 ];
 
 /// Mọi món: CATALOG ở trên + các bộ Miu (miu_sets.rs). Dùng hàm này thay vì CATALOG.
