@@ -14,6 +14,13 @@
       "file": "pink-angel-1.zip",
       "sha256": "5ab811809d1b3d6eac3663e46b1c2d20f146f0789d49469cff73e3f0e89b9f4b",
       "size": 1800130
+    },
+    {
+      "id": "snow-lolita",
+      "version": 1,
+      "file": "snow-lolita-1.zip",
+      "sha256": "ee4b5d5ae325af61876987e2e8c06eb37936e9f93201f0bc607892386b2aba1f",
+      "size": 2061505
     }
   ]
 }

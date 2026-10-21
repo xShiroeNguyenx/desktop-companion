@@ -25,8 +25,9 @@ pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 650), (Rarity::Rare
 /// Mẫu số của mọi tỉ lệ: phần nghìn.
 pub const RATE_TOTAL: u32 = 1000;
 /// Tỉ lệ (‰) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
-/// Cả hạng giữ 1%, chia đều cho các model. Món chưa có trong catalog thì bỏ qua.
-pub const LEGENDARY_PCT: &[(&str, u32)] = &[("model.gothic-aristocrat", 5), ("model.pink-angel", 5)];
+/// Hai model 10000 🍬 chia nhau 1%; bản lolita 5000 🍬 riêng 2% (rẻ hơn thì ra dễ hơn).
+/// Món chưa có trong catalog thì bỏ qua.
+pub const LEGENDARY_PCT: &[(&str, u32)] = &[("model.gothic-aristocrat", 5), ("model.pink-angel", 5), ("model.snow-lolita", 20)];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
 pub const PITY_RARE: u32 = 10;
 /// Lượt thứ N kể từ lần cuối ra Sử thi chắc chắn Sử thi.
@@ -309,19 +310,20 @@ mod tests {
     #[test]
     fn legendary_comes_out_of_common_share() {
         let r = rates();
-        assert_eq!(r, vec![(Rarity::Common, 640), (Rarity::Rare, 250), (Rarity::Epic, 100), (Rarity::Legendary, 10)]);
-        assert_eq!(roll_rarity(&r, 0.639, 0.0, Rarity::Common), (Rarity::Common, false));
-        assert_eq!(roll_rarity(&r, 0.64, 0.0, Rarity::Common), (Rarity::Rare, false));
-        assert_eq!(roll_rarity(&r, 0.989, 0.0, Rarity::Common), (Rarity::Epic, false));
-        assert_eq!(roll_rarity(&r, 0.99, 0.0, Rarity::Common), (Rarity::Legendary, false));
-        // Bảo hiểm Hiếm+ chia 25:10:1; bảo hiểm Sử thi+ chia 10:1.
-        assert_eq!(roll_rarity(&r, 0.1, 0.98, Rarity::Rare), (Rarity::Legendary, true));
-        assert_eq!(roll_rarity(&r, 0.1, 0.9, Rarity::Epic), (Rarity::Epic, true));
-        assert_eq!(roll_rarity(&r, 0.1, 0.95, Rarity::Epic), (Rarity::Legendary, true));
-        // Hai model chia đều 1%: mỗi model 0.5%.
+        assert_eq!(r, vec![(Rarity::Common, 620), (Rarity::Rare, 250), (Rarity::Epic, 100), (Rarity::Legendary, 30)]);
+        assert_eq!(roll_rarity(&r, 0.619, 0.0, Rarity::Common), (Rarity::Common, false));
+        assert_eq!(roll_rarity(&r, 0.62, 0.0, Rarity::Common), (Rarity::Rare, false));
+        assert_eq!(roll_rarity(&r, 0.969, 0.0, Rarity::Common), (Rarity::Epic, false));
+        assert_eq!(roll_rarity(&r, 0.97, 0.0, Rarity::Common), (Rarity::Legendary, false));
+        // Bảo hiểm Hiếm+ chia 25:10:3; bảo hiểm Sử thi+ chia 10:3.
+        assert_eq!(roll_rarity(&r, 0.1, 0.92, Rarity::Rare), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.93, Rarity::Rare), (Rarity::Legendary, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.76, Rarity::Epic), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.78, Rarity::Epic), (Rarity::Legendary, true));
+        // Trong hạng Huyền thoại: 0.5% · 0.5% · 2%.
         let x = |v: f64| { let l: Vec<_> = legendary().collect(); pick_weighted(&l, v).unwrap().id };
-        assert_eq!((x(0.49), x(0.5)), ("model.gothic-aristocrat", "model.pink-angel"));
-        assert!(legendary().all(|(_, p)| pct(p) == 0.5));
+        assert_eq!((x(0.16), x(0.17), x(0.33), x(0.34)), ("model.gothic-aristocrat", "model.pink-angel", "model.pink-angel", "model.snow-lolita"));
+        assert_eq!(legendary().map(|(_, p)| pct(p)).collect::<Vec<_>>(), vec![0.5, 0.5, 2.0]);
     }
 
     #[test]

@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-10-21
+
+### Added
+- **❄️ Snow Lolita**, a third Live2D model in the Collection: a silver-haired
+  cat girl in glasses and a white fur coat of snowflakes and ice crystals, with
+  smile, sad, angry, surprised, shy and wink expressions and her own idle, nod,
+  tilt, shake and happy motions. She costs 5000 🍬, half the other models, and
+  downloads once unlocked.
+
+### Changed
+- **Candy Capsule rates are now 62 / 25 / 10 / 3.** Snow Lolita has her own 2%
+  Legendary rate (cheaper model, easier to win); Gothic Aristocrat and Pink
+  Angel still share 1%. The extra comes out of the Common share, so Rare and
+  Epic stay the same.
+
 ## [0.9.6] - 2026-10-21
 
 ### Added

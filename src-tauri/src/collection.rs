@@ -514,6 +514,19 @@ pub const CATALOG: &[Item] = &[
         ],
         asset: "pink-angel",
     },
+    Item {
+        id: "model.snow-lolita",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 5000,
+        name: ["Snow Lolita", "スノー・ロリータ", "Snow Lolita"],
+        desc: [
+            "Cô gái tai mèo tóc bạch kim đeo kính, áo lông trắng điểm bông tuyết và pha lê băng, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "雪の結晶と氷のクリスタルで飾った白いファーコートの、眼鏡をかけた銀髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A silver-haired cat girl in glasses and a white fur coat of snowflakes and ice crystals becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "snow-lolita",
+    },
 ];
 
 /// Mọi món: CATALOG ở trên + các bộ Miu (miu_sets.rs). Dùng hàm này thay vì CATALOG.

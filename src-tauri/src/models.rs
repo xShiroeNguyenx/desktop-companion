@@ -69,6 +69,15 @@ pub const BUILTIN: &[Builtin] = &[
         item: Some("model.pink-angel"),
         preview: Some("media/model-previews/pink-angel.png"),
     },
+    Builtin {
+        id: "snow-lolita",
+        dir: "Snow_Lolita",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Snow Lolita",
+        desc: "Cô gái tai mèo áo lông bông tuyết ❄️",
+        item: Some("model.snow-lolita"),
+        preview: Some("media/model-previews/snow-lolita.png"),
+    },
 ];
 
 pub fn builtin(id: &str) -> Option<&'static Builtin> {
@@ -200,12 +209,12 @@ mod tests {
         assert_eq!(effective("custom-9", &c, &mine, &none), DEFAULT_ID);
         assert_eq!(effective("nope", &c, &[], &none), DEFAULT_ID);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), DEFAULT_ID, "đã tải (máy khác chép sang) nhưng chưa mua");
-        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel", "snow-lolita"]);
         c.owned.push("model.gothic-aristocrat".into());
         assert_eq!(effective("gothic-aristocrat", &c, &[], &none), DEFAULT_ID, "đã mua nhưng chưa tải xong");
-        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel", "snow-lolita"]);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), "gothic-aristocrat");
-        assert_eq!(locked(&c, &got), vec!["pink-angel"]);
+        assert_eq!(locked(&c, &got), vec!["pink-angel", "snow-lolita"]);
     }
 
     #[test]
