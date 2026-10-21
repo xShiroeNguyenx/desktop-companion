@@ -16,6 +16,12 @@
   let todayKey = selected;
 
   const S = () => C.strings(data.lang);
+  // Mốc "nhắc trước" đang chọn ở ô thêm việc; mở ô thì về mặc định 1 ngày.
+  let remindPick = [1];
+  // Việc đang sửa (null = ô đang thêm việc mới).
+  let editing = null;
+  // Việc đang hiện trong khung ngày, theo id (để bấm vào thì sửa).
+  let shown = {};
   const p2 = (x) => String(x).padStart(2, '0');
 
   function el(tag, cls, text) {
@@ -49,6 +55,8 @@
     $('addBtn').title = s.addTitle;
     $('addText').placeholder = s.placeholder;
     $('addSave').textContent = s.save;
+    $('remindLbl').textContent = '🔔 ' + s.remind;
+    renderChips();
     const week = $('week');
     week.textContent = '';
     s.weekdays.forEach((w, i) => week.append(el('div', i === 6 ? 'sun' : null, w)));
@@ -102,6 +110,7 @@
     const list = $('infoTasks');
     list.textContent = '';
     const due = byDay[selected] || [];
+    shown = Object.fromEntries(due.map((t) => [t.id, t]));
     // Miu mini: ngày lễ / sinh nhật thì reo, có việc quá hạn thì giật mình,
     // có việc tới hạn thì "cố lên", còn lại nháy mắt.
     const face = fest.length ? 'cheer' : due.some((t) => t.over) ? 'surprised' : due.length ? 'fight' : 'wink';
@@ -113,12 +122,23 @@
     for (const t of due.slice(0, room)) {
       const b = el('button', t.over ? 'task over' : 'task');
       b.type = 'button';
+      b.dataset.id = t.id;
       const at = new Date(t.due);
       b.append(el('span', 't', `${p2(at.getHours())}:${p2(at.getMinutes())}`), el('span', 'x', t.text));
-      b.title = t.over ? `${t.text} (${s.overdue})` : t.text;
+      b.title = (t.over ? `${t.text} (${s.overdue})` : t.text) + '\n✏️ ' + s.edit;
+      if (t.remind.length && !t.over) {
+        b.append(el('span', 'bell', '🔔'));
+        b.title += '\n🔔 ' + C.remindTitle(t.remind, data.lang);
+      }
       list.append(b);
     }
-    if (due.length > room) list.append(el('div', 'muted', C.fill(s.more, { n: due.length - room })));
+    if (due.length > room) {
+      // Còn việc không vừa khung: bấm để xem đủ trong bảng Công việc.
+      const more = el('button', 'moreBtn', C.fill(s.more, { n: due.length - room }));
+      more.type = 'button';
+      more.title = s.openTasks;
+      list.append(more);
+    }
   }
 
   function render() {
@@ -142,6 +162,8 @@
     data = v;
     // Skin màu chọn trong Bộ sưu tập (app/skins.css).
     document.body.dataset.skin = data.skin || 'lavender';
+    // Trang trí trên mép thẻ (widget-deco.css), cũng chọn trong Bộ sưu tập.
+    window.WidgetDeco.mount($('wrap'), data.deco);
     render();
   }
 
@@ -158,13 +180,48 @@
     if (text) showMsg.timer = setTimeout(() => { m.textContent = ''; }, 4000);
   }
 
+  function renderChips() {
+    const box = $('remindChips');
+    box.textContent = '';
+    for (const d of C.REMIND_CHOICES) {
+      const b = el('button', remindPick.includes(d) ? 'chip on' : 'chip', C.remindLabel(d, data.lang));
+      b.type = 'button';
+      b.dataset.d = String(d);
+      box.append(b);
+    }
+  }
+
   function openAdd(on) {
+    editing = null;
     $('addRow').hidden = !on;
+    $('remindRow').hidden = !on;
+    if (on) {
+      remindPick = [1];
+      renderChips();
+    }
     $('addBtn').textContent = on ? S().cancel : S().add;
     if (on) {
       $('addText').value = '';
       $('addText').focus();
     }
+  }
+
+  /** Mở ô sửa cho một việc đã có: điền sẵn tên, giờ, các mốc nhắc trước. */
+  function openEdit(task) {
+    openAdd(true);
+    editing = task;
+    $('addText').value = task.text;
+    $('addTime').value = C.hhmm(task.due);
+    remindPick = [...task.remind];
+    renderChips();
+  }
+
+  async function saveEdit(task, text, due) {
+    const ch = C.editChanges(task, text, due, remindPick);
+    if (ch.text != null) await invoke('tasks_set_text', { id: task.id, text: ch.text });
+    if (ch.due != null) await invoke('tasks_set_due', { id: task.id, dueAt: String(ch.due) });
+    // Đổi giờ thì Rust xoá các mốc đã nhắc; gửi lại mốc nhắc trước cho chắc.
+    if (ch.remind || ch.due != null) await invoke('tasks_set_remind', { id: task.id, days: remindPick });
   }
 
   async function saveTask() {
@@ -180,19 +237,26 @@
     }
     $('addSave').disabled = true;
     try {
+      if (editing) {
+        await saveEdit(editing, text, due);
+        openAdd(false);
+        showMsg(S().edited);
+        return;
+      }
       const t = await invoke('tasks_add', { text, note: '', source: 'manual' });
       await invoke('tasks_set_due', { id: t.id, dueAt: String(due) });
+      if (remindPick.length) await invoke('tasks_set_remind', { id: t.id, days: remindPick });
       openAdd(false);
       showMsg(S().saved);
     } catch (e) {
       // Báo nguyên văn lỗi từ Rust (vd. hạn chót không hợp lệ), đừng im lặng.
       showMsg(String(e), true);
-      log('[cal] thêm việc: ' + e);
+      log('[cal] lưu việc: ' + e);
     } finally {
       $('addSave').disabled = false;
+      // tasks.json đổi → Rust gửi "tasks-refresh"; vẽ lại luôn cho chắc.
+      loadTasks();
     }
-    // tasks.json đổi → Rust gửi "tasks-refresh"; vẽ lại luôn cho chắc.
-    loadTasks();
   }
 
   // ─── Kéo / bấm ─────────────────────────────────────────────────────────────
@@ -217,7 +281,10 @@
     render();
   });
   $('infoTasks').addEventListener('click', (e) => {
-    if (e.target.closest('.task')) invoke('open_tasks').catch((err) => log('[cal] open_tasks: ' + err));
+    // Bấm một việc: sửa ngay trong khung (tên, giờ, nhắc trước).
+    const b = e.target.closest('.task');
+    if (b && shown[b.dataset.id]) openEdit(shown[b.dataset.id]);
+    if (e.target.closest('.moreBtn')) invoke('open_tasks').catch((err) => log('[cal] open_tasks: ' + err));
   });
   $('prevBtn').addEventListener('click', () => {
     const p = C.addMonths(view.year, view.month, -1);
@@ -239,6 +306,13 @@
   }, { passive: true });
   $('addBtn').addEventListener('click', () => openAdd($('addRow').hidden));
   $('addSave').addEventListener('click', saveTask);
+  $('remindChips').addEventListener('click', (e) => {
+    const b = e.target.closest('.chip');
+    if (!b) return;
+    const d = Number(b.dataset.d);
+    remindPick = remindPick.includes(d) ? remindPick.filter((x) => x !== d) : [...remindPick, d];
+    renderChips();
+  });
   $('addText').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') saveTask();
     if (e.key === 'Escape') openAdd(false);

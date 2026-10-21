@@ -31,7 +31,7 @@
       color: var(--w-ink);
       position: relative;
       height: 100%;
-      padding: 8px 12px 8px;
+      padding: 10px 12px 8px;
       border-radius: 18px;
       border: 1px solid var(--w-line);
       background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b));
@@ -44,12 +44,12 @@
     }
     @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
     button { font: inherit; color: inherit; }
-    /* Miu mờ phía sau giờ, như hình nền (giống lịch ghim). */
+    /* Miu mờ phía sau giờ, như hình nền. Cùng độ mờ với lịch và thời tiết ghim. */
     .miu {
       position: absolute; right: 2px; top: 2px; z-index: 0;
       height: 82px; width: 76px;
       object-fit: contain; object-position: right top;
-      opacity: 0.28; pointer-events: none;
+      opacity: 0.45; pointer-events: none;
     }
     .card > :not(.miu):not(.tools) { position: relative; z-index: 1; }
 
@@ -94,6 +94,7 @@
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
   </style>
   <link rel="stylesheet" href="skins.css" />
+  <link rel="stylesheet" href="widget-deco.css" />
 </head>
 <body>
   <div class="wrap" id="wrap">
@@ -111,6 +112,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/widget-deco.js"></script>
   <script src="js/calendar-core.js"></script>
   <script src="js/clock-core.js"></script>
   <script src="js/clock-pin.js"></script>

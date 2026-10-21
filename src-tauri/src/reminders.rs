@@ -173,6 +173,51 @@ pub fn reminder_due(now: i64, due: i64, created: i64, reminded: u8, offset_min: 
     (stage.rank() > reminded && start >= created).then_some(stage)
 }
 
+// ─── Nhắc trước N ngày ───────────────────────────────────────────────────────
+
+/// Nhắc sớm nhất bao nhiêu ngày trước hạn.
+pub const MAX_REMIND_DAYS: u32 = 60;
+
+/// Làm sạch danh sách "nhắc trước N ngày": 1..=60, không trùng, xa trước gần
+/// sau, tối đa 5 mốc.
+pub fn clean_remind_days(days: &[u32]) -> Vec<u32> {
+    let mut v: Vec<u32> = days.iter().copied().filter(|d| (1..=MAX_REMIND_DAYS).contains(d)).collect();
+    v.sort_unstable_by(|a, b| b.cmp(a));
+    v.dedup();
+    v.truncate(5);
+    v
+}
+
+/// Mốc "nhắc trước `days` ngày": 7 giờ sáng (giờ địa phương) của ngày cách
+/// ngày hạn `days` ngày.
+pub fn early_start(due: i64, days: u32, offset_min: i32) -> i64 {
+    local_ms(local_day(due, offset_min) - days as i64, MORNING_HOUR, 0, offset_min)
+}
+
+/// Mốc nhắc sớm cần nói bây giờ (số ngày), nếu có. Chỉ trước khi các mốc thường
+/// (hôm nay / sắp tới / tới hạn) bắt đầu. Lỡ nhiều mốc (máy tắt) thì chỉ nói mốc
+/// gần hạn nhất; mốc bắt đầu trước lúc tạo việc thì bỏ, như `reminder_due`.
+pub fn early_due(now: i64, due: i64, created: i64, days: &[u32], said: &[u32], offset_min: i32) -> Option<u32> {
+    if now >= due || stage_at(now, due, offset_min).is_some() {
+        return None;
+    }
+    let latest = days
+        .iter()
+        .copied()
+        .filter(|&d| d >= 1)
+        .filter(|&d| {
+            let start = early_start(due, d, offset_min);
+            start <= now && start >= created
+        })
+        .min()?;
+    (!said.contains(&latest)).then_some(latest)
+}
+
+/// Còn bao nhiêu ngày (theo lịch địa phương) tới ngày hạn.
+pub fn days_left(now: i64, due: i64, offset_min: i32) -> i64 {
+    local_day(due, offset_min) - local_day(now, offset_min)
+}
+
 // ─── Nhắc sức khoẻ ───────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -334,6 +379,35 @@ mod tests {
             .map(|s| s.rank())
             .collect();
         assert_eq!(r, vec![1, 2, 3, 4, 6]);
+    }
+
+    #[test]
+    fn remind_days_are_cleaned() {
+        assert_eq!(clean_remind_days(&[1, 7, 7, 0, 99, 10]), vec![10, 7, 1]);
+        assert_eq!(clean_remind_days(&[1, 2, 3, 5, 7, 10]), vec![10, 7, 5, 3, 2]);
+        assert!(clean_remind_days(&[]).is_empty());
+    }
+
+    #[test]
+    fn early_reminders_fire_on_their_morning_once() {
+        let due = vn(2026, 11, 6, 8, 0);
+        let created = vn(2026, 10, 21, 9, 0);
+        let days = [10, 7, 1];
+        assert_eq!(early_due(vn(2026, 10, 27, 6, 59), due, created, &days, &[], VN), None);
+        assert_eq!(early_due(vn(2026, 10, 27, 7, 0), due, created, &days, &[], VN), Some(10));
+        assert_eq!(early_due(vn(2026, 10, 28, 12, 0), due, created, &days, &[10], VN), None);
+        assert_eq!(early_due(vn(2026, 10, 30, 7, 0), due, created, &days, &[10], VN), Some(7));
+        // Máy tắt mấy hôm: chỉ nói mốc gần hạn nhất.
+        assert_eq!(early_due(vn(2026, 11, 5, 9, 0), due, created, &days, &[], VN), Some(1));
+        assert_eq!(days_left(vn(2026, 11, 5, 9, 0), due, VN), 1);
+        // Tới ngày hạn: mốc thường lo, nhắc sớm thôi.
+        assert_eq!(early_due(vn(2026, 11, 6, 7, 30), due, created, &days, &[], VN), None);
+        assert_eq!(early_due(due + HOUR_MS, due, created, &days, &[], VN), None);
+        // Mốc trước lúc tạo việc thì bỏ, mốc sau vẫn nhắc.
+        let late = vn(2026, 10, 29, 10, 0);
+        assert_eq!(early_due(vn(2026, 10, 29, 11, 0), due, late, &days, &[], VN), None);
+        assert_eq!(early_due(vn(2026, 10, 30, 7, 0), due, late, &days, &[], VN), Some(7));
+        assert_eq!(early_due(vn(2026, 10, 30, 7, 0), due, created, &[], &[], VN), None);
     }
 
     #[test]

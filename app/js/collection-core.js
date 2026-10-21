@@ -4,11 +4,11 @@
 // đụng DOM; dùng trong cửa sổ (window.CollectionCore) và node --test.
 (function (root) {
   /** Thứ tự tab. Nhóm không có món thì không hiện. */
-  const CATS = ['skin', 'effect', 'side_set', 'model', 'miu_set', 'bubble', 'flower', 'line_pack'];
+  const CATS = ['skin', 'widget_deco', 'effect', 'side_set', 'model', 'miu_set', 'bubble', 'flower', 'line_pack'];
   /** Icon trên tab. */
-  const TAB_ICONS = { skin: '🎨', effect: '✨', side_set: '🖼️', miu_set: '🐰', bubble: '💬', flower: '🌸', line_pack: '📜', model: '🎭' };
+  const TAB_ICONS = { skin: '🎨', widget_deco: '🎀', effect: '✨', side_set: '🖼️', miu_set: '🐰', bubble: '💬', flower: '🌸', line_pack: '📜', model: '🎭' };
   // 'model': model đang dùng nằm ở Settings.pet_model, Rust đánh dấu sẵn `selected`.
-  const SELECTABLE = ['skin', 'side_set', 'miu_set', 'bubble', 'flower', 'model'];
+  const SELECTABLE = ['skin', 'widget_deco', 'side_set', 'miu_set', 'bubble', 'flower', 'model'];
 
   const T = {
     vi: {
@@ -18,7 +18,7 @@
       howTitle: 'Cách nhận kẹo', earn: ['✅ Hoàn thành việc', '🍅 Xong phiên Tập trung', '🎮 Thắng mini game', '💗 Chat & vuốt đầu', '🏆 Đạt cột mốc'],
       noMoney: 'Không thể mua kẹo bằng tiền thật.',
       howTo: 'Kẹo đến từ việc đã xong, phiên Tập trung, chat, vuốt đầu và thắng game (có trần mỗi ngày). Mỗi cột mốc thân thiết +200 🍬. Không bán, không mua bằng tiền thật.',
-      tabs: { skin: 'Skin widget', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model' },
+      tabs: { skin: 'Skin widget', widget_deco: 'Trang trí', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model' },
       rarity: { common: 'Thường', rare: 'Hiếm', epic: 'Sử thi', legendary: 'Huyền thoại' },
       using: 'Đang dùng', use: 'Dùng', buy: 'Đổi {price} 🍬', short: '🍬 Thiếu {n}', on: 'Đang bật', off: 'Bật',
       preview: 'Xem thử', free: 'Có sẵn', empty: 'Chưa có món nào ở nhóm này.', close: 'Đóng',
@@ -61,7 +61,7 @@
       howTitle: 'キャンディのもらい方', earn: ['✅ タスク完了', '🍅 集中セッション', '🎮 ミニゲーム勝利', '💗 チャット・なでなで', '🏆 節目の達成'],
       noMoney: 'キャンディはお金では買えません。',
       howTo: 'キャンディはタスク完了・集中セッション・チャット・なでなで・ゲーム勝利でもらえます（1日の上限あり）。なかよし度の節目ごとに +200 🍬。販売も課金もありません。',
-      tabs: { skin: 'ウィジェットスキン', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル' },
+      tabs: { skin: 'ウィジェットスキン', widget_deco: 'デコ', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル' },
       rarity: { common: 'ノーマル', rare: 'レア', epic: 'エピック', legendary: 'レジェンド' },
       using: '使用中', use: '使う', buy: '{price} 🍬 で交換', short: 'あと {n} 🍬', on: 'オン', off: 'オンにする',
       preview: 'プレビュー', free: '最初から', empty: 'このグループにはまだアイテムがありません。', close: '閉じる',
@@ -104,7 +104,7 @@
       howTitle: 'How to earn candy', earn: ['✅ Finish tasks', '🍅 Focus sessions', '🎮 Win mini games', '💗 Chat & headpats', '🏆 Reach milestones'],
       noMoney: 'Candy can never be bought with real money.',
       howTo: 'Candy comes from finished tasks, focus sessions, chat, headpats and game wins (daily caps apply). Every friendship milestone adds +200 🍬. Never sold, never bought with real money.',
-      tabs: { skin: 'Widget skins', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models' },
+      tabs: { skin: 'Widget skins', widget_deco: 'Decor', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models' },
       rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
       using: 'In use', use: 'Use', buy: 'Trade {price} 🍬', short: '{n} 🍬 short', on: 'On', off: 'Turn on',
       preview: 'Preview', free: 'Included', empty: 'Nothing in this group yet.', close: 'Close',

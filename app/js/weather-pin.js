@@ -82,6 +82,8 @@
     receivedAt = Date.now();
     // Skin màu chọn trong Bộ sưu tập (app/skins.css).
     document.body.dataset.skin = data.skin || 'lavender';
+    // Trang trí trên mép thẻ (widget-deco.css), cũng chọn trong Bộ sưu tập.
+    window.WidgetDeco.mount($('wrap'), data.deco);
     render();
   }
 

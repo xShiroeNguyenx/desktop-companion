@@ -27,7 +27,7 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 /// Kích thước widget ghim (logical px) theo cỡ. ĐỒNG BỘ với bố cục
 /// weather-pin.html (cỡ lớn có thêm tên thành phố, 3 ngày tới, giờ cập nhật).
 fn pin_size(size: &str) -> (f64, f64) {
-    if size == "large" { (270.0, 312.0) } else { (232.0, 172.0) }
+    (crate::pin_widget::WIDTH, if size == "large" { 312.0 } else { 172.0 })
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -197,6 +197,7 @@ pub fn view(app: &AppHandle) -> Value {
         "me": a.me,
         // Skin màu + thư mục ảnh Miu của widget ghim (Bộ sưu tập).
         "skin": crate::collection::effective_skin(&col),
+        "deco": crate::collection::effective_widget_deco(&col),
         "miuDir": crate::collection::effective_miu_dir(&col),
         "miuExt": crate::collection::effective_miu_ext(&col),
     })
@@ -459,5 +460,6 @@ mod tests {
     fn pin_sizes() {
         assert!(pin_size("large").1 > pin_size("small").1);
         assert_eq!(pin_size("lạ"), pin_size("small"));
+        assert_eq!(pin_size("large").0, crate::pin_widget::WIDTH, "cùng bề rộng với lịch, đồng hồ");
     }
 }

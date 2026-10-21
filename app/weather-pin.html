@@ -2,8 +2,8 @@
 <!--
   Widget thời tiết ghim trên desktop (PLAN.md 13.7b, weather_net.rs →
   "pin-weather"). Cùng cách với tờ note task: cửa sổ trong suốt, kéo ở đâu cũng
-  được, không luôn-nổi trừ khi bật 📍. Có Miu ở góc như thẻ dự báo (không dùng
-  đầu ghim mặt nhân vật). Kích thước cửa sổ: weather_net::pin_size.
+  được, không luôn-nổi trừ khi bật 📍. Miu chìm mờ ở góc trên phải như đồng hồ
+  ghim. Kích thước cửa sổ: weather_net::pin_size (cùng bề rộng với lịch, đồng hồ).
 -->
 <html lang="vi">
 <head>
@@ -43,26 +43,27 @@
       display: flex; flex-direction: column; gap: 4px;
       overflow: hidden;
     }
-    .card.sky-sun { --w-sky: rgba(160, 100, 70, 0.3); }
-    .card.sky-rain { --w-sky: rgba(20, 50, 110, 0.38); }
-    .card.sky-night { --w-sky: rgba(8, 8, 46, 0.45); }
+    /* Tint nhẹ: vẫn thấy trời mà màu thẻ không lệch khỏi lịch, đồng hồ cùng skin. */
+    .card.sky-sun { --w-sky: rgba(255, 190, 90, 0.1); }
+    .card.sky-rain { --w-sky: rgba(20, 50, 110, 0.16); }
+    .card.sky-night { --w-sky: rgba(8, 8, 46, 0.2); }
     .card.old { opacity: 0.72; }
     @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
 
     .city { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 4px; }
     .ago { font-size: 10.5px; color: var(--w-ink-soft); margin-top: auto; }
-    /* Hàng nhiệt độ: icon + số bên trái, Miu bên phải (không đè lên chữ nào). */
     .now { display: flex; align-items: center; gap: 6px; min-height: 64px; }
     .now .ic { font-size: 36px; line-height: 1; }
     .now .t { font: 800 36px/1 "Segoe UI", sans-serif; letter-spacing: -1px; white-space: nowrap; }
     .now .t sup { font-size: 14px; vertical-align: top; position: relative; top: 4px; margin-left: 1px; }
-    .now .miu {
-      margin-left: auto;
-      width: 70px; height: 70px; flex: 0 0 auto;
-      object-fit: contain; object-position: right bottom;
-      pointer-events: none;
-      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+    /* Miu mờ phía sau, như hình nền (giống đồng hồ ghim). */
+    .miu {
+      position: absolute; right: 2px; top: 2px; z-index: 0;
+      height: 82px; width: 76px;
+      object-fit: contain; object-position: right top;
+      opacity: 0.45; pointer-events: none;
     }
+    .card > :not(.miu):not(.tools) { position: relative; z-index: 1; }
     .meta { font-size: 12px; color: var(--w-ink); line-height: 1.45; }
     .meta b { color: var(--w-ink); }
     .rain { color: #8fc0ff; font-weight: 700; }
@@ -73,10 +74,10 @@
     .days .lo { color: var(--w-ink-soft); }
     .empty { font-size: 12px; color: var(--w-ink-soft); line-height: 1.4; }
     .small .city, .small .ago, .small .days { display: none; }
-    .large .now .miu { width: 84px; height: 84px; }
+    .large .miu { height: 104px; width: 96px; }
 
     .tools {
-      position: absolute; right: 6px; bottom: 6px;
+      position: absolute; right: 8px; bottom: 8px; z-index: 2;
       display: flex; gap: 4px;
       opacity: 0; transition: opacity 0.15s;
     }
@@ -91,14 +92,15 @@
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
   </style>
   <link rel="stylesheet" href="skins.css" />
+  <link rel="stylesheet" href="widget-deco.css" />
 </head>
 <body>
   <div class="wrap" id="wrap">
     <div class="card small" id="card">
+      <img class="miu" id="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
       <div class="city" id="city"></div>
       <div class="now">
         <span class="ic" id="ic"></span><span class="t" id="t"></span>
-        <img class="miu" id="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
       </div>
       <div class="meta" id="meta"></div>
       <div class="days" id="days"></div>
@@ -112,6 +114,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/widget-deco.js"></script>
   <script src="js/weather-core.js"></script>
   <script src="js/weather-pin.js"></script>
 </body>

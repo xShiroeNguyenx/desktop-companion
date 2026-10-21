@@ -37,6 +37,10 @@ impl Default for PinState {
     }
 }
 
+/// Bề rộng chung (logical px) của mọi widget ghim (lịch, đồng hồ, thời tiết):
+/// "Xếp gọn" dồn chúng thành một cột thẳng cả hai mép. Chỉ chiều cao khác nhau.
+pub const WIDTH: f64 = 300.0;
+
 pub struct Spec {
     /// Phải bắt đầu bằng "pin-" (capability glob) và không phải "pin-<số>" (tờ note task).
     pub label: &'static str,

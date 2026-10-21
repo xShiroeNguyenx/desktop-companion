@@ -211,6 +211,9 @@
     .mini .cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; position: relative; z-index: 1; }
     .mini .cells i { height: 9px; border-radius: 3px; }
     .mini img { position: absolute; right: -4px; bottom: -6px; height: 70%; opacity: 0.35; }
+    /* Trang trí widget: widget thu nhỏ + lớp .deco (widget-deco.css) phủ sát mép thẻ. */
+    .dmini { position: relative; width: 80%; margin-bottom: 8px; --deco-inset: 0; --deco-r: 12px; --ds: 0.8; }
+    .dmini .mini { width: 100%; margin-bottom: 0; }
     .badge {
       position: absolute; left: 8px; top: 8px; z-index: 2;
       display: flex; align-items: center; gap: 4px;
@@ -662,6 +665,7 @@
   </style>
   <!-- Giao diện theo bộ nhân vật (js/theme-apply.js đặt body[data-theme]). -->
   <link rel="stylesheet" href="theme-pages.css" />
+  <link rel="stylesheet" href="widget-deco.css" />
 </head>
 <body>
   <div class="window">
@@ -757,6 +761,7 @@
   <script src="js/tauri-api.js"></script>
   <script src="js/theme-apply.js"></script>
   <script src="js/miu-skin.js"></script>
+  <script src="js/widget-deco.js"></script>
   <script src="js/collection-core.js"></script>
   <script src="js/gacha-fx.js"></script>
   <script src="js/collection.js"></script>

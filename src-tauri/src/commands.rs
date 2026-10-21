@@ -192,6 +192,8 @@ pub fn tasks_add(app: AppHandle, text: String, note: String, source: String) -> 
             pin_top: false,
             due_at: String::new(),
             reminded: 0,
+            remind_days: Vec::new(),
+            early_said: Vec::new(),
         };
         tasks.insert(0, task.clone());
         task
@@ -226,11 +228,26 @@ pub fn tasks_set_due(app: AppHandle, id: String, due_at: String) -> Result<(), S
             if t.due_at != due_at {
                 t.due_at = due_at.clone();
                 t.reminded = 0;
+                t.early_said.clear();
             }
         }
     })?;
     pins::refresh(&app, &id);
     Ok(())
+}
+
+/// Đặt các mốc "nhắc trước N ngày" (lịch ghim). Đổi thì nhắc sớm lại từ đầu.
+#[tauri::command]
+pub fn tasks_set_remind(app: AppHandle, id: String, days: Vec<u32>) -> Result<(), String> {
+    let days = crate::reminders::clean_remind_days(&days);
+    store::update_tasks(&app, |tasks| {
+        if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+            if t.remind_days != days {
+                t.remind_days = days.clone();
+                t.early_said.clear();
+            }
+        }
+    })
 }
 
 /// Mở link (trong nội dung / ghi chú task) bằng trình duyệt mặc định.
@@ -278,6 +295,22 @@ pub fn game_result(app: AppHandle, won: bool) {
 pub fn notify_test(app: AppHandle) -> Result<(), String> {
     let a = persona::address(&store::load_settings(&app));
     notify::toast(&app, &crate::lines::line(crate::lines::Key::ToastTest, &a, &[]))
+}
+
+/// Đổi nội dung việc (sửa sự kiện trên lịch ghim). Rỗng thì từ chối, dài quá thì cắt.
+#[tauri::command]
+pub fn tasks_set_text(app: AppHandle, id: String, text: String) -> Result<(), String> {
+    let text: String = text.trim().chars().take(200).collect();
+    if text.is_empty() {
+        return Err("Nội dung việc không được để trống.".into());
+    }
+    store::update_tasks(&app, |tasks| {
+        if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+            t.text = text;
+        }
+    })?;
+    pins::refresh(&app, &id);
+    Ok(())
 }
 
 /// Sửa ghi chú của một công việc.

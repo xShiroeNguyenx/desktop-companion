@@ -1,0 +1,204 @@
+/*
+  Trang trí trên mép 3 widget ghim (calendar-pin, clock-pin, weather-pin) và thẻ
+  xem trước trong Bộ sưu tập. js/widget-deco.js gắn [data-deco="<asset>"] lên
+  phần tử chủ và thêm lớp .deco gồm 8 ô <i class="d1…d8">; mỗi kiểu dưới đây chỉ
+  vẽ những ô nó cần. Phải có một khối [data-deco="<asset>"] cho MỌI món
+  WidgetDeco trong collection.rs CATALOG — test every_widget_deco_exists_in_css.
+
+  Lớp .deco nằm TRÊN thẻ, không nhận chuột. Thẻ cách mép cửa sổ 6px (.wrap) nên
+  đồ trang trí chỉ được thò ra ngoài thẻ tối đa 6px, và chừa góc dưới phải cho
+  các nút 📍 ✕.
+
+  --deco-inset : khoảng từ phần tử chủ tới mép thẻ (widget 6px, xem trước 0)
+  --deco-r     : bo góc của thẻ
+  --ds         : tỉ lệ cỡ đồ trang trí (thẻ xem trước nhỏ hơn)
+*/
+
+.deco {
+  display: none;
+  position: absolute;
+  inset: var(--deco-inset, 6px);
+  z-index: 3;
+  pointer-events: none;
+  border-radius: var(--deco-r, 18px);
+}
+[data-deco]:not([data-deco="none"]) > .deco { display: block; }
+.deco i { position: absolute; display: block; font-style: normal; line-height: 1; }
+
+/* ─── 🎀 Nơ ruy băng ─────────────────────────────────────────────────────── */
+[data-deco="ribbon"] .d1,
+[data-deco="ribbon"] .d2 {
+  top: -6px;
+  font-size: calc(20px * var(--ds, 1));
+  filter: drop-shadow(0 2px 2px rgba(60, 10, 40, 0.35));
+}
+[data-deco="ribbon"] .d1 { left: -5px; transform: rotate(-20deg); }
+[data-deco="ribbon"] .d2 { right: -5px; transform: rotate(20deg); }
+[data-deco="ribbon"] .d1::before,
+[data-deco="ribbon"] .d2::before { content: "🎀"; }
+
+/* ─── Băng dính washi ────────────────────────────────────────────────────── */
+[data-deco="tape"] .d1 {
+  top: -6px; left: 50%;
+  width: calc(64px * var(--ds, 1)); height: calc(16px * var(--ds, 1));
+  transform: translateX(-50%) rotate(-3deg);
+  background: repeating-linear-gradient(45deg, rgba(255, 170, 205, 0.78) 0 6px, rgba(255, 245, 250, 0.72) 6px 12px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+[data-deco="tape"] .d2 {
+  left: -6px; bottom: 10px;
+  width: calc(40px * var(--ds, 1)); height: calc(13px * var(--ds, 1));
+  transform: rotate(48deg);
+  transform-origin: left center;
+  background: repeating-linear-gradient(90deg, rgba(150, 205, 255, 0.78) 0 5px, rgba(245, 252, 255, 0.72) 5px 10px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* ─── 🌸 Hoa anh đào: chùm hoa ở góc + cánh hoa rơi ─────────────────────────── */
+[data-deco="sakura"] .d1,
+[data-deco="sakura"] .d2,
+[data-deco="sakura"] .d3 { filter: drop-shadow(0 1px 2px rgba(120, 20, 60, 0.3)); }
+[data-deco="sakura"] .d1 { left: -5px; top: -6px; font-size: calc(20px * var(--ds, 1)); transform: rotate(-12deg); }
+[data-deco="sakura"] .d2 { left: calc(15px * var(--ds, 1)); top: -5px; font-size: calc(12px * var(--ds, 1)); transform: rotate(18deg); }
+[data-deco="sakura"] .d3 { left: -5px; bottom: -5px; font-size: calc(15px * var(--ds, 1)); }
+[data-deco="sakura"] .d1::before,
+[data-deco="sakura"] .d2::before,
+[data-deco="sakura"] .d3::before { content: "🌸"; }
+[data-deco="sakura"] .d4,
+[data-deco="sakura"] .d5,
+[data-deco="sakura"] .d6 {
+  top: -4%;
+  width: 8px; height: 6px;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(135deg, #ffd6e8, #ff9ec7);
+  opacity: 0.75;
+  animation: deco-fall 11s linear infinite;
+}
+[data-deco="sakura"] .d4 { left: 22%; }
+[data-deco="sakura"] .d5 { left: 58%; animation-delay: -4s; animation-duration: 13s; }
+[data-deco="sakura"] .d6 { left: 84%; animation-delay: -8s; animation-duration: 10s; }
+
+/* ─── Viền ren đính ngọc trai ────────────────────────────────────────────── */
+[data-deco="lace"] .d1,
+[data-deco="lace"] .d3 {
+  left: 16px; right: 16px; height: 8px;
+  filter: drop-shadow(0 1px 1px rgba(80, 40, 80, 0.3));
+}
+[data-deco="lace"] .d1 {
+  top: -5px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)) 0 0 / 100% 2px no-repeat,
+    radial-gradient(circle at 5px 2px, rgba(255, 255, 255, 0.95) 4px, transparent 4.5px) 0 0 / 10px 8px repeat-x;
+}
+[data-deco="lace"] .d3 {
+  bottom: -5px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)) 0 100% / 100% 2px no-repeat,
+    radial-gradient(circle at 5px 6px, rgba(255, 255, 255, 0.95) 4px, transparent 4.5px) 0 0 / 10px 8px repeat-x;
+}
+[data-deco="lace"] .d2 {
+  top: 4px; left: 21px; right: 21px; height: 4px;
+  background: radial-gradient(circle, #fff 1.6px, transparent 2px) 0 0 / 10px 4px repeat-x;
+  opacity: 0.85;
+}
+
+/* ─── ⭐ Dây đèn sao võng trên đầu ───────────────────────────────────────── */
+[data-deco="stars"] .d1 {
+  left: 10px; right: 10px; top: -14px; height: 24px;
+  border-bottom: 1.5px solid rgba(255, 228, 160, 0.85);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+}
+[data-deco="stars"] .d2,
+[data-deco="stars"] .d3,
+[data-deco="stars"] .d4,
+[data-deco="stars"] .d5 {
+  font-size: calc(11px * var(--ds, 1));
+  color: #ffe27a;
+  text-shadow: 0 0 4px rgba(255, 220, 120, 0.9);
+  animation: deco-twinkle 2.4s ease-in-out infinite;
+}
+[data-deco="stars"] .d2::before,
+[data-deco="stars"] .d3::before,
+[data-deco="stars"] .d4::before,
+[data-deco="stars"] .d5::before { content: "★"; }
+[data-deco="stars"] .d2 { left: 12%; top: -1px; }
+[data-deco="stars"] .d3 { left: 30%; top: 5px; color: #ffb3d9; animation-delay: -0.6s; }
+[data-deco="stars"] .d4 { right: 30%; top: 5px; color: #b8e0ff; animation-delay: -1.2s; }
+[data-deco="stars"] .d5 { right: 12%; top: -1px; animation-delay: -1.8s; }
+
+/* ─── ❄️ Tuyết phủ trên mép + bông tuyết rơi ─────────────────────────────── */
+[data-deco="snow"] .d1 {
+  top: -6px; left: 6px; right: 6px; height: 13px;
+  background:
+    linear-gradient(#fff, #fff) 0 0 / 100% 5px no-repeat,
+    radial-gradient(ellipse 9px 6px at 11px 4px, #fff 98%, transparent) 0 0 / 22px 13px repeat-x,
+    radial-gradient(ellipse 5px 4px at 3px 6px, #fff 98%, transparent) 6px 0 / 22px 13px repeat-x;
+  border-radius: 8px 8px 0 0;
+  filter: drop-shadow(0 1px 1px rgba(110, 150, 200, 0.55));
+}
+[data-deco="snow"] .d2 { left: -4px; bottom: -4px; font-size: calc(14px * var(--ds, 1)); color: #eef7ff; text-shadow: 0 0 4px rgba(140, 190, 255, 0.9); }
+[data-deco="snow"] .d2::before { content: "❄"; }
+[data-deco="snow"] .d3,
+[data-deco="snow"] .d4,
+[data-deco="snow"] .d5,
+[data-deco="snow"] .d6 {
+  top: -4%;
+  font-size: 9px; color: #fff; opacity: 0.8;
+  text-shadow: 0 0 3px rgba(150, 200, 255, 0.9);
+  animation: deco-fall 9s linear infinite;
+}
+[data-deco="snow"] .d3::before,
+[data-deco="snow"] .d4::before,
+[data-deco="snow"] .d5::before,
+[data-deco="snow"] .d6::before { content: "❄"; }
+[data-deco="snow"] .d3 { left: 16%; }
+[data-deco="snow"] .d4 { left: 42%; animation-delay: -3s; animation-duration: 11s; }
+[data-deco="snow"] .d5 { left: 66%; animation-delay: -6s; }
+[data-deco="snow"] .d6 { left: 90%; animation-delay: -1.5s; animation-duration: 12s; font-size: 7px; }
+
+/* ─── 🌈 Viền ánh kim: viền cầu vồng chạy màu + ✦ lấp lánh ─────────────────── */
+[data-deco="holo"] .d1 {
+  inset: -2px;
+  border-radius: calc(var(--deco-r, 18px) + 2px);
+  padding: 2.5px;
+  background: linear-gradient(120deg, #ff9de2, #ffd36e, #9dffcb, #8fd3ff, #c79bff, #ff9de2) 0 0 / 300% 300%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 3px rgba(255, 190, 255, 0.7));
+  animation: deco-holo 6s linear infinite;
+}
+[data-deco="holo"] .d2,
+[data-deco="holo"] .d3,
+[data-deco="holo"] .d4 {
+  font-size: calc(14px * var(--ds, 1));
+  color: #fff;
+  text-shadow: 0 0 5px #ff9de2, 0 0 9px #8fd3ff;
+  animation: deco-twinkle 2.2s ease-in-out infinite;
+}
+[data-deco="holo"] .d2::before,
+[data-deco="holo"] .d3::before,
+[data-deco="holo"] .d4::before { content: "✦"; }
+[data-deco="holo"] .d2 { left: -5px; top: -6px; }
+[data-deco="holo"] .d3 { right: -5px; top: -6px; animation-delay: -0.7s; }
+[data-deco="holo"] .d4 { left: -5px; bottom: -5px; animation-delay: -1.4s; font-size: calc(11px * var(--ds, 1)); }
+
+@keyframes deco-fall {
+  0% { top: -4%; transform: translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.8; }
+  50% { transform: translateX(8px) rotate(180deg); }
+  90% { opacity: 0.8; }
+  100% { top: 100%; transform: translateX(-4px) rotate(360deg); opacity: 0; }
+}
+@keyframes deco-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.75); }
+}
+@keyframes deco-holo {
+  to { background-position: 300% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deco i { animation: none !important; }
+  [data-deco="sakura"] .d4, [data-deco="sakura"] .d5, [data-deco="sakura"] .d6,
+  [data-deco="snow"] .d3, [data-deco="snow"] .d4, [data-deco="snow"] .d5, [data-deco="snow"] .d6 { display: none; }
+}

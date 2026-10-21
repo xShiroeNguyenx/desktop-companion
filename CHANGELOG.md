@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-10-21
+
+### Added
+- **🎀 Widget decor in the Collection.** A new Decor tab dresses the calendar,
+  clock and weather widgets together: ribbon bows, washi tape and sakura with
+  falling petals (Common), lace trim, a twinkling star garland and a snowcap with
+  falling flakes (Rare), and a shifting rainbow holo frame (Epic). Trade candy
+  for them or win them in the Candy Capsule; the decor never blocks clicks and
+  keeps clear of the widget buttons.
+- **Early reminders for calendar events.** When you add something on the pinned
+  calendar, pick when to hear about it ahead of time: 1 day, 3 days, 1 week,
+  10 days or 1 month before (any mix; 1 day is on by default). The pet tells you
+  at 7 am that day, or Windows shows a notification if she can't, and the usual
+  same-day reminders still follow. Events with early reminders show a 🔔.
+- **Edit events on the calendar.** Click an event to change its name, time or
+  early reminders right in the calendar. Renaming keeps its reminder history;
+  changing the time starts the reminders over. "+n more" opens the Tasks panel.
+
+### Changed
+- **The three widgets match.** Calendar, clock and weather now share one width,
+  the same padding and the same faded Miu, so "Tidy up" lines them up on both
+  edges. The weather tint is lighter, so the card keeps your skin's colour.
+
 ## [0.9.7] - 2026-10-21
 
 ### Added

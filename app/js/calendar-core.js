@@ -246,9 +246,31 @@
       const due = Number(t && t.due_at);
       if (!t || t.done || !Number.isFinite(due) || due <= 0) continue;
       const key = keyOfDate(new Date(due));
-      (out[key] = out[key] || []).push({ id: t.id, text: t.text, due, over: due < now });
+      const remind = Array.isArray(t.remind_days) ? t.remind_days.filter((d) => Number.isInteger(d) && d > 0) : [];
+      (out[key] = out[key] || []).push({ id: t.id, text: t.text, due, over: due < now, remind });
     }
     for (const k of Object.keys(out)) out[k].sort((a, b) => a.due - b.due);
+    return out;
+  }
+
+  /** "HH:MM" giờ địa phương của mốc millis (điền sẵn ô giờ khi sửa việc). */
+  function hhmm(ms) {
+    const d = new Date(ms);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  /**
+   * Những lệnh cần gọi khi lưu sửa một việc: chỉ thứ thật sự đổi, để đổi tên
+   * không làm nhắc lại từ đầu (tasks_set_due xoá các mốc đã nhắc).
+   * @returns {{text?: string, due?: number, remind?: number[]}}
+   */
+  function editChanges(task, text, due, remind) {
+    const out = {};
+    if (text !== task.text) out.text = text;
+    if (due !== task.due) out.due = due;
+    const a = [...(task.remind || [])].sort((x, y) => x - y).join(',');
+    const b = [...(remind || [])].sort((x, y) => x - y).join(',');
+    if (a !== b) out.remind = [...remind];
     return out;
   }
 
@@ -281,6 +303,8 @@
       unpin: 'Gỡ ghim', add: '＋ Việc', addTitle: 'Thêm việc có hạn vào ngày này', placeholder: 'Việc cần làm…',
       save: 'Lưu', cancel: 'Huỷ', noTasks: 'Không có việc nào tới hạn', more: '+{n} việc nữa',
       overdue: 'quá hạn', saved: 'Đã thêm việc ✓', openTasks: 'Mở bảng Công việc', bday: 'Sinh nhật {you} 🎂',
+      edit: 'Bấm để sửa tên, giờ và nhắc trước', edited: 'Đã lưu thay đổi ✓',
+      remind: 'Nhắc trước', remindTitle: 'Nhắc trước {list}', day: '{n} ngày', week: '1 tuần', month: '1 tháng',
       h: {
         newYear: 'Tết Dương lịch', valentine: 'Lễ Tình nhân', women: 'Quốc tế Phụ nữ',
         reunification: 'Giải phóng miền Nam', labour: 'Quốc tế Lao động', children: 'Quốc tế Thiếu nhi',
@@ -298,6 +322,8 @@
       unpin: '固定をはずす', add: '＋ タスク', addTitle: 'この日が期限のタスクを追加', placeholder: 'やること…',
       save: '保存', cancel: 'やめる', noTasks: '期限のタスクはありません', more: 'ほか{n}件',
       overdue: '期限切れ', saved: '追加したよ ✓', openTasks: 'タスク一覧を開く', bday: '{you}の誕生日 🎂',
+      edit: 'クリックで名前・時間・事前通知を編集', edited: '変更を保存したよ ✓',
+      remind: '事前通知', remindTitle: '{list}前にお知らせ', day: '{n}日', week: '1週間', month: '1か月',
       h: {
         newYear: '元日', valentine: 'バレンタイン', women: '国際女性デー',
         reunification: '南部解放記念日', labour: 'メーデー', children: '国際子どもの日',
@@ -315,6 +341,8 @@
       unpin: 'Unpin', add: '＋ Task', addTitle: 'Add a task due on this day', placeholder: 'Something to do…',
       save: 'Save', cancel: 'Cancel', noTasks: 'Nothing due', more: '+{n} more',
       overdue: 'overdue', saved: 'Task added ✓', openTasks: 'Open Tasks', bday: 'Your birthday 🎂',
+      edit: 'Click to edit the name, time and reminders', edited: 'Changes saved ✓',
+      remind: 'Remind', remindTitle: 'Reminders {list} before', day: '{n} days', week: '1 week', month: '1 month',
       h: {
         newYear: "New Year's Day", valentine: "Valentine's Day", women: "International Women's Day",
         reunification: 'Reunification Day', labour: 'Labour Day', children: "Children's Day",
@@ -335,6 +363,24 @@
     return String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
   }
 
+  /** Các lựa chọn "nhắc trước N ngày" ở ô thêm việc (Rust nhận 1..=60, reminders.rs). */
+  const REMIND_CHOICES = [1, 3, 7, 10, 30];
+
+  /** Nhãn của "nhắc trước N ngày": "1 ngày", "1 tuần", "1 tháng", "10 ngày"… */
+  function remindLabel(days, lang) {
+    const s = strings(lang);
+    if (days === 7) return s.week;
+    if (days === 30) return s.month;
+    if (days === 1 && lang === 'en') return '1 day';
+    return fill(s.day, { n: days });
+  }
+
+  /** Tiêu đề chuông trên dòng việc: "Nhắc trước 1 tuần, 1 ngày" (xa trước gần sau). */
+  function remindTitle(days, lang) {
+    const list = [...(days || [])].sort((a, b) => b - a).map((d) => remindLabel(d, lang)).join(', ');
+    return list ? fill(strings(lang).remindTitle, { list }) : '';
+  }
+
   /** Tiêu đề lưới: "Tháng 10, 2026" / "2026年10月" / "October 2026". */
   function monthTitle(year, month, lang) {
     return fill(strings(lang).title, { y: year, m: month, M: MONTHS_EN[month - 1] });
@@ -350,6 +396,7 @@
   const api = {
     T, strings, fill, toLunar, jdFromDate, canChi, daysInMonth, addMonths, monthGrid,
     dayKey, keyOfDate, holidays, tasksByDay, dueAt, monthTitle, lunarLabel, isBirthday,
+    REMIND_CHOICES, remindLabel, remindTitle, hhmm, editChanges,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CalendarCore = api;

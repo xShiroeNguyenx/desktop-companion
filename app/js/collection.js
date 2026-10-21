@@ -72,6 +72,12 @@
     const pv = el('div', 'pv');
     if (item.cat === 'skin') {
       pv.append(miniWidget(item.asset));
+    } else if (item.cat === 'widget_deco') {
+      // Widget thu nhỏ theo skin đang dùng, đeo trang trí của món này.
+      const host = el('div', 'dmini');
+      host.append(miniWidget(data.skin || 'lavender'));
+      window.WidgetDeco.mount(host, item.asset);
+      pv.append(host);
     } else if (item.cat === 'effect') {
       pv.append(el('span', 'ic', C.effectIcon(item.asset)));
     } else if (item.cat === 'bubble') {

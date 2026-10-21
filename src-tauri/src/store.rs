@@ -399,6 +399,13 @@ pub struct Task {
     /// Mốc nhắc hạn chót đã nói gần nhất (reminders::Stage::rank). Đổi hạn thì về 0.
     #[serde(default)]
     pub reminded: u8,
+    /// Nhắc trước hạn bao nhiêu ngày (7 giờ sáng ngày đó), xa trước gần sau, vd. [7, 1].
+    /// Rỗng = chỉ nhắc các mốc thường. Đặt ở lịch ghim (reminders::early_due).
+    #[serde(default)]
+    pub remind_days: Vec<u32>,
+    /// Các mốc nhắc sớm đã nói (số ngày). Đổi hạn hay đổi `remind_days` thì xoá.
+    #[serde(default)]
+    pub early_said: Vec<u32>,
 }
 
 fn config_dir(app: &AppHandle) -> Option<PathBuf> {

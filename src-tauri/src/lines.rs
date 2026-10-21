@@ -38,6 +38,8 @@ pub enum Key {
     DueSoon,
     DueNow,
     Overdue,
+    /// Nhắc trước N ngày (lịch ghim). Biến: {task}, {days}, {date}.
+    DueEarly,
     // ── Nhắc sức khoẻ; Multi = gộp nhiều loại vào một câu.
     HealthEyes,
     HealthWater,
@@ -141,6 +143,7 @@ impl Key {
         Key::DueSoon,
         Key::DueNow,
         Key::Overdue,
+        Key::DueEarly,
         Key::HealthEyes,
         Key::HealthWater,
         Key::HealthStand,
@@ -199,7 +202,7 @@ impl Key {
         match self {
             Key::HealthEyes | Key::HealthWater | Key::HealthStand | Key::HealthMulti | Key::TaskDone => 6,
             Key::PinDone => 4,
-            Key::DueToday | Key::DueSoon | Key::DueNow | Key::Overdue => 3,
+            Key::DueToday | Key::DueSoon | Key::DueNow | Key::Overdue | Key::DueEarly => 3,
             Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
             Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
@@ -252,6 +255,7 @@ impl Key {
             Key::NameFailed => &["err"],
             Key::DueToday | Key::TaskSavedDue => &["task", "time"],
             Key::Overdue => &["task", "days"],
+            Key::DueEarly => &["task", "days", "date"],
             Key::DoneMilestone => &["count"],
             Key::TaskNotFound | Key::TaskAmbiguous => &["query"],
             Key::FocusStart => &["min"],
@@ -450,6 +454,22 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "\"{task}\" is due now, {you}! Is it done? 😳",
             "It's time: \"{task}\"! Did you make it?",
             "\"{task}\" just hit its deadline~ Tick it off when it's done!",
+        ],
+
+        (DueEarly, Vi) => &[
+            "Còn {days} ngày nữa là tới \"{task}\" ({date}) đó {you}~ 📅",
+            "{You} ơi, {me} nhắc trước nè: \"{task}\" vào {date}, còn {days} ngày thôi!",
+            "Đánh dấu lịch nha: \"{task}\" lúc {date}, còn {days} ngày nữa~ 🗓️",
+        ],
+        (DueEarly, Ja) => &[
+            "「{task}」まであと{days}日だよ（{date}）📅",
+            "{you}、先に言っておくね：「{task}」は{date}、あと{days}日！",
+            "カレンダーにメモ：「{task}」{date}、あと{days}日～🗓️",
+        ],
+        (DueEarly, En) => &[
+            "{days} day(s) to go until \"{task}\" ({date}), {you}~ 📅",
+            "Early heads-up: \"{task}\" is on {date}, {days} day(s) away!",
+            "Mark your calendar: \"{task}\" at {date}, in {days} day(s)~ 🗓️",
         ],
 
         (Overdue, Vi) => &[

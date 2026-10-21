@@ -597,6 +597,8 @@ fn main() {
             commands::tasks_delete,
             commands::tasks_set_pinned,
             commands::tasks_set_due,
+            commands::tasks_set_remind,
+            commands::tasks_set_text,
             commands::notify_test,
             commands::open_url,
             commands::game_info,

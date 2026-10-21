@@ -35,6 +35,8 @@ pub enum Category {
     Flower,
     /// Model Live2D (models.rs). Model đang dùng lưu ở `Settings.pet_model`, không ở đây.
     Model,
+    /// Trang trí trên mép 3 widget ghim (app/widget-deco.css [data-deco]).
+    WidgetDeco,
 }
 
 impl Category {
@@ -48,6 +50,7 @@ impl Category {
             Category::Bubble => "bubble",
             Category::Flower => "flower",
             Category::Model => "model",
+            Category::WidgetDeco => "widget_deco",
         }
     }
 
@@ -61,6 +64,7 @@ impl Category {
             Category::Bubble,
             Category::Flower,
             Category::Model,
+            Category::WidgetDeco,
         ]
             .into_iter()
             .find(|c| c.code() == s)
@@ -68,7 +72,7 @@ impl Category {
 
     /// Nhóm có "món đang dùng" (chọn một trong các món đã có).
     fn selectable(self) -> bool {
-        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet | Category::Bubble | Category::Flower)
+        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet | Category::Bubble | Category::Flower | Category::WidgetDeco)
     }
 }
 
@@ -117,7 +121,7 @@ pub struct Item {
     pub name: [&'static str; 3],
     pub desc: [&'static str; 3],
     /// Skin: id trong skins.css · MiuSet: thư mục ảnh · SideSet: id bộ (sidegirl::SETS) · Effect: loại fx
-    /// · Model: id trong models::BUILTIN.
+    /// · Model: id trong models::BUILTIN · WidgetDeco: id trong widget-deco.css.
     pub asset: &'static str,
 }
 
@@ -527,6 +531,110 @@ pub const CATALOG: &[Item] = &[
         ],
         asset: "snow-lolita",
     },
+    Item {
+        id: "wdeco.none",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Common,
+        price: 0,
+        name: ["Không trang trí", "デコなし", "No decor"],
+        desc: [
+            "Widget để trơn, không trang trí.",
+            "ウィジェットに飾りをつけません。",
+            "Plain widgets with no decor.",
+        ],
+        asset: "none",
+    },
+    Item {
+        id: "wdeco.ribbon",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Nơ ruy băng", "リボン", "Ribbon bows"],
+        desc: [
+            "Hai chiếc nơ 🎀 cài trên góc các widget.",
+            "ウィジェットの角に🎀のリボンがふたつ。",
+            "Two 🎀 bows pinned to the widgets' corners.",
+        ],
+        asset: "ribbon",
+    },
+    Item {
+        id: "wdeco.tape",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Băng dính washi", "マスキングテープ", "Washi tape"],
+        desc: [
+            "Mẩu băng dính hoa văn dán widget lên màn hình như dán sổ tay.",
+            "手帳みたいに柄入りのマスキングテープでウィジェットを留めます。",
+            "Patterned washi tape sticks the widgets to your screen like a planner page.",
+        ],
+        asset: "tape",
+    },
+    Item {
+        id: "wdeco.sakura",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Hoa anh đào", "桜", "Sakura"],
+        desc: [
+            "Chùm hoa 🌸 ở góc widget, cánh hoa rơi chầm chậm.",
+            "ウィジェットの角に🌸、花びらがゆっくり舞います。",
+            "🌸 blossoms on the widgets' corners, with petals drifting down.",
+        ],
+        asset: "sakura",
+    },
+    Item {
+        id: "wdeco.lace",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Viền ren", "レース", "Lace trim"],
+        desc: [
+            "Viền ren trắng đính ngọc trai trên mép widget.",
+            "真珠つきの白いレースでウィジェットの縁を飾ります。",
+            "White lace with pearls trims the widgets' edges.",
+        ],
+        asset: "lace",
+    },
+    Item {
+        id: "wdeco.stars",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Dây đèn sao", "星のガーランド", "Star garland"],
+        desc: [
+            "Dây đèn ngôi sao võng trên đầu widget, nhấp nháy lung linh.",
+            "ウィジェットの上に星のガーランド、きらきら瞬きます。",
+            "A garland of twinkling stars hangs across the widgets.",
+        ],
+        asset: "stars",
+    },
+    Item {
+        id: "wdeco.snow",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Tuyết phủ", "雪化粧", "Snowcap"],
+        desc: [
+            "Lớp tuyết phủ trên mép widget, bông tuyết rơi nhẹ.",
+            "ウィジェットの上に雪が積もり、雪がちらちら降ります。",
+            "Snow piles on top of the widgets while flakes fall gently.",
+        ],
+        asset: "snow",
+    },
+    Item {
+        id: "wdeco.holo",
+        cat: Category::WidgetDeco,
+        rarity: Rarity::Epic,
+        price: 3000,
+        name: ["Viền ánh kim", "ホロフレーム", "Holo frame"],
+        desc: [
+            "Viền cầu vồng đổi màu liên tục, lấp lánh ✨ ở các góc.",
+            "虹色に移り変わる縁と、角にきらめく✨。",
+            "A shifting rainbow frame with ✨ sparkles on the corners.",
+        ],
+        asset: "holo",
+    },
 ];
 
 /// Mọi món: CATALOG ở trên + các bộ Miu (miu_sets.rs). Dùng hàm này thay vì CATALOG.
@@ -577,6 +685,8 @@ pub struct Collection {
     pub bubble: String,
     #[serde(default = "default_flower")]
     pub flower: String,
+    #[serde(default = "default_widget_deco")]
+    pub widget_deco: String,
     /// Hiệu ứng đã mua và đang bật.
     #[serde(default)]
     pub effects_on: Vec<String>,
@@ -609,6 +719,9 @@ fn default_bubble() -> String {
 fn default_flower() -> String {
     "flower.sakura".into()
 }
+fn default_widget_deco() -> String {
+    "wdeco.none".into()
+}
 
 impl Default for Collection {
     fn default() -> Self {
@@ -622,6 +735,7 @@ impl Default for Collection {
             miu_set: default_miu_set(),
             bubble: default_bubble(),
             flower: default_flower(),
+            widget_deco: default_widget_deco(),
             effects_on: Vec::new(),
             pity: 0,
             epic_pity: 0,
@@ -777,6 +891,7 @@ pub fn select(c: &mut Collection, cat: Category, id: &str) -> Result<&'static It
         Category::MiuSet => &mut c.miu_set,
         Category::Bubble => &mut c.bubble,
         Category::Flower => &mut c.flower,
+        Category::WidgetDeco => &mut c.widget_deco,
         _ => unreachable!("selectable() đã lọc"),
     };
     *slot = it.id.to_string();
@@ -818,6 +933,7 @@ pub fn selected(c: &Collection, cat: Category) -> &'static Item {
         Category::MiuSet => &c.miu_set,
         Category::Bubble => &c.bubble,
         Category::Flower => &c.flower,
+        Category::WidgetDeco => &c.widget_deco,
         _ => return default_of(cat),
     };
     item(id).filter(|it| it.cat == cat && owns(c, it)).unwrap_or_else(|| default_of(cat))
@@ -846,6 +962,11 @@ pub fn effective_bubble(c: &Collection) -> &'static str {
 
 pub fn effective_flower(c: &Collection) -> &'static str {
     selected(c, Category::Flower).asset
+}
+
+/// Trang trí của 3 widget ghim (asset trong widget-deco.css).
+pub fn effective_widget_deco(c: &Collection) -> &'static str {
+    selected(c, Category::WidgetDeco).asset
 }
 
 pub fn effective_side_set(c: &Collection) -> &'static str {
@@ -1011,7 +1132,7 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), items().count(), "id trùng");
-        for cat in [Category::Skin, Category::SideSet, Category::MiuSet, Category::Bubble, Category::Flower] {
+        for cat in [Category::Skin, Category::SideSet, Category::MiuSet, Category::Bubble, Category::Flower, Category::WidgetDeco] {
             let free = items().filter(|i| i.cat == cat && i.price == 0).count();
             assert_eq!(free, 1, "{cat:?} phải có đúng một món mặc định");
         }
@@ -1029,9 +1150,24 @@ mod tests {
                 Category::Bubble => "bubble.",
                 Category::Flower => "flower.",
                 Category::Model => "model.",
+                Category::WidgetDeco => "wdeco.",
             }));
             assert_eq!(Category::from_code(it.cat.code()), Some(it.cat));
         }
+    }
+
+    #[test]
+    fn every_widget_deco_exists_in_css() {
+        let css = include_str!("../../app/widget-deco.css");
+        for it in items().filter(|i| i.cat == Category::WidgetDeco && i.price > 0) {
+            assert!(css.contains(&format!("[data-deco=\"{}\"]", it.asset)), "{}: thiếu trong widget-deco.css", it.id);
+        }
+        let mut c = Collection::default();
+        assert_eq!(effective_widget_deco(&c), "none");
+        c.widget_deco = "wdeco.holo".into();
+        assert_eq!(effective_widget_deco(&c), "none", "chưa sở hữu thì về mặc định");
+        c.owned.push("wdeco.holo".into());
+        assert_eq!(effective_widget_deco(&c), "holo");
     }
 
     #[test]

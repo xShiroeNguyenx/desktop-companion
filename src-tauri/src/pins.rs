@@ -376,6 +376,8 @@ mod tests {
             pin_top: false,
             due_at: String::new(),
             reminded: 0,
+            remind_days: Vec::new(),
+            early_said: Vec::new(),
         }
     }
 

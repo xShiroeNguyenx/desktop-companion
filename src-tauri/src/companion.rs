@@ -178,6 +178,13 @@ pub fn parse_deadline_tag(tag: &str) -> Option<(&str, u8)> {
     Some((id, rank.parse().ok()?))
 }
 
+/// "deadline:<id>:d<days>" (nhắc trước N ngày) → (id, days).
+pub fn parse_early_tag(tag: &str) -> Option<(&str, u32)> {
+    let rest = tag.strip_prefix("deadline:")?;
+    let (id, days) = rest.rsplit_once(':')?;
+    Some((id, days.strip_prefix('d')?.parse().ok()?))
+}
+
 /// Ngược lại của Stage::rank.
 pub fn stage_from_rank(rank: u8) -> Option<Stage> {
     match rank {
@@ -747,8 +754,12 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
         .filter_map(|t| {
             let due: i64 = t.due_at.parse().ok()?;
             let created: i64 = t.created_at.parse().unwrap_or(0);
-            let stage = reminders::reminder_due(now_ms, due, created, t.reminded, offset)?;
-            Some(format!("deadline:{}:{}", t.id, stage.rank()))
+            if let Some(stage) = reminders::reminder_due(now_ms, due, created, t.reminded, offset) {
+                return Some(format!("deadline:{}:{}", t.id, stage.rank()));
+            }
+            // Nhắc trước N ngày (đặt ở lịch ghim): "deadline:<id>:d<N>".
+            let days = reminders::early_due(now_ms, due, created, &t.remind_days, &t.early_said, offset)?;
+            Some(format!("deadline:{}:d{days}", t.id))
         })
         .collect();
     sync_kind(pending, Kind::Deadline, &deadlines, now);
@@ -867,6 +878,9 @@ fn calendar_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<(St
 
 /// Câu nhắc của một mốc hạn chót, và đánh dấu đã nhắc mốc đó.
 fn deadline_line(app: &AppHandle, tag: &str) -> Option<String> {
+    if let Some((id, _)) = parse_early_tag(tag) {
+        return early_line(app, id);
+    }
     let (id, rank) = parse_deadline_tag(tag)?;
     let stage = stage_from_rank(rank)?;
     let task = store::load_tasks(app).into_iter().find(|t| t.id == id && !t.done)?;
@@ -886,7 +900,33 @@ fn deadline_line(app: &AppHandle, tag: &str) -> Option<String> {
     Some(lines::line(key, &a, &[("task", name.as_str()), ("time", time.as_str()), ("days", days.as_str())]))
 }
 
+/// Câu nhắc trước N ngày. Số ngày tính lại theo hôm nay (lỡ mốc vì máy tắt thì
+/// vẫn nói đúng còn bao nhiêu ngày).
+fn early_line(app: &AppHandle, id: &str) -> Option<String> {
+    let task = store::load_tasks(app).into_iter().find(|t| t.id == id && !t.done)?;
+    let due: i64 = task.due_at.parse().ok()?;
+    let a = persona::address(&store::load_settings(app));
+    let offset = reminders::local_offset_min();
+    let left = reminders::days_left(now_secs() as i64 * 1000, due, offset).max(1).to_string();
+    let date = reminders::fmt_local(due, offset);
+    let name = crate::pins::short_task(&task.text);
+    Some(lines::line(Key::DueEarly, &a, &[("task", name.as_str()), ("days", left.as_str()), ("date", date.as_str())]))
+}
+
 fn mark_reminded(app: &AppHandle, tag: &str) {
+    // Nhắc sớm: đánh dấu mốc này và mọi mốc xa hơn (đã qua, không nói lại).
+    if let Some((id, days)) = parse_early_tag(tag) {
+        let _ = store::update_tasks(app, |tasks| {
+            if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
+                let passed: Vec<u32> = t.remind_days.iter().copied().filter(|&d| d >= days).collect();
+                t.early_said.extend(passed);
+                t.early_said.push(days);
+                t.early_said.sort_unstable();
+                t.early_said.dedup();
+            }
+        });
+        return;
+    }
     if let Some((id, rank)) = parse_deadline_tag(tag) {
         let _ = store::update_tasks(app, |tasks| {
             if let Some(t) = tasks.iter_mut().find(|t| t.id == id) {
@@ -1196,6 +1236,9 @@ mod tests {
     #[test]
     fn deadline_tags_roundtrip() {
         assert_eq!(parse_deadline_tag("deadline:1760000004821:3"), Some(("1760000004821", 3)));
+        assert_eq!(parse_early_tag("deadline:1760000004821:d7"), Some(("1760000004821", 7)));
+        assert_eq!(parse_early_tag("deadline:1760000004821:3"), None);
+        assert_eq!(parse_deadline_tag("deadline:1760000004821:d7"), None, "nhắc sớm không lẫn vào mốc thường");
         assert_eq!(parse_deadline_tag("deadline:1:x"), None);
         assert_eq!(parse_deadline_tag("health"), None);
         for s in [Stage::Today, Stage::Soon, Stage::Due, Stage::Over(1), Stage::Over(3)] {

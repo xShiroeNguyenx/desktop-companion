@@ -140,3 +140,32 @@ test('tiêu đề tháng và chữ âm lịch trong ô', () => {
   assert.equal(C.lunarLabel({ day: 15, month: 8, leap: false }, 'vi'), 'Rằm');
   assert.equal(C.lunarLabel({ day: 7, month: 9, leap: false }, 'en'), '7');
 });
+
+test('nhãn nhắc trước N ngày', () => {
+  assert.deepEqual(C.REMIND_CHOICES.map((d) => C.remindLabel(d, 'vi')), ['1 ngày', '3 ngày', '1 tuần', '10 ngày', '1 tháng']);
+  assert.deepEqual(C.REMIND_CHOICES.map((d) => C.remindLabel(d, 'en')), ['1 day', '3 days', '1 week', '10 days', '1 month']);
+  assert.equal(C.remindLabel(7, 'ja'), '1週間');
+  assert.equal(C.remindTitle([1, 7], 'vi'), 'Nhắc trước 1 tuần, 1 ngày');
+  assert.equal(C.remindTitle([], 'vi'), '');
+  // Mọi lựa chọn nằm trong khoảng Rust nhận (reminders::MAX_REMIND_DAYS = 60).
+  assert.ok(C.REMIND_CHOICES.every((d) => d >= 1 && d <= 60));
+});
+
+test('việc trên lịch mang theo mốc nhắc trước', () => {
+  const due = String(new Date(2026, 10, 6, 8, 0).getTime());
+  const by = C.tasksByDay([
+    { id: '1', text: 'giỗ', done: false, due_at: due, remind_days: [7, 1] },
+    { id: '2', text: 'cũ', done: false, due_at: due },
+    { id: '3', text: 'hỏng', done: false, due_at: due, remind_days: [0, 'x', 3] },
+  ], 0);
+  assert.deepEqual(by['2026-11-06'].map((t) => t.remind), [[7, 1], [], [3]]);
+});
+
+test('sửa việc: chỉ gọi những gì đổi', () => {
+  const task = { id: '1', text: 'Đám giỗ', due: 1000, remind: [7, 1] };
+  assert.deepEqual(C.editChanges(task, 'Đám giỗ', 1000, [1, 7]), {}, 'thứ tự mốc không tính là đổi');
+  assert.deepEqual(C.editChanges(task, 'Đám giỗ bà nội', 1000, [7, 1]), { text: 'Đám giỗ bà nội' });
+  assert.deepEqual(C.editChanges(task, 'Đám giỗ', 2000, [7, 1]), { due: 2000 });
+  assert.deepEqual(C.editChanges(task, 'Đám giỗ', 1000, []), { remind: [] });
+  assert.equal(C.hhmm(new Date(2026, 10, 6, 8, 5).getTime()), '08:05');
+});

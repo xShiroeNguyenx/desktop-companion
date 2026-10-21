@@ -16,7 +16,7 @@ pub const MAX_ZONES: usize = 2;
 /// Cỡ cửa sổ (logical px). ĐỒNG BỘ với clock-pin.html: phần giờ chính + hàng
 /// 🍅, mỗi đồng hồ thêm một hàng 30px.
 fn size(s: &Settings) -> (f64, f64) {
-    (236.0, 132.0 + 30.0 * s.clock_zones.len().min(MAX_ZONES) as f64)
+    (crate::pin_widget::WIDTH, 132.0 + 30.0 * s.clock_zones.len().min(MAX_ZONES) as f64)
 }
 
 fn state(s: &Settings) -> PinState {
@@ -67,6 +67,7 @@ pub fn view(app: &AppHandle) -> Value {
         "focus": { "phase": phase, "remaining": remaining, "length": length },
         "focusMin": s.focus_min,
         "skin": crate::collection::effective_skin(&c),
+        "deco": crate::collection::effective_widget_deco(&c),
         "miuDir": crate::collection::effective_miu_dir(&c),
         "miuExt": crate::collection::effective_miu_ext(&c),
     })

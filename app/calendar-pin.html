@@ -31,7 +31,7 @@
       color: var(--w-ink);
       position: relative;
       height: 100%;
-      padding: 10px 10px 8px;
+      padding: 10px 12px 8px;
       border-radius: 18px;
       border: 1px solid var(--w-line);
       background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b));
@@ -112,7 +112,7 @@
       position: absolute; right: 0; bottom: 0; z-index: 0;
       height: 124px; width: 112px;
       object-fit: contain; object-position: right bottom;
-      opacity: 0.32;
+      opacity: 0.45;
       pointer-events: none;
     }
     .info > :not(.miu) { position: relative; z-index: 1; }
@@ -127,6 +127,7 @@
     .task.over .t { color: #ff8b8b; }
     .task .x { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .muted { font-size: 11px; color: var(--w-ink-soft); }
+    .moreBtn { border: none; background: none; padding: 0; text-align: left; font-size: 11px; color: var(--w-ink-soft); text-decoration: underline; cursor: pointer; }
     .addRow { display: flex; gap: 4px; margin-top: auto; }
     .addRow input {
       min-width: 0; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 7px;
@@ -142,6 +143,16 @@
     .small:hover { background: rgba(255, 255, 255, 0.22); }
     .small.primary { background: var(--w-accent); color: #fff; }
     .small.primary:hover { filter: brightness(1.08); }
+    /* Hàng "🔔 Nhắc trước": chọn nhiều mốc (reminders::early_due). */
+    .remindRow { display: flex; align-items: center; gap: 3px; white-space: nowrap; overflow: hidden; }
+    .remindRow .lbl { font-size: 10.5px; color: var(--w-ink-soft); margin-right: 1px; }
+    .chip {
+      border: none; border-radius: 7px; padding: 2px 5px;
+      background: rgba(255, 255, 255, 0.1); font-size: 10.5px; cursor: pointer;
+    }
+    .chip:hover { background: rgba(255, 255, 255, 0.2); }
+    .chip.on { background: var(--w-accent); color: #fff; }
+    .task .bell { flex: 0 0 auto; font-size: 10px; }
     .msg { font-size: 11px; color: #9ff0b8; }
     .msg.err { color: #ff9c9c; }
     [hidden] { display: none !important; }
@@ -162,6 +173,7 @@
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
   </style>
   <link rel="stylesheet" href="skins.css" />
+  <link rel="stylesheet" href="widget-deco.css" />
 </head>
 <body>
   <div class="wrap" id="wrap">
@@ -186,6 +198,10 @@
           <input type="time" id="addTime" value="09:00" />
           <button class="small primary" id="addSave" type="button"></button>
         </div>
+        <div class="remindRow" id="remindRow" hidden>
+          <span class="lbl" id="remindLbl"></span>
+          <span id="remindChips"></span>
+        </div>
         <div class="addRow" id="addBar">
           <button class="small" id="addBtn" type="button"></button>
           <span class="msg" id="msg"></span>
@@ -200,6 +216,7 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/widget-deco.js"></script>
   <script src="js/calendar-core.js"></script>
   <script src="js/calendar-pin.js"></script>
 </body>

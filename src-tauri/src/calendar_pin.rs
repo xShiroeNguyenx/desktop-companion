@@ -13,7 +13,7 @@ pub const LABEL: &str = "pin-calendar";
 /// Kích thước widget (logical px). ĐỒNG BỘ với bố cục calendar-pin.html
 /// (lưới 6 hàng + khung ngày đang chọn ở dưới).
 fn size(_: &Settings) -> (f64, f64) {
-    (300.0, 448.0)
+    (crate::pin_widget::WIDTH, 448.0)
 }
 
 // Trạng thái ghim nằm ở các trường calendar_pin* có từ v0.9.0: giữ nguyên để
@@ -54,6 +54,7 @@ pub fn view(app: &AppHandle) -> Value {
         "you": a.you,
         // Skin màu (app/skins.css) và thư mục ảnh Miu mini, chọn trong Bộ sưu tập.
         "skin": crate::collection::effective_skin(&c),
+        "deco": crate::collection::effective_widget_deco(&c),
         "miuDir": crate::collection::effective_miu_dir(&c),
         "miuExt": crate::collection::effective_miu_ext(&c),
     })
