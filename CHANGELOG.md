@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-10-22
+
+### Added
+- **Three more Live2D models in the Collection**, each with smile, sad, angry,
+  surprised, shy and wink expressions and her own motions, downloaded once
+  unlocked:
+  - **❄️ Snow Aristocrat** (10000 🍬): a silver-haired cat-eared noble with long
+    curls, in a white and blue frilled dress of snowflakes and ice crystals.
+  - **🦇 Gothic Lolita** (5000 🍬): a lavender-haired cat girl in glasses and a
+    black and purple gothic lolita dress of hearts and plush bunnies.
+  - **❄️ Snow Dancer** (5000 🍬): a street dancer with blue-tipped brown hair, a
+    snowflake cap, a white jacket and a chained black skirt.
+
+### Changed
+- **The Legendary tier stays at 3%, now split six ways.** Each 10000 🍬 model
+  (Gothic Aristocrat, Pink Angel, Snow Aristocrat) is 0.2%; each 5000 🍬 model
+  (Snow Lolita, Gothic Lolita, Snow Dancer) is 0.8%. Common, Rare and Epic are
+  unchanged at 62 / 25 / 10.
+
 ## [0.9.8] - 2026-10-21
 
 ### Added

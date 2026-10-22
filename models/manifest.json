@@ -9,11 +9,32 @@
       "size": 3111118
     },
     {
+      "id": "gothic-lolita",
+      "version": 1,
+      "file": "gothic-lolita-1.zip",
+      "sha256": "b003d0ab4452bbc8e87e30cdf9638d687763a3ad9a025a1c522104ef9637aba8",
+      "size": 1753796
+    },
+    {
       "id": "pink-angel",
       "version": 1,
       "file": "pink-angel-1.zip",
       "sha256": "5ab811809d1b3d6eac3663e46b1c2d20f146f0789d49469cff73e3f0e89b9f4b",
       "size": 1800130
+    },
+    {
+      "id": "snow-aristocrat",
+      "version": 1,
+      "file": "snow-aristocrat-1.zip",
+      "sha256": "b0cb919d1843d42b37d8c7c27f801d1915b7684629b33fbff5afd91ed6aff34c",
+      "size": 2190754
+    },
+    {
+      "id": "snow-dancer",
+      "version": 1,
+      "file": "snow-dancer-1.zip",
+      "sha256": "69f17c6364ac61779110285204888983684c455d35991258ff5866a872565e5f",
+      "size": 1477067
     },
     {
       "id": "snow-lolita",
