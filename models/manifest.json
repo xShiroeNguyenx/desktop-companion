@@ -3,10 +3,10 @@
   "models": [
     {
       "id": "gothic-aristocrat",
-      "version": 2,
-      "file": "gothic-aristocrat-2.zip",
-      "sha256": "681da6185d2498a9d723d15432e7e8ff99be247a700fa88221292d1a53bc7b19",
-      "size": 3111118
+      "version": 3,
+      "file": "gothic-aristocrat-3.zip",
+      "sha256": "da053e45d698a61c147f583bb2f9e04037490374127ef8e9a8a797355c23d65f",
+      "size": 4179765
     },
     {
       "id": "gothic-lolita",
@@ -16,18 +16,32 @@
       "size": 1753796
     },
     {
-      "id": "pink-angel",
+      "id": "gothic-pastel",
       "version": 1,
-      "file": "pink-angel-1.zip",
-      "sha256": "5ab811809d1b3d6eac3663e46b1c2d20f146f0789d49469cff73e3f0e89b9f4b",
-      "size": 1800130
+      "file": "gothic-pastel-1.zip",
+      "sha256": "3f6e8456ddcf67726b332553bded6a0cf988c217181950aa2d5131c5cf5f0d6f",
+      "size": 2380403
+    },
+    {
+      "id": "pink-angel",
+      "version": 2,
+      "file": "pink-angel-2.zip",
+      "sha256": "ab813f80f4928938a7f17d4ca5dfad667274c04506a832a0d614244da36ad6db",
+      "size": 3060938
+    },
+    {
+      "id": "pink-pastel",
+      "version": 1,
+      "file": "pink-pastel-1.zip",
+      "sha256": "f7a6b3fb24bc347e9f93e984945fe8e8134e698ec84de3792272315ab6f46ff2",
+      "size": 2068081
     },
     {
       "id": "snow-aristocrat",
-      "version": 1,
-      "file": "snow-aristocrat-1.zip",
-      "sha256": "b0cb919d1843d42b37d8c7c27f801d1915b7684629b33fbff5afd91ed6aff34c",
-      "size": 2190754
+      "version": 2,
+      "file": "snow-aristocrat-2.zip",
+      "sha256": "e381132265d4bd3bbb2d5e63c51be2ef9900482034591e06ef0efb09af519462",
+      "size": 3181606
     },
     {
       "id": "snow-dancer",
@@ -42,6 +56,13 @@
       "file": "snow-lolita-1.zip",
       "sha256": "ee4b5d5ae325af61876987e2e8c06eb37936e9f93201f0bc607892386b2aba1f",
       "size": 2061505
+    },
+    {
+      "id": "snow-pastel",
+      "version": 1,
+      "file": "snow-pastel-1.zip",
+      "sha256": "5b45573ff4d87f162e9384d3dd82356f9b79ff1f6c9415047228a4af41fec12b",
+      "size": 2270454
     }
   ]
 }

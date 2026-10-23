@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-10-23
+
+### Added
+- **The Pastel trio joins the Collection at 7500 🍬 each**, cat girls in glasses
+  and white frills with smile, sad, angry, surprised, shy and wink expressions
+  and their own motions, downloaded once unlocked:
+  - **🦇 Gothic Pastel**: lilac-silver hair, black and purple bows, plush bunnies.
+  - **🌸 Pink Pastel**: pastel-pink hair, pink bows and cherry blossoms.
+  - **❄️ Snow Pastel**: silver hair, fur sleeves and blue snowflake bows.
+
+### Changed
+- **Updated Gothic Aristocrat, Pink Angel and Snow Aristocrat models**, with
+  Pink Angel moving to a sharper 2048 px texture. Installed copies update
+  themselves at the next launch, with no app update needed.
+- **The Legendary tier stays at 3%, now split nine ways.** Each 10000 🍬 model
+  is 0.2%, each 7500 🍬 model 0.3% and each 5000 🍬 model (Snow Lolita, Gothic
+  Lolita, Snow Dancer) 0.5%, down from 0.8%.
+
 ## [0.9.9] - 2026-10-22
 
 ### Added

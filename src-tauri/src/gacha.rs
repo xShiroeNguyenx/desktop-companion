@@ -25,15 +25,18 @@ pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 650), (Rarity::Rare
 /// Mẫu số của mọi tỉ lệ: phần nghìn.
 pub const RATE_TOTAL: u32 = 1000;
 /// Tỉ lệ (‰) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
-/// Cả hạng giữ 3%: model 10000 🍬 mỗi con 0.2%, model 5000 🍬 mỗi con 0.8% (rẻ hơn thì ra dễ
-/// gấp 4). Món chưa có trong catalog thì bỏ qua.
+/// Cả hạng giữ 3%: model 10000 🍬 mỗi con 0.2%, 7500 🍬 mỗi con 0.3%, 5000 🍬 mỗi con 0.5%
+/// (rẻ hơn thì ra dễ hơn). Món chưa có trong catalog thì bỏ qua.
 pub const LEGENDARY_PCT: &[(&str, u32)] = &[
     ("model.gothic-aristocrat", 2),
     ("model.pink-angel", 2),
-    ("model.snow-lolita", 8),
+    ("model.snow-lolita", 5),
     ("model.snow-aristocrat", 2),
-    ("model.gothic-lolita", 8),
-    ("model.snow-dancer", 8),
+    ("model.gothic-lolita", 5),
+    ("model.snow-dancer", 5),
+    ("model.gothic-pastel", 3),
+    ("model.pink-pastel", 3),
+    ("model.snow-pastel", 3),
 ];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
 pub const PITY_RARE: u32 = 10;
@@ -327,12 +330,14 @@ mod tests {
         assert_eq!(roll_rarity(&r, 0.1, 0.93, Rarity::Rare), (Rarity::Legendary, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.76, Rarity::Epic), (Rarity::Epic, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.78, Rarity::Epic), (Rarity::Legendary, true));
-        // Trong hạng Huyền thoại (2:2:8:2:8:8 trên 30): 0.2% mỗi model 10000 🍬, 0.8% mỗi model 5000 🍬.
+        // Trong hạng Huyền thoại (2:2:5:2:5:5:3:3:3 trên 30): 0.2% mỗi model 10000 🍬,
+        // 0.3% mỗi model 7500 🍬, 0.5% mỗi model 5000 🍬.
         let x = |v: f64| { let l: Vec<_> = legendary().collect(); pick_weighted(&l, v).unwrap().id };
         assert_eq!((x(0.06), x(0.07), x(0.13), x(0.14)), ("model.gothic-aristocrat", "model.pink-angel", "model.pink-angel", "model.snow-lolita"));
-        assert_eq!((x(0.39), x(0.41), x(0.46), x(0.48)), ("model.snow-lolita", "model.snow-aristocrat", "model.snow-aristocrat", "model.gothic-lolita"));
-        assert_eq!((x(0.73), x(0.74), x(0.999)), ("model.gothic-lolita", "model.snow-dancer", "model.snow-dancer"));
-        assert_eq!(legendary().map(|(_, p)| pct(p)).collect::<Vec<_>>(), vec![0.2, 0.2, 0.8, 0.2, 0.8, 0.8]);
+        assert_eq!((x(0.29), x(0.31), x(0.36), x(0.37)), ("model.snow-lolita", "model.snow-aristocrat", "model.snow-aristocrat", "model.gothic-lolita"));
+        assert_eq!((x(0.53), x(0.54), x(0.69), x(0.71)), ("model.gothic-lolita", "model.snow-dancer", "model.snow-dancer", "model.gothic-pastel"));
+        assert_eq!((x(0.79), x(0.81), x(0.89), x(0.91), x(0.999)), ("model.gothic-pastel", "model.pink-pastel", "model.pink-pastel", "model.snow-pastel", "model.snow-pastel"));
+        assert_eq!(legendary().map(|(_, p)| pct(p)).collect::<Vec<_>>(), vec![0.2, 0.2, 0.5, 0.2, 0.5, 0.5, 0.3, 0.3, 0.3]);
     }
 
     #[test]
