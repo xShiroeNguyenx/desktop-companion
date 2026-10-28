@@ -40,6 +40,20 @@
   <br /><sub>Character sets: 🐰 Bunny · 🐱 Neko · 🦊 Fox · ❄️ Snow Lounge</sub>
 </p>
 
+<p align="center">
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="200" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="200" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="200" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-gothic-pastel.png" height="200" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="200" alt="Pink Pastel" />
+  <br />
+  <img src="docs/landing/img/model-snow-pastel.png" height="200" alt="Snow Pastel" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="200" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="200" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="200" alt="Snow Dancer" />
+  <br /><sub>🎭 Live2D models in the Collection: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer</sub>
+</p>
+
 ---
 
 ## Features
@@ -123,28 +137,51 @@
   that day; your birthday gets a 🎂. It stays above other windows unless you
   turn 📍 off. The pet mentions holidays, the full moon (*Rằm*) and the 1st of
   each lunar month, and the evening before reminds you they are tomorrow.
+  Add an event and pick **early reminders** (1 day, 3 days, 1 week, 10 days or
+  1 month before, any mix); she tells you at 7 am that day, or Windows shows a
+  notification. Events with early reminders show a 🔔, and clicking an event
+  lets you change its name, time or reminders right in the calendar.
 - **🕐 Clock with world clocks** — your PC's time with the lunar date, plus up
   to two more clocks (Tokyo, Seoul, New York, London…) with the time
   difference and "tomorrow" / "yesterday"; summer time is handled. Its 🍅 row
   starts a focus session and counts down.
 - **🍬 Candy & Collection** — finished tasks, focus sessions, chat, headpats
   and game wins also earn candy (same daily caps as friendship points). Trade it
-  in the 🍬 Collection (💞 → 🍬 on the ring) for widget skins, reward effects
-  (fireworks, sakura shower, confetti, heart shower, soap bubbles, shooting
-  star), speech-bubble styles, the flower shown when you select text,
-  character sets (🐰 Bunny, 🐱 Neko, 🦊 Fox, ❄️ Snow Lounge) and Miu face sets
-  (❄️ Snow, 🦇 Gothic). Snow, Neko and Fox Lounge also restyle every panel
-  (icy blue / gothic lolita / fox shrine). Decorations only; never sold for
-  real money.
+  in the 🍬 Collection (💞 → 🍬 on the ring) for widget skins (Sakura, Night
+  sky, Mint, Sunset, Ocean, Matcha, Cotton candy, Café latte, Neon night),
+  🎀 widget decor (ribbon bows, washi tape, sakura petals, lace trim, a star
+  garland, a snowcap, a rainbow holo frame), reward effects (fireworks, sakura
+  shower, confetti, heart shower, soap bubbles, shooting star), speech-bubble
+  styles (Cloud, Heart, Gothic lace, Scroll), the flower shown when you select
+  text (⭐ 🍀 🐾 ❄️), character sets (🐰 Bunny, 🐱 Neko, 🦊 Fox, ❄️ Snow
+  Lounge), Miu face sets (❄️ Snow, 🦇 Gothic) and Live2D models. Snow, Neko
+  and Fox Lounge also restyle every panel (icy blue / gothic lolita / fox
+  shrine). Decorations only; never sold for real money.
+- **🎭 Live2D models in the Collection** — nine extra characters, each with
+  smile, sad, angry, surprised, shy and wink expressions and her own motions:
+
+  | Model | Price | Capsule rate |
+  |---|---|---|
+  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat | 10000 🍬 | 0.2% each |
+  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.3% each |
+  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.5% each |
+
+  They are not in the installer: once unlocked, the model downloads (a few MB,
+  progress on its card), is checked against a signed list, and updates itself
+  when a newer version is published, without an app update. Press **Use** and
+  she replaces the character on screen right away. Hiyori, Haru, Mao and Miara
+  stay free, and so do models you add from a folder.
 - **🎰 Candy Capsule** — spin the bunny capsule machine in the Collection:
-  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 65% ·
-  Rare 25% · Epic 10%). Every 10th spin without a Rare is a sure Rare, every
-  50th without an Epic a sure Epic, and duplicates refund candy. Rare and
-  Epic capsules burst open with their own light show. Trading directly in
-  the shop always stays available.
+  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 62% ·
+  Rare 25% · Epic 10% · 🌈 Legendary 3%, Live2D models only). Every 10th spin
+  without a Rare is a sure Rare or better, every 50th without an Epic a sure
+  Epic or better, and duplicates refund 10% of the item's price. Each rarity
+  bursts open with its own light show, with rainbow rays and heavy confetti
+  for a Legendary. Trading directly in the shop always stays available.
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
   calendar, the clock and the weather widget, picks the extra clocks, and
-  🧹 tidies every pinned widget into a column on the right.
+  🧹 tidies every pinned widget into a column on the right. All three share one
+  width and padding, so they line up on both edges.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
@@ -163,6 +200,8 @@
   Mini Games page; the part over the panel fades so everything stays readable.
 - **Look-at cursor** — the model's head/eyes follow the mouse when it's near the pet.
 - **Resize** — `Ctrl` + mouse wheel scales the pet; size is remembered.
+- **Appearance menu** — locked Collection models show a 🔒; picking one opens
+  the Collection on the Models tab.
 - **Custom Live2D models** — load your own `*.model3.json` models from any folder.
 - **Sounds** — interaction SFX (poke / headpat / etc.) in Japanese / Vietnamese / English.
 - **AI providers** — Anthropic Claude or Google Gemini (bring your own API key).
@@ -254,5 +293,5 @@ cd src-tauri && cargo test   # Rust unit tests
 ## License
 
 - **Code:** MIT — see [LICENSE](LICENSE).
-- **Original artwork** (Gothic Aristocrat model, side characters, Miu faces, Arcade art): [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) — free to share and remix with credit, not for commercial use. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
+- **Original artwork** (the Live2D models in the Collection, side characters, Miu faces, Arcade art): [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) — free to share and remix with credit, not for commercial use. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
 - **Live2D sample models** (Hiyori, Haru, Mao, Miara): © Live2D Inc., Free Material License.

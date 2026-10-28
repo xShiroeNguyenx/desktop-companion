@@ -41,6 +41,20 @@ duyệt, Word…).
   <br /><sub>Bộ nhân vật: 🐰 Bunny · 🐱 Neko · 🦊 Hồ ly · ❄️ Xứ Tuyết</sub>
 </p>
 
+<p align="center">
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="200" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="200" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="200" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-gothic-pastel.png" height="200" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="200" alt="Pink Pastel" />
+  <br />
+  <img src="docs/landing/img/model-snow-pastel.png" height="200" alt="Snow Pastel" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="200" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="200" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="200" alt="Snow Dancer" />
+  <br /><sub>🎭 Model Live2D trong Bộ sưu tập: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer</sub>
+</p>
+
 ---
 
 ## Tính năng
@@ -110,26 +124,46 @@ duyệt, Word…).
   (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn, hoặc thêm
   việc có hạn vào ngày đó; ngày sinh của bạn có 🎂. Luôn nổi trên các cửa sổ khác,
   trừ khi bạn tắt 📍. Pet nhắc ngày lễ, Rằm, mùng 1, và tối hôm trước báo mai là
-  ngày gì.
+  ngày gì. Khi thêm sự kiện, chọn **nhắc sớm** (trước 1 ngày, 3 ngày, 1 tuần, 10
+  ngày hoặc 1 tháng, chọn bao nhiêu cũng được); pet nhắc lúc 7 giờ sáng hôm đó, hoặc
+  Windows hiện thông báo. Sự kiện có nhắc sớm mang dấu 🔔, và bấm vào sự kiện là
+  sửa được tên, giờ hay lịch nhắc ngay trên lịch.
 - **🕐 Đồng hồ có giờ thế giới** — giờ máy kèm ngày âm, thêm tối đa 2 đồng hồ
   (Tokyo, Seoul, New York, London…) ghi chênh giờ và "ngày mai" / "hôm qua"; tự
   tính giờ mùa hè. Hàng 🍅 bắt đầu phiên Tập trung và đếm lùi.
 - **🍬 Kẹo & Bộ sưu tập** — xong việc, phiên Tập trung, chat, vuốt đầu, thắng
   game cũng được kẹo (cùng trần mỗi ngày với điểm thân thiết). Đổi kẹo trong 🍬 Bộ
-  sưu tập (💞 → 🍬 trên menu tròn) lấy skin widget, hiệu ứng thưởng (pháo hoa, pháo
-  giấy, mưa hoa anh đào, mưa tim, bong bóng xà phòng, sao băng), kiểu bong bóng thoại,
-  bông hoa khi bôi chữ, bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết) và bộ
-  mặt Miu (❄️ tuyết, 🦇 Gothic). Xứ Tuyết, Neko Lounge và Hồ ly còn đổi giao diện mọi
-  khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí; không bán bằng
-  tiền thật.
+  sưu tập (💞 → 🍬 trên menu tròn) lấy skin widget (Sakura, Trời đêm, Bạc hà, Hoàng
+  hôn, Đại dương, Matcha, Kẹo bông, Café latte, Neon đêm), 🎀 trang trí widget (nơ,
+  băng washi, cánh hoa anh đào, viền ren, dây sao, mũ tuyết, khung hologram cầu vồng),
+  hiệu ứng thưởng (pháo hoa, pháo giấy, mưa hoa anh đào, mưa tim, bong bóng xà phòng,
+  sao băng), kiểu bong bóng thoại (Mây, Trái tim, Ren Gothic, Cuộn giấy), bông hoa khi
+  bôi chữ (⭐ 🍀 🐾 ❄️), bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết), bộ mặt
+  Miu (❄️ tuyết, 🦇 Gothic) và model Live2D. Xứ Tuyết, Neko Lounge và Hồ ly còn đổi
+  giao diện mọi khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí;
+  không bán bằng tiền thật.
+- **🎭 Model Live2D trong Bộ sưu tập** — chín nhân vật thêm, ai cũng có biểu cảm
+  cười, buồn, giận, ngạc nhiên, ngại, nháy mắt và chuyển động riêng:
+
+  | Model | Giá | Tỉ lệ Capsule |
+  |---|---|---|
+  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat | 10000 🍬 | 0.2% mỗi model |
+  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.3% mỗi model |
+  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.5% mỗi model |
+
+  Model không nằm trong bộ cài: mở khoá xong app mới tải về (vài MB, tiến độ hiện
+  trên thẻ), kiểm với danh sách có chữ ký, và tự cập nhật khi có bản mới mà không cần
+  cập nhật app. Bấm **Dùng** là nhân vật trên màn hình đổi ngay. Hiyori, Haru, Mao,
+  Miara vẫn miễn phí, model bạn tự thêm từ thư mục cũng vậy.
 - **🎰 Candy Capsule** — quay máy kẹo thỏ trong Bộ sưu tập: 100 🍬 một lượt, 1000 🍬
-  mười lượt, tỉ lệ ghi ngay trên máy (Thường 65% · Hiếm 25% · Sử thi 10%). Lượt thứ 10
-  chưa ra Hiếm thì chắc chắn Hiếm, lượt thứ 50 chưa ra Sử thi thì chắc chắn Sử thi; trùng
-  món được hoàn kẹo. Capsule Hiếm và Sử thi bung ra với hiệu ứng riêng. Đổi thẳng trong
-  cửa hàng vẫn luôn có.
+  mười lượt, tỉ lệ ghi ngay trên máy (Thường 62% · Hiếm 25% · Sử thi 10% · 🌈 Huyền
+  thoại 3%, chỉ gồm model Live2D). Lượt thứ 10 chưa ra Hiếm thì chắc chắn từ Hiếm trở
+  lên, lượt thứ 50 chưa ra Sử thi thì chắc chắn từ Sử thi trở lên; trùng món được hoàn
+  10% giá món đó. Mỗi hạng bung capsule với hiệu ứng riêng, Huyền thoại có tia cầu vồng
+  và mưa pháo giấy dày. Đổi thẳng trong cửa hàng vẫn luôn có.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
-  bên phải.
+  bên phải. Ba widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -147,6 +181,8 @@ duyệt, Word…).
   bảng mờ đi nên vẫn đọc rõ.
 - **Nhìn theo con trỏ** — đầu/mắt nhân vật dõi theo chuột khi chuột ở gần pet.
 - **Phóng to / thu nhỏ** — `Ctrl` + lăn chuột để đổi kích thước; tự nhớ kích thước.
+- **Menu Diện mạo** — model chưa mở khoá trong Bộ sưu tập có 🔒; chọn vào thì mở
+  Bộ sưu tập ở tab Model.
 - **Model Live2D tự thêm** — nạp model `*.model3.json` của bạn từ thư mục bất kỳ.
 - **Âm thanh** — hiệu ứng tương tác (chọc / vuốt đầu / …) bằng tiếng Nhật / Việt / Anh.
 - **Nhà cung cấp AI** — Anthropic Claude hoặc Google Gemini (tự nhập API key của bạn).
@@ -237,5 +273,5 @@ cd src-tauri && cargo test   # test Rust
 ## Giấy phép
 
 - **Mã nguồn:** MIT — xem [LICENSE](LICENSE).
-- **Art gốc** (model Gothic Aristocrat, nhân vật bám mép, bộ mặt Miu, ảnh Arcade): [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.vi) — được chia sẻ và chỉnh sửa nếu ghi tên tác giả, không dùng thương mại. Xem [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
+- **Art gốc** (các model Live2D trong Bộ sưu tập, nhân vật bám mép, bộ mặt Miu, ảnh Arcade): [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.vi) — được chia sẻ và chỉnh sửa nếu ghi tên tác giả, không dùng thương mại. Xem [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
 - **Model mẫu Live2D** (Hiyori, Haru, Mao, Miara): © Live2D Inc., Free Material License.
