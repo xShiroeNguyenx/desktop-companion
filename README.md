@@ -41,17 +41,20 @@
 </p>
 
 <p align="center">
-  <img src="docs/landing/img/model-gothic-aristocrat.png" height="200" alt="Gothic Aristocrat" />
-  <img src="docs/landing/img/model-pink-angel.png" height="200" alt="Pink Angel" />
-  <img src="docs/landing/img/model-snow-aristocrat.png" height="200" alt="Snow Aristocrat" />
-  <img src="docs/landing/img/model-gothic-pastel.png" height="200" alt="Gothic Pastel" />
-  <img src="docs/landing/img/model-pink-pastel.png" height="200" alt="Pink Pastel" />
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
+  <img src="docs/landing/img/model-gothic-pastel.png" height="180" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="180" alt="Pink Pastel" />
   <br />
-  <img src="docs/landing/img/model-snow-pastel.png" height="200" alt="Snow Pastel" />
-  <img src="docs/landing/img/model-snow-lolita.png" height="200" alt="Snow Lolita" />
-  <img src="docs/landing/img/model-gothic-lolita.png" height="200" alt="Gothic Lolita" />
-  <img src="docs/landing/img/model-snow-dancer.png" height="200" alt="Snow Dancer" />
-  <br /><sub>🎭 Live2D models in the Collection: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer</sub>
+  <img src="docs/landing/img/model-snow-pastel.png" height="180" alt="Snow Pastel" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
+  <img src="docs/landing/img/model-pink-kawaii.png" height="180" alt="Pink Kawaii" />
+  <img src="docs/landing/img/model-snow-kawaii.png" height="180" alt="Snow Kawaii" />
+  <br /><sub>🎭 Live2D models in the Collection: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Pink Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer · Pink Kawaii · Snow Kawaii</sub>
 </p>
 
 ---
@@ -157,14 +160,14 @@
   Lounge), Miu face sets (❄️ Snow, 🦇 Gothic) and Live2D models. Snow, Neko
   and Fox Lounge also restyle every panel (icy blue / gothic lolita / fox
   shrine). Decorations only; never sold for real money.
-- **🎭 Live2D models in the Collection** — nine extra characters, each with
+- **🎭 Live2D models in the Collection** — twelve extra characters, each with
   smile, sad, angry, surprised, shy and wink expressions and her own motions:
 
   | Model | Price | Capsule rate |
   |---|---|---|
-  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat | 10000 🍬 | 0.2% each |
-  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.3% each |
-  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.5% each |
+  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat · 🌸 Pink Aristocrat | 10000 🍬 | 0.1% each |
+  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.2% each |
+  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer · 🐰 Pink Kawaii · ❄️ Snow Kawaii | 5000 🍬 | 0.4% each |
 
   They are not in the installer: once unlocked, the model downloads (a few MB,
   progress on its card), is checked against a signed list, and updates itself
@@ -178,6 +181,9 @@
   Epic or better, and duplicates refund 10% of the item's price. Each rarity
   bursts open with its own light show, with rainbow rays and heavy confetti
   for a Legendary. Trading directly in the shop always stays available.
+- **🎁 A free spin every day** — each day a small capsule appears next to the
+  character; click it for one free Candy Capsule spin, opened right there on
+  the pet. It counts like any other spin (guarantees, history, duplicate refund).
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
   calendar, the clock and the weather widget, picks the extra clocks, and
   🧹 tidies every pinned widget into a column on the right. All three share one

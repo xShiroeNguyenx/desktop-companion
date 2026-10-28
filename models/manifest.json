@@ -3,10 +3,10 @@
   "models": [
     {
       "id": "gothic-aristocrat",
-      "version": 3,
-      "file": "gothic-aristocrat-3.zip",
-      "sha256": "da053e45d698a61c147f583bb2f9e04037490374127ef8e9a8a797355c23d65f",
-      "size": 4179765
+      "version": 4,
+      "file": "gothic-aristocrat-4.zip",
+      "sha256": "1b13208114e2096153e8afbec97e0993d12cb7be75b3fbfd3357e1d2ec991f32",
+      "size": 4736976
     },
     {
       "id": "gothic-lolita",
@@ -30,6 +30,20 @@
       "size": 3060938
     },
     {
+      "id": "pink-aristocrat",
+      "version": 1,
+      "file": "pink-aristocrat-1.zip",
+      "sha256": "aaac31acd48834a9e47547cae8a65bf83d0c8c7d0eb2e38a0c7fb19cfbfa5013",
+      "size": 3420363
+    },
+    {
+      "id": "pink-kawaii",
+      "version": 1,
+      "file": "pink-kawaii-1.zip",
+      "sha256": "3432ed0bd0f24614ad81713499b45c233ffea56eb8ad5fc6b5b1434f512b1f38",
+      "size": 2145978
+    },
+    {
       "id": "pink-pastel",
       "version": 1,
       "file": "pink-pastel-1.zip",
@@ -38,10 +52,10 @@
     },
     {
       "id": "snow-aristocrat",
-      "version": 2,
-      "file": "snow-aristocrat-2.zip",
-      "sha256": "e381132265d4bd3bbb2d5e63c51be2ef9900482034591e06ef0efb09af519462",
-      "size": 3181606
+      "version": 3,
+      "file": "snow-aristocrat-3.zip",
+      "sha256": "e5ff97c5152dc52c4f85c28971a3b3cc96dbb60df9755b8ff3189b20b1a1ea1e",
+      "size": 2993755
     },
     {
       "id": "snow-dancer",
@@ -49,6 +63,13 @@
       "file": "snow-dancer-1.zip",
       "sha256": "69f17c6364ac61779110285204888983684c455d35991258ff5866a872565e5f",
       "size": 1477067
+    },
+    {
+      "id": "snow-kawaii",
+      "version": 1,
+      "file": "snow-kawaii-1.zip",
+      "sha256": "83874563feb9b0b85882fbe68efcd0a1a2cbc32a27a7554a0da4d392fd6e8c5e",
+      "size": 2081712
     },
     {
       "id": "snow-lolita",

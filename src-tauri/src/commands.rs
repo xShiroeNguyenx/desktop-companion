@@ -487,6 +487,8 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     // Model đổi ở menu Diện mạo / Bộ sưu tập (pet_set_model), form không có ô chọn
     // model: lấy từ form thì Lưu Cài đặt sau khi đổi model sẽ ghi đè về model cũ.
     settings.pet_model = old.pet_model.clone();
+    // Tắt tiếng bật / tắt ở menu Âm thanh trên pet, không ở form.
+    settings.muted = old.muted;
     settings.name_asks = old.name_asks;
     settings.name_asked_at = old.name_asked_at;
     settings.address_asked = old.address_asked;
@@ -761,7 +763,8 @@ pub async fn collection_preview_fx(app: AppHandle, kind: String) -> Result<(), S
     Ok(())
 }
 
-/// Chỉ bản dev (npm run dev): "candy" = +10000 kẹo, "unlock" = mở hết. Bản phát hành từ chối.
+/// Chỉ bản dev (npm run dev): "candy" = +10000 kẹo, "unlock" = mở hết, "free" = trả
+/// lại lượt quay miễn phí hôm nay và hiện lại khung 🎁 trên pet. Bản phát hành từ chối.
 #[tauri::command]
 pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, String> {
     if !cfg!(debug_assertions) {
@@ -776,8 +779,15 @@ pub async fn collection_debug(app: AppHandle, action: String) -> Result<Value, S
             crate::collection::unlock_all(c);
             Ok(())
         }
+        "free" => {
+            c.free_day = 0;
+            Ok(())
+        }
         _ => Err(format!("Lệnh lạ: {action}")),
     })??;
+    if action == "free" {
+        crate::companion::reoffer_free_spin(&app);
+    }
     crate::collection::changed(&app);
     Ok(crate::collection::view(&app))
 }
@@ -814,6 +824,70 @@ pub async fn collection_pull(app: AppHandle, count: u32) -> Result<Value, String
         install_if_model(&app, p.item);
     }
     Ok(serde_json::json!({ "results": results, "view": crate::collection::view(&app) }))
+}
+
+/// Mở Bộ sưu tập ở cửa hàng, đúng nhóm của món `id`, và chỉ vào thẻ của món đó
+/// (collection.js nghe "collection-focus"). Id lạ thì chỉ mở Bộ sưu tập.
+pub fn show_item(app: &AppHandle, id: &str) {
+    windows::open_collection(app);
+    if let Some(it) = crate::collection::item(id) {
+        let _ = app.emit_to("collection", "collection-focus", serde_json::json!({ "tab": it.cat.code(), "item": it.id }));
+    }
+}
+
+/// Trang pet vừa nạp (lại) hỏi: hôm nay còn lượt quay miễn phí không, và ngôn ngữ
+/// cho chữ trên khung 🎁 (daily-gacha.js).
+#[tauri::command]
+pub fn gacha_free_status(app: AppHandle) -> Value {
+    let ready = crate::companion::free_spin_pending(&app);
+    let a = persona::address(&store::load_settings(&app));
+    serde_json::json!({ "ready": ready, "lang": a.lang.code() })
+}
+
+/// 🎁 Khung quay miễn phí cạnh pet (pet_command "gacha:free", app/media/webview/daily-gacha.js):
+/// một lượt không tốn kẹo, mỗi ngày một lần. Kết quả (hay lỗi) trả về khung bằng
+/// "gacha:result"; món mới thì pet khoe như khi quay trong Bộ sưu tập.
+pub fn free_spin(app: &AppHandle) {
+    let now = now_millis() as u64;
+    let (today, _) = crate::companion::today_and_hour(now / 1000);
+    let a = persona::address(&store::load_settings(app));
+    let idx = crate::collection::lang_index(a.lang);
+    let mut rand = crate::gacha::rng();
+    let emit = |v: Value| {
+        let _ = app.emit_to("main", "pet-message", v);
+    };
+    let pull = match store::update_collection(app, |c| crate::gacha::pull_free(c, today, now, &mut rand)) {
+        Ok(Ok(p)) => p,
+        Ok(Err(e)) => {
+            emit(serde_json::json!({ "command": "gacha:result", "lang": a.lang.code(), "error": e.code() }));
+            return;
+        }
+        Err(e) => {
+            eprintln!("[gacha] lưu lượt miễn phí lỗi: {e}");
+            emit(serde_json::json!({ "command": "gacha:result", "lang": a.lang.code(), "error": "save_failed" }));
+            return;
+        }
+    };
+    emit(serde_json::json!({
+        "command": "gacha:result",
+        "lang": a.lang.code(),
+        "id": pull.item.id,
+        "name": pull.item.name[idx],
+        "cat": pull.item.cat.code(),
+        "rarity": pull.item.rarity.code(),
+        "dup": pull.dup,
+        "refund": pull.refund,
+        "candy": store::load_collection(app).candy,
+    }));
+    if pull.dup {
+        emit(serde_json::json!({ "command": "setExpression", "expression": "happy", "duration": 6000 }));
+    } else {
+        let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", pull.item.name[idx])]);
+        emit(serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
+        emit(serde_json::json!({ "command": "showMessage", "text": line }));
+        install_if_model(app, pull.item);
+    }
+    crate::collection::changed(app);
 }
 
 /// Đổi model Live2D của pet (menu Diện mạo, nút "Dùng" ở tab 🎭 Model). Chưa dùng

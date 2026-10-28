@@ -103,6 +103,7 @@
 
   function card(item) {
     const c = el('article', 'item' + (item.selected || item.on ? ' selected' : ''));
+    c.dataset.id = item.id;
     c.append(preview(item));
     const name = el('div', 'name', item.name);
     name.append(el('span', 'rar ' + C.rarityClass(item.rarity), S().rarity[item.rarity] || item.rarity));
@@ -425,6 +426,7 @@
   }
   $('devCandy').addEventListener('click', () => dev('candy'));
   $('devUnlock').addEventListener('click', () => dev('unlock'));
+  $('devFree').addEventListener('click', () => dev('free'));
   $('pull1').addEventListener('click', () => pull(1));
   $('pull10').addEventListener('click', () => pull(10));
   $('gresOk').addEventListener('click', closeResults);
@@ -451,6 +453,16 @@
     if (mode === 'shop') renderShop();
   });
   // Bấm model còn khoá ở menu Diện mạo của pet → mở thẳng tab của nó trong cửa hàng.
+  // Thẻ của một món (nút "Xem" trên thẻ quà cạnh pet): cuộn tới và nhấp nháy viền.
+  function spotlight(id) {
+    const c = [...document.querySelectorAll('#grid .item')].find((n) => n.dataset.id === id);
+    if (!c) return;
+    c.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    c.classList.remove('spot');
+    void c.offsetWidth;
+    c.classList.add('spot');
+    setTimeout(() => c.classList.remove('spot'), 2600);
+  }
   listen('collection-focus', (e) => {
     const t = e && e.payload && e.payload.tab;
     if (!t || !C.CATS.includes(t)) return;
@@ -458,6 +470,8 @@
     try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
     closeResults();
     setMode('shop');
+    const id = e.payload.item;
+    if (id) requestAnimationFrame(() => spotlight(id));
   });
   FX.buildMachine($('machine'));
   renderHead();

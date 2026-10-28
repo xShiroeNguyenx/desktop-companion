@@ -9,7 +9,7 @@
 // không nói được thì gửi thông báo Windows (notify.rs).
 
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use serde_json::json;
@@ -260,6 +260,8 @@ pub struct CompanionState {
     cpu_high: Mutex<Sustain>,
     ram_high: Mutex<Sustain>,
     weather: Mutex<crate::weather::Talk>,
+    /// Ngày (bond::Day) đã đưa khung 🎁 quay miễn phí ra pet, để tick chỉ đưa một lần mỗi ngày.
+    free_spin_offered: AtomicI64,
 }
 
 fn now_secs() -> u64 {
@@ -498,6 +500,38 @@ fn bond_sync(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, away: bool
         .map(|(_, tag)| format!("ms:{tag}"))
         .collect();
     sync_kind(pending, Kind::Milestone, &live, now);
+}
+
+/// 🎁 Khung quay miễn phí cạnh pet (daily-gacha.js): hôm nay còn lượt không
+/// (gacha::free_ready). Trang pet hỏi bằng command `gacha_free_status` mỗi lần
+/// nạp (lại), vì sự kiện gửi lúc trang đang nạp có thể chưa có ai nghe. Ghi lại
+/// là đã đưa ra hôm nay để tick không gửi thêm.
+pub fn free_spin_pending(app: &AppHandle) -> bool {
+    let (today, _) = today_and_hour(now_secs());
+    let ready = crate::gacha::free_ready(&store::load_collection(app), today);
+    if ready {
+        app.state::<CompanionState>().free_spin_offered.store(today, Ordering::SeqCst);
+    }
+    ready
+}
+
+/// Nút 🛠 của bản dev (collection_debug "free"): vừa trả lại lượt hôm nay, đẩy khung ra ngay.
+pub fn reoffer_free_spin(app: &AppHandle) {
+    app.state::<CompanionState>().free_spin_offered.store(0, Ordering::SeqCst);
+    offer_free_spin(app);
+}
+
+/// Tick: sang ngày mới khi app đang chạy thì đẩy khung 🎁 ra pet (mỗi ngày một lần).
+fn offer_free_spin(app: &AppHandle) {
+    let (today, _) = today_and_hour(now_secs());
+    if !crate::gacha::free_ready(&store::load_collection(app), today) {
+        return;
+    }
+    if app.state::<CompanionState>().free_spin_offered.swap(today, Ordering::SeqCst) == today {
+        return;
+    }
+    let a = persona::address(&store::load_settings(app));
+    pet(app, json!({ "command": "gacha:offer", "lang": a.lang.code() }));
 }
 
 /// Menu tròn 💗: gửi số liệu cho bảng "Thân thiết" trên pet (bond.js).
@@ -1096,6 +1130,10 @@ fn tick(app: &AppHandle) {
     };
     for c in &toasts {
         deliver_toast(app, c);
+    }
+    // Sang ngày mới (hay lần đầu mở máy): khung 🎁 quay miễn phí. Vắng thì đợi về.
+    if !snap.away() {
+        offer_free_spin(app);
     }
     let Some(c) = chosen else { return };
 

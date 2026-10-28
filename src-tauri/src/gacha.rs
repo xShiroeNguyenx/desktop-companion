@@ -25,18 +25,21 @@ pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 650), (Rarity::Rare
 /// Mẫu số của mọi tỉ lệ: phần nghìn.
 pub const RATE_TOTAL: u32 = 1000;
 /// Tỉ lệ (‰) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
-/// Cả hạng giữ 3%: model 10000 🍬 mỗi con 0.2%, 7500 🍬 mỗi con 0.3%, 5000 🍬 mỗi con 0.5%
-/// (rẻ hơn thì ra dễ hơn). Món chưa có trong catalog thì bỏ qua.
+/// Cả hạng giữ 3%: model 10000 🍬 mỗi con 0.1%, 7500 🍬 mỗi con 0.2%, 5000 🍬 mỗi con 0.4%
+/// (rẻ hơn thì ra dễ hơn; 4 × 1 + 3 × 2 + 5 × 4 = 30‰). Món chưa có trong catalog thì bỏ qua.
 pub const LEGENDARY_PCT: &[(&str, u32)] = &[
-    ("model.gothic-aristocrat", 2),
-    ("model.pink-angel", 2),
-    ("model.snow-lolita", 5),
-    ("model.snow-aristocrat", 2),
-    ("model.gothic-lolita", 5),
-    ("model.snow-dancer", 5),
-    ("model.gothic-pastel", 3),
-    ("model.pink-pastel", 3),
-    ("model.snow-pastel", 3),
+    ("model.gothic-aristocrat", 1),
+    ("model.pink-angel", 1),
+    ("model.snow-lolita", 4),
+    ("model.snow-aristocrat", 1),
+    ("model.gothic-lolita", 4),
+    ("model.snow-dancer", 4),
+    ("model.gothic-pastel", 2),
+    ("model.pink-pastel", 2),
+    ("model.snow-pastel", 2),
+    ("model.pink-aristocrat", 1),
+    ("model.pink-kawaii", 4),
+    ("model.snow-kawaii", 4),
 ];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
 pub const PITY_RARE: u32 = 10;
@@ -206,6 +209,30 @@ pub fn pull_many(
     Ok((0..n).map(|_| pull_one(c, now_ms, rand)).collect())
 }
 
+/// Hôm nay (`today`, bond::Day) còn lượt quay miễn phí không (khung 🎁 cạnh pet).
+pub fn free_ready(c: &Collection, today: crate::bond::Day) -> bool {
+    enabled() && c.free_day != today
+}
+
+/// 🎁 Lượt quay miễn phí mỗi ngày: một lượt thường (tính bảo hiểm, lịch sử, hoàn
+/// khi trùng) nhưng không trừ kẹo. Mỗi ngày một lần; đồng hồ lùi về ngày cũ
+/// cũng chỉ được thêm đúng một lượt cho ngày đó.
+pub fn pull_free(
+    c: &mut Collection,
+    today: crate::bond::Day,
+    now_ms: u64,
+    rand: &mut impl FnMut() -> f64,
+) -> Result<Pull, BuyError> {
+    if !enabled() {
+        return Err(BuyError::NotFound);
+    }
+    if c.free_day == today {
+        return Err(BuyError::UsedToday);
+    }
+    c.free_day = today;
+    Ok(pull_one(c, now_ms, rand))
+}
+
 /// Nguồn ngẫu nhiên cho bản chạy thật: SplitMix64, gieo từ đồng hồ nano giây
 /// trộn bộ đếm toàn cục (hai lần quay sát nhau vẫn khác). Đủ cho trò chơi,
 /// không dùng cho bảo mật; không thêm crate `rand`.
@@ -330,14 +357,14 @@ mod tests {
         assert_eq!(roll_rarity(&r, 0.1, 0.93, Rarity::Rare), (Rarity::Legendary, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.76, Rarity::Epic), (Rarity::Epic, true));
         assert_eq!(roll_rarity(&r, 0.1, 0.78, Rarity::Epic), (Rarity::Legendary, true));
-        // Trong hạng Huyền thoại (2:2:5:2:5:5:3:3:3 trên 30): 0.2% mỗi model 10000 🍬,
-        // 0.3% mỗi model 7500 🍬, 0.5% mỗi model 5000 🍬.
+        // Trong hạng Huyền thoại (1:1:4:1:4:4:2:2:2:1:4:4 trên 30): 0.1% mỗi model 10000 🍬,
+        // 0.2% mỗi model 7500 🍬, 0.4% mỗi model 5000 🍬.
         let x = |v: f64| { let l: Vec<_> = legendary().collect(); pick_weighted(&l, v).unwrap().id };
-        assert_eq!((x(0.06), x(0.07), x(0.13), x(0.14)), ("model.gothic-aristocrat", "model.pink-angel", "model.pink-angel", "model.snow-lolita"));
-        assert_eq!((x(0.29), x(0.31), x(0.36), x(0.37)), ("model.snow-lolita", "model.snow-aristocrat", "model.snow-aristocrat", "model.gothic-lolita"));
-        assert_eq!((x(0.53), x(0.54), x(0.69), x(0.71)), ("model.gothic-lolita", "model.snow-dancer", "model.snow-dancer", "model.gothic-pastel"));
-        assert_eq!((x(0.79), x(0.81), x(0.89), x(0.91), x(0.999)), ("model.gothic-pastel", "model.pink-pastel", "model.pink-pastel", "model.snow-pastel", "model.snow-pastel"));
-        assert_eq!(legendary().map(|(_, p)| pct(p)).collect::<Vec<_>>(), vec![0.2, 0.2, 0.5, 0.2, 0.5, 0.5, 0.3, 0.3, 0.3]);
+        assert_eq!((x(0.0), x(0.034), x(0.066), x(0.067)), ("model.gothic-aristocrat", "model.pink-angel", "model.pink-angel", "model.snow-lolita"));
+        assert_eq!((x(0.199), x(0.201), x(0.234), x(0.367)), ("model.snow-lolita", "model.snow-aristocrat", "model.gothic-lolita", "model.snow-dancer"));
+        assert_eq!((x(0.501), x(0.567), x(0.634), x(0.701)), ("model.gothic-pastel", "model.pink-pastel", "model.snow-pastel", "model.pink-aristocrat"));
+        assert_eq!((x(0.734), x(0.866), x(0.867), x(0.999)), ("model.pink-kawaii", "model.pink-kawaii", "model.snow-kawaii", "model.snow-kawaii"));
+        assert_eq!(legendary().map(|(_, p)| pct(p)).collect::<Vec<_>>(), vec![0.1, 0.1, 0.4, 0.1, 0.4, 0.4, 0.2, 0.2, 0.2, 0.1, 0.4, 0.4]);
     }
 
     #[test]
@@ -408,6 +435,26 @@ mod tests {
         assert_eq!(c.candy, refund(a[0].item));
         assert_eq!(c.history.len(), 2);
         assert_eq!((c.history[0].t, c.history[0].dup), (2, true), "mới nhất lên đầu");
+    }
+
+    #[test]
+    fn free_pull_once_a_day_costs_nothing() {
+        let mut c = Collection::default();
+        let day = 20_000;
+        assert!(free_ready(&c, day));
+        let p = pull_free(&mut c, day, 7, &mut seq(&[0.0])).unwrap();
+        assert!(!p.dup);
+        assert_eq!((c.candy, c.spent_total, c.pulls, c.pity), (0, 0, 1, 1), "không trừ kẹo, vẫn tính bảo hiểm");
+        assert_eq!(c.history[0].id, p.item.id);
+        assert!(!free_ready(&c, day));
+        let before = c.clone();
+        assert_eq!(pull_free(&mut c, day, 8, &mut seq(&[0.0])).unwrap_err(), BuyError::UsedToday);
+        assert_eq!(c, before, "lượt thứ hai trong ngày không đổi gì");
+        // Ngày mới: lại có lượt; trùng thì vẫn hoàn kẹo như lượt thường.
+        assert!(free_ready(&c, day + 1));
+        let q = pull_free(&mut c, day + 1, 9, &mut seq(&[0.0])).unwrap();
+        assert!(q.dup);
+        assert_eq!(c.candy, refund(q.item));
     }
 
     #[test]

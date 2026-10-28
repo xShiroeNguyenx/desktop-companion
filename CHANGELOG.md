@@ -6,6 +6,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-10-28
+
+### Added
+- **🎁 A free Candy Capsule spin every day.** The first time you are at the
+  computer each day, a small capsule sits on top of the character's head and
+  follows her when she moves or changes size. Click it and the capsule shakes,
+  then opens into a gift card with a bow, a glowing medal, stars for the rarity
+  and a burst of sparkles (a rainbow frame for a Legendary model). It is a
+  normal spin in every way except the price: it counts towards the Rare and Epic
+  guarantees, shows in the spin history and refunds candy for a duplicate.
+  🍬 View opens the Collection right at the item you won; × hides the capsule
+  until the next time the app starts, and the spin stays yours until midnight.
+- **Three more Live2D models in the Collection**, cat girls with smile, sad,
+  angry, surprised, shy and wink expressions and their own motions, downloaded
+  once unlocked:
+  - **🌸 Pink Aristocrat** (10000 🍬): a pink-haired noble with long curls, in a
+    pink gothic lolita dress with black lace, bows and hearts.
+  - **🐰 Pink Kawaii** (5000 🍬): pink hair, an oversized white bunny jacket, a
+    pink plaid skirt and bunny sneakers.
+  - **❄️ Snow Kawaii** (5000 🍬): blue-tinted silver hair and glasses, a white
+    jacket with blue bows, a frilled skirt and bunny boots.
+
+### Changed
+- **Updated Gothic Aristocrat and Snow Aristocrat models.** Installed copies
+  update themselves at the next launch, with no app update needed.
+- **The Legendary tier stays at 3%, now split twelve ways.** Each 10000 🍬 model
+  is 0.1%, each 7500 🍬 model 0.2% and each 5000 🍬 model 0.4%, so the cheaper
+  a model, the easier she is to win. Common, Rare and Epic are unchanged at
+  62 / 25 / 10.
+
+### Fixed
+- **🔇 Mute is remembered.** Muting the pet from the Sound menu now lasts across
+  restarts and model changes; before, she started talking and playing sounds
+  again every time the app opened. While muted she no longer prepares spoken
+  replies at all.
+
 ## [0.9.10] - 2026-10-23
 
 ### Added
@@ -711,6 +747,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.9.11]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.11
+[0.9.10]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.10
+[0.9.9]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.9
+[0.9.8]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.8
+[0.9.7]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.7
+[0.9.6]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.6
 [0.9.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.5
 [0.9.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.4
 [0.9.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.3

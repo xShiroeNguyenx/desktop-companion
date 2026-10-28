@@ -540,6 +540,10 @@ impl Speaker {
             return None;
         }
         let s = store::load_settings(app);
+        // Đang tắt tiếng: tts-player.js cũng bỏ audio, nhưng đừng tốn công tổng hợp.
+        if s.muted {
+            return None;
+        }
         let voice = match s.tts_engine.as_str() {
             "edge" => s.tts_voice_edge,
             "windows" => s.tts_voice_windows,

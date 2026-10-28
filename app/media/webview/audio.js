@@ -283,5 +283,7 @@ export function setAmbientVolume(volume) {
 
 export function setGlobalAudioMuted(muted) {
   window.__AUDIO_MUTED__ = Boolean(muted);
+  // Trang pet nạp lại khi đổi model: pet-config.js đọc lại lựa chọn này.
+  try { sessionStorage.setItem('audioMuted', window.__AUDIO_MUTED__ ? '1' : '0'); } catch (_) { /* ignore */ }
   syncAmbientPlayback();
 }

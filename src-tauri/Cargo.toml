@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.9.10"
+version = "0.9.11"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"

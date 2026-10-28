@@ -41,17 +41,20 @@
 </p>
 
 <p align="center">
-  <img src="docs/landing/img/model-gothic-aristocrat.png" height="200" alt="Gothic Aristocrat" />
-  <img src="docs/landing/img/model-pink-angel.png" height="200" alt="Pink Angel" />
-  <img src="docs/landing/img/model-snow-aristocrat.png" height="200" alt="Snow Aristocrat" />
-  <img src="docs/landing/img/model-gothic-pastel.png" height="200" alt="Gothic Pastel" />
-  <img src="docs/landing/img/model-pink-pastel.png" height="200" alt="Pink Pastel" />
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
+  <img src="docs/landing/img/model-gothic-pastel.png" height="180" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="180" alt="Pink Pastel" />
   <br />
-  <img src="docs/landing/img/model-snow-pastel.png" height="200" alt="Snow Pastel" />
-  <img src="docs/landing/img/model-snow-lolita.png" height="200" alt="Snow Lolita" />
-  <img src="docs/landing/img/model-gothic-lolita.png" height="200" alt="Gothic Lolita" />
-  <img src="docs/landing/img/model-snow-dancer.png" height="200" alt="Snow Dancer" />
-  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Aristocrat・Pink Angel・Snow Aristocrat・Gothic Pastel・Pink Pastel・Snow Pastel・Snow Lolita・Gothic Lolita・Snow Dancer</sub>
+  <img src="docs/landing/img/model-snow-pastel.png" height="180" alt="Snow Pastel" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
+  <img src="docs/landing/img/model-pink-kawaii.png" height="180" alt="Pink Kawaii" />
+  <img src="docs/landing/img/model-snow-kawaii.png" height="180" alt="Snow Kawaii" />
+  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Aristocrat・Pink Angel・Snow Aristocrat・Pink Aristocrat・Gothic Pastel・Pink Pastel・Snow Pastel・Snow Lolita・Gothic Lolita・Snow Dancer・Pink Kawaii・Snow Kawaii</sub>
 </p>
 
 ---
@@ -134,14 +137,14 @@
   （🐰 バニー・🐱 ネコ・🦊 狐・❄️ 雪の国）、ミウの表情セット（❄️ 雪・🦇 ゴシック）、
   Live2D モデルと交換できます。雪の国・ネコ・狐は全パネルの見た目も変えます
   （氷・ゴシックロリータ・狐の社）。飾りだけで、お金では買えません。
-- **🎭 コレクションの Live2D モデル** — 9 人の追加キャラクター。笑顔・悲しみ・怒り・
+- **🎭 コレクションの Live2D モデル** — 12 人の追加キャラクター。笑顔・悲しみ・怒り・
   驚き・照れ・ウインクの表情と、それぞれのモーションつき：
 
   | モデル | 価格 | カプセル排出率 |
   |---|---|---|
-  | 🦇 Gothic Aristocrat・🌸 Pink Angel・❄️ Snow Aristocrat | 10000 🍬 | 各 0.2% |
-  | 🦇 Gothic Pastel・🌸 Pink Pastel・❄️ Snow Pastel | 7500 🍬 | 各 0.3% |
-  | ❄️ Snow Lolita・🦇 Gothic Lolita・❄️ Snow Dancer | 5000 🍬 | 各 0.5% |
+  | 🦇 Gothic Aristocrat・🌸 Pink Angel・❄️ Snow Aristocrat・🌸 Pink Aristocrat | 10000 🍬 | 各 0.1% |
+  | 🦇 Gothic Pastel・🌸 Pink Pastel・❄️ Snow Pastel | 7500 🍬 | 各 0.2% |
+  | ❄️ Snow Lolita・🦇 Gothic Lolita・❄️ Snow Dancer・🐰 Pink Kawaii・❄️ Snow Kawaii | 5000 🍬 | 各 0.4% |
 
   インストーラーには含まれず、解放するとダウンロードされます（数 MB、進み具合はカードに
   表示）。署名つきリストで検証してからインストールし、新しい版が出ればアプリを更新しなくても
@@ -153,6 +156,9 @@
   50回目はエピック以上確定、ダブりはそのアイテムの価格の 10% がキャンディで返ってきます。
   レア度ごとに専用の演出で開き、レジェンドは虹色の光と大量の紙吹雪。ショップでの交換も
   いつでもできます。
+- **🎁 毎日1回の無料ガチャ** — 毎日キャラクターの横に小さなカプセルが現れます。クリックすると
+  キャンディカプセルを1回無料でまわせて、その場で開きます。ほかの回と同じく天井・履歴・
+  ダブりの返還に数えられます。
 - **🧩 ウィジェットをひとまとめに** — 設定 → *🧩 Widget* でカレンダー・時計・天気ウィジェットの
   固定／解除、追加の時計の選択、🧹 で固定中のウィジェットを右側に一列に整列できます。
   3 つのウィジェットは幅と余白が同じなので、両端がきれいにそろいます。

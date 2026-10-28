@@ -29,6 +29,7 @@ import {
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
+import { handleDailyGachaMessage, initDailyGacha } from './daily-gacha.js';
 import { handleBondMessage } from './bond.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
 
@@ -268,6 +269,11 @@ window.addEventListener('message', (event) => {
     case 'naming:error':
       handleNamingMessage(event.data);
       break;
+    // Khung 🎁 quay miễn phí mỗi ngày (companion.rs offer_free_spin, commands.rs free_spin).
+    case 'gacha:offer':
+    case 'gacha:result':
+      handleDailyGachaMessage(event.data);
+      break;
     // Đổi "Ngôn ngữ chữ" từ bảng Cài đặt. Nhớ qua sessionStorage vì trang pet
     // nạp lại khi đổi model (pet-config.js đọc lại).
     case 'messageLanguage':
@@ -505,5 +511,7 @@ debugLog('Webview script loaded');
 // Trang pet nạp lại mỗi lần đổi model: hỏi lại trạng thái "Đừng làm phiền".
 vscode.postMessage({ command: 'dnd:sync' });
 vscode.postMessage({ command: 'focus:sync' });
+// Khung 🎁 quay miễn phí: hỏi thẳng Rust (khung cũ mất theo trang khi nạp lại).
+initDailyGacha();
 initAmbientAudio();
 initLive2D();

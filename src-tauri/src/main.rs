@@ -278,6 +278,17 @@ fn pet_command(app: AppHandle, payload: Value) {
                 eprintln!("[persona] lưu ngôn ngữ chữ lỗi: {e}");
             }
         }
+        // Menu Âm thanh → 🔇 Tắt tiếng: lưu lại để mở app lần sau vẫn im.
+        "setMuted" => {
+            let muted = payload.get("muted").and_then(|m| m.as_bool()).unwrap_or(false);
+            let mut s = store::load_settings(&app);
+            if s.muted != muted {
+                s.muted = muted;
+                if let Err(e) = store::save_settings(&app, &s) {
+                    eprintln!("[audio] lưu tắt tiếng lỗi: {e}");
+                }
+            }
+        }
         "setDnd" => {
             let on = payload.get("value").and_then(|b| b.as_bool()).unwrap_or(false);
             companion::set_dnd(&app, on, true);
@@ -296,6 +307,17 @@ fn pet_command(app: AppHandle, payload: Value) {
         "games:show" => companion::show_games(&app),
         // Menu tròn 💞 → 🍬: Bộ sưu tập (kẹo, skin, hiệu ứng, bộ nhân vật).
         "shop:show" => windows::open_collection(&app),
+        // Khung 🎁 quay miễn phí mỗi ngày cạnh pet. Luồng riêng: free_spin ghi file
+        // và báo mọi cửa sổ (collection::changed), như weather:pin.
+        "gacha:free" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || commands::free_spin(&app2));
+        }
+        // Nút "Xem" trên thẻ quà: mở Bộ sưu tập ở đúng món vừa quay.
+        "gacha:view" => {
+            let id = payload.get("id").and_then(|i| i.as_str()).unwrap_or("");
+            commands::show_item(&app, id);
+        }
         // Menu tròn 💞 → 🌦: bật / tắt hiệu ứng thời tiết (loại chọn trong Cài đặt).
         "weather:toggle" => {
             fx::toggle(&app);
@@ -643,6 +665,7 @@ fn main() {
             commands::collection_get,
             commands::pet_set_model,
             commands::models_locked,
+            commands::gacha_free_status,
             commands::model_install,
             commands::collection_buy,
             commands::collection_select,
@@ -683,7 +706,8 @@ fn main() {
                 .title("Desktop Companion")
                 .initialization_script(&format!(
                     "window.__INIT_MODEL__ = {:?}; window.__CUSTOM_MODELS__ = {}; \
-                     window.__BUILTIN_MODELS__ = {}; window.__INIT_MESSAGE_LANGUAGE__ = {:?};",
+                     window.__BUILTIN_MODELS__ = {}; window.__INIT_MESSAGE_LANGUAGE__ = {:?}; \
+                     window.__INIT_MUTED__ = {};",
                     // Model chưa mở khoá (sửa tay settings.json…) thì về mặc định.
                     models::effective(
                         &settings.pet_model,
@@ -693,7 +717,8 @@ fn main() {
                     ),
                     custom_json,
                     models::builtin_json(),
-                    persona::Lang::from_code(&settings.message_language).code()
+                    persona::Lang::from_code(&settings.message_language).code(),
+                    settings.muted
                 ))
                 .inner_size(300.0, 420.0)
                 .min_inner_size(220.0, 300.0)

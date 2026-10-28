@@ -166,6 +166,12 @@
       box-shadow: 0 4px 12px rgba(200, 120, 170, 0.18);
     }
     .item.selected { border-color: var(--pink-2); box-shadow: 0 0 0 3px rgba(255, 143, 192, 0.25), 0 4px 12px rgba(200, 120, 170, 0.18); }
+    /* Món vừa quay được (nút "Xem" trên thẻ quà cạnh pet). */
+    .item.spot { animation: spot 0.65s ease-in-out 4; }
+    @keyframes spot {
+      50% { border-color: var(--pink-2); box-shadow: 0 0 0 5px rgba(255, 143, 192, 0.45), 0 0 22px rgba(255, 95, 162, 0.55); transform: scale(1.03); }
+    }
+    @media (prefers-reduced-motion: reduce) { .item.spot { animation: none; border-color: var(--pink-2); } }
     .pv {
       position: relative;
       height: 96px; border-radius: 13px; overflow: hidden;
@@ -730,6 +736,7 @@
       <div class="dev" id="devTools" hidden>
         <button id="devCandy" type="button">🛠 +1000 🍬</button>
         <button id="devUnlock" type="button">🛠 Mở hết</button>
+        <button id="devFree" type="button">🛠 🎁 Hiện lại capsule</button>
       </div>
       <div class="nomoney"><span>🚫</span><div id="noMoney"></div></div>
     </div>

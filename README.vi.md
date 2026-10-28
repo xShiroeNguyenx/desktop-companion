@@ -42,17 +42,20 @@ duyệt, Word…).
 </p>
 
 <p align="center">
-  <img src="docs/landing/img/model-gothic-aristocrat.png" height="200" alt="Gothic Aristocrat" />
-  <img src="docs/landing/img/model-pink-angel.png" height="200" alt="Pink Angel" />
-  <img src="docs/landing/img/model-snow-aristocrat.png" height="200" alt="Snow Aristocrat" />
-  <img src="docs/landing/img/model-gothic-pastel.png" height="200" alt="Gothic Pastel" />
-  <img src="docs/landing/img/model-pink-pastel.png" height="200" alt="Pink Pastel" />
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
+  <img src="docs/landing/img/model-gothic-pastel.png" height="180" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="180" alt="Pink Pastel" />
   <br />
-  <img src="docs/landing/img/model-snow-pastel.png" height="200" alt="Snow Pastel" />
-  <img src="docs/landing/img/model-snow-lolita.png" height="200" alt="Snow Lolita" />
-  <img src="docs/landing/img/model-gothic-lolita.png" height="200" alt="Gothic Lolita" />
-  <img src="docs/landing/img/model-snow-dancer.png" height="200" alt="Snow Dancer" />
-  <br /><sub>🎭 Model Live2D trong Bộ sưu tập: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer</sub>
+  <img src="docs/landing/img/model-snow-pastel.png" height="180" alt="Snow Pastel" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
+  <img src="docs/landing/img/model-pink-kawaii.png" height="180" alt="Pink Kawaii" />
+  <img src="docs/landing/img/model-snow-kawaii.png" height="180" alt="Snow Kawaii" />
+  <br /><sub>🎭 Model Live2D trong Bộ sưu tập: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Pink Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer · Pink Kawaii · Snow Kawaii</sub>
 </p>
 
 ---
@@ -142,14 +145,14 @@ duyệt, Word…).
   Miu (❄️ tuyết, 🦇 Gothic) và model Live2D. Xứ Tuyết, Neko Lounge và Hồ ly còn đổi
   giao diện mọi khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí;
   không bán bằng tiền thật.
-- **🎭 Model Live2D trong Bộ sưu tập** — chín nhân vật thêm, ai cũng có biểu cảm
+- **🎭 Model Live2D trong Bộ sưu tập** — mười hai nhân vật thêm, ai cũng có biểu cảm
   cười, buồn, giận, ngạc nhiên, ngại, nháy mắt và chuyển động riêng:
 
   | Model | Giá | Tỉ lệ Capsule |
   |---|---|---|
-  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat | 10000 🍬 | 0.2% mỗi model |
-  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.3% mỗi model |
-  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.5% mỗi model |
+  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat · 🌸 Pink Aristocrat | 10000 🍬 | 0.1% mỗi model |
+  | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.2% mỗi model |
+  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer · 🐰 Pink Kawaii · ❄️ Snow Kawaii | 5000 🍬 | 0.4% mỗi model |
 
   Model không nằm trong bộ cài: mở khoá xong app mới tải về (vài MB, tiến độ hiện
   trên thẻ), kiểm với danh sách có chữ ký, và tự cập nhật khi có bản mới mà không cần
@@ -161,6 +164,9 @@ duyệt, Word…).
   lên, lượt thứ 50 chưa ra Sử thi thì chắc chắn từ Sử thi trở lên; trùng món được hoàn
   10% giá món đó. Mỗi hạng bung capsule với hiệu ứng riêng, Huyền thoại có tia cầu vồng
   và mưa pháo giấy dày. Đổi thẳng trong cửa hàng vẫn luôn có.
+- **🎁 Mỗi ngày một lượt quay miễn phí** — mỗi ngày một viên capsule nhỏ hiện cạnh
+  nhân vật; bấm vào là được quay Candy Capsule một lượt miễn phí, mở ngay trên pet.
+  Lượt này tính như mọi lượt khác (bảo hiểm, lịch sử, hoàn kẹo khi trùng).
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
   bên phải. Ba widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.

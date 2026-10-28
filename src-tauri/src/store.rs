@@ -66,6 +66,11 @@ pub struct Settings {
     /// "vi" | "ja" | "en": câu pet nói + ngôn ngữ trả lời chat.
     #[serde(default = "default_message_language")]
     pub message_language: String,
+    /// Menu Âm thanh → 🔇 Tắt tiếng (pet_command "setMuted"): không hiệu ứng âm
+    /// thanh, không nhạc nền, không đọc thành tiếng. Không có trên form Cài đặt:
+    /// settings_set giữ nguyên giá trị cũ.
+    #[serde(default)]
+    pub muted: bool,
     /// Đã xin đặt tên mấy lần, lần cuối lúc nào (giây unix). Không có trên form
     /// Cài đặt: settings_set giữ nguyên giá trị cũ.
     #[serde(default)]
@@ -325,6 +330,7 @@ impl Default for Settings {
             vi_user: default_vi_user(),
             ja_honorific: default_ja_honorific(),
             message_language: default_message_language(),
+            muted: false,
             name_asks: 0,
             name_asked_at: 0,
             address_asked: false,

@@ -55,7 +55,14 @@
     if (recent) messageLang = recent;
   } catch (_) { /* ignore */ }
   window.__MESSAGE_LANGUAGE__ = ['vi', 'ja', 'en'].includes(messageLang) ? messageLang : 'vi';
-  window.__AUDIO_MUTED__ = false;
+  // Tắt tiếng: như ngôn ngữ chữ, lựa chọn trong phiên này (sessionStorage, trang
+  // nạp lại khi đổi model) thắng giá trị đã lưu mà Rust tiêm vào lúc dựng cửa sổ.
+  let muted = window.__INIT_MUTED__ === true;
+  try {
+    const recent = sessionStorage.getItem('audioMuted');
+    if (recent === '1' || recent === '0') muted = recent === '1';
+  } catch (_) { /* ignore */ }
+  window.__AUDIO_MUTED__ = muted;
   window.__FOCUS_FOLLOW__ = true;
   window.__AMBIENT_PRESET__ = 'off';
   window.__AMBIENT_VOLUME__ = 0.5;

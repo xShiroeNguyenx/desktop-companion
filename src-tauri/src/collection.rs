@@ -610,6 +610,45 @@ pub const CATALOG: &[Item] = &[
         asset: "snow-pastel",
     },
     Item {
+        id: "model.pink-aristocrat",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 10000,
+        name: ["Pink Aristocrat", "ピンク・アリストクラット", "Pink Aristocrat"],
+        desc: [
+            "Tiểu thư tai mèo tóc hồng xoăn dài, váy gothic lolita hồng phối ren đen, nơ và trái tim, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "リボンとハートで飾った、ピンクと黒いレースのゴシックロリータ服の、長い巻き髪がピンクの猫耳令嬢。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A pink-haired cat-eared noble with long curls, in a pink gothic lolita dress with black lace, bows and hearts, becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "pink-aristocrat",
+    },
+    Item {
+        id: "model.pink-kawaii",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 5000,
+        name: ["Pink Kawaii", "ピンク・カワイイ", "Pink Kawaii"],
+        desc: [
+            "Cô gái tai mèo tóc hồng, áo khoác trắng rộng in thỏ, chân váy kẻ hồng và giày thỏ bông, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "うさぎ柄の白いオーバーサイズジャケットにピンクのチェックスカート、うさぎのスニーカーの、ピンク髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A pink-haired cat girl in an oversized white bunny jacket, a pink plaid skirt and bunny sneakers becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "pink-kawaii",
+    },
+    Item {
+        id: "model.snow-kawaii",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 5000,
+        name: ["Snow Kawaii", "スノー・カワイイ", "Snow Kawaii"],
+        desc: [
+            "Cô gái tai mèo tóc bạch kim ánh xanh đeo kính, áo khoác trắng nơ xanh, váy bèo trắng và giày thỏ bông, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "青いリボンの白いジャケットに白いフリルスカート、うさぎのブーツの、眼鏡をかけた青みがかった銀髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A cat girl in glasses with blue-tinted silver hair, a white jacket with blue bows, a white frilled skirt and bunny boots becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "snow-kawaii",
+    },
+    Item {
         id: "wdeco.none",
         cat: Category::WidgetDeco,
         rarity: Rarity::Common,
@@ -777,6 +816,9 @@ pub struct Collection {
     pub pulls: u32,
     #[serde(default)]
     pub history: Vec<crate::gacha::HistEntry>,
+    /// Ngày (bond::Day) đã dùng lượt quay miễn phí gần nhất (gacha::pull_free). 0 = chưa bao giờ.
+    #[serde(default)]
+    pub free_day: crate::bond::Day,
     /// Phiên bản bảng giá. File cũ (0) có kẹo theo giá ×1 → `migrate` nhân 10.
     #[serde(default)]
     pub econ: u32,
@@ -819,6 +861,7 @@ impl Default for Collection {
             epic_pity: 0,
             pulls: 0,
             history: Vec::new(),
+            free_day: 0,
             econ: ECON,
         }
     }
@@ -905,6 +948,8 @@ pub enum BuyError {
     AlreadyOwned,
     /// Còn thiếu bao nhiêu kẹo.
     NotEnough { need: u32 },
+    /// Lượt quay miễn phí hôm nay đã dùng (gacha::pull_free).
+    UsedToday,
 }
 
 impl BuyError {
@@ -913,6 +958,7 @@ impl BuyError {
         match self {
             BuyError::NotFound => "not_found".into(),
             BuyError::AlreadyOwned => "already_owned".into(),
+            BuyError::UsedToday => "used_today".into(),
             BuyError::NotEnough { need } => format!("not_enough:{need}"),
         }
     }
