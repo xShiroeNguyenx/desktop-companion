@@ -106,6 +106,14 @@ duyệt, Word…).
   bấm đúp để sửa tại chỗ. 📌 ghim ghi chú lên desktop thành tờ giấy vàng có sẵn nút
   📋 Copy. Bôi đen ở đâu cũng được, chọn 🗒️ **Lưu ghi chú** trên bông hoa là có
   ngay một ghi chú mới chứa đoạn đó.
+- **🛰 Theo dõi website** — thêm tối đa 8 website (Cài đặt → 🛰, có nút Thử ngay),
+  widget trên desktop hiện từng site xanh / đỏ kèm thời gian phản hồi. Pet báo khi
+  site sập và khi chạy lại, cả bằng thông báo Windows. Chỉ coi là sập sau 2 lần lỗi
+  liên tiếp; mọi site cùng lỗi một lúc thì pet chỉ báo "máy mất mạng".
+- **🔎 Ô mở nhanh** — **Ctrl+Alt+Space** ở bất kỳ đâu mở ô tìm: gõ tên bookmark,
+  `!yt` / `!gh` / `!g` / `!w` / `!map` / `!tr` + từ khoá, địa chỉ web, hoặc chữ bất kỳ
+  để tìm trên Google. Tự thêm bang trong Cài đặt. Bookmark nằm ở tab 🔖 của bảng
+  Ghi chú.
 - **🍅 Phiên Tập trung** — 25 phút tập trung rồi nghỉ 5 phút (chỉnh được). Vòng đếm
   ngược hiện trên pet, pet giữ nét mặt tập trung, và chỉ hạn chót mới được chen ngang.
 - **Pet biết khi bạn rời máy** — 10 phút không đụng chuột/phím (hoặc khoá màn hình)
@@ -188,7 +196,7 @@ duyệt, Word…).
   nhân vật; bấm vào là được quay Candy Capsule một lượt miễn phí, mở ngay trên pet.
   Lượt này tính như mọi lượt khác (bảo hiểm, lịch sử, hoàn kẹo khi trùng).
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
-  thời tiết, thông số máy, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
+  thời tiết, thông số máy, theo dõi website, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
   thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
@@ -242,7 +250,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · Thoát
+Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · 🛰 Ghim / gỡ theo dõi website · Thoát
 
 ### Chuột phải vào pet
 
@@ -252,7 +260,7 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 📊 thông số máy, 🔕 Đừng làm phiền) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 📊 thông số máy, 🛰 theo dõi website, 🔕 Đừng làm phiền) ·
 ☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân

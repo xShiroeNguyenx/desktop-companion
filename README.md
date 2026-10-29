@@ -111,6 +111,15 @@
   double-click edits it in place. 📌 pins a note to the desktop as a yellow
   sticky note with its own 📋 Copy button. Select text anywhere and pick
   🗒️ **Save as note** on the flower to start a note with it.
+- **🛰 Site monitor** — add up to eight websites (Settings → 🛰, with a Test now
+  button) and a desktop widget shows each one green or red with its response
+  time. The pet tells you when a site goes down and when it is back, also as a
+  Windows notification. A site counts as down only after two failed checks,
+  and if every site fails at once she just says you seem to be offline.
+- **🔎 Quick launcher** — **Ctrl+Alt+Space** anywhere opens a search box: type a
+  bookmark name, `!yt` / `!gh` / `!g` / `!w` / `!map` / `!tr` + words, a web
+  address, or anything to search Google. Add your own bangs in Settings.
+  Bookmarks live in a 🔖 tab of the Notes board.
 - **🍅 Focus sessions** — 25 minutes of focus, then a 5-minute break (both
   adjustable). A ring on the pet counts down, she wears her focused face, and
   only a deadline may interrupt you.
@@ -209,7 +218,8 @@
   character; click it for one free Candy Capsule spin, opened right there on
   the pet. It counts like any other spin (guarantees, history, duplicate refund).
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
-  calendar, the clock, the weather widget and the system monitor, picks the
+  calendar, the clock, the weather widget, the system monitor and the site
+  monitor, picks the
   extra clocks, and 🧹 tidies every pinned widget into a column on the right.
   They all share one
   width and padding, so they line up on both edges.
@@ -266,7 +276,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · Quit
+Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · 🛰 Pin / unpin the site monitor · Quit
 
 ### Right-click the pet
 
@@ -276,7 +286,7 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 📊 system monitor, 🔕 Do not disturb) · ☁️ Weather (forecast,
+(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 📊 system monitor, 🛰 site monitor, 🔕 Do not disturb) · ☁️ Weather (forecast,
 effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
