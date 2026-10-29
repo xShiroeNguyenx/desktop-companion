@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-29
+
 ### Added
 - **🗒️ Notes, for the things you look up every day.** A separate board from
   Tasks, with no due dates and nothing to tick off: Wi-Fi details, phone
@@ -795,6 +797,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.10.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.0
 [0.9.11]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.11
 [0.9.10]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.10
 [0.9.9]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.9
