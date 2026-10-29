@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-29
+
 ### Added
 - **📊 System monitor widget**, pinned on the desktop like the calendar and the
   clock: CPU with a one-minute graph, RAM, free space on the Windows drive,
@@ -821,6 +823,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.10.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.1
 [0.10.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.0
 [0.9.11]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.11
 [0.9.10]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.10
