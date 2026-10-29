@@ -112,6 +112,9 @@ pub struct Settings {
     /// Cảnh báo CPU / RAM cao. Mặc định TẮT; tắt thì không lấy mẫu gì cả.
     #[serde(default)]
     pub sysmon_enabled: bool,
+    /// Nhắc pin yếu (chưa cắm sạc) và ổ hệ thống sắp đầy (power_warn.rs). Mặc định bật.
+    #[serde(default = "default_true")]
+    pub low_warn: bool,
     #[serde(default = "default_warn_pct")]
     pub cpu_warn_pct: u32,
     #[serde(default = "default_warn_pct")]
@@ -191,6 +194,9 @@ pub struct Settings {
     /// Đồng hồ thêm (tên múi giờ IANA, tối đa 2), ngoài giờ máy.
     #[serde(default)]
     pub clock_zones: Vec<String>,
+    /// Widget Thông số máy ghim (sysmon_pin.rs).
+    #[serde(default)]
+    pub sysmon_pin: crate::pin_widget::PinState,
 }
 
 fn default_weather_units() -> String {
@@ -344,6 +350,7 @@ impl Default for Settings {
             welcome_back: true,
             quiet_fullscreen: true,
             sysmon_enabled: false,
+            low_warn: true,
             cpu_warn_pct: default_warn_pct(),
             ram_warn_pct: default_warn_pct(),
             focus_min: default_focus_min(),
@@ -371,6 +378,7 @@ impl Default for Settings {
             calendar_talk: true,
             clock_pin: Default::default(),
             clock_zones: Vec::new(),
+            sysmon_pin: Default::default(),
         }
     }
 }

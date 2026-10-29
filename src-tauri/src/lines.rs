@@ -78,6 +78,10 @@ pub enum Key {
     /// CPU / RAM cao kéo dài. Biến: {pct}.
     CpuHigh,
     RamHigh,
+    // ── Pin yếu / ổ đầy (power_warn.rs). Biến: {pct} / {drive}, {free}.
+    BatteryLow,
+    BatteryCritical,
+    DiskLow,
     // ── Thân thiết (bond.rs, Phase 12).
     /// Câu chào đầu ngày khi có việc tới hạn hôm nay. Biến: {due}.
     DailyGreeting,
@@ -177,6 +181,9 @@ impl Key {
         Key::FocusStopped,
         Key::CpuHigh,
         Key::RamHigh,
+        Key::BatteryLow,
+        Key::BatteryCritical,
+        Key::DiskLow,
         Key::DailyGreeting,
         Key::DailyGreetingFree,
         Key::GreetingEvents,
@@ -216,6 +223,7 @@ impl Key {
             Key::EventToday | Key::EventSoon | Key::EventNow => 3,
             Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
             Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
+            Key::BatteryLow | Key::BatteryCritical | Key::DiskLow => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
             Key::WeatherRain
             | Key::WeatherSnow
@@ -273,7 +281,8 @@ impl Key {
             Key::TaskNotFound | Key::TaskAmbiguous => &["query"],
             Key::FocusStart => &["min"],
             Key::FocusDone => &["brk"],
-            Key::CpuHigh | Key::RamHigh => &["pct"],
+            Key::CpuHigh | Key::RamHigh | Key::BatteryLow | Key::BatteryCritical => &["pct"],
+            Key::DiskLow => &["drive", "free"],
             Key::DailyGreeting => &["due"],
             Key::GreetingEvents => &["events"],
             Key::MilestoneDays | Key::StreakMilestone => &["days"],
@@ -870,6 +879,52 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         ],
 
         // ── CPU / RAM ───────────────────────────────────────────────────────
+        (BatteryLow, Vi) => &[
+            "Pin còn {pct}% rồi {you} ơi, cắm sạc giúp {me} nha~ 🔋",
+            "{You} ơi, máy sắp hết pin ({pct}%), cắm sạc đi kẻo tắt ngang á!",
+            "Pin chỉ còn {pct}% thôi, {me} hơi lo nè… cắm sạc nha {you}~",
+        ],
+        (BatteryLow, Ja) => &[
+            "バッテリー残り{pct}%だよ、充電してね～🔋",
+            "{you}、もうすぐ電池切れ（{pct}%）！急に落ちる前に充電しよ！",
+            "残り{pct}%…ちょっと心配。充電お願い～",
+        ],
+        (BatteryLow, En) => &[
+            "Battery's at {pct}%, {you}, plug me in please~ 🔋",
+            "Running low on battery ({pct}%)! Charge before it shuts down~",
+            "Only {pct}% left… I'm a little worried. Charger, please~",
+        ],
+        (BatteryCritical, Vi) => &[
+            "Pin còn có {pct}% thôi {you}!! Lưu bài lại rồi cắm sạc ngay nha 🪫",
+            "Gấp lắm rồi: pin {pct}%! {You} lưu hết lại kẻo mất nha!",
+            "{Me} sắp ngất rồi… pin {pct}%! Cắm sạc liền đi {you} 🪫",
+        ],
+        (BatteryCritical, Ja) => &[
+            "バッテリー{pct}%しかないよ！保存して今すぐ充電して🪫",
+            "ピンチ：残り{pct}%！消えちゃう前に保存して！",
+            "もう倒れそう…{pct}%！すぐ充電してね🪫",
+        ],
+        (BatteryCritical, En) => &[
+            "Only {pct}% battery left! Save your work and plug in now 🪫",
+            "Urgent: {pct}% battery! Save everything before it dies!",
+            "I'm about to faint… {pct}%! Charger, right now 🪫",
+        ],
+        (DiskLow, Vi) => &[
+            "Ổ {drive} chỉ còn trống {free} thôi {you}, dọn bớt file nha~ 💾",
+            "{You} ơi, ổ {drive} sắp đầy rồi (còn {free}). Đầy là máy chậm lắm á!",
+            "{Me} thấy ổ {drive} còn có {free}, xoá bớt đồ không cần nha {you}~",
+        ],
+        (DiskLow, Ja) => &[
+            "{drive}ドライブの空きが{free}しかないよ、少し整理しよ～💾",
+            "{you}、{drive}がいっぱいになりそう（残り{free}）。重くなっちゃうよ！",
+            "{drive}の空きは{free}だけ。いらないファイル消そっか～",
+        ],
+        (DiskLow, En) => &[
+            "Drive {drive} has only {free} free, {you}, time to clean up~ 💾",
+            "Your {drive} drive is nearly full ({free} left). A full drive slows everything down!",
+            "Only {free} left on {drive}, let's delete what you don't need~",
+        ],
+
         (CpuHigh, Vi) => &[
             "Máy đang thở dốc đó {you}… CPU {pct}% mấy phút rồi á 😵",
             "CPU cao {pct}% lâu rồi nè, có app nào chạy quá sức không {you}?",

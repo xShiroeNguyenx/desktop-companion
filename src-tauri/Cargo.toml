@@ -56,6 +56,14 @@ windows-sys = { version = "0.61", features = [
     "Win32_UI_Shell",
     # GetSystemPowerStatus: hiệu ứng thời tiết dừng khi chạy pin (fx.rs).
     "Win32_System_Power",
+    # Widget Thông số máy (sysmon_pin.rs): dung lượng ổ đĩa, tốc độ mạng.
+    "Win32_Storage_FileSystem",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+    "Win32_Networking_WinSock",
+    # Bảng "ngốn máy nhất" (top_procs.rs): danh sách tiến trình, RAM từng tiến trình.
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_ProcessStatus",
 ] }
 # WinRT SpeechSynthesizer (giọng có sẵn của Windows, kể cả giọng OneCore).
 windows = { version = "0.61", features = [

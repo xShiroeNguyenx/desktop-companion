@@ -347,7 +347,7 @@
 
   // Nhóm 🧩 Widget: tick = ghim / gỡ ngay (không chờ Lưu). Trạng thái đọc lại
   // mỗi lần bảng được focus, vì widget có thể đã gỡ bằng ✕ trên chính nó.
-  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather' };
+  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather', wSysmon: 'sysmon' };
   async function syncWidgets() {
     try {
       const st = await invoke('widgets_status');
@@ -494,6 +494,7 @@
       $('welcomeBack').checked = s.welcome_back !== false;
       $('quietFullscreen').checked = s.quiet_fullscreen !== false;
       $('sysmonEnabled').checked = s.sysmon_enabled === true;
+      $('lowWarn').checked = s.low_warn !== false;
       fillWarn('cpuWarn', s.cpu_warn_pct ?? 90);
       fillWarn('ramWarn', s.ram_warn_pct ?? 90);
       syncSysmon();
@@ -646,6 +647,7 @@
       welcome_back: $('welcomeBack').checked,
       quiet_fullscreen: $('quietFullscreen').checked,
       sysmon_enabled: $('sysmonEnabled').checked,
+      low_warn: $('lowWarn').checked,
       cpu_warn_pct: Number($('cpuWarn').value) || 90,
       ram_warn_pct: Number($('ramWarn').value) || 90,
       weather_mode: $('weatherMode').value,

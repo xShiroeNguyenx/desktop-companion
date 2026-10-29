@@ -679,6 +679,7 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.calendar_pin_pos = old.calendar_pin_pos;
     settings.calendar_pin_top = old.calendar_pin_top;
     settings.clock_pin = old.clock_pin;
+    settings.sysmon_pin = old.sysmon_pin;
     // Đồng hồ thêm thì chỉnh ở form (nhóm 🧩 Widget): chỉ làm sạch.
     settings.clock_zones = crate::clock_pin::clean_zones(&settings.clock_zones);
 
@@ -718,6 +719,7 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
         crate::pin_widget::resize(&app, &crate::clock_pin::SPEC);
     }
     crate::clock_pin::broadcast(&app);
+    crate::sysmon_pin::broadcast(&app);
     if settings.message_language != old.message_language {
         let _ = app.emit_to(
             "main",
@@ -825,6 +827,24 @@ pub fn calendar_get(app: AppHandle) -> Value {
     crate::calendar_pin::view(&app)
 }
 
+/// Widget Thông số máy: ngôn ngữ, luôn nổi, skin (số đo gửi riêng qua "sysmon-stats").
+#[tauri::command]
+pub fn sysmon_get(app: AppHandle) -> Value {
+    crate::sysmon_pin::view(&app)
+}
+
+/// Widget Thông số máy → bảng "ngốn máy nhất" (by = "cpu" | "ram"). Chỉ đọc khi
+/// trang đang mở bảng và hỏi; xem cam kết quyền riêng tư ở đầu top_procs.rs.
+#[tauri::command]
+pub fn sysmon_top(by: String) -> Vec<crate::top_procs::Row> {
+    crate::top_procs::top(&by)
+}
+
+#[tauri::command]
+pub fn open_task_manager() -> Result<(), String> {
+    crate::top_procs::open_task_manager()
+}
+
 /// Đồng hồ ghim: múi giờ, luôn nổi, pha Tập trung (clock_pin::view).
 #[tauri::command]
 pub fn clock_get(app: AppHandle) -> Value {
@@ -835,6 +855,7 @@ fn widget_spec(id: &str) -> Result<&'static crate::pin_widget::Spec, String> {
     match id {
         "calendar" => Ok(&crate::calendar_pin::SPEC),
         "clock" => Ok(&crate::clock_pin::SPEC),
+        "sysmon" => Ok(&crate::sysmon_pin::SPEC),
         _ => Err(format!("Không có widget \"{id}\".")),
     }
 }
@@ -857,6 +878,7 @@ pub fn widgets_status(app: AppHandle) -> Value {
     serde_json::json!({
         "calendar": s.calendar_pin,
         "clock": s.clock_pin.pinned,
+        "sysmon": s.sysmon_pin.pinned,
         "weather": s.weather_pin,
     })
 }

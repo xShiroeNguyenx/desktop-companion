@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!--
+  Widget Thông số máy ghim trên desktop (sysmon_pin.rs → "pin-sysmon"). Cùng
+  kiểu với đồng hồ ghim: cửa sổ trong suốt, kéo ở nền, 📍 bật tắt luôn nổi.
+  Số đo Rust gửi mỗi 2 giây ("sysmon-stats"); định dạng: js/sysmon-core.js.
+  Kích thước cửa sổ: sysmon_pin::size (300 × 172).
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thông số máy</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #f6eaf4;
+      user-select: none;
+    }
+    .wrap { position: absolute; inset: 0; padding: 6px; }
+    .card {
+      /* Màu theo skin (app/skins.css ghi đè qua body[data-skin]); đây là Oải hương. */
+      --w-bg-a: rgba(56, 44, 84, 0.72); --w-bg-b: rgba(84, 50, 92, 0.72);
+      --w-ink: #f6eaf4; --w-ink-soft: #c9b6d6; --w-accent: #ff73ab; --w-gold: #ffd27a;
+      --w-chip: rgba(255, 255, 255, 0.08); --w-line: rgba(255, 255, 255, 0.35);
+      --w-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); --w-sky: transparent;
+      color: var(--w-ink);
+      position: relative;
+      height: 100%;
+      padding: 10px 12px 8px;
+      border-radius: 18px;
+      border: 1px solid var(--w-line);
+      background: linear-gradient(var(--w-sky), var(--w-sky)), linear-gradient(160deg, var(--w-bg-a), var(--w-bg-b));
+      text-shadow: var(--w-shadow);
+      box-shadow: 0 6px 14px -6px rgba(20, 10, 40, 0.6);
+      cursor: grab;
+      animation: drop-in 0.4s cubic-bezier(.2, 1.4, .4, 1) backwards;
+      display: flex; flex-direction: column; gap: 6px;
+      overflow: hidden;
+    }
+    @keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } }
+    button { font: inherit; color: inherit; }
+    /* Miu mờ phía sau, như hình nền. Cùng độ mờ với các widget khác. */
+    .miu {
+      position: absolute; right: 2px; top: 2px; z-index: 0;
+      height: 82px; width: 76px;
+      object-fit: contain; object-position: right top;
+      opacity: 0.45; pointer-events: none;
+    }
+    .card > :not(.miu):not(.tools) { position: relative; z-index: 1; }
+
+    .head { display: flex; align-items: baseline; gap: 8px; padding-right: 64px; }
+    .head .title { font-size: 13px; font-weight: 800; white-space: nowrap; }
+    .head .sub { font-size: 10.5px; color: var(--w-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* CPU: số to + biểu đồ 60 giây. */
+    .cpu { display: flex; align-items: flex-end; gap: 10px; }
+    .cpu .big { font: 800 30px/1 "Segoe UI", sans-serif; letter-spacing: -1px; min-width: 70px; }
+    .cpu .big small { font-size: 14px; font-weight: 700; margin-left: 1px; }
+    .cpu .lbl { font-size: 10.5px; font-weight: 700; color: var(--w-ink-soft); letter-spacing: 0.05em; }
+    .spark { flex: 1; height: 30px; display: block; overflow: visible; }
+    .spark polyline { fill: none; stroke: var(--w-accent); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+    .spark .base { stroke: rgba(255, 255, 255, 0.15); stroke-width: 1; }
+    .lv-warn .big, .row.lv-warn .v { color: var(--w-gold); }
+    .lv-hot .big, .row.lv-hot .v { color: #ff8b8b; }
+    .cpu.lv-warn .spark polyline { stroke: var(--w-gold); }
+    .cpu.lv-hot .spark polyline { stroke: #ff8b8b; }
+
+    /* RAM / ổ đĩa: nhãn · thanh · số. */
+    .row { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 8px; font-size: 11.5px; }
+    .row .k { font-weight: 700; color: var(--w-ink-soft); }
+    .row .v { font-weight: 700; white-space: nowrap; }
+    .bar { height: 7px; border-radius: 4px; background: var(--w-chip); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--w-accent); transition: width 0.4s ease; }
+    .row.lv-warn .bar i { background: var(--w-gold); }
+    .row.lv-hot .bar i { background: #ff6b6b; }
+
+    .foot { margin-top: auto; display: flex; gap: 12px; font-size: 11.5px; font-weight: 700; white-space: nowrap; padding-right: 58px; }
+    .foot .dn { color: #9fd0ff; }
+    .foot .up { color: #b9f2c8; }
+    .foot .bat { margin-left: auto; }
+    .muted { color: var(--w-ink-soft); font-weight: 600; }
+
+    /* Bấm CPU / RAM để mở bảng "ngốn máy nhất". */
+    .clickable { cursor: pointer; border-radius: 8px; }
+    .clickable:hover { background: rgba(255, 255, 255, 0.06); }
+
+    /* Bảng "ngốn máy nhất": thay chỗ phần số đo, cùng cỡ cửa sổ. */
+    /* Phần số đo: cột như thẻ, hàng mạng / pin nằm sát đáy. */
+    .main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+    /* Mở bảng thì ẩn số đo và Miu (hàng nút cần cả bề ngang). */
+    .card.showing-top .head, .card.showing-top .main, .card.showing-top .miu { display: none; }
+    .top { flex: 1; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+    .top[hidden] { display: none; }
+    .top-head { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .top-head button {
+      border: none; border-radius: 7px; padding: 2px 8px;
+      background: var(--w-chip); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .top-head button:hover { background: rgba(255, 255, 255, 0.2); }
+    .top-head button.on { background: var(--w-accent); color: #fff; }
+    .top-head .tm { margin-left: auto; }
+    .top-list { display: flex; flex-direction: column; }
+    .proc {
+      display: grid; grid-template-columns: 1fr 44px 58px; gap: 6px; align-items: center;
+      height: 19px; font-size: 11.5px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .proc .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+    .proc .n small { font-weight: 600; color: var(--w-ink-soft); margin-left: 3px; }
+    .proc .c, .proc .m { text-align: right; color: var(--w-ink-soft); font-weight: 600; }
+    .proc .on { color: var(--w-ink); font-weight: 800; }
+
+    .tools {
+      position: absolute; right: 8px; bottom: 8px; z-index: 2;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .card:hover .tools { opacity: 1; }
+    .tools button {
+      width: 24px; height: 24px; border-radius: 8px;
+      border: none; background: rgba(40, 30, 60, 0.85); color: #fff;
+      font-size: 12px; cursor: pointer;
+    }
+    .tools button:hover { background: rgba(90, 70, 120, 0.95); }
+    .tools button.on { background: var(--w-accent); }
+    @media (prefers-reduced-motion: reduce) { .card { animation: none; } .bar i { transition: none; } }
+  </style>
+  <link rel="stylesheet" href="skins.css" />
+  <link rel="stylesheet" href="widget-deco.css" />
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="card" id="card">
+      <img class="miu" id="miu" src="media/game/rps-wink.png" alt="" draggable="false" />
+      <div class="head"><span class="title" id="title"></span><span class="sub" id="uptime"></span></div>
+      <div class="main" id="main">
+      <div class="cpu clickable" id="cpuBox">
+        <div>
+          <div class="lbl">CPU</div>
+          <div class="big" id="cpu">–</div>
+        </div>
+        <svg class="spark" id="spark" viewBox="0 0 160 30" preserveAspectRatio="none" aria-hidden="true">
+          <line class="base" x1="0" y1="30" x2="160" y2="30"></line>
+          <polyline id="sparkLine" points=""></polyline>
+        </svg>
+      </div>
+      <div class="row clickable" id="ramRow"><span class="k" id="ramK"></span><span class="bar"><i id="ramBar"></i></span><span class="v" id="ramV">–</span></div>
+      <div class="row" id="diskRow"><span class="k" id="diskK">C:</span><span class="bar"><i id="diskBar"></i></span><span class="v" id="diskV">–</span></div>
+      <div class="foot">
+        <span class="dn" id="netDn">↓ –</span>
+        <span class="up" id="netUp">↑ –</span>
+        <span class="bat" id="bat" hidden></span>
+      </div>
+      </div>
+      <div class="top" id="topPanel" hidden>
+        <div class="top-head">
+          <button id="topBack" type="button">↩</button>
+          <button id="sortCpu" type="button" data-by="cpu">CPU</button>
+          <button id="sortRam" type="button" data-by="ram">RAM</button>
+          <button class="tm" id="taskmgr" type="button"></button>
+        </div>
+        <div class="top-list" id="topList"></div>
+      </div>
+      <div class="tools">
+        <button id="topBtn" type="button">📍</button>
+        <button id="unpinBtn" type="button">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/widget-deco.js"></script>
+  <script src="js/sysmon-core.js"></script>
+  <script src="js/sysmon-pin.js"></script>
+</body>
+</html>

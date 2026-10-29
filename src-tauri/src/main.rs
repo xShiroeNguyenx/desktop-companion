@@ -24,6 +24,7 @@ mod naming;
 mod note_pins;
 mod notes;
 mod persona;
+mod power_warn;
 mod notify;
 mod pins;
 mod pin_widget;
@@ -36,6 +37,8 @@ mod gacha;
 mod weather;
 mod weather_net;
 mod store;
+mod sysmon_pin;
+mod top_procs;
 mod taskref;
 mod tts;
 mod windows;
@@ -340,6 +343,15 @@ fn pet_command(app: AppHandle, payload: Value) {
             });
         }
         // Menu tròn 💞 → 📅: ghim / gỡ lịch tháng (luồng riêng, như weather:pin).
+        // Menu tròn 💞 → 📊: ghim / gỡ widget Thông số máy.
+        "sysmon:pin" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || {
+                if let Err(e) = pin_widget::toggle(&app2, &sysmon_pin::SPEC) {
+                    eprintln!("[sysmon] ghim lỗi: {e}");
+                }
+            });
+        }
         "calendar:pin" => {
             let app2 = app.clone();
             std::thread::spawn(move || {
@@ -674,6 +686,9 @@ fn main() {
             commands::weather_pin_size,
             commands::calendar_get,
             commands::clock_get,
+            commands::sysmon_get,
+            commands::sysmon_top,
+            commands::open_task_manager,
             commands::widget_pin_set,
             commands::widget_pin_top,
             commands::widgets_status,
@@ -789,6 +804,8 @@ fn main() {
             pins::restore_all(&app_handle);
             // Ghi chú đang ghim lên desktop cũng vậy.
             note_pins::restore_all(&app_handle);
+            // Widget Thông số máy: chỉ đo khi đang hiện.
+            sysmon_pin::start(app_handle.clone());
             tts::start(app_handle.clone());
             // Trọng tài lời nói: mọi câu pet tự nói (tự bắt chuyện, sau này là
             // nhắc nghỉ, hạn chót…) đều qua đây.
@@ -855,6 +872,8 @@ fn main() {
                 MenuItem::with_id(app, "forecast", "☁️ Dự báo thời tiết", true, None::<&str>)?;
             let calendar_item =
                 MenuItem::with_id(app, "calendar", "📅 Ghim / gỡ lịch tháng", true, None::<&str>)?;
+            let sysmon_item =
+                MenuItem::with_id(app, "sysmon", "📊 Ghim / gỡ thông số máy", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -870,6 +889,7 @@ fn main() {
                     &weather_item,
                     &forecast_item,
                     &calendar_item,
+                    &sysmon_item,
                     &sep,
                     &quit_item,
                 ],
@@ -906,6 +926,14 @@ fn main() {
                         std::thread::spawn(move || {
                             if let Err(e) = pin_widget::toggle(&app2, &calendar_pin::SPEC) {
                                 eprintln!("[calendar] ghim lịch lỗi: {e}");
+                            }
+                        });
+                    }
+                    "sysmon" => {
+                        let app2 = app.clone();
+                        std::thread::spawn(move || {
+                            if let Err(e) = pin_widget::toggle(&app2, &sysmon_pin::SPEC) {
+                                eprintln!("[sysmon] ghim lỗi: {e}");
                             }
                         });
                     }

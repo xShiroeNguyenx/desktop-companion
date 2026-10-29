@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **📊 System monitor widget**, pinned on the desktop like the calendar and the
+  clock: CPU with a one-minute graph, RAM, free space on the Windows drive,
+  download and upload speed, battery (laptops only) and how long the PC has
+  been on. It refreshes every 2 seconds and measures nothing while it is not
+  pinned. Bars turn gold from 70% and red from 90%; Miu cheers you on when the
+  PC is busy, looks startled when it is overloaded and dozes when it is idle.
+  Pin it from Settings → 🧩 Widget, 💞 → 📊 on the ring menu or the tray, and
+  🧹 Tidy lines it up with the other widgets. Skins and decorations from the
+  Collection apply to it too.
+- **See what is slowing the PC down.** Click CPU or RAM on the system monitor
+  and it lists the five apps using the most, grouped like Task Manager does
+  (all of Chrome's processes on one line, with a ×23 count). Switch between
+  CPU and RAM, open Task Manager with one click, or ↩ go back. The app list is
+  read only while this panel is open and only shown there: it is not saved,
+  not sent anywhere and the pet does not use it. Nothing is ever closed for
+  you.
+- **The pet warns you about a low battery and a full drive** (Settings →
+  awareness, on by default). Below 15% without the charger she asks you to
+  plug in, and again more urgently at 5%; each level once per drain. When the
+  Windows drive has less than 10% free she says how much is left, at most once
+  a day. Like deadlines, these reach you as a Windows notification when she is
+  hidden, and they may interrupt a focus session.
+
 ## [0.10.0] - 2026-10-29
 
 ### Added

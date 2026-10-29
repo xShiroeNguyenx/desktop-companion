@@ -1196,6 +1196,7 @@ mod glue {
         let _ = app.emit("collection-changed", view(app));
         crate::calendar_pin::broadcast(app);
         crate::clock_pin::broadcast(app);
+        crate::sysmon_pin::broadcast(app);
         crate::weather_net::broadcast(app);
         let c = store::load_collection(app);
         crate::sidegirl::set_side_set(app, effective_side_set(&c));

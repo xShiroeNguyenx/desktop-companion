@@ -1,4 +1,5 @@
-// Khung chung cho các widget ghim trên desktop (lịch tháng, đồng hồ): mở cửa
+// Khung chung cho các widget ghim trên desktop (lịch tháng, đồng hồ, thông số
+// máy): mở cửa
 // sổ trong suốt, ghim / gỡ, 📍 luôn nổi, nhớ vị trí khi kéo, Alt+F4 = gỡ ghim,
 // "Xếp gọn". Mỗi widget chỉ khai một `Spec` (label, trang html, cỡ, đọc / ghi
 // trạng thái ghim trong Settings). Widget thời tiết (weather_net.rs) có vòng
@@ -56,8 +57,8 @@ pub struct Spec {
     pub broadcast: fn(&AppHandle),
 }
 
-pub fn specs() -> [&'static Spec; 2] {
-    [&crate::calendar_pin::SPEC, &crate::clock_pin::SPEC]
+pub fn specs() -> [&'static Spec; 3] {
+    [&crate::calendar_pin::SPEC, &crate::clock_pin::SPEC, &crate::sysmon_pin::SPEC]
 }
 
 pub fn spec(label: &str) -> Option<&'static Spec> {

@@ -1101,6 +1101,9 @@ function setupCompactContextMenu() {
     } else if (action === 'toggle-weather-pin') {
       // Ghim / gỡ widget thời tiết (chưa chọn thành phố thì Rust mở thẻ dự báo).
       vscode.postMessage({ command: 'weather:pin' });
+    } else if (action === 'toggle-sysmon-pin') {
+      // Ghim / gỡ widget Thông số máy (sysmon_pin.rs).
+      vscode.postMessage({ command: 'sysmon:pin' });
     } else if (action === 'toggle-calendar-pin') {
       // Ghim / gỡ lịch tháng lên desktop (calendar_pin.rs).
       vscode.postMessage({ command: 'calendar:pin' });
@@ -1238,6 +1241,7 @@ function setupCompactContextMenu() {
             // Vòng ngoài đã đủ 8 ô: Ghi chú nằm trong nhóm này.
             { icon: '🗒️', label: 'Ghi chú', action: 'open-notes' },
             { icon: '📅', label: 'Lịch tháng', action: 'toggle-calendar-pin' },
+            { icon: '📊', label: 'Thông số máy', action: 'toggle-sysmon-pin' },
             window.__DND__
               ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
               : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },

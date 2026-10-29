@@ -34,6 +34,8 @@ const EXPRESSION_MS: u64 = 8000;
 pub enum Kind {
     Deadline,
     FocusEnd,
+    /// Pin yếu / ổ hệ thống sắp đầy (power_warn.rs).
+    Power,
     Welcome,
     /// Xin người dùng đặt tên cho pet (naming.rs).
     AskName,
@@ -50,12 +52,12 @@ pub enum Kind {
 impl Kind {
     /// Không phải chờ hết khoảng nghỉ giữa hai câu.
     fn bypasses_gap(self) -> bool {
-        matches!(self, Kind::Deadline)
+        matches!(self, Kind::Deadline | Kind::Power)
     }
 
     /// Được nói trong phiên Tập trung.
     fn allowed_in_focus(self) -> bool {
-        matches!(self, Kind::Deadline | Kind::FocusEnd)
+        matches!(self, Kind::Deadline | Kind::FocusEnd | Kind::Power)
     }
 }
 
@@ -734,6 +736,14 @@ fn awareness_candidates(app: &AppHandle, now: u64, snap: &awareness::Snapshot, s
         }
     }
 
+    // Pin yếu / ổ đầy: không phụ thuộc cảnh báo CPU / RAM bên dưới.
+    if settings.low_warn {
+        let (today, _) = today_and_hour(now);
+        for tag in crate::power_warn::tags(app, today) {
+            out.push(Candidate { kind: Kind::Power, since: now, ttl: Some(30 * 60), tag });
+        }
+    }
+
     // CPU / RAM: tắt thì không lấy mẫu gì cả, và quên mọi mốc cũ.
     if !settings.sysmon_enabled {
         if let Ok(mut p) = state.cpu_prev.lock() {
@@ -976,6 +986,27 @@ fn early_line(app: &AppHandle, id: &str) -> Option<String> {
     Some(lines::line(Key::DueEarly, &a, &[("task", name.as_str()), ("days", left.as_str()), ("date", date.as_str())]))
 }
 
+/// Câu nhắc pin yếu ("power:bat:<pct>") / ổ đầy ("power:disk:<% trống>"). Ổ
+/// đĩa đọc lại lúc nói để câu nói đúng số hiện tại.
+fn power_line(app: &AppHandle, tag: &str) -> Option<String> {
+    let a = persona::address(&store::load_settings(app));
+    let rest = tag.strip_prefix("power:")?;
+    let (what, n) = rest.split_once(':')?;
+    match what {
+        "bat" => {
+            let pct: u32 = n.parse().ok()?;
+            let key = if pct <= crate::power_warn::BATTERY_CRITICAL { Key::BatteryCritical } else { Key::BatteryLow };
+            Some(lines::line(key, &a, &[("pct", n)]))
+        }
+        "disk" => {
+            let (drive, used, total) = crate::sysmon_pin::system_disk()?;
+            let free = crate::power_warn::fmt_size(total.saturating_sub(used));
+            Some(lines::line(Key::DiskLow, &a, &[("drive", drive.as_str()), ("free", free.as_str())]))
+        }
+        _ => None,
+    }
+}
+
 /// Câu nhắc một sự kiện lịch ("event:<id>:<ngày>:<mốc>").
 fn event_line(app: &AppHandle, tag: &str) -> Option<String> {
     use crate::events::Mark;
@@ -1087,6 +1118,7 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
             mark_reminded(app, &c.tag);
             Some((text, Some("surprised".into())))
         }
+        Kind::Power => Some((power_line(app, &c.tag)?, Some("surprised".into()))),
         Kind::Health => {
             let settings = store::load_settings(app);
             let intervals = [settings.remind_eyes_min, settings.remind_water_min, settings.remind_stand_min];
@@ -1134,7 +1166,8 @@ fn speak(app: &AppHandle, c: &Candidate) -> bool {
 /// Gửi một câu hạn chót bằng thông báo Windows. Lỗi thì ghi nhớ để lượt sau
 /// chờ pet nói được thay vì thử lại mỗi 30 giây.
 fn deliver_toast(app: &AppHandle, c: &Candidate) {
-    let Some(text) = deadline_line(app, &c.tag) else { return };
+    let text = if c.kind == Kind::Power { power_line(app, &c.tag) } else { deadline_line(app, &c.tag) };
+    let Some(text) = text else { return };
     match notify::toast(app, &text) {
         Ok(()) => mark_reminded(app, &c.tag),
         Err(e) => {
@@ -1180,7 +1213,7 @@ fn tick(app: &AppHandle) {
         // Hạn chót không chờ pet: nói không được thì đi đường thông báo Windows.
         let mut toasts = Vec::new();
         pending.retain(|c| {
-            let toast = c.kind == Kind::Deadline
+            let toast = matches!(c.kind, Kind::Deadline | Kind::Power)
                 && deadline_channel(&ctx, settings.due_toast, failed.contains(&c.tag)) == Channel::Toast;
             if toast {
                 toasts.push(c.clone());
@@ -1203,7 +1236,7 @@ fn tick(app: &AppHandle) {
         // Nói được hay model lỗi đều đếm lại từ đầu, để không gọi model mỗi lượt.
         chat::touch_activity(app);
     }
-    if c.kind == Kind::Deadline {
+    if matches!(c.kind, Kind::Deadline | Kind::Power) {
         if let Ok(mut f) = state.toast_failed.lock() {
             f.remove(&c.tag);
         }

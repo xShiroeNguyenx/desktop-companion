@@ -310,7 +310,7 @@
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Lịch, đồng hồ, thời tiết ghim trên màn hình">🧩 Widget</h3>
+        <h3 data-sub="Lịch, đồng hồ, thời tiết, thông số máy ghim trên màn hình">🧩 Widget</h3>
         <div class="set-toggle">
           <label for="wCalendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
           <input type="checkbox" id="wCalendar" />
@@ -322,6 +322,10 @@
         <div class="set-toggle">
           <label for="wWeather">☁️ Thời tiết</label>
           <input type="checkbox" id="wWeather" />
+        </div>
+        <div class="set-toggle">
+          <label for="wSysmon">📊 Thông số máy (CPU, RAM, ổ đĩa, mạng, pin)</label>
+          <input type="checkbox" id="wSysmon" />
         </div>
         <div class="set-field">
           <label for="clockZone1">Đồng hồ thêm (giờ nước khác)</label>
@@ -389,6 +393,10 @@
           <input type="checkbox" id="quietFullscreen" />
         </div>
         <div class="set-toggle">
+          <label for="lowWarn">Nhắc pin yếu (dưới 15%, chưa cắm sạc) và ổ hệ thống sắp đầy (trống dưới 10%)</label>
+          <input type="checkbox" id="lowWarn" />
+        </div>
+        <div class="set-toggle">
           <label for="sysmonEnabled">Cảnh báo khi CPU / RAM cao kéo dài</label>
           <input type="checkbox" id="sysmonEnabled" />
         </div>
@@ -402,7 +410,7 @@
             <select id="ramWarn" class="warn-select"></select>
           </div>
         </div>
-        <div class="status">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM. Em không đọc tên cửa sổ, tên ứng dụng hay nội dung màn hình. Tắt cảnh báo CPU / RAM thì em không đo gì cả.</div>
+        <div class="status">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM, % pin, dung lượng ổ đĩa. Em không đọc tên cửa sổ hay nội dung màn hình. Tên ứng dụng chỉ được đọc khi bạn tự mở bảng "ngốn máy nhất" trên widget 📊 Thông số máy, chỉ để hiện ở đó: không lưu, không gửi đi. Tắt cảnh báo CPU / RAM thì em không đo CPU / RAM.</div>
       </div>
 
       <div class="set-group">
