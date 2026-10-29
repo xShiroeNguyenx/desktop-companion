@@ -111,7 +111,8 @@ duyệt, Word…).
 - **Pet biết khi bạn rời máy** — 10 phút không đụng chuột/phím (hoặc khoá màn hình)
   thì pet ngủ gật, quay lại thì pet chào. Có thêm cảnh báo CPU / RAM cao (mặc định
   tắt). App chỉ đọc trạng thái bật/tắt và phần trăm — không đọc tên cửa sổ, tên ứng
-  dụng hay nội dung màn hình.
+  dụng hay nội dung màn hình. Pet còn nhắc (bật sẵn) khi pin dưới 15% mà chưa cắm
+  sạc, nhắc lần nữa ở 5%, và khi ổ cài Windows còn trống dưới 10%.
 - **💗 Thân thiết** — ngày có mặt, việc xong, phiên tập trung, chat, vuốt đầu và
   chơi game làm mức thân thiết tăng dần qua 5 cấp (có trần mỗi ngày, không bao giờ
   bị trừ). Mỗi sáng pet chào kèm số việc tới hạn hôm nay, chúc mừng các cột mốc
@@ -147,6 +148,12 @@ duyệt, Word…).
 - **🕐 Đồng hồ có giờ thế giới** — giờ máy kèm ngày âm, thêm tối đa 2 đồng hồ
   (Tokyo, Seoul, New York, London…) ghi chênh giờ và "ngày mai" / "hôm qua"; tự
   tính giờ mùa hè. Hàng 🍅 bắt đầu phiên Tập trung và đếm lùi.
+- **📊 Thông số máy** — CPU kèm biểu đồ một phút, RAM, dung lượng trống của ổ cài
+  Windows, tốc độ tải xuống / tải lên, pin (chỉ máy có pin) và thời gian máy đã
+  chạy; cập nhật mỗi 2 giây và chỉ đo khi đang ghim. Thanh chuyển vàng từ 70%, đỏ
+  từ 90%, máy rảnh thì Miu ngủ gật. Bấm CPU hoặc RAM để xem 5 ứng dụng dùng nhiều
+  nhất (gom như Task Manager), kèm nút mở Task Manager. Tên ứng dụng chỉ được đọc
+  khi bảng đó đang mở và chỉ hiện ở đó: không lưu, không gửi đi đâu.
 - **🍬 Kẹo & Bộ sưu tập** — xong việc, phiên Tập trung, chat, vuốt đầu, thắng
   game cũng được kẹo (cùng trần mỗi ngày với điểm thân thiết). Đổi kẹo trong 🍬 Bộ
   sưu tập (💞 → 🍬 trên menu tròn) lấy skin widget (Sakura, Trời đêm, Bạc hà, Hoàng
@@ -181,8 +188,8 @@ duyệt, Word…).
   nhân vật; bấm vào là được quay Candy Capsule một lượt miễn phí, mở ngay trên pet.
   Lượt này tính như mọi lượt khác (bảo hiểm, lịch sử, hoàn kẹo khi trùng).
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
-  thời tiết, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim thành một cột
-  bên phải. Ba widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
+  thời tiết, thông số máy, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
+  thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -235,7 +242,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · Thoát
+Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · Thoát
 
 ### Chuột phải vào pet
 
@@ -245,7 +252,7 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 🔕 Đừng làm phiền) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 📊 thông số máy, 🔕 Đừng làm phiền) ·
 ☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân

@@ -118,7 +118,9 @@
   keyboard (or with the screen locked) she dozes off, and greets you when you
   come back. An optional warning (off by default) tells you when CPU or RAM
   stays high. Only on/off states and percentages are read — never window
-  titles, app names or screen content.
+  titles, app names or screen content. She also warns you (on by default) when
+  the battery drops below 15% without the charger, again at 5%, and when the
+  Windows drive has less than 10% free.
 - **💗 A bond that grows** — days together, finished tasks and focus sessions,
   chats, head-pats and games slowly raise your bond through five levels
   (capped per day, never taken away). She says hello each morning with what is
@@ -163,6 +165,13 @@
   to two more clocks (Tokyo, Seoul, New York, London…) with the time
   difference and "tomorrow" / "yesterday"; summer time is handled. Its 🍅 row
   starts a focus session and counts down.
+- **📊 System monitor** — CPU with a one-minute graph, RAM, free space on the
+  Windows drive, download / upload speed, battery (laptops only) and how long
+  the PC has been on, refreshed every 2 seconds and only while it is pinned.
+  Bars turn gold from 70% and red from 90%, and Miu dozes when the PC is idle.
+  Click CPU or RAM to see the five apps using the most (grouped like Task
+  Manager), with a button that opens Task Manager. App names are read only
+  while that list is open and only shown there: never saved or sent anywhere.
 - **🍬 Candy & Collection** — finished tasks, focus sessions, chat, headpats
   and game wins also earn candy (same daily caps as friendship points). Trade it
   in the 🍬 Collection (💞 → 🍬 on the ring) for widget skins (Sakura, Night
@@ -200,8 +209,9 @@
   character; click it for one free Candy Capsule spin, opened right there on
   the pet. It counts like any other spin (guarantees, history, duplicate refund).
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
-  calendar, the clock and the weather widget, picks the extra clocks, and
-  🧹 tidies every pinned widget into a column on the right. All three share one
+  calendar, the clock, the weather widget and the system monitor, picks the
+  extra clocks, and 🧹 tidies every pinned widget into a column on the right.
+  They all share one
   width and padding, so they line up on both edges.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
@@ -256,7 +266,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · Quit
+Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · Quit
 
 ### Right-click the pet
 
@@ -266,7 +276,7 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 🔕 Do not disturb) · ☁️ Weather (forecast,
+(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 📊 system monitor, 🔕 Do not disturb) · ☁️ Weather (forecast,
 effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
