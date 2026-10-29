@@ -680,6 +680,12 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     settings.calendar_pin_top = old.calendar_pin_top;
     settings.clock_pin = old.clock_pin;
     settings.sysmon_pin = old.sysmon_pin;
+    settings.monitor_pin = old.monitor_pin;
+    settings.monitor_interval_min = crate::monitor::clean_interval(settings.monitor_interval_min);
+    settings.search_engine = crate::launcher::clean_engine(&settings.search_engine);
+    settings.launcher_hotkey = settings.launcher_hotkey.trim().to_string();
+    // Bang tự thêm sai thì báo đúng dòng, không lưu ngầm giá trị hỏng.
+    crate::launcher::parse_bangs(&settings.custom_bangs).map_err(|e| format!("Bang tự thêm: {e}"))?;
     // Đồng hồ thêm thì chỉnh ở form (nhóm 🧩 Widget): chỉ làm sạch.
     settings.clock_zones = crate::clock_pin::clean_zones(&settings.clock_zones);
 
@@ -712,6 +718,16 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     if settings.weather_shortcut.trim() != old.weather_shortcut.trim() {
         crate::fx::register_shortcut(&app);
     }
+    if settings.launcher_hotkey != old.launcher_hotkey {
+        crate::launcher::register(&app);
+        let st = crate::launcher::status();
+        if !st.is_empty() {
+            return Err(format!("Đã lưu, nhưng ô mở nhanh: {st}"));
+        }
+    }
+    if settings.monitor_interval_min != old.monitor_interval_min {
+        crate::monitor_net::kick(&app);
+    }
 
     // Lịch ghim theo ngôn ngữ, ngày sinh, cách gọi người dùng: gửi lại cho chắc.
     crate::calendar_pin::broadcast(&app);
@@ -720,6 +736,7 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     }
     crate::clock_pin::broadcast(&app);
     crate::sysmon_pin::broadcast(&app);
+    crate::monitor_pin::broadcast(&app);
     if settings.message_language != old.message_language {
         let _ = app.emit_to(
             "main",
@@ -827,6 +844,149 @@ pub fn calendar_get(app: AppHandle) -> Value {
     crate::calendar_pin::view(&app)
 }
 
+// ── 🛰 Theo dõi website (monitor.rs, monitor_net.rs, monitor_pin.rs) ─────────
+
+#[tauri::command]
+pub fn monitor_get(app: AppHandle) -> Value {
+    crate::monitor_pin::view(&app)
+}
+
+/// Danh sách site kèm trạng thái mới nhất (widget, Cài đặt).
+#[tauri::command]
+pub fn monitor_stats(app: AppHandle) -> Value {
+    crate::monitor_net::stats(&app)
+}
+
+#[tauri::command]
+pub fn monitor_add(app: AppHandle, name: String, url: String) -> Result<(), String> {
+    let (name, url) = crate::monitor::clean(&name, &url)?;
+    store::update_monitors(&app, |list| {
+        if list.len() >= crate::monitor::MAX_SITES {
+            return Err(format!("Tối đa {} site.", crate::monitor::MAX_SITES));
+        }
+        if list.iter().any(|s| s.url == url) {
+            return Err("Site này đã có trong danh sách.".to_string());
+        }
+        let id = crate::monitor::next_id(list, now_millis());
+        list.push(crate::monitor::Site { id, name, url, notify: true });
+        Ok(())
+    })??;
+    monitor_changed(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn monitor_update(app: AppHandle, id: String, name: String, url: String, notify: bool) -> Result<(), String> {
+    let (name, url) = crate::monitor::clean(&name, &url)?;
+    let found = store::update_monitors(&app, |list| {
+        let Some(s) = list.iter_mut().find(|s| s.id == id) else { return false };
+        s.name = name;
+        s.url = url;
+        s.notify = notify;
+        true
+    })?;
+    if !found {
+        return Err("Site này không còn nữa.".into());
+    }
+    monitor_changed(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn monitor_delete(app: AppHandle, id: String) -> Result<(), String> {
+    store::update_monitors(&app, |list| list.retain(|s| s.id != id))?;
+    monitor_changed(&app);
+    Ok(())
+}
+
+/// Nút "Thử ngay": kiểm một URL ngay, không lưu gì.
+#[tauri::command]
+pub async fn monitor_test(url: String) -> Result<crate::monitor::Outcome, String> {
+    let url = crate::links::safe_web_url(&url)?;
+    let client = crate::monitor_net::client()?;
+    Ok(crate::monitor_net::check(&client, &url).await)
+}
+
+/// Danh sách đổi: kiểm lại ngay, widget đổi chiều cao theo số site.
+fn monitor_changed(app: &AppHandle) {
+    crate::monitor_net::kick(app);
+    crate::pin_widget::resize(app, &crate::monitor_pin::SPEC);
+}
+
+// ── 🔖 Bookmark (bookmarks.rs) & 🔎 Ô mở nhanh (launcher.rs) ────────────────
+
+#[tauri::command]
+pub fn bookmarks_list(app: AppHandle) -> Result<Vec<crate::bookmarks::Bookmark>, String> {
+    store::load_bookmarks(&app)
+}
+
+#[tauri::command]
+pub fn bookmarks_add(app: AppHandle, title: String, url: String, group: String) -> Result<(), String> {
+    let (title, url, group) = crate::bookmarks::clean(&title, &url, &group)?;
+    store::update_bookmarks(&app, |list| {
+        if list.len() >= crate::bookmarks::MAX_BOOKMARKS {
+            return Err(format!("Tối đa {} bookmark.", crate::bookmarks::MAX_BOOKMARKS));
+        }
+        let id = crate::bookmarks::next_id(list, now_millis());
+        list.push(crate::bookmarks::Bookmark { id, title, url, group });
+        Ok(())
+    })?
+}
+
+#[tauri::command]
+pub fn bookmarks_update(app: AppHandle, id: String, title: String, url: String, group: String) -> Result<(), String> {
+    let (title, url, group) = crate::bookmarks::clean(&title, &url, &group)?;
+    let found = store::update_bookmarks(&app, |list| {
+        let Some(b) = list.iter_mut().find(|b| b.id == id) else { return false };
+        b.title = title;
+        b.url = url;
+        b.group = group;
+        true
+    })?;
+    if found { Ok(()) } else { Err("Bookmark này không còn nữa.".into()) }
+}
+
+#[tauri::command]
+pub fn bookmarks_delete(app: AppHandle, id: String) -> Result<(), String> {
+    store::update_bookmarks(&app, |list| list.retain(|b| b.id != id))
+}
+
+/// Dữ liệu cho ô mở nhanh: bookmark, công cụ tìm, bang tự thêm.
+#[tauri::command]
+pub fn launcher_data(app: AppHandle) -> Value {
+    let s = store::load_settings(&app);
+    let (bookmarks, err) = match store::load_bookmarks(&app) {
+        Ok(b) => (b, String::new()),
+        Err(e) => (Vec::new(), e),
+    };
+    serde_json::json!({
+        "bookmarks": bookmarks,
+        "engine": crate::launcher::clean_engine(&s.search_engine),
+        "bangs": crate::launcher::parse_bangs(&s.custom_bangs).unwrap_or_default(),
+        "error": err,
+    })
+}
+
+#[tauri::command]
+pub fn launcher_hide(app: AppHandle) {
+    crate::launcher::hide(&app);
+}
+
+/// Trang ô mở nhanh tự giãn cao theo số kết quả.
+#[tauri::command]
+pub fn launcher_resize(app: AppHandle, h: f64) {
+    if let Some(w) = app.get_webview_window(crate::launcher::LABEL) {
+        let h = if h.is_finite() { h.clamp(crate::launcher::HEIGHT, 480.0) } else { crate::launcher::HEIGHT };
+        let _ = w.set_size(tauri::LogicalSize::new(crate::launcher::WIDTH, h));
+    }
+}
+
+/// Cài đặt: lỗi đăng ký phím ô mở nhanh (rỗng = ổn).
+#[tauri::command]
+pub fn launcher_status() -> String {
+    crate::launcher::status()
+}
+
 /// Widget Thông số máy: ngôn ngữ, luôn nổi, skin (số đo gửi riêng qua "sysmon-stats").
 #[tauri::command]
 pub fn sysmon_get(app: AppHandle) -> Value {
@@ -856,6 +1016,7 @@ fn widget_spec(id: &str) -> Result<&'static crate::pin_widget::Spec, String> {
         "calendar" => Ok(&crate::calendar_pin::SPEC),
         "clock" => Ok(&crate::clock_pin::SPEC),
         "sysmon" => Ok(&crate::sysmon_pin::SPEC),
+        "monitor" => Ok(&crate::monitor_pin::SPEC),
         _ => Err(format!("Không có widget \"{id}\".")),
     }
 }
@@ -879,6 +1040,7 @@ pub fn widgets_status(app: AppHandle) -> Value {
         "calendar": s.calendar_pin,
         "clock": s.clock_pin.pinned,
         "sysmon": s.sysmon_pin.pinned,
+        "monitor": s.monitor_pin.pinned,
         "weather": s.weather_pin,
     })
 }

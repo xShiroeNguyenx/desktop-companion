@@ -169,6 +169,21 @@
     }
     .set-foot .status { flex: 1; margin: 0; }
     .set-foot button.action { flex: 0 0 auto; padding: 9px 24px; }
+
+    /* 🛰 Danh sách site theo dõi. */
+    .mon-list { display: flex; flex-direction: column; gap: 4px; }
+    .mon-list:empty { display: none; }
+    .mon-row { display: grid; grid-template-columns: 10px 1fr auto auto auto; align-items: center; gap: 8px; font-size: 12px; }
+    .mon-row .n { min-width: 0; display: flex; flex-direction: column; }
+    .mon-row .n b, .mon-row .n small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mon-row .n small { color: var(--muted); }
+    .mon-row .v { color: var(--muted); white-space: nowrap; }
+    .mon-row button { background: none; border: none; cursor: pointer; font-size: 13px; padding: 0 2px; }
+    .mon-row button.off { opacity: 0.35; filter: grayscale(1); }
+    .mon-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+    .mon-dot.up { background: #57d48c; }
+    .mon-dot.warn { background: #ffd166; }
+    .mon-dot.down { background: #ff6b6b; }
   </style>
   <!-- Giao diện đi kèm bộ nhân vật ❄️ Xứ Tuyết (settings.js đặt body[data-theme]). -->
   <link rel="stylesheet" href="theme-snow.css" />
@@ -310,7 +325,7 @@
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Lịch, đồng hồ, thời tiết, thông số máy ghim trên màn hình">🧩 Widget</h3>
+        <h3 data-sub="Lịch, đồng hồ, thời tiết, thông số máy, website ghim trên màn hình">🧩 Widget</h3>
         <div class="set-toggle">
           <label for="wCalendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
           <input type="checkbox" id="wCalendar" />
@@ -326,6 +341,10 @@
         <div class="set-toggle">
           <label for="wSysmon">📊 Thông số máy (CPU, RAM, ổ đĩa, mạng, pin)</label>
           <input type="checkbox" id="wSysmon" />
+        </div>
+        <div class="set-toggle">
+          <label for="wMonitor">🛰 Theo dõi website</label>
+          <input type="checkbox" id="wMonitor" />
         </div>
         <div class="set-field">
           <label for="clockZone1">Đồng hồ thêm (giờ nước khác)</label>
@@ -343,6 +362,52 @@
             <button class="ghost" id="widgetsTidy" type="button" style="flex:1;">🧹 Xếp gọn các widget về góc phải</button>
           </div>
           <div class="status" id="widgetStatus">Bật / tắt là ghim / gỡ ngay. Kéo widget đi đâu cũng được, 📍 trên widget để bật / tắt luôn nổi.</div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3 data-sub="Em báo khi website sập và khi chạy lại">🛰 Theo dõi website</h3>
+        <div class="mon-list" id="monList"></div>
+        <div class="set-field">
+          <label for="monUrl">Thêm site (tối đa 8)</label>
+          <input type="text" id="monUrl" placeholder="https://example.com/health" spellcheck="false" />
+          <div class="row tight" style="margin-top:6px;">
+            <input type="text" id="monName" placeholder="Tên (trống thì lấy tên miền)" style="flex:1;" />
+            <button class="ghost" id="monTest" type="button" style="flex:0 0 auto;">Thử ngay</button>
+            <button class="action" id="monAdd" type="button" style="flex:0 0 auto;">Thêm</button>
+          </div>
+          <div class="status" id="monStatus">Chỉ gửi yêu cầu GET tới đúng địa chỉ này, không đọc nội dung trang. Lưu ngay, không cần bấm Lưu.</div>
+        </div>
+        <div class="set-field">
+          <label for="monInterval">Kiểm mỗi</label>
+          <select id="monInterval">
+            <option value="1">1 phút</option>
+            <option value="2">2 phút</option>
+            <option value="5">5 phút</option>
+            <option value="10">10 phút</option>
+          </select>
+          <div class="status">Sập = lỗi 2 lần liên tiếp. Mọi site cùng lỗi mạng thì em coi là máy mất mạng và chỉ báo một câu. Áp dụng khi Lưu.</div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3 data-sub="Phím tắt mở ô tìm bookmark, !yt, !gh…">🔎 Ô mở nhanh</h3>
+        <div class="set-field">
+          <label for="launcherHotkey">Phím tắt (trống = tắt)</label>
+          <input type="text" id="launcherHotkey" placeholder="Ctrl+Alt+Space" spellcheck="false" />
+          <div class="status" id="launcherStatus">Gõ tên bookmark (tab 🔖 trong bảng Ghi chú), địa chỉ web, hoặc !yt / !gh / !g / !w / !map / !tr / !so / !npm + từ khoá.</div>
+        </div>
+        <div class="set-field">
+          <label for="searchEngine">Tìm mặc định bằng</label>
+          <select id="searchEngine">
+            <option value="google">Google</option>
+            <option value="duckduckgo">DuckDuckGo</option>
+            <option value="bing">Bing</option>
+          </select>
+        </div>
+        <div class="set-field">
+          <label for="customBangs">Bang tự thêm (mỗi dòng: !tên URL có {q})</label>
+          <textarea id="customBangs" rows="3" spellcheck="false" placeholder="!docs https://example.com/search?q={q}"></textarea>
         </div>
       </div>
 
@@ -628,6 +693,7 @@
   <script src="js/tauri-api.js"></script>
   <script src="js/theme-apply.js"></script>
   <script src="js/clock-core.js"></script>
+  <script src="js/monitor-core.js"></script>
   <script src="js/settings.js"></script>
 </body>
 </html>

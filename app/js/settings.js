@@ -1,7 +1,7 @@
 // Settings window: load/save app settings (provider, keys, model, target,
 // auto-flower) + autostart toggle.
 (function () {
-  const { invoke, log } = window.DC;
+  const { invoke, listen, log } = window.DC;
   const $ = (id) => document.getElementById(id);
 
   function syncProviderBlocks() {
@@ -347,7 +347,7 @@
 
   // Nhóm 🧩 Widget: tick = ghim / gỡ ngay (không chờ Lưu). Trạng thái đọc lại
   // mỗi lần bảng được focus, vì widget có thể đã gỡ bằng ✕ trên chính nó.
-  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather', wSysmon: 'sysmon' };
+  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather', wSysmon: 'sysmon', wMonitor: 'monitor' };
   async function syncWidgets() {
     try {
       const st = await invoke('widgets_status');
@@ -397,6 +397,111 @@
     sel.value = zone || '';
   }
   window.addEventListener('focus', syncWidgets);
+
+  // ── 🛰 Theo dõi website: thêm / xoá / bật tắt báo lưu ngay (monitors.json) ──
+  const MC = window.MonitorCore;
+  function monMsg(text, ok) {
+    const st = $('monStatus');
+    st.className = ok == null ? 'status' : ok ? 'status ok' : 'status err';
+    st.textContent = text;
+  }
+  function renderMonitors(v) {
+    const list = $('monList');
+    list.textContent = '';
+    for (const s of (v && v.sites) || []) {
+      const row = document.createElement('div');
+      row.className = 'mon-row';
+      const dot = document.createElement('span');
+      dot.className = 'mon-dot ' + MC.dot(s);
+      const n = document.createElement('span');
+      n.className = 'n';
+      const b = document.createElement('b');
+      b.textContent = s.name;
+      const small = document.createElement('small');
+      small.textContent = s.url;
+      n.append(b, small);
+      const val = document.createElement('span');
+      val.className = 'v';
+      val.textContent = MC.resultText(s.last, 'vi');
+      const bell = document.createElement('button');
+      bell.type = 'button';
+      bell.textContent = '🔔';
+      bell.className = s.notify ? '' : 'off';
+      bell.title = s.notify ? 'Em đang báo khi site này sập. Bấm để tắt báo' : 'Bấm để em báo khi site này sập';
+      bell.addEventListener('click', async () => {
+        try {
+          await invoke('monitor_update', { id: s.id, name: s.name, url: s.url, notify: !s.notify });
+          loadMonitors();
+        } catch (e) {
+          monMsg(String(e), false);
+        }
+      });
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = '🗑';
+      del.title = 'Xoá (bấm 2 lần)';
+      del.addEventListener('click', async () => {
+        if (del.dataset.armed !== '1') {
+          del.dataset.armed = '1';
+          del.textContent = 'Xoá?';
+          setTimeout(() => { del.dataset.armed = ''; del.textContent = '🗑'; }, 3000);
+          return;
+        }
+        try {
+          await invoke('monitor_delete', { id: s.id });
+          loadMonitors();
+        } catch (e) {
+          monMsg(String(e), false);
+        }
+      });
+      row.append(dot, n, val, bell, del);
+      list.append(row);
+    }
+  }
+  async function loadMonitors() {
+    try {
+      renderMonitors(await invoke('monitor_stats'));
+    } catch (e) {
+      monMsg(String(e), false);
+    }
+  }
+  $('monTest').addEventListener('click', async () => {
+    monMsg('Đang kiểm…');
+    try {
+      const o = await invoke('monitor_test', { url: $('monUrl').value });
+      if (o.state === 'up') monMsg(`Chạy tốt ✓ (mã ${o.status}, ${MC.fmtMs(o.ms)})`, true);
+      else monMsg('Không vào được: ' + MC.resultText(o, 'vi'), false);
+    } catch (e) {
+      monMsg(String(e), false);
+    }
+  });
+  $('monAdd').addEventListener('click', async () => {
+    try {
+      await invoke('monitor_add', { name: $('monName').value, url: $('monUrl').value });
+      $('monUrl').value = '';
+      $('monName').value = '';
+      monMsg('Đã thêm ✓ Em kiểm ngay bây giờ.', true);
+      loadMonitors();
+    } catch (e) {
+      monMsg(String(e), false);
+    }
+  });
+  listen('monitor-stats', (e) => renderMonitors(e && e.payload));
+  window.addEventListener('focus', loadMonitors);
+  loadMonitors();
+
+  // 🔎 Phím ô mở nhanh không đăng ký được (trùng app khác…): báo ngay khi mở bảng.
+  async function showLauncherStatus() {
+    try {
+      const st = await invoke('launcher_status');
+      if (st) {
+        $('launcherStatus').className = 'status err';
+        $('launcherStatus').textContent = st;
+      }
+    } catch (_) { /* giữ chữ hướng dẫn */ }
+  }
+  window.addEventListener('focus', showLauncherStatus);
+  showLauncherStatus();
   syncWidgets();
   for (const id of ['weatherMode', 'weatherKind', 'weatherIntensity', 'weatherBattery', 'weatherTalk', 'weatherLightning']) {
     $(id).addEventListener('change', applyWeather);
@@ -495,6 +600,10 @@
       $('quietFullscreen').checked = s.quiet_fullscreen !== false;
       $('sysmonEnabled').checked = s.sysmon_enabled === true;
       $('lowWarn').checked = s.low_warn !== false;
+      $('monInterval').value = String(s.monitor_interval_min || 5);
+      $('launcherHotkey').value = s.launcher_hotkey ?? 'Ctrl+Alt+Space';
+      $('searchEngine').value = s.search_engine || 'google';
+      $('customBangs').value = s.custom_bangs || '';
       fillWarn('cpuWarn', s.cpu_warn_pct ?? 90);
       fillWarn('ramWarn', s.ram_warn_pct ?? 90);
       syncSysmon();
@@ -648,6 +757,10 @@
       quiet_fullscreen: $('quietFullscreen').checked,
       sysmon_enabled: $('sysmonEnabled').checked,
       low_warn: $('lowWarn').checked,
+      monitor_interval_min: Number($('monInterval').value) || 5,
+      launcher_hotkey: $('launcherHotkey').value.trim(),
+      search_engine: $('searchEngine').value,
+      custom_bangs: $('customBangs').value,
       cpu_warn_pct: Number($('cpuWarn').value) || 90,
       ram_warn_pct: Number($('ramWarn').value) || 90,
       weather_mode: $('weatherMode').value,

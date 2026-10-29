@@ -3,6 +3,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod awareness;
+mod bookmarks;
 mod bond;
 mod calendar_pin;
 mod clock_pin;
@@ -12,12 +13,16 @@ mod events;
 mod commands;
 mod companion;
 mod focus;
+mod launcher;
 mod lines;
 mod links;
 mod miu_sets;
 mod model_dl;
 mod model_pack;
 mod models;
+mod monitor;
+mod monitor_net;
+mod monitor_pin;
 mod lunar;
 mod llm;
 mod naming;
@@ -344,6 +349,15 @@ fn pet_command(app: AppHandle, payload: Value) {
         }
         // Menu tròn 💞 → 📅: ghim / gỡ lịch tháng (luồng riêng, như weather:pin).
         // Menu tròn 💞 → 📊: ghim / gỡ widget Thông số máy.
+        // Menu tròn 💞 → 🛰: ghim / gỡ widget Theo dõi website.
+        "monitor:pin" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || {
+                if let Err(e) = pin_widget::toggle(&app2, &monitor_pin::SPEC) {
+                    eprintln!("[monitor] ghim lỗi: {e}");
+                }
+            });
+        }
         "sysmon:pin" => {
             let app2 = app.clone();
             std::thread::spawn(move || {
@@ -489,8 +503,9 @@ fn register_capture_hotkey(app: &AppHandle, spec: &str) -> bool {
         Ok(sc) => gs.register(sc).is_ok(),
         Err(_) => false,
     };
-    // unregister_all vừa gỡ cả phím tắt thời tiết: đăng ký lại.
+    // unregister_all vừa gỡ cả phím tắt thời tiết và ô mở nhanh: đăng ký lại.
     fx::register_shortcut(app);
+    launcher::register(app);
     ok
 }
 
@@ -538,6 +553,9 @@ fn main() {
                     // Phím tắt thời tiết: bật / tắt hiệu ứng (lối thoát khẩn khi lớp phủ gây phiền).
                     if fx::is_shortcut(shortcut) {
                         fx::toggle(app);
+                    } else if launcher::is_shortcut(shortcut) {
+                        // 🔎 Ô mở nhanh.
+                        launcher::toggle(app);
                     } else if shortcut.matches(Modifiers::CONTROL, Code::KeyC) {
                         let ok = selection::copy_last_selection();
                         if let Some(w) = app.get_webview_window("flower") {
@@ -688,6 +706,20 @@ fn main() {
             commands::clock_get,
             commands::sysmon_get,
             commands::sysmon_top,
+            commands::monitor_get,
+            commands::monitor_stats,
+            commands::monitor_add,
+            commands::monitor_update,
+            commands::monitor_delete,
+            commands::monitor_test,
+            commands::bookmarks_list,
+            commands::bookmarks_add,
+            commands::bookmarks_update,
+            commands::bookmarks_delete,
+            commands::launcher_data,
+            commands::launcher_hide,
+            commands::launcher_resize,
+            commands::launcher_status,
             commands::open_task_manager,
             commands::widget_pin_set,
             commands::widget_pin_top,
@@ -806,6 +838,8 @@ fn main() {
             note_pins::restore_all(&app_handle);
             // Widget Thông số máy: chỉ đo khi đang hiện.
             sysmon_pin::start(app_handle.clone());
+            // 🛰 Theo dõi website: chỉ kiểm khi danh sách có site.
+            monitor_net::start(app_handle.clone());
             tts::start(app_handle.clone());
             // Trọng tài lời nói: mọi câu pet tự nói (tự bắt chuyện, sau này là
             // nhắc nghỉ, hạn chót…) đều qua đây.
@@ -874,6 +908,8 @@ fn main() {
                 MenuItem::with_id(app, "calendar", "📅 Ghim / gỡ lịch tháng", true, None::<&str>)?;
             let sysmon_item =
                 MenuItem::with_id(app, "sysmon", "📊 Ghim / gỡ thông số máy", true, None::<&str>)?;
+            let monitor_item =
+                MenuItem::with_id(app, "monitor", "🛰 Ghim / gỡ theo dõi website", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
             let menu = Menu::with_items(
@@ -890,6 +926,7 @@ fn main() {
                     &forecast_item,
                     &calendar_item,
                     &sysmon_item,
+                    &monitor_item,
                     &sep,
                     &quit_item,
                 ],
@@ -926,6 +963,14 @@ fn main() {
                         std::thread::spawn(move || {
                             if let Err(e) = pin_widget::toggle(&app2, &calendar_pin::SPEC) {
                                 eprintln!("[calendar] ghim lịch lỗi: {e}");
+                            }
+                        });
+                    }
+                    "monitor" => {
+                        let app2 = app.clone();
+                        std::thread::spawn(move || {
+                            if let Err(e) = pin_widget::toggle(&app2, &monitor_pin::SPEC) {
+                                eprintln!("[monitor] ghim lỗi: {e}");
                             }
                         });
                     }

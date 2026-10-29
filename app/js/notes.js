@@ -10,6 +10,7 @@
 
   let notes = [];
   let events = [];
+  let bookmarks = [];
   let tab = 'notes';
   // Id ghi chú đang mở rộng nội dung (giữ qua các lần vẽ lại).
   const expanded = new Set();
@@ -161,9 +162,10 @@
     const open = document.querySelector('.nt-editor');
     if (open) {
       // Đang soạn dở mà có đoạn mới gửi tới: nối vào cuối, đừng nuốt mất.
+      // (Ô đang mở có thể là ô bookmark, không có textarea.)
       const ta = open.querySelector('textarea');
-      if (prefill) ta.value = ta.value ? ta.value.replace(/\s*$/, '') + '\n\n' + prefill : prefill;
-      (prefill ? open.querySelector('input') : ta).focus();
+      if (prefill && ta) ta.value = ta.value ? ta.value.replace(/\s*$/, '') + '\n\n' + prefill : prefill;
+      ((prefill || !ta) ? open.querySelector('input') : ta).focus();
       return;
     }
     const box = document.createElement('div');
@@ -229,6 +231,111 @@
     else $('ntComposer').appendChild(box);
     // Sửa: vào thẳng nội dung. Mới (kể cả có sẵn nội dung): gõ tiêu đề trước.
     (n ? body : title).focus();
+  }
+
+  // ─── Tab Bookmark (bookmarks.json; ô mở nhanh tìm trong đây) ────────────────
+
+  function makeBookmark(b) {
+    const row = document.createElement('div');
+    row.className = 'nt-item tk-item ev';
+    row.title = 'Bấm để mở trong trình duyệt';
+    const top = document.createElement('div');
+    top.className = 'nt-top';
+    const title = document.createElement('div');
+    title.className = 'nt-title';
+    title.textContent = '🔖 ' + b.title;
+    top.appendChild(title);
+    if (b.group) {
+      const g = document.createElement('span');
+      g.className = 'nt-badge';
+      g.textContent = b.group;
+      top.appendChild(g);
+    }
+    const copy = btn('copy', '📋', 'Copy link', async () => {
+      try {
+        await navigator.clipboard.writeText(b.url);
+        showStatus('Đã copy link ✓', true);
+      } catch (e) {
+        showStatus('Không copy được vào clipboard: ' + (e && e.message ? e.message : e));
+      }
+    });
+    const edit = btn('edit', '✏️', 'Sửa', () => openBmEditor(b, row));
+    const del = deleteBtn('Xoá bookmark', async () => {
+      await call('bookmarks_delete', { id: b.id });
+      render();
+    });
+    top.append(copy, edit, del);
+    const url = document.createElement('div');
+    url.className = 'nt-when';
+    url.textContent = b.url;
+    row.append(top, url);
+    row.addEventListener('click', (e) => {
+      if (!e.target.closest('button')) openLink(b.url);
+    });
+    return row;
+  }
+
+  // Ô soạn bookmark (thêm mới: b = null). Enter lưu, Esc huỷ.
+  function openBmEditor(b, replaceEl) {
+    const open = document.querySelector('.nt-editor');
+    if (open) {
+      open.querySelector('input').focus();
+      return;
+    }
+    const box = document.createElement('div');
+    box.className = 'nt-editor';
+    const input = (ph, value, label, max) => {
+      const i = document.createElement('input');
+      i.type = 'text';
+      i.placeholder = ph;
+      i.value = value || '';
+      i.maxLength = max;
+      i.setAttribute('aria-label', label);
+      return i;
+    };
+    const url = input('https://… (bắt buộc)', b && b.url, 'Địa chỉ', 2000);
+    const title = input('Tên (trống thì lấy tên trang web)', b && b.title, 'Tên', 80);
+    const group = input('Nhóm (tuỳ chọn, vd: Công việc)', b && b.group, 'Nhóm', 30);
+    const bar = document.createElement('div');
+    bar.className = 'nt-editor-bar';
+    const hint = document.createElement('span');
+    hint.className = 'hint';
+    hint.textContent = 'Enter để lưu · Esc để huỷ · tìm lại bằng ô mở nhanh (Ctrl+Alt+Space)';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'ghost';
+    cancel.textContent = 'Huỷ';
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'action';
+    save.textContent = 'Lưu';
+    bar.append(hint, cancel, save);
+    box.append(url, title, group, bar);
+
+    const close = () => {
+      box.remove();
+      render();
+    };
+    save.addEventListener('click', async () => {
+      const args = { title: title.value, url: url.value, group: group.value };
+      const ok = b ? await call('bookmarks_update', { id: b.id, ...args }) : await call('bookmarks_add', args);
+      // Rust từ chối (URL không phải http / https…): giữ ô lại, lỗi đã hiện ở dòng trạng thái.
+      if (ok) close();
+      else url.focus();
+    });
+    cancel.addEventListener('click', close);
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        save.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    });
+    if (replaceEl) replaceEl.replaceWith(box);
+    else $('ntComposer').appendChild(box);
+    url.focus();
   }
 
   // ─── Tab Sự kiện ────────────────────────────────────────────────────────────
@@ -317,6 +424,21 @@
     const rows = Cal.upcomingEvents(events, Cal.keyOfDate(new Date())).filter((r) => matches({ title: r.ev.title, body: '' }, q));
     $('evCount').textContent = searching ? `${rows.length}/${events.length}` : String(events.length);
 
+    const shownBm = (bookmarks || [])
+      .filter((b) => matches({ title: b.title, body: `${b.group} ${b.url}` }, q))
+      .sort((a, b) => (a.group || '￿').localeCompare(b.group || '￿') || a.title.localeCompare(b.title));
+    $('bmCount').textContent = searching ? `${shownBm.length}/${bookmarks.length}` : String(bookmarks.length);
+
+    if (tab === 'bookmarks') {
+      if (!shownBm.length) {
+        list.appendChild(emptyRow(bookmarks.length
+          ? 'Không có bookmark nào khớp.'
+          : 'Chưa có bookmark nào.<br/>Thêm trang hay dùng, rồi bấm Ctrl+Alt+Space ở bất kỳ đâu<br/>và gõ vài chữ để mở nhanh.'));
+        return;
+      }
+      for (const b of shownBm) list.appendChild(makeBookmark(b));
+      return;
+    }
     if (tab === 'events') {
       if (!rows.length) {
         list.appendChild(emptyRow(events.length
@@ -339,11 +461,12 @@
   async function render() {
     // Đang soạn / sửa thì không vẽ lại, kẻo mất chữ đang gõ.
     if (document.querySelector('.nt-editor')) return;
-    // Hai file độc lập: file này hỏng thì vẫn hiện được file kia.
-    const [n, e] = await Promise.allSettled([invoke('notes_list'), invoke('events_list')]);
+    // Ba file độc lập: file này hỏng thì vẫn hiện được file kia.
+    const [n, e, b] = await Promise.allSettled([invoke('notes_list'), invoke('events_list'), invoke('bookmarks_list')]);
     notes = n.status === 'fulfilled' ? n.value || [] : [];
     events = e.status === 'fulfilled' ? e.value || [] : [];
-    const errs = [n, e].filter((r) => r.status === 'rejected').map((r) => String(r.reason));
+    bookmarks = b.status === 'fulfilled' ? b.value || [] : [];
+    const errs = [n, e, b].filter((r) => r.status === 'rejected').map((r) => String(r.reason));
     if (errs.length) showStatus(errs.join(' · '), false, 20000);
     fillList();
   }
@@ -352,9 +475,14 @@
     tab = next;
     for (const b of document.querySelectorAll('.nt-tabs .tab')) b.classList.toggle('active', b.dataset.tab === tab);
     const isEvents = tab === 'events';
-    $('ntSearch').placeholder = isEvents ? 'Tìm sự kiện...' : 'Tìm trong ghi chú (gõ không dấu cũng được)...';
-    $('ntNew').textContent = isEvents ? '📅 Mở lịch' : '+ Ghi chú mới';
-    $('ntNew').title = isEvents ? 'Mở lịch ghim để thêm / sửa sự kiện' : 'Ctrl+N';
+    const text = {
+      notes: ['Tìm trong ghi chú (gõ không dấu cũng được)...', '+ Ghi chú mới', 'Ctrl+N'],
+      events: ['Tìm sự kiện...', '📅 Mở lịch', 'Mở lịch ghim để thêm / sửa sự kiện'],
+      bookmarks: ['Tìm bookmark (tên, nhóm, địa chỉ)...', '+ Bookmark mới', 'Ctrl+N'],
+    }[tab];
+    $('ntSearch').placeholder = text[0];
+    $('ntNew').textContent = text[1];
+    $('ntNew').title = text[2];
     $('ntComposer').hidden = isEvents;
     fillList();
   }
@@ -365,6 +493,7 @@
   });
   $('ntNew').addEventListener('click', () => {
     if (tab === 'events') openOnCalendar(Cal.keyOfDate(new Date()));
+    else if (tab === 'bookmarks') openBmEditor(null, null);
     else openEditor(null, null);
   });
   $('ntSearch').addEventListener('input', () => {
@@ -382,6 +511,10 @@
     const k = e.key.toLowerCase();
     if (k === 'n') {
       e.preventDefault();
+      if (tab === 'bookmarks') {
+        openBmEditor(null, null);
+        return;
+      }
       if (tab !== 'notes') setTab('notes');
       openEditor(null, null);
     } else if (k === 'f') {

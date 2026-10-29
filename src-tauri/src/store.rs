@@ -197,6 +197,31 @@ pub struct Settings {
     /// Widget Thông số máy ghim (sysmon_pin.rs).
     #[serde(default)]
     pub sysmon_pin: crate::pin_widget::PinState,
+    /// Widget 🛰 Theo dõi website ghim (monitor_pin.rs).
+    #[serde(default)]
+    pub monitor_pin: crate::pin_widget::PinState,
+    /// Kiểm các site mỗi bao nhiêu phút (monitor::INTERVALS).
+    #[serde(default = "default_monitor_interval")]
+    pub monitor_interval_min: u32,
+    /// 🔎 Ô mở nhanh (launcher.rs): phím tắt, rỗng = tắt.
+    #[serde(default = "default_launcher_hotkey")]
+    pub launcher_hotkey: String,
+    /// "google" | "duckduckgo" | "bing".
+    #[serde(default = "default_search_engine")]
+    pub search_engine: String,
+    /// Bang tự thêm, mỗi dòng "!key URL-có-{q}" (launcher::parse_bangs).
+    #[serde(default)]
+    pub custom_bangs: String,
+}
+
+fn default_monitor_interval() -> u32 {
+    crate::monitor::DEFAULT_INTERVAL
+}
+fn default_launcher_hotkey() -> String {
+    crate::launcher::DEFAULT_HOTKEY.into()
+}
+fn default_search_engine() -> String {
+    "google".into()
 }
 
 fn default_weather_units() -> String {
@@ -379,6 +404,11 @@ impl Default for Settings {
             clock_pin: Default::default(),
             clock_zones: Vec::new(),
             sysmon_pin: Default::default(),
+            monitor_pin: Default::default(),
+            monitor_interval_min: default_monitor_interval(),
+            launcher_hotkey: default_launcher_hotkey(),
+            search_engine: default_search_engine(),
+            custom_bangs: String::new(),
         }
     }
 }
@@ -555,6 +585,44 @@ pub fn update_notes<R>(
         return Ok(out);
     }
     write_list(&path, &notes)?;
+    Ok(out)
+}
+
+// ─── monitors.json (🛰 Theo dõi website) & bookmarks.json (🔖) ──────────────────
+// Danh sách người dùng tự nhập: cùng cách đọc / ghi an toàn với notes.json.
+
+static MONITORS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+static BOOKMARKS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+pub fn load_monitors(app: &AppHandle) -> Result<Vec<crate::monitor::Site>, String> {
+    read_list(&config_dir(app).ok_or("no config dir")?.join("monitors.json"))
+}
+
+pub fn update_monitors<R>(app: &AppHandle, f: impl FnOnce(&mut Vec<crate::monitor::Site>) -> R) -> Result<R, String> {
+    let _guard = MONITORS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let path = config_dir(app).ok_or("no config dir")?.join("monitors.json");
+    let mut list: Vec<crate::monitor::Site> = read_list(&path)?;
+    let before = list.clone();
+    let out = f(&mut list);
+    if list != before {
+        write_list(&path, &list)?;
+    }
+    Ok(out)
+}
+
+pub fn load_bookmarks(app: &AppHandle) -> Result<Vec<crate::bookmarks::Bookmark>, String> {
+    read_list(&config_dir(app).ok_or("no config dir")?.join("bookmarks.json"))
+}
+
+pub fn update_bookmarks<R>(app: &AppHandle, f: impl FnOnce(&mut Vec<crate::bookmarks::Bookmark>) -> R) -> Result<R, String> {
+    let _guard = BOOKMARKS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let path = config_dir(app).ok_or("no config dir")?.join("bookmarks.json");
+    let mut list: Vec<crate::bookmarks::Bookmark> = read_list(&path)?;
+    let before = list.clone();
+    let out = f(&mut list);
+    if list != before {
+        write_list(&path, &list)?;
+    }
     Ok(out)
 }
 

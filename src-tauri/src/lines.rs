@@ -82,6 +82,10 @@ pub enum Key {
     BatteryLow,
     BatteryCritical,
     DiskLow,
+    // ── Website theo dõi (monitor_net.rs). Biến: {site}, {why} / {mins}.
+    SiteDown,
+    SiteUp,
+    NetDown,
     // ── Thân thiết (bond.rs, Phase 12).
     /// Câu chào đầu ngày khi có việc tới hạn hôm nay. Biến: {due}.
     DailyGreeting,
@@ -184,6 +188,9 @@ impl Key {
         Key::BatteryLow,
         Key::BatteryCritical,
         Key::DiskLow,
+        Key::SiteDown,
+        Key::SiteUp,
+        Key::NetDown,
         Key::DailyGreeting,
         Key::DailyGreetingFree,
         Key::GreetingEvents,
@@ -224,6 +231,7 @@ impl Key {
             Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
             Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
             Key::BatteryLow | Key::BatteryCritical | Key::DiskLow => 3,
+            Key::SiteDown | Key::SiteUp | Key::NetDown => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
             Key::WeatherRain
             | Key::WeatherSnow
@@ -283,6 +291,8 @@ impl Key {
             Key::FocusDone => &["brk"],
             Key::CpuHigh | Key::RamHigh | Key::BatteryLow | Key::BatteryCritical => &["pct"],
             Key::DiskLow => &["drive", "free"],
+            Key::SiteDown => &["site", "why"],
+            Key::SiteUp => &["site", "mins"],
             Key::DailyGreeting => &["due"],
             Key::GreetingEvents => &["events"],
             Key::MilestoneDays | Key::StreakMilestone => &["days"],
@@ -923,6 +933,52 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "Drive {drive} has only {free} free, {you}, time to clean up~ 💾",
             "Your {drive} drive is nearly full ({free} left). A full drive slows everything down!",
             "Only {free} left on {drive}, let's delete what you don't need~",
+        ],
+
+        (SiteDown, Vi) => &[
+            "{You} ơi, {site} không vào được rồi ({why}) 😳",
+            "Báo động nè: {site} đang sập, {why}!",
+            "{Me} vừa thấy {site} không chạy ({why}), {you} xem thử nha~",
+        ],
+        (SiteDown, Ja) => &[
+            "{you}、{site}に入れなくなったよ（{why}）😳",
+            "大変：{site}がダウンしてる、{why}！",
+            "{site}が動いてないみたい（{why}）、見てみて～",
+        ],
+        (SiteDown, En) => &[
+            "{You}, {site} is unreachable ({why}) 😳",
+            "Alert: {site} is down, {why}!",
+            "I just noticed {site} isn't working ({why}), take a look~",
+        ],
+        (SiteUp, Vi) => &[
+            "{site} chạy lại rồi {you} ơi, sập khoảng {mins} phút 🎉",
+            "Yên tâm nha, {site} vào được rồi (sập {mins} phút)~",
+            "{Me} báo tin vui: {site} sống lại rồi sau {mins} phút!",
+        ],
+        (SiteUp, Ja) => &[
+            "{site}が復活したよ、約{mins}分ダウンしてた🎉",
+            "安心して、{site}にまた入れるよ（{mins}分ダウン）～",
+            "いい知らせ：{site}が{mins}分ぶりに復活！",
+        ],
+        (SiteUp, En) => &[
+            "{site} is back up, {you}, after about {mins} min 🎉",
+            "Relax, {site} is reachable again (down {mins} min)~",
+            "Good news: {site} came back after {mins} min!",
+        ],
+        (NetDown, Vi) => &[
+            "Hình như máy mất mạng rồi {you}, {me} không vào được site nào cả 📡",
+            "{You} ơi, mạng có vấn đề rồi á, các site đều không kết nối được~",
+            "Mất mạng rồi nè, {me} tạm thôi theo dõi tới khi có mạng lại nha 📡",
+        ],
+        (NetDown, Ja) => &[
+            "ネットが切れてるみたい、どのサイトにもつながらないよ📡",
+            "{you}、ネットワークがおかしいよ、全部のサイトにつながらない～",
+            "ネットが落ちてる…戻るまで見守りはお休みね📡",
+        ],
+        (NetDown, En) => &[
+            "Looks like you're offline, {you}, I can't reach any site 📡",
+            "Your network seems down, every site fails to connect~",
+            "We're offline, I'll pause watching until the network is back 📡",
         ],
 
         (CpuHigh, Vi) => &[

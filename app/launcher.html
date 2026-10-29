@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!--
+  🔎 Ô mở nhanh (launcher.rs, phím tắt mặc định Ctrl+Alt+Space). Cửa sổ trong
+  suốt không viền; trang tự giãn cao theo số kết quả (launcher_resize).
+  Tách lệnh / xếp hạng: js/launcher-core.js.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mở nhanh</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; }
+    .wrap { padding: 6px; }
+    .card {
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(160deg, rgba(44, 34, 70, 0.96), rgba(70, 40, 80, 0.96));
+      box-shadow: 0 10px 28px -8px rgba(10, 5, 25, 0.75);
+      color: #f6eaf4;
+      overflow: hidden;
+    }
+    .bar { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 14px; }
+    .bar .ic { font-size: 18px; opacity: 0.85; }
+    #q {
+      flex: 1; min-width: 0;
+      border: none; outline: none; background: transparent; color: inherit;
+      font: 500 18px "Segoe UI", sans-serif;
+    }
+    #q::placeholder { color: rgba(246, 234, 244, 0.45); }
+    .list { border-top: 1px solid rgba(255, 255, 255, 0.12); padding: 4px; }
+    .list:empty { display: none; }
+    .row {
+      display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 8px;
+      height: 40px; padding: 0 10px; border-radius: 10px; cursor: pointer;
+    }
+    .row.sel { background: rgba(255, 115, 171, 0.28); }
+    .row .i { text-align: center; font-size: 14px; }
+    .row .t { min-width: 0; display: flex; flex-direction: column; }
+    .row .t b, .row .t small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .t b { font-size: 13.5px; font-weight: 600; }
+    .row .t small { font-size: 11px; color: #c9b6d6; }
+    .msg { font-size: 12px; padding: 6px 14px 8px; color: #ff9c9c; }
+    .msg:empty { display: none; }
+    .hint { font-size: 10.5px; color: rgba(246, 234, 244, 0.5); padding: 0 14px 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="wrap">
+    <div class="card">
+      <div class="bar">
+        <span class="ic">🔎</span>
+        <input id="q" type="text" autocomplete="off" spellcheck="false" aria-label="Tìm hoặc mở nhanh" />
+      </div>
+      <div class="list" id="list" role="listbox"></div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/notes-core.js"></script>
+  <script src="js/launcher-core.js"></script>
+  <script src="js/launcher.js"></script>
+</body>
+</html>

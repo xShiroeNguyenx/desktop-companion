@@ -193,6 +193,19 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    // 🔎 Ô mở nhanh (launcher.rs): không viền, luôn nổi, không hiện trên taskbar.
+    let _ = WebviewWindowBuilder::new(app, crate::launcher::LABEL, WebviewUrl::App("launcher.html".into()))
+        .title("Mở nhanh")
+        .inner_size(crate::launcher::WIDTH, crate::launcher::HEIGHT)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .visible(false)
+        .build();
+
     let _ = WebviewWindowBuilder::new(app, "notes", WebviewUrl::App("notes.html".into()))
         .title("Ghi chú")
         .inner_size(560.0, 600.0)

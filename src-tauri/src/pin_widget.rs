@@ -57,8 +57,8 @@ pub struct Spec {
     pub broadcast: fn(&AppHandle),
 }
 
-pub fn specs() -> [&'static Spec; 3] {
-    [&crate::calendar_pin::SPEC, &crate::clock_pin::SPEC, &crate::sysmon_pin::SPEC]
+pub fn specs() -> [&'static Spec; 4] {
+    [&crate::calendar_pin::SPEC, &crate::clock_pin::SPEC, &crate::sysmon_pin::SPEC, &crate::monitor_pin::SPEC]
 }
 
 pub fn spec(label: &str) -> Option<&'static Spec> {

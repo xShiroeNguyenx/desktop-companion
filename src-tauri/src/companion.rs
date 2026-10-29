@@ -36,6 +36,8 @@ pub enum Kind {
     FocusEnd,
     /// Pin yếu / ổ hệ thống sắp đầy (power_warn.rs).
     Power,
+    /// Website theo dõi sập / sống lại, máy mất mạng (monitor_net.rs).
+    Monitor,
     Welcome,
     /// Xin người dùng đặt tên cho pet (naming.rs).
     AskName,
@@ -52,12 +54,12 @@ pub enum Kind {
 impl Kind {
     /// Không phải chờ hết khoảng nghỉ giữa hai câu.
     fn bypasses_gap(self) -> bool {
-        matches!(self, Kind::Deadline | Kind::Power)
+        matches!(self, Kind::Deadline | Kind::Power | Kind::Monitor)
     }
 
     /// Được nói trong phiên Tập trung.
     fn allowed_in_focus(self) -> bool {
-        matches!(self, Kind::Deadline | Kind::FocusEnd | Kind::Power)
+        matches!(self, Kind::Deadline | Kind::FocusEnd | Kind::Power | Kind::Monitor)
     }
 }
 
@@ -744,6 +746,11 @@ fn awareness_candidates(app: &AppHandle, now: u64, snap: &awareness::Snapshot, s
         }
     }
 
+    // Website theo dõi: sự kiện do luồng monitor_net.rs gom sẵn.
+    for tag in crate::monitor_net::take_events() {
+        out.push(Candidate { kind: Kind::Monitor, since: now, ttl: Some(60 * 60), tag });
+    }
+
     // CPU / RAM: tắt thì không lấy mẫu gì cả, và quên mọi mốc cũ.
     if !settings.sysmon_enabled {
         if let Ok(mut p) = state.cpu_prev.lock() {
@@ -1007,6 +1014,31 @@ fn power_line(app: &AppHandle, tag: &str) -> Option<String> {
     }
 }
 
+/// Câu báo website: "mon:down:<id>:<lý do>", "mon:up:<id>:<giây sập>", "mon:net:0".
+/// Site đã bị xoá khỏi danh sách thì thôi không nói.
+fn monitor_line(app: &AppHandle, tag: &str) -> Option<String> {
+    let a = persona::address(&store::load_settings(app));
+    let rest = tag.strip_prefix("mon:")?;
+    let (kind, rest) = rest.split_once(':')?;
+    if kind == "net" {
+        return Some(lines::line(Key::NetDown, &a, &[]));
+    }
+    let (id, val) = rest.split_once(':')?;
+    let site = store::load_monitors(app).ok()?.into_iter().find(|s| s.id == id)?;
+    let name = crate::pins::short_task(&site.name);
+    match kind {
+        "down" => {
+            let why = crate::monitor::reason_text(val, a.lang.code());
+            Some(lines::line(Key::SiteDown, &a, &[("site", name.as_str()), ("why", why.as_str())]))
+        }
+        "up" => {
+            let mins = (val.parse::<u64>().ok()? / 60).max(1).to_string();
+            Some(lines::line(Key::SiteUp, &a, &[("site", name.as_str()), ("mins", mins.as_str())]))
+        }
+        _ => None,
+    }
+}
+
 /// Câu nhắc một sự kiện lịch ("event:<id>:<ngày>:<mốc>").
 fn event_line(app: &AppHandle, tag: &str) -> Option<String> {
     use crate::events::Mark;
@@ -1119,6 +1151,10 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
             Some((text, Some("surprised".into())))
         }
         Kind::Power => Some((power_line(app, &c.tag)?, Some("surprised".into()))),
+        Kind::Monitor => {
+            let face = if c.tag.starts_with("mon:up:") { "happy" } else { "surprised" };
+            Some((monitor_line(app, &c.tag)?, Some(face.into())))
+        }
         Kind::Health => {
             let settings = store::load_settings(app);
             let intervals = [settings.remind_eyes_min, settings.remind_water_min, settings.remind_stand_min];
@@ -1166,7 +1202,11 @@ fn speak(app: &AppHandle, c: &Candidate) -> bool {
 /// Gửi một câu hạn chót bằng thông báo Windows. Lỗi thì ghi nhớ để lượt sau
 /// chờ pet nói được thay vì thử lại mỗi 30 giây.
 fn deliver_toast(app: &AppHandle, c: &Candidate) {
-    let text = if c.kind == Kind::Power { power_line(app, &c.tag) } else { deadline_line(app, &c.tag) };
+    let text = match c.kind {
+        Kind::Power => power_line(app, &c.tag),
+        Kind::Monitor => monitor_line(app, &c.tag),
+        _ => deadline_line(app, &c.tag),
+    };
     let Some(text) = text else { return };
     match notify::toast(app, &text) {
         Ok(()) => mark_reminded(app, &c.tag),
@@ -1213,7 +1253,7 @@ fn tick(app: &AppHandle) {
         // Hạn chót không chờ pet: nói không được thì đi đường thông báo Windows.
         let mut toasts = Vec::new();
         pending.retain(|c| {
-            let toast = matches!(c.kind, Kind::Deadline | Kind::Power)
+            let toast = matches!(c.kind, Kind::Deadline | Kind::Power | Kind::Monitor)
                 && deadline_channel(&ctx, settings.due_toast, failed.contains(&c.tag)) == Channel::Toast;
             if toast {
                 toasts.push(c.clone());
@@ -1236,7 +1276,7 @@ fn tick(app: &AppHandle) {
         // Nói được hay model lỗi đều đếm lại từ đầu, để không gọi model mỗi lượt.
         chat::touch_activity(app);
     }
-    if matches!(c.kind, Kind::Deadline | Kind::Power) {
+    if matches!(c.kind, Kind::Deadline | Kind::Power | Kind::Monitor) {
         if let Ok(mut f) = state.toast_failed.lock() {
             f.remove(&c.tag);
         }

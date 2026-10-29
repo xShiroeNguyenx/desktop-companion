@@ -1745,3 +1745,137 @@ khi app khác đang tải).
 **Kiểm bằng tay sau khi đăng:** bản dev → +kẹo → mua Gothic Aristocrat → thẻ hiện % rồi "Dùng"; pet
 đổi model; tắt mạng rồi bấm Tải về → câu "không kết nối được"; xoá `<app_data>/models` rồi mở app
 → tự tải lại; đăng v2 → mở app → tự cập nhật; release `models` không thành "Latest" trên GitHub.
+
+---
+
+## 17. 🛰 Theo dõi website & 🔎 Ô mở nhanh (ý tưởng từ Glance)
+
+Lập 2026-10-29. Hai ý lấy từ widget **Monitor** và **Search + Bookmarks** của
+[Glance](https://github.com/glanceapp/glance). Glance dùng **AGPL-3.0**, repo này MIT: **chỉ lấy ý
+tưởng, tự viết lại, không chép code / CSS / ảnh** của Glance.
+
+Điểm khác Glance: Glance là trang web, chỉ hiện chấm đỏ. Ở đây pet **chủ động báo** (bubble, hoặc
+thông báo Windows khi pet ẩn), và ô mở nhanh gọi bằng **phím tắt toàn cục** từ bất kỳ ứng dụng nào.
+
+### 17.1 Nguyên tắc (chốt trước khi làm)
+
+- **Dữ liệu người dùng tự nhập** (danh sách site, bookmark) lưu file riêng qua `store::read_list` /
+  `write_list` (chống ghi đè file hỏng, có `.bak`), **không** nhét vào `Settings` (tránh lỗi
+  `settings_set` chép tay, xem 15.1 A1).
+- **Không đưa URL / tên máy thật vào repo**, kể cả ví dụ, placeholder, test: dùng `example.com`,
+  `app-01.example.net`, `203.0.113.10`.
+- Mở link chỉ qua `links::safe_web_url` (http / https). Theo dõi site chỉ gửi **GET**, không gửi
+  cookie / dữ liệu gì của người dùng, không đọc nội dung trang (chỉ mã trạng thái + thời gian).
+- Logic quyết định (khi nào coi là sập, khi nào báo, tách lệnh của ô mở nhanh) là **hàm thuần có
+  test**; phần mạng / cửa sổ mỏng.
+- Không tự "sửa" gì: site sập thì chỉ báo và cho mở link, không tự chạy lệnh nào.
+
+### 17.2 🛰 Theo dõi website (Phase 25, v0.11.0)
+
+**Người dùng thấy gì**
+- Widget ghim `pin-monitor` (cùng khung với lịch / đồng hồ / 📊): mỗi site một dòng, chấm 🟢 / 🔴,
+  tên, thời gian phản hồi (ms) hoặc lỗi ngắn ("Hết giờ", "500", "Lỗi DNS", "Lỗi SSL"). Đầu thẻ:
+  "3/4 đang chạy". Bấm một dòng → mở site trong trình duyệt. Cao theo số site (như đồng hồ), tối đa
+  8 dòng.
+- Pet báo khi site **sập** ("app-01 không vào được rồi, lỗi 502") và khi **sống lại** ("app-01 chạy
+  lại rồi, sập 12 phút"). Pet ẩn / DND / toàn màn hình → thông báo Windows như hạn chót.
+- Quản lý danh sách: Cài đặt → nhóm **🛰 Theo dõi website**: danh sách + ô thêm (tên, URL), nút
+  **Thử ngay** (kiểm một lần, hiện kết quả liền), sửa / xoá. Lưu ngay, không chờ nút Lưu Cài đặt
+  (như các công tắc 🧩 Widget). Chu kỳ kiểm: 1 / 2 / 5 / 10 phút, mặc định **5 phút**.
+
+**Kiến trúc**
+- `monitor.rs` (thuần): `Site { id, name, url, notify }`; `Health` theo dõi từng site;
+  `fn observe(prev, result, now) -> (Health, Option<Event>)` với `Event::Down { reason }` /
+  `Event::Up { down_secs }`; `fn classify(status, err) -> Outcome` (2xx/3xx = chạy; 4xx/5xx, hết
+  giờ, DNS, kết nối bị từ chối, SSL = sập, kèm chữ ngắn).
+- **Chống báo nhầm:** coi là sập sau **2 lần lỗi liên tiếp**, sống lại sau 1 lần thành công.
+  Vừa thức dậy từ sleep (khoảng cách giữa hai lần kiểm > 3 × chu kỳ) thì lượt đó không tính.
+  **Tất cả** site cùng lỗi một lúc → coi là **máy mất mạng**: một câu "mất mạng rồi" thay vì N câu
+  site sập, và không đổi trạng thái site.
+- `monitor_net.rs`: luồng nền, mỗi chu kỳ kiểm song song tối đa 4 site, timeout 5 giây,
+  `reqwest` (đã có), theo redirect, **không đọc body**. Chỉ chạy khi danh sách có site.
+  Phát `"monitor-stats"` cho widget, đưa `Event` vào hàng chờ lời nói.
+- `store.rs`: `monitors.json` (`read_list` / `write_list`). Trạng thái sống / sập chỉ giữ trong RAM
+  (mở app lại thì kiểm lại từ đầu, không báo "sống lại" giả).
+- `companion.rs`: `Kind::Monitor` (ưu tiên ngay sau `Power`), toast khi pet không nói được.
+  Câu thoại `SiteDown {site, why}`, `SiteUp {site, mins}`, `NetDown` trong `lines.rs`, đủ vi/ja/en.
+- Widget: `monitor_pin.rs` + `monitor-pin.html` / `monitor-pin.js` / `monitor-core.js` (định dạng,
+  có test), theo đúng khuôn `sysmon_pin`.
+
+**Nơi phải đăng ký widget mới** (chưa có registry 15.1 A5): `pin_widget::specs()`,
+`commands::widget_spec` / `widgets_status` / chép `*_pin` trong `settings_set`, `collection.rs`
+(broadcast skin), Cài đặt (`settings.html` + `WIDGETS` trong `settings.js`), menu tròn 💞
+(`interaction.js` + lệnh `main.rs`), tray, `Settings` thêm `PinState`.
+
+**Test**
+- Thuần: `classify` mọi loại lỗi; `observe` (1 lỗi chưa báo, 2 lỗi báo, sống lại kèm thời gian sập,
+  không báo lặp); sleep; mất mạng toàn bộ.
+- Mạng thật ở **cổng ngẫu nhiên**: dựng `TcpListener` ở `127.0.0.1:0` trả 200 / 500 / không trả
+  lời, kiểm đúng `Outcome` và timeout (không khẳng định cổng cố định).
+- `monitor-core.js`: định dạng ms, chữ lỗi, đếm "3/4".
+
+### 17.3 🔎 Ô mở nhanh (Phase 26, v0.11.0)
+
+**Người dùng thấy gì**
+- Phím tắt toàn cục (mặc định đề xuất **Ctrl+Alt+Space**, đổi / tắt được trong Cài đặt) → ô gõ nhỏ
+  giữa màn hình đang có con trỏ, kiểu Spotlight / PowerToys Run. Esc hoặc bấm ra ngoài là ẩn.
+- Gõ:
+  - `!yt mèo con` → tìm YouTube; `!gh tauri` → GitHub; `!g`, `!w` (Wikipedia tiếng Việt),
+    `!map`, `!so` (StackOverflow), `!tr` (Google Dịch)…
+  - `example.com/docs` hoặc `https://…` → mở thẳng.
+  - Chữ thường → danh sách khớp (không dấu, như tìm Ghi chú) trong **bookmark**, kèm dòng cuối
+    "Tìm «…» trên Google". ↑↓ chọn, Enter mở, ↑ khi ô trống = câu vừa gõ.
+- Cài đặt → nhóm **🔎 Ô mở nhanh**: phím tắt, công cụ tìm mặc định (Google / DuckDuckGo / Bing),
+  danh sách bang (bộ mặc định + tự thêm `!jira` → `https://…/search?q={q}`).
+
+**Nguồn bookmark** (đã chốt): **danh sách riêng người dùng tự thêm**, file `bookmarks.json`
+(`read_list` / `write_list`). Quản lý ở **tab 🔖 Bookmark** của bảng Ghi chú (cạnh 🗒️ và 🎗):
+thêm / sửa / xoá, tên + URL + nhóm (tuỳ chọn), tìm không dấu, bấm để mở.
+
+**Kiến trúc**
+- `launcher-core.js` (thuần, có test): `parse(input, bangs) -> { kind: 'bang' | 'url' | 'search',
+  url?, query }`; `fill(template, q)` mã hoá bằng `encodeURIComponent`; `rank(bookmarks, q)` dùng
+  `NotesCore.fold`.
+- `launcher.html` / `launcher.js`: cửa sổ dựng sẵn, không viền, luôn nổi, `skip_taskbar`; giãn cao
+  theo số kết quả (tối đa 8). Mở link qua `open_url` (Rust kiểm http/https lần nữa).
+- Rust: `launcher.rs`: đăng ký phím (khuôn `fx::register_shortcut`), hiện cửa sổ ở giữa màn hình
+  có con trỏ, ẩn khi mất focus. `Settings`: `launcher_hotkey`, `search_engine`, `bangs`.
+- Bang người dùng thêm: template phải ra URL http / https sau khi điền (kiểm bằng
+  `safe_web_url`), không thì từ chối lúc lưu với câu báo rõ.
+- Không lưu lịch sử gõ ra đĩa; chỉ nhớ câu cuối trong RAM cho phím ↑.
+
+**Test**
+- `launcher-core`: bang có / không có từ khoá, bang lạ → tìm thường, URL không có scheme, ký tự
+  đặc biệt / tiếng Việt được mã hoá, template độc (`javascript:`) bị chặn, xếp hạng không dấu.
+- Rust: `bookmarks.json` thêm / sửa / xoá, URL không phải http/https bị từ chối.
+- Rust: chuỗi phím tắt hợp lệ / trùng phím chụp chữ bị từ chối.
+
+### 17.4 Rủi ro
+
+- **Phím tắt toàn cục:** đăng ký lại phím chụp chữ (`main.rs`) gọi `unregister_all`, nên phím ô
+  mở nhanh phải đăng ký lại sau mỗi lần đó (như `fx::register_shortcut`). Phím trùng ứng dụng khác
+  (Unikey, PowerToys, IME) thì đăng ký thất bại **im lặng** nếu không kiểm: phải báo lên Cài đặt.
+- **Giành focus:** Windows chặn cửa sổ tự nhảy lên. Ô mở nhanh hiện do người dùng bấm phím nên được
+  phép, nhưng phải thử thật trên Windows 11 (kể cả khi đang ở ứng dụng toàn màn hình).
+- **Báo nhầm site sập:** VPN tắt (site nội bộ), Wi-Fi chập chờn, sleep → đã có 2 lần lỗi, bỏ lượt
+  sau sleep, gộp "mất mạng". Vẫn cần chạy thử vài ngày trên máy thật.
+- **Site cần đăng nhập** trả 401 / 403: v1 coi là sập; cân nhắc tuỳ chọn "mã chấp nhận được" ở
+  bản sau (Glance có `alt-status-codes`).
+- WebView2 dựng sẵn thêm 1 cửa sổ (`launcher`): thêm RAM; đo cùng mục 15.4.
+
+### 17.5 Kiểm thử bằng tay
+
+- Thêm 3 site (một site chạy, một site trả 500, một host không tồn tại) → widget đúng màu / chữ;
+  pet báo đúng 1 lần cho site sập, không báo lại mỗi chu kỳ; tắt Wi-Fi → một câu "mất mạng"; bật
+  lại → không báo "sống lại" hàng loạt giả; sleep máy 10 phút rồi mở.
+- Ẩn pet / DND → thông báo Windows.
+- Ô mở nhanh: gọi từ Chrome, VS Code, Explorer, game toàn màn hình; `!yt` tiếng Việt có dấu;
+  Esc / bấm ra ngoài; đổi phím trong Cài đặt rồi dùng ngay; phím trùng → báo lỗi.
+
+### 17.6 Đã chốt với người dùng (2026-10-29)
+
+1. Phím tắt ô mở nhanh mặc định: **Ctrl+Alt+Space**.
+2. Bookmark: **danh sách riêng người dùng tự thêm** (tab 🔖 trong bảng Ghi chú).
+3. Kiểm site mặc định **mỗi 5 phút**; site sập **được báo cả lúc Tập trung**.
+4. Công cụ tìm mặc định: **Google**.
+5. Hai tính năng **ship chung ở v0.11.0**.
