@@ -253,6 +253,111 @@
     return out;
   }
 
+  // ─── Sự kiện lịch (events.json, src-tauri/src/events.rs) ──────────────────
+
+  function parseDayKey(key) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || '');
+    return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+  }
+
+  function isLeapYear(y) {
+    return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  }
+
+  // Âm lịch của ngày gốc, nhớ lại theo chuỗi ngày (mỗi lần vẽ lưới hỏi 42 lần).
+  const originLunar = {};
+  function lunarOfKey(key) {
+    if (!originLunar[key]) {
+      const o = parseDayKey(key);
+      originLunar[key] = toLunar(o.d, o.m, o.y);
+    }
+    return originLunar[key];
+  }
+
+  /**
+   * Sự kiện `ev` ({date: "YYYY-MM-DD", repeat}) có rơi vào ngày y-m-d không.
+   * ĐỒNG BỘ với events::on_day (Rust): ngày gốc luôn khớp, trước ngày gốc thì
+   * không; "yearly" 29/2 dời về 28/2 năm không nhuận; "lunar" chỉ tháng thường
+   * (không lặp vào tháng nhuận), ngày 30 mà tháng chỉ có 29 ngày thì dời về 29.
+   */
+  function eventOnDay(ev, y, m, d, lunar) {
+    const o = parseDayKey(ev && ev.date);
+    if (!o) return false;
+    const key = dayKey(y, m, d);
+    if (key === ev.date) return true;
+    if (key < ev.date) return false;
+    if (ev.repeat === 'yearly') {
+      return (m === o.m && d === o.d) || (o.m === 2 && o.d === 29 && m === 2 && d === 28 && !isLeapYear(y));
+    }
+    if (ev.repeat === 'lunar') {
+      const ol = lunarOfKey(ev.date);
+      const l = lunar || toLunar(d, m, y);
+      if (l.leap || l.month !== ol.month) return false;
+      if (l.day === ol.day) return true;
+      if (ol.day === 30 && l.day === 29) {
+        const n = new Date(y, m - 1, d + 1);
+        return toLunar(n.getDate(), n.getMonth() + 1, n.getFullYear()).day === 1;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Các sự kiện của ngày y-m-d, sắp theo giờ.
+   * @returns {{id:string,title:string,time:string,repeat:string,remind:number[],ev:object}[]}
+   */
+  function eventsOn(events, y, m, d, lunar) {
+    const out = [];
+    for (const ev of events || []) {
+      if (!ev || !eventOnDay(ev, y, m, d, lunar)) continue;
+      const remind = Array.isArray(ev.remind_days) ? ev.remind_days.filter((x) => Number.isInteger(x) && x > 0) : [];
+      out.push({ id: ev.id, title: ev.title, time: ev.time || '', repeat: ev.repeat || 'once', remind, ev });
+    }
+    return out.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  }
+
+  /** Số ngày từ ngày `a` tới ngày `b` (khoá "YYYY-MM-DD"), không lệch vì giờ mùa hè. */
+  function daysBetween(a, b) {
+    const x = parseDayKey(a);
+    const y = parseDayKey(b);
+    return Math.round((Date.UTC(y.y, y.m - 1, y.d) - Date.UTC(x.y, x.m - 1, x.d)) / 86400000);
+  }
+
+  /**
+   * Lần xảy ra gần nhất của sự kiện kể từ ngày `fromKey` (tính cả ngày đó),
+   * hoặc null nếu đã qua (sự kiện một lần). Một năm âm dài nhất 385 ngày nên
+   * quét 400 ngày là đủ cho sự kiện lặp.
+   */
+  function nextOccurrence(ev, fromKey) {
+    if (!parseDayKey(ev && ev.date) || !parseDayKey(fromKey)) return null;
+    if (ev.repeat !== 'yearly' && ev.repeat !== 'lunar') return ev.date >= fromKey ? ev.date : null;
+    const s = parseDayKey(fromKey < ev.date ? ev.date : fromKey);
+    for (let i = 0; i <= 400; i++) {
+      const d = new Date(s.y, s.m - 1, s.d + i);
+      if (eventOnDay(ev, d.getFullYear(), d.getMonth() + 1, d.getDate())) return keyOfDate(d);
+    }
+    return null;
+  }
+
+  /**
+   * Danh sách "Sắp tới": mỗi sự kiện kèm lần xảy ra kế tiếp và số ngày còn lại.
+   * Gần nhất lên trước (cùng ngày thì theo giờ); sự kiện một lần đã qua xuống
+   * cuối, mới qua lên trước.
+   * @returns {{ev:object, next:string|null, days:number|null}[]}
+   */
+  function upcomingEvents(events, todayKey) {
+    const rows = (events || []).filter(Boolean).map((ev) => {
+      const next = nextOccurrence(ev, todayKey);
+      return { ev, next, days: next ? daysBetween(todayKey, next) : null };
+    });
+    return rows.sort((a, b) => {
+      if ((a.next == null) !== (b.next == null)) return a.next == null ? 1 : -1;
+      if (a.next == null) return a.ev.date < b.ev.date ? 1 : a.ev.date > b.ev.date ? -1 : 0;
+      if (a.days !== b.days) return a.days - b.days;
+      return (a.ev.time || '') < (b.ev.time || '') ? -1 : (a.ev.time || '') > (b.ev.time || '') ? 1 : 0;
+    });
+  }
+
   /** "HH:MM" giờ địa phương của mốc millis (điền sẵn ô giờ khi sửa việc). */
   function hhmm(ms) {
     const d = new Date(ms);
@@ -300,11 +405,16 @@
       weekdaysLong: ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'],
       lunarMonth: 'Tháng {m} âm · {cc}', lunarFull: 'Âm lịch {d}/{m}{leap} · năm {cc}', leap: ' nhuận',
       full: 'Rằm', today: 'Hôm nay', prev: 'Tháng trước', next: 'Tháng sau', top: 'Luôn nổi',
-      unpin: 'Gỡ ghim', add: '＋ Việc', addTitle: 'Thêm việc có hạn vào ngày này', placeholder: 'Việc cần làm…',
-      save: 'Lưu', cancel: 'Huỷ', noTasks: 'Không có việc nào tới hạn', more: '+{n} việc nữa',
-      overdue: 'quá hạn', saved: 'Đã thêm việc ✓', openTasks: 'Mở bảng Công việc', bday: 'Sinh nhật {you} 🎂',
+      unpin: 'Gỡ ghim', add: '＋ Thêm', addTitle: 'Thêm việc hoặc sự kiện vào ngày này', placeholder: 'Việc cần làm…',
+      save: 'Lưu', cancel: 'Huỷ', noTasks: 'Không có việc hay sự kiện nào',
+      overdue: 'quá hạn', saved: 'Đã thêm việc ✓', bday: 'Sinh nhật {you} 🎂',
       edit: 'Bấm để sửa tên, giờ và nhắc trước', edited: 'Đã lưu thay đổi ✓',
       remind: 'Nhắc trước', remindTitle: 'Nhắc trước {list}', day: '{n} ngày', week: '1 tuần', month: '1 tháng',
+      kindTask: '✓ Việc', kindEvent: '🎗 Sự kiện', evPlaceholder: 'Tên sự kiện (giỗ, sinh nhật…)',
+      once: '1 lần', yearly: '↻ Năm', lunarYearly: '↻ Âm lịch', onceTitle: 'Chỉ ngày này',
+      yearlyTitle: 'Lặp hằng năm vào {d}/{m} dương lịch', lunarTitle: 'Lặp hằng năm vào {d}/{m} âm lịch (giỗ, sinh nhật âm)',
+      evSaved: 'Đã thêm sự kiện ✓', del: '🗑', delTitle: 'Xoá', delConfirm: 'Xoá?', deleted: 'Đã xoá ✓',
+      kindTaskTitle: 'Việc cần làm xong trước hạn (có trong bảng Công việc)', kindEventTitle: 'Sự kiện: không có hạn, không quá hạn, lặp được',
       h: {
         newYear: 'Tết Dương lịch', valentine: 'Lễ Tình nhân', women: 'Quốc tế Phụ nữ',
         reunification: 'Giải phóng miền Nam', labour: 'Quốc tế Lao động', children: 'Quốc tế Thiếu nhi',
@@ -319,11 +429,16 @@
       weekdaysLong: ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'],
       lunarMonth: '旧暦{m}月 · {cc}', lunarFull: '旧暦 {m}月{d}日{leap} · {cc}年', leap: '（閏）',
       full: '満月', today: '今日', prev: '前の月', next: '次の月', top: '常に手前',
-      unpin: '固定をはずす', add: '＋ タスク', addTitle: 'この日が期限のタスクを追加', placeholder: 'やること…',
-      save: '保存', cancel: 'やめる', noTasks: '期限のタスクはありません', more: 'ほか{n}件',
-      overdue: '期限切れ', saved: '追加したよ ✓', openTasks: 'タスク一覧を開く', bday: '{you}の誕生日 🎂',
+      unpin: '固定をはずす', add: '＋ 追加', addTitle: 'この日にタスクか予定を追加', placeholder: 'やること…',
+      save: '保存', cancel: 'やめる', noTasks: 'タスクも予定もありません',
+      overdue: '期限切れ', saved: '追加したよ ✓', bday: '{you}の誕生日 🎂',
       edit: 'クリックで名前・時間・事前通知を編集', edited: '変更を保存したよ ✓',
       remind: '事前通知', remindTitle: '{list}前にお知らせ', day: '{n}日', week: '1週間', month: '1か月',
+      kindTask: '✓ タスク', kindEvent: '🎗 予定', evPlaceholder: '予定の名前（法事、誕生日…）',
+      once: '1回', yearly: '↻ 毎年', lunarYearly: '↻ 旧暦', onceTitle: 'この日だけ',
+      yearlyTitle: '毎年 {m}月{d}日（新暦）にくり返す', lunarTitle: '毎年 旧暦{m}月{d}日にくり返す（法事・旧暦の誕生日）',
+      evSaved: '予定を追加したよ ✓', del: '🗑', delTitle: '削除', delConfirm: '削除？', deleted: '削除したよ ✓',
+      kindTaskTitle: '期限までに終わらせるタスク（タスク一覧にも出る）', kindEventTitle: '予定：期限切れにならず、くり返しもできる',
       h: {
         newYear: '元日', valentine: 'バレンタイン', women: '国際女性デー',
         reunification: '南部解放記念日', labour: 'メーデー', children: '国際子どもの日',
@@ -338,11 +453,16 @@
       weekdaysLong: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
       lunarMonth: 'Lunar month {m} · {cc}', lunarFull: 'Lunar {d}/{m}{leap} · {cc}', leap: ' (leap)',
       full: 'Full', today: 'Today', prev: 'Previous month', next: 'Next month', top: 'Always on top',
-      unpin: 'Unpin', add: '＋ Task', addTitle: 'Add a task due on this day', placeholder: 'Something to do…',
-      save: 'Save', cancel: 'Cancel', noTasks: 'Nothing due', more: '+{n} more',
-      overdue: 'overdue', saved: 'Task added ✓', openTasks: 'Open Tasks', bday: 'Your birthday 🎂',
+      unpin: 'Unpin', add: '＋ Add', addTitle: 'Add a task or an event on this day', placeholder: 'Something to do…',
+      save: 'Save', cancel: 'Cancel', noTasks: 'No tasks or events',
+      overdue: 'overdue', saved: 'Task added ✓', bday: 'Your birthday 🎂',
       edit: 'Click to edit the name, time and reminders', edited: 'Changes saved ✓',
       remind: 'Remind', remindTitle: 'Reminders {list} before', day: '{n} days', week: '1 week', month: '1 month',
+      kindTask: '✓ Task', kindEvent: '🎗 Event', evPlaceholder: 'Event name (memorial, birthday…)',
+      once: 'Once', yearly: '↻ Yearly', lunarYearly: '↻ Lunar', onceTitle: 'Only this day',
+      yearlyTitle: 'Repeats every year on {m}/{d}', lunarTitle: 'Repeats every year on lunar {m}/{d} (memorials, lunar birthdays)',
+      evSaved: 'Event added ✓', del: '🗑', delTitle: 'Delete', delConfirm: 'Delete?', deleted: 'Deleted ✓',
+      kindTaskTitle: 'Something to finish by the deadline (also in Tasks)', kindEventTitle: 'An event: never overdue, can repeat',
       h: {
         newYear: "New Year's Day", valentine: "Valentine's Day", women: "International Women's Day",
         reunification: 'Reunification Day', labour: 'Labour Day', children: "Children's Day",
@@ -396,7 +516,8 @@
   const api = {
     T, strings, fill, toLunar, jdFromDate, canChi, daysInMonth, addMonths, monthGrid,
     dayKey, keyOfDate, holidays, tasksByDay, dueAt, monthTitle, lunarLabel, isBirthday,
-    REMIND_CHOICES, remindLabel, remindTitle, hhmm, editChanges,
+    REMIND_CHOICES, remindLabel, remindTitle, hhmm, editChanges, eventOnDay, eventsOn,
+    nextOccurrence, upcomingEvents, daysBetween,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CalendarCore = api;

@@ -68,3 +68,32 @@ pub fn broadcast(app: &AppHandle) {
 pub fn tasks_changed(app: &AppHandle) {
     let _ = app.emit_to(LABEL, "tasks-refresh", ());
 }
+
+/// Ngày chờ mở (bảng Ghi chú → tab Sự kiện → bấm một sự kiện). Cửa sổ lịch vừa
+/// dựng thì chưa kịp nghe "calendar-goto": trang tự lấy ngày này lúc khởi động.
+static GOTO: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+/// Ghim (nếu chưa) và đưa lịch lên trước, mở đúng ngày `date` ("YYYY-MM-DD").
+/// Gọi từ command async (dựng cửa sổ trong command đồng bộ treo WebView2).
+pub fn open_day(app: &AppHandle, date: &str) -> Result<(), String> {
+    let (y, m, d) = crate::events::parse_date(date).ok_or("Ngày không hợp lệ.")?;
+    let key = format!("{y:04}-{m:02}-{d:02}");
+    if let Ok(mut g) = GOTO.lock() {
+        *g = Some(key.clone());
+    }
+    crate::pin_widget::set_pinned(app, &SPEC, true)?;
+    let _ = app.emit_to(LABEL, "calendar-goto", key);
+    Ok(())
+}
+
+/// Lấy (và xoá) ngày đang chờ mở.
+pub fn take_goto() -> Option<String> {
+    GOTO.lock().ok()?.take()
+}
+
+/// Sự kiện lịch đổi (events.json): widget đọc lại qua events_list.
+pub fn events_changed(app: &AppHandle) {
+    let _ = app.emit_to(LABEL, "events-refresh", ());
+    // Tab 🎗 Sự kiện trong bảng Ghi chú cũng liệt kê chúng.
+    let _ = app.emit_to("notes", "events-refresh", ());
+}

@@ -179,19 +179,34 @@ pub(crate) fn primary_area(app: &AppHandle) -> Rect {
 /// `index` = thứ tự trong các tờ đang ghim, để xếp chỗ khi chưa có vị trí.
 fn open_on_main(app: &AppHandle, task: &Task, index: usize) {
     let Some(label) = label_for(&task.id) else { return };
-    if let Some(w) = app.get_webview_window(&label) {
+    let init = format!("window.__PIN_ID__ = {:?};", task.id);
+    open_paper(app, &label, "Task ghim", &init, task.pin_top, task.pin_pos, index);
+}
+
+/// Dựng (hoặc hiện lại) một cửa sổ tờ giấy pin.html: task ghim, ghi chú ghim
+/// (note_pins.rs). `init` = script tiêm vào trang (id, loại tờ). Main thread.
+pub(crate) fn open_paper(
+    app: &AppHandle,
+    label: &str,
+    title: &str,
+    init: &str,
+    top: bool,
+    saved_pos: Option<(i32, i32)>,
+    index: usize,
+) {
+    if let Some(w) = app.get_webview_window(label) {
         let _ = w.show();
-        let _ = app.emit_to(label.as_str(), "pin-refresh", ());
+        let _ = app.emit_to(label, "pin-refresh", ());
         return;
     }
-    let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("pin.html".into()))
-        .title("Task ghim")
-        .initialization_script(&format!("window.__PIN_ID__ = {:?};", task.id))
+    let built = WebviewWindowBuilder::new(app, label, WebviewUrl::App("pin.html".into()))
+        .title(title)
+        .initialization_script(init)
         .inner_size(NOTE_W, NOTE_H)
         .transparent(true)
         .decorations(false)
         .shadow(false)
-        .always_on_top(task.pin_top)
+        .always_on_top(top)
         .skip_taskbar(true)
         .resizable(false)
         .focused(false)
@@ -207,14 +222,22 @@ fn open_on_main(app: &AppHandle, task: &Task, index: usize) {
     let scale = w.scale_factor().unwrap_or(1.0);
     let note = ((NOTE_W * scale) as i32, (NOTE_H * scale) as i32);
     let fallback = cascade_pos(index, primary_area(app), note);
-    let pos = match task.pin_pos {
+    let pos = match saved_pos {
         Some(p) => visible_or(p, note, &work_areas(app), fallback),
         None => fallback,
     };
     let _ = w.set_position(PhysicalPosition::new(pos.0, pos.1));
     set_tool_window(&w);
     let _ = w.show();
-    crate::windows::force_repaint(app, &label);
+    crate::windows::force_repaint(app, label);
+}
+
+/// Chưa có ảnh mặt nhân vật trên cây ghim: nhờ pet chụp. Tờ note hiện ảnh mặc
+/// định trong lúc chờ, rồi đổi khi nhận được sự kiện "pin-avatar".
+pub(crate) fn request_avatar_if_missing(app: &AppHandle) {
+    if store::load_pin_avatar(app).is_none() {
+        let _ = app.emit_to("main", "pet-message", json!({ "command": "capturePinAvatar" }));
+    }
 }
 
 fn close_on_main(app: &AppHandle, id: &str) {
@@ -254,10 +277,8 @@ pub fn set_pinned(app: &AppHandle, id: &str, pinned: bool) -> Result<(), String>
             close_on_main(&app2, &id2);
         }
     });
-    if pinned && store::load_pin_avatar(app).is_none() {
-        // Chưa có ảnh mặt nhân vật: nhờ pet chụp. Tờ note hiện ảnh mặc định
-        // trong lúc chờ, rồi đổi khi nhận được sự kiện "pin-avatar".
-        let _ = app.emit_to("main", "pet-message", json!({ "command": "capturePinAvatar" }));
+    if pinned {
+        request_avatar_if_missing(app);
     }
     let _ = app.emit_to("tasks", "tasks-refresh", ());
     Ok(())
@@ -292,8 +313,14 @@ pub fn set_top(app: &AppHandle, id: &str, top: bool) -> Result<(), String> {
 }
 
 pub fn resize(app: &AppHandle, id: &str, w: f64, h: f64) {
+    if let Some(label) = label_for(id) {
+        resize_label(app, &label, w, h);
+    }
+}
+
+pub(crate) fn resize_label(app: &AppHandle, label: &str, w: f64, h: f64) {
     let (w, h) = clamp_note_size(w, h);
-    if let Some(win) = label_for(id).and_then(|l| app.get_webview_window(&l)) {
+    if let Some(win) = app.get_webview_window(label) {
         let _ = win.set_size(tauri::LogicalSize::new(w, h));
     }
 }

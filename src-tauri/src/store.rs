@@ -474,6 +474,113 @@ pub fn update_tasks<R>(app: &AppHandle, f: impl FnOnce(&mut Vec<Task>) -> R) -> 
     Ok(out)
 }
 
+// ─── notes.json (bảng Ghi chú, notes.rs) ─────────────────────────────────────
+
+fn notes_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("notes.json"))
+}
+
+static NOTES_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Đọc một danh sách JSON (notes.json, events.json). File thiếu → rỗng. File có
+/// mà không đọc được (hỏng / sửa tay sai) thì báo lỗi, KHÔNG coi là rỗng: khác
+/// tasks.json, ở đây toàn dữ liệu người dùng tự gõ, ghi đè lên file hỏng là mất sạch.
+fn read_list<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> Result<Vec<T>, String> {
+    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    match std::fs::read_to_string(path) {
+        Ok(raw) => serde_json::from_str(&raw).map_err(|e| {
+            let bak = backup_path(path);
+            let hint = if bak.exists() {
+                format!(" Có bản sao lưu lần ghi trước: {}. Tắt app, đổi tên nó thành {name} để khôi phục.", bak.display())
+            } else {
+                String::new()
+            };
+            format!("{name} bị hỏng, app không ghi đè để giữ dữ liệu ({e}). File: {}.{hint}", path.display())
+        }),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(e) => Err(format!("Không đọc được {name}: {e}")),
+    }
+}
+
+/// "notes.json" → "notes.json.bak".
+fn backup_path(path: &std::path::Path) -> PathBuf {
+    let mut s = path.as_os_str().to_owned();
+    s.push(".bak");
+    PathBuf::from(s)
+}
+
+/// Ghi danh sách người dùng tự gõ (notes.json, events.json) cho an toàn:
+/// bản đang có (đã đọc được, tức là còn tốt) chép sang .bak trước, rồi ghi vào
+/// file tạm và đổi tên đè lên, để mất điện giữa chừng không để lại file cụt.
+fn write_list<T: Serialize>(path: &std::path::Path, list: &[T]) -> Result<(), String> {
+    let json = serde_json::to_string_pretty(list).map_err(|e| e.to_string())?;
+    if path.exists() {
+        std::fs::copy(path, backup_path(path)).map_err(|e| format!("Không sao lưu được trước khi ghi: {e}"))?;
+    }
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = PathBuf::from(tmp);
+    std::fs::write(&tmp, json).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, path).map_err(|e| e.to_string())
+}
+
+fn read_notes(path: &std::path::Path) -> Result<Vec<crate::notes::Note>, String> {
+    read_list(path)
+}
+
+pub fn load_notes(app: &AppHandle) -> Result<Vec<crate::notes::Note>, String> {
+    read_notes(&notes_path(app).ok_or("no config dir")?)
+}
+
+/// Đọc notes.json, cho `f` sửa, ghi lại — trong một khoá. File hỏng thì không
+/// ghi; không đổi thì không ghi (để .bak không bị đè bằng chính bản hiện tại).
+pub fn update_notes<R>(
+    app: &AppHandle,
+    f: impl FnOnce(&mut Vec<crate::notes::Note>) -> R,
+) -> Result<R, String> {
+    let _guard = NOTES_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let path = notes_path(app).ok_or("no config dir")?;
+    let mut notes = read_notes(&path)?;
+    let before = notes.clone();
+    let out = f(&mut notes);
+    if notes == before {
+        return Ok(out);
+    }
+    write_list(&path, &notes)?;
+    Ok(out)
+}
+
+// ─── events.json (sự kiện lịch, events.rs) ───────────────────────────────────
+
+fn events_path(app: &AppHandle) -> Option<PathBuf> {
+    Some(config_dir(app)?.join("events.json"))
+}
+
+static EVENTS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+pub fn load_events(app: &AppHandle) -> Result<Vec<crate::events::CalEvent>, String> {
+    read_list(&events_path(app).ok_or("no config dir")?)
+}
+
+/// Đọc events.json, cho `f` sửa, ghi lại — trong một khoá (bảng lịch và luồng
+/// nhắc của pet cùng ghi). File hỏng thì không ghi. Không đổi thì không ghi.
+pub fn update_events<R>(
+    app: &AppHandle,
+    f: impl FnOnce(&mut Vec<crate::events::CalEvent>) -> R,
+) -> Result<R, String> {
+    let _guard = EVENTS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let path = events_path(app).ok_or("no config dir")?;
+    let mut list: Vec<crate::events::CalEvent> = read_list(&path)?;
+    let before = list.clone();
+    let out = f(&mut list);
+    if list == before {
+        return Ok(out);
+    }
+    write_list(&path, &list)?;
+    crate::calendar_pin::events_changed(app);
+    Ok(out)
+}
+
 fn bond_path(app: &AppHandle) -> Option<PathBuf> {
     Some(config_dir(app)?.join("bond.json"))
 }
@@ -584,4 +691,44 @@ pub fn save_chat(app: &AppHandle, msgs: &[ChatMsg]) -> Result<(), String> {
     let path = chat_path(app).ok_or("no config dir")?;
     let json = serde_json::to_string_pretty(msgs).map_err(|e| e.to_string())?;
     std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tmp_dir(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("dc-store-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn write_list_keeps_previous_copy() {
+        let dir = tmp_dir("bak");
+        let path = dir.join("notes.json");
+        write_list(&path, &[1, 2]).unwrap();
+        assert!(!backup_path(&path).exists(), "lần ghi đầu chưa có gì để sao lưu");
+        write_list(&path, &[3]).unwrap();
+        let cur: Vec<i32> = read_list(&path).unwrap();
+        let bak: Vec<i32> = read_list(&backup_path(&path)).unwrap();
+        assert_eq!((cur, bak), (vec![3], vec![1, 2]));
+        assert!(!dir.join("notes.json.tmp").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn damaged_file_is_reported_with_backup_hint() {
+        let dir = tmp_dir("broken");
+        let path = dir.join("events.json");
+        assert_eq!(read_list::<i32>(&path).unwrap(), Vec::<i32>::new(), "chưa có file = rỗng");
+        std::fs::write(&path, "[1, 2").unwrap();
+        let err = read_list::<i32>(&path).unwrap_err();
+        assert!(err.contains("bị hỏng") && !err.contains(".bak"), "{err}");
+        std::fs::write(backup_path(&path), "[1]").unwrap();
+        let err = read_list::<i32>(&path).unwrap_err();
+        assert!(err.contains("events.json.bak"), "{err}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

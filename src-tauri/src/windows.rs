@@ -193,6 +193,14 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
+    let _ = WebviewWindowBuilder::new(app, "notes", WebviewUrl::App("notes.html".into()))
+        .title("Ghi chú")
+        .inner_size(560.0, 600.0)
+        .min_inner_size(360.0, 360.0)
+        .resizable(true)
+        .visible(false)
+        .build();
+
     let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
         .title("Cài đặt")
         // Rộng để chứa 2 cột ôm lấy nhân vật ở giữa; hẹp hơn 560px thì
@@ -414,6 +422,7 @@ pub fn hide_flower_menu(app: &AppHandle) {
 // Một entry trên ring: mở đúng cửa sổ tương ứng rồi ẩn ring đi.
 //   "translate" → cửa sổ dịch nhanh
 //   "reply" / "task" / "full" → popup 3 tab, mở sẵn tab tương ứng
+//   "note" → bảng Ghi chú, ô soạn điền sẵn đoạn vừa bôi đen
 //   "ask" → Quick Chat của pet, kèm đoạn vừa bôi đen
 pub fn flower_menu_action(app: &AppHandle, action: &str) {
     let x = FLOWER_X.load(Ordering::SeqCst);
@@ -423,6 +432,13 @@ pub fn flower_menu_action(app: &AppHandle, action: &str) {
         "translate" => open_quick(app, x, y),
         "reply" => open_popup_tab(app, x, y, "reply"),
         "task" => open_popup_tab(app, x, y, "task"),
+        // Lưu ghi chú: mở bảng Ghi chú, ô soạn điền sẵn đoạn vừa bôi đen.
+        "note" => {
+            let text = crate::selection::last_selection_json()
+                .and_then(|v| v.get("text").and_then(|t| t.as_str()).map(str::to_string))
+                .unwrap_or_default();
+            open_notes_compose(app, &text);
+        }
         "full" => open_popup_tab(app, x, y, "translate"),
         "ask" => {
             let text = crate::selection::last_selection_json()
@@ -614,6 +630,19 @@ pub fn open_tasks(app: &AppHandle) {
     open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 820.0, 580.0);
     dock_pet_to(app, "tasks");
     crate::sidegirl::sync(app, "tasks", true);
+}
+
+/// Bảng 🗒️ Ghi chú (notes.html). Không ghép pet vào giữa như Công việc: chỉ
+/// một cột, mở để tra nhanh rồi đóng.
+pub fn open_notes(app: &AppHandle) {
+    open_simple(app, "notes", "notes.html", "Ghi chú", 560.0, 600.0);
+}
+
+/// Bông hoa → 🗒️ Lưu ghi chú: mở bảng Ghi chú, ô soạn mới điền sẵn `text`
+/// (notes.js nghe "notes-compose") để người dùng thêm tiêu đề rồi lưu.
+pub fn open_notes_compose(app: &AppHandle, text: &str) {
+    open_notes(app);
+    let _ = app.emit_to("notes", "notes-compose", text);
 }
 
 // ─── Ghép pet vào giữa cửa sổ Cài đặt / Công việc ───────────────────────────

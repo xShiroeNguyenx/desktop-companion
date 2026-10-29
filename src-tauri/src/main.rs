@@ -8,6 +8,7 @@ mod calendar_pin;
 mod clock_pin;
 mod collection;
 mod chat;
+mod events;
 mod commands;
 mod companion;
 mod focus;
@@ -20,6 +21,8 @@ mod models;
 mod lunar;
 mod llm;
 mod naming;
+mod note_pins;
+mod notes;
 mod persona;
 mod notify;
 mod pins;
@@ -350,6 +353,7 @@ fn pet_command(app: AppHandle, payload: Value) {
         "focus:sync" => companion::sync_focus(&app),
         "openSettings" => windows::open_settings(&app),
         "openTasks" => windows::open_tasks(&app),
+        "openNotes" => windows::open_notes(&app),
         // Menu chuột phải → 🗂️ Mở đầy đủ: Trợ lý văn bản, người dùng tự gõ văn bản.
         "openAssistant" => windows::open_assistant(&app),
         "setClickThrough" => {
@@ -621,6 +625,22 @@ fn main() {
             commands::tasks_set_due,
             commands::tasks_set_remind,
             commands::tasks_set_text,
+            commands::open_notes,
+            commands::notes_list,
+            commands::notes_add,
+            commands::notes_update,
+            commands::notes_set_pinned,
+            commands::notes_delete,
+            commands::notes_set_desk,
+            commands::note_pin_get,
+            commands::note_pin_set_top,
+            commands::note_pin_resize,
+            commands::events_list,
+            commands::events_add,
+            commands::events_update,
+            commands::events_delete,
+            commands::calendar_open_day,
+            commands::calendar_take_goto,
             commands::notify_test,
             commands::open_url,
             commands::game_info,
@@ -767,6 +787,8 @@ fn main() {
             windows::precreate(&app_handle);
             // Các task đang ghim hiện lại trên desktop như lúc tắt app.
             pins::restore_all(&app_handle);
+            // Ghi chú đang ghim lên desktop cũng vậy.
+            note_pins::restore_all(&app_handle);
             tts::start(app_handle.clone());
             // Trọng tài lời nói: mọi câu pet tự nói (tự bắt chuyện, sau này là
             // nhắc nghỉ, hạn chót…) đều qua đây.
@@ -816,6 +838,7 @@ fn main() {
             // Tray.
             let show_item = MenuItem::with_id(app, "toggle_show", "Hiện / Ẩn pet", true, None::<&str>)?;
             let tasks_item = MenuItem::with_id(app, "open_tasks", "Công việc (Tasks)", true, None::<&str>)?;
+            let notes_item = MenuItem::with_id(app, "open_notes", "🗒️ Ghi chú", true, None::<&str>)?;
             let settings_item = MenuItem::with_id(app, "open_settings", "Cài đặt", true, None::<&str>)?;
             let click_through_item =
                 MenuItem::with_id(app, "click_through", "Bật / Tắt click-through", true, None::<&str>)?;
@@ -839,6 +862,7 @@ fn main() {
                 &[
                     &show_item,
                     &tasks_item,
+                    &notes_item,
                     &settings_item,
                     &click_through_item,
                     &focus_item,
@@ -870,6 +894,7 @@ fn main() {
                         }
                     }
                     "open_tasks" => windows::open_tasks(app),
+                    "open_notes" => windows::open_notes(app),
                     "open_settings" => windows::open_settings(app),
                     "focus" => companion::toggle_focus(app),
                     "weather" => {
@@ -919,6 +944,10 @@ fn main() {
                 if let Some(spec) = pin_widget::spec(window.label()) {
                     pin_widget::on_closed(window.app_handle(), spec);
                 }
+            }
+            // Tờ giấy ghi chú ghim (note_pins.rs): Alt+F4 = gỡ ghim.
+            WindowEvent::CloseRequested { .. } if note_pins::id_from_label(window.label()).is_some() => {
+                note_pins::on_closed(window.app_handle(), window.label());
             }
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
@@ -979,6 +1008,13 @@ fn main() {
                             (event, window.is_visible().unwrap_or(false), pin_widget::spec(label))
                         {
                             pin_widget::remember_pos(window.app_handle(), spec, pos.x, pos.y);
+                        }
+                    }
+                    label if note_pins::id_from_label(label).is_some() => {
+                        if let (WindowEvent::Moved(pos), true) =
+                            (event, window.is_visible().unwrap_or(false))
+                        {
+                            note_pins::remember_pos(window.app_handle(), label, pos.x, pos.y);
                         }
                     }
                     label if label.starts_with("pin-") => {

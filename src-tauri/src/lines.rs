@@ -40,6 +40,10 @@ pub enum Key {
     Overdue,
     /// Nhắc trước N ngày (lịch ghim). Biến: {task}, {days}, {date}.
     DueEarly,
+    // ── Sự kiện lịch (events.rs): không có "hạn" hay "quá hạn". Biến: {task}, {time}.
+    EventToday,
+    EventSoon,
+    EventNow,
     // ── Nhắc sức khoẻ; Multi = gộp nhiều loại vào một câu.
     HealthEyes,
     HealthWater,
@@ -79,6 +83,8 @@ pub enum Key {
     DailyGreeting,
     /// Câu chào đầu ngày khi không có việc nào tới hạn.
     DailyGreetingFree,
+    /// Nối sau câu chào đầu ngày khi hôm nay có sự kiện lịch (events.rs). Biến: {events}.
+    GreetingEvents,
     /// Quen nhau được N ngày. Biến: {days}.
     MilestoneDays,
     /// Kỷ niệm N năm. Biến: {years}.
@@ -144,6 +150,9 @@ impl Key {
         Key::DueNow,
         Key::Overdue,
         Key::DueEarly,
+        Key::EventToday,
+        Key::EventSoon,
+        Key::EventNow,
         Key::HealthEyes,
         Key::HealthWater,
         Key::HealthStand,
@@ -170,6 +179,7 @@ impl Key {
         Key::RamHigh,
         Key::DailyGreeting,
         Key::DailyGreetingFree,
+        Key::GreetingEvents,
         Key::MilestoneDays,
         Key::Anniversary,
         Key::LevelUp,
@@ -203,6 +213,7 @@ impl Key {
             Key::HealthEyes | Key::HealthWater | Key::HealthStand | Key::HealthMulti | Key::TaskDone => 6,
             Key::PinDone => 4,
             Key::DueToday | Key::DueSoon | Key::DueNow | Key::Overdue | Key::DueEarly => 3,
+            Key::EventToday | Key::EventSoon | Key::EventNow => 3,
             Key::WelcomeShort | Key::WelcomeLong | Key::WelcomeMorning | Key::FocusDone => 4,
             Key::FocusStart | Key::BreakDone | Key::CpuHigh | Key::RamHigh => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
@@ -245,6 +256,8 @@ impl Key {
             | Key::TaskSaved
             | Key::DueSoon
             | Key::DueNow
+            | Key::EventSoon
+            | Key::EventNow
             | Key::TaskDone
             | Key::TaskDoneEarly
             | Key::AllDone
@@ -253,7 +266,7 @@ impl Key {
             | Key::DeletedNote => &["task"],
             Key::TaskFailed => &["task", "err"],
             Key::NameFailed => &["err"],
-            Key::DueToday | Key::TaskSavedDue => &["task", "time"],
+            Key::DueToday | Key::EventToday | Key::TaskSavedDue => &["task", "time"],
             Key::Overdue => &["task", "days"],
             Key::DueEarly => &["task", "days", "date"],
             Key::DoneMilestone => &["count"],
@@ -262,6 +275,7 @@ impl Key {
             Key::FocusDone => &["brk"],
             Key::CpuHigh | Key::RamHigh => &["pct"],
             Key::DailyGreeting => &["due"],
+            Key::GreetingEvents => &["events"],
             Key::MilestoneDays | Key::StreakMilestone => &["days"],
             Key::Anniversary => &["years"],
             Key::LevelUp => &["level"],
@@ -470,6 +484,55 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "{days} day(s) to go until \"{task}\" ({date}), {you}~ 📅",
             "Early heads-up: \"{task}\" is on {date}, {days} day(s) away!",
             "Mark your calendar: \"{task}\" at {date}, in {days} day(s)~ 🗓️",
+        ],
+
+        // ── Sự kiện lịch ────────────────────────────────────────────────────
+        (EventToday, Vi) => &[
+            "Hôm nay là \"{task}\" đó {you}, lúc {time} nha~ 🎗️",
+            "{You} nhớ nha, hôm nay có \"{task}\" ({time}) á!",
+            "{Me} nhắc nè: \"{task}\" vào {time} hôm nay đó~ 🗓️",
+        ],
+        (EventToday, Ja) => &[
+            "今日は「{task}」の日だよ、{time}から～🎗️",
+            "{you}、忘れないでね：今日は「{task}」（{time}）！",
+            "お知らせ：今日の{time}に「{task}」があるよ～🗓️",
+        ],
+        (EventToday, En) => &[
+            "Today is \"{task}\", {you}, at {time}~ 🎗️",
+            "Don't forget: \"{task}\" is today ({time})!",
+            "Little reminder: \"{task}\" at {time} today~ 🗓️",
+        ],
+
+        (EventSoon, Vi) => &[
+            "Còn chưa tới 1 tiếng nữa là tới \"{task}\" rồi {you} ơi~ 🎗️",
+            "{You} chuẩn bị nha, \"{task}\" sắp bắt đầu rồi!",
+            "Sắp tới giờ \"{task}\" rồi đó {you}~",
+        ],
+        (EventSoon, Ja) => &[
+            "「{task}」まであと1時間もないよ～🎗️",
+            "{you}、そろそろ準備してね。「{task}」もうすぐだよ！",
+            "もうすぐ「{task}」の時間だよ～",
+        ],
+        (EventSoon, En) => &[
+            "Less than an hour until \"{task}\", {you}~ 🎗️",
+            "Time to get ready: \"{task}\" starts soon!",
+            "\"{task}\" is coming up soon~",
+        ],
+
+        (EventNow, Vi) => &[
+            "Tới giờ \"{task}\" rồi {you}~ 🎗️",
+            "{You} ơi, đến giờ \"{task}\" rồi đó!",
+            "Bây giờ là \"{task}\" nha {you}~",
+        ],
+        (EventNow, Ja) => &[
+            "「{task}」の時間だよ～🎗️",
+            "{you}、「{task}」の時間になったよ！",
+            "今から「{task}」だよ～",
+        ],
+        (EventNow, En) => &[
+            "It's time for \"{task}\", {you}~ 🎗️",
+            "\"{task}\" is starting now!",
+            "Now: \"{task}\"~",
         ],
 
         (Overdue, Vi) => &[
@@ -876,6 +939,22 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "Hi! A light day today — no deadlines at all~",
             "Wishing you a smooth day~ no deadlines chasing you today!",
             "New day! Nothing urgent, so slow and steady~",
+        ],
+
+        (GreetingEvents, Vi) => &[
+            "À, hôm nay còn có {events} nữa đó, {you} nhớ nha~ 🎗️",
+            "Mà hôm nay là {events} đó {you}, đừng quên nha!",
+            "{Me} nhắc luôn: hôm nay có {events} á~ 🗓️",
+        ],
+        (GreetingEvents, Ja) => &[
+            "あ、今日は{events}の日でもあるよ。忘れないでね～🎗️",
+            "それと、今日は{events}だよ！",
+            "ついでに：今日は{events}があるよ～🗓️",
+        ],
+        (GreetingEvents, En) => &[
+            "Oh, and today is {events}, don't forget~ 🎗️",
+            "Also, {events} is today!",
+            "One more thing: {events} today~ 🗓️",
         ],
 
         (MilestoneDays, Vi) => &[

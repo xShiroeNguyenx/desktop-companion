@@ -93,6 +93,14 @@
     }
     .day .dot.over { background: #ff6b6b; }
     .day.today .dot { background: #fff; }
+    /* Sự kiện lịch (events.json): chấm vàng ở góc trái. */
+    .day .edot {
+      position: absolute; top: 3px; left: 4px;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--w-gold);
+    }
+    .day.today .edot { background: #fff; }
+    .day.bday .edot { left: 13px; }
 
     .info {
       position: relative;
@@ -116,18 +124,29 @@
       pointer-events: none;
     }
     .info > :not(.miu) { position: relative; z-index: 1; }
-    .tasks { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; min-height: 0; overflow: hidden; }
+    /* Danh sách việc + sự kiện của ngày: cuộn trong khung (lăn chuột ở đây không lật tháng). */
+    .tasks {
+      display: flex; flex-direction: column; gap: 2px; margin-top: 2px;
+      flex: 0 1 auto; min-height: 0; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    }
+    .tasks::-webkit-scrollbar { width: 4px; }
+    .tasks::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 2px; }
+    /* Đang thêm / sửa: nhường chỗ cho ô nhập (khung ngày cao cố định). */
+    .info.adding .tasks, .info.adding .fest, .info.adding .lunar { display: none !important; }
     .task {
       display: flex; gap: 6px; align-items: baseline;
       border: none; background: rgba(255, 255, 255, 0.07); border-radius: 7px;
       padding: 2px 6px; text-align: left; font-size: 11.5px; cursor: pointer;
     }
     .task:hover { background: rgba(255, 255, 255, 0.15); }
+    .task { flex: 0 0 auto; }
     .task .t { color: #9fd0ff; font-weight: 700; flex: 0 0 auto; }
+    .task.ev .t { color: var(--w-gold); }
+    .task .rep { flex: 0 0 auto; font-size: 10px; color: var(--w-ink-soft); }
     .task.over .t { color: #ff8b8b; }
     .task .x { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .muted { font-size: 11px; color: var(--w-ink-soft); }
-    .moreBtn { border: none; background: none; padding: 0; text-align: left; font-size: 11px; color: var(--w-ink-soft); text-decoration: underline; cursor: pointer; }
     .addRow { display: flex; gap: 4px; margin-top: auto; }
     .addRow input {
       min-width: 0; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 7px;
@@ -153,6 +172,8 @@
     .chip:hover { background: rgba(255, 255, 255, 0.2); }
     .chip.on { background: var(--w-accent); color: #fff; }
     .task .bell { flex: 0 0 auto; font-size: 10px; }
+    .kindRow .sep { width: 1px; align-self: stretch; margin: 1px 3px; background: rgba(255, 255, 255, 0.2); }
+    .small.danger.confirm { background: #e0525a; color: #fff; }
     .msg { font-size: 11px; color: #9ff0b8; }
     .msg.err { color: #ff9c9c; }
     [hidden] { display: none !important; }
@@ -193,10 +214,16 @@
         <div class="lunar" id="infoLunar"></div>
         <div class="fest" id="infoFest" hidden></div>
         <div class="tasks" id="infoTasks"></div>
+        <div class="remindRow kindRow" id="kindRow" hidden>
+          <span id="kindChips"></span>
+          <span class="sep" id="kindSep"></span>
+          <span id="repeatChips"></span>
+        </div>
         <div class="addRow" id="addRow" hidden>
           <input type="text" id="addText" maxlength="200" />
           <input type="time" id="addTime" value="09:00" />
           <button class="small primary" id="addSave" type="button"></button>
+          <button class="small danger" id="addDel" type="button" hidden></button>
         </div>
         <div class="remindRow" id="remindRow" hidden>
           <span class="lbl" id="remindLbl"></span>

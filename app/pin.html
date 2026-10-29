@@ -108,6 +108,23 @@
     }
     .memo:empty { display: none; }
 
+    /* Ghi chú ghim (note_pins.rs, window.__PIN_KIND__ = "note"): giấy vàng,
+       tiêu đề có thể trống, nội dung là phần chính nên hiện nhiều dòng hơn. */
+    .wrap.kind-note {
+      --paper-1: #fffbe8;
+      --paper-2: #fff0b8;
+      --ink: #5a4a1f;
+      --ink-soft: #8a7848;
+      --line: rgba(200, 160, 60, 0.22);
+    }
+    .kind-note .text:empty { display: none; }
+    .kind-note .memo {
+      font-size: 12px;
+      line-height: 18px;
+      color: var(--ink);
+      -webkit-line-clamp: 14;
+    }
+
     /* Link trong nội dung / ghi chú: bấm để mở trình duyệt. */
     .lnk {
       color: #c2367a;
@@ -270,7 +287,7 @@
 <body>
   <div class="wrap" id="wrap">
     <div class="note" id="note">
-      <div class="head"><span>📌 Việc cần làm</span><span class="when" id="when"></span></div>
+      <div class="head"><span id="headLabel">📌 Việc cần làm</span><span class="when" id="when"></span></div>
       <div class="text" id="text"></div>
       <div class="memo" id="memo"></div>
       <div class="due" id="due"></div>

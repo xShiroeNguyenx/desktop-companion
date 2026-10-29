@@ -945,6 +945,9 @@ function setupCompactContextMenu() {
     <div class="companion-menu-item" data-action="open-tasks">
       <span style="font-size: 11px;">📝</span> Công việc (Tasks)
     </div>
+    <div class="companion-menu-item" data-action="open-notes">
+      <span style="font-size: 11px;">🗒️</span> Ghi chú
+    </div>
     <div class="companion-menu-item" data-action="open-settings">
       <span style="font-size: 11px;">⚙️</span> Cài đặt
     </div>
@@ -1089,6 +1092,9 @@ function setupCompactContextMenu() {
       vscode.postMessage({ command: 'openSettings' });
     } else if (action === 'open-tasks') {
       vscode.postMessage({ command: 'openTasks' });
+    } else if (action === 'open-notes') {
+      // Bảng 🗒️ Ghi chú (windows.rs → open_notes).
+      vscode.postMessage({ command: 'openNotes' });
     } else if (action === 'open-assistant') {
       // Trợ lý văn bản ở chế độ tự gõ (windows.rs → open_assistant).
       vscode.postMessage({ command: 'openAssistant' });
@@ -1229,6 +1235,8 @@ function setupCompactContextMenu() {
             { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
             { icon: '🎮', label: 'Chơi', action: 'show-games' },
             { icon: '🍬', label: 'Bộ sưu tập', action: 'show-shop' },
+            // Vòng ngoài đã đủ 8 ô: Ghi chú nằm trong nhóm này.
+            { icon: '🗒️', label: 'Ghi chú', action: 'open-notes' },
             { icon: '📅', label: 'Lịch tháng', action: 'toggle-calendar-pin' },
             window.__DND__
               ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }

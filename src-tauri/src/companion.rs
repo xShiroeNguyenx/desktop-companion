@@ -632,12 +632,30 @@ fn daily_greeting_line(app: &AppHandle, a: &persona::Address, now: u64) -> Strin
         .filter(|&d| reminders::local_day(d, offset) == today)
         .count();
     let _ = store::update_bond(app, |b| b.last_greeting_day = today);
-    if due == 0 {
+    let greeting = if due == 0 {
         lines::line(Key::DailyGreetingFree, a, &[])
     } else {
         let n = due.to_string();
         lines::line(Key::DailyGreeting, a, &[("due", n.as_str())])
+    };
+    // Sự kiện lịch hôm nay (giỗ, sinh nhật…): thêm một câu kể tên.
+    let events = events_today(app, today);
+    if events.is_empty() {
+        return greeting;
     }
+    let names = events.join(", ");
+    format!("{greeting} {}", lines::line(Key::GreetingEvents, a, &[("events", names.as_str())]))
+}
+
+/// Tên (đã cắt ngắn, trong ngoặc kép) các sự kiện lịch rơi vào ngày `today`, theo giờ.
+fn events_today(app: &AppHandle, today: i64) -> Vec<String> {
+    let mut list: Vec<_> = store::load_events(app)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|e| crate::events::next_occurrence(e, today, 0) == Some(today))
+        .collect();
+    list.sort_by(|x, y| x.time.cmp(&y.time));
+    list.iter().take(3).map(|e| format!("\"{}\"", crate::pins::short_task(&e.title))).collect()
 }
 
 /// Câu cho một cột mốc ("ms:<tag>") và ghi lại là đã nói.
@@ -782,7 +800,7 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
     // Hạn chót: mỗi task tối đa một câu, ở mốc mới nhất chưa nhắc.
     let now_ms = now as i64 * 1000;
     let offset = reminders::local_offset_min();
-    let deadlines: Vec<String> = store::load_tasks(app)
+    let mut deadlines: Vec<String> = store::load_tasks(app)
         .iter()
         .filter(|t| !t.done)
         .filter_map(|t| {
@@ -796,6 +814,14 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
             Some(format!("deadline:{}:d{days}", t.id))
         })
         .collect();
+    // Sự kiện lịch (events.rs): cùng loại với hạn chót để cũng đi đường thông
+    // báo Windows khi pet không nói được. File hỏng thì bỏ qua (lịch tự báo lỗi).
+    deadlines.extend(
+        store::load_events(app)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|e| crate::events::reminder_tag(e, now_ms, offset)),
+    );
     sync_kind(pending, Kind::Deadline, &deadlines, now);
 
     // Nhắc sức khoẻ: gộp mọi loại đang tới hạn vào một câu.
@@ -912,6 +938,9 @@ fn calendar_line(app: &AppHandle, a: &persona::Address, tag: &str) -> Option<(St
 
 /// Câu nhắc của một mốc hạn chót, và đánh dấu đã nhắc mốc đó.
 fn deadline_line(app: &AppHandle, tag: &str) -> Option<String> {
+    if tag.starts_with("event:") {
+        return event_line(app, tag);
+    }
     if let Some((id, _)) = parse_early_tag(tag) {
         return early_line(app, id);
     }
@@ -947,7 +976,39 @@ fn early_line(app: &AppHandle, id: &str) -> Option<String> {
     Some(lines::line(Key::DueEarly, &a, &[("task", name.as_str()), ("days", left.as_str()), ("date", date.as_str())]))
 }
 
+/// Câu nhắc một sự kiện lịch ("event:<id>:<ngày>:<mốc>").
+fn event_line(app: &AppHandle, tag: &str) -> Option<String> {
+    use crate::events::Mark;
+    let (id, day, mark) = crate::events::parse_tag(tag)?;
+    let ev = store::load_events(app).ok()?.into_iter().find(|e| e.id == id)?;
+    let a = persona::address(&store::load_settings(app));
+    let offset = reminders::local_offset_min();
+    let due = crate::events::due_ms(&ev, day, offset)?;
+    let name = crate::pins::short_task(&ev.title);
+    match mark {
+        Mark::Early(_) => {
+            let left = reminders::days_left(now_secs() as i64 * 1000, due, offset).max(1).to_string();
+            let date = reminders::fmt_local(due, offset);
+            Some(lines::line(Key::DueEarly, &a, &[("task", name.as_str()), ("days", left.as_str()), ("date", date.as_str())]))
+        }
+        Mark::Stage(Stage::Today) => {
+            Some(lines::line(Key::EventToday, &a, &[("task", name.as_str()), ("time", ev.time.as_str())]))
+        }
+        Mark::Stage(Stage::Soon) => Some(lines::line(Key::EventSoon, &a, &[("task", name.as_str())])),
+        Mark::Stage(Stage::Due) => Some(lines::line(Key::EventNow, &a, &[("task", name.as_str())])),
+        Mark::Stage(Stage::Over(_)) => None,
+    }
+}
+
 fn mark_reminded(app: &AppHandle, tag: &str) {
+    if let Some((id, day, mark)) = crate::events::parse_tag(tag) {
+        let _ = store::update_events(app, |list| {
+            if let Some(e) = list.iter_mut().find(|e| e.id == id) {
+                crate::events::mark(e, day, &mark);
+            }
+        });
+        return;
+    }
     // Nhắc sớm: đánh dấu mốc này và mọi mốc xa hơn (đã qua, không nói lại).
     if let Some((id, days)) = parse_early_tag(tag) {
         let _ = store::update_tasks(app, |tasks| {

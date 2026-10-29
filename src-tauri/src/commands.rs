@@ -6,7 +6,7 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::{links, llm, naming, notify, persona, pins, rewards, selection, store, tts, windows};
+use crate::{events, links, llm, naming, note_pins, notes, notify, persona, pins, rewards, selection, store, tts, windows};
 
 fn lang_name(code: &str) -> &'static str {
     match code {
@@ -54,7 +54,7 @@ pub fn close_flower(app: AppHandle) {
     windows::hide_flower(&app);
 }
 
-// Một mục trên ring: "translate" | "reply" | "ask" | "task" | "full".
+// Một mục trên ring: "translate" | "reply" | "ask" | "task" | "note" | "full".
 #[tauri::command]
 pub fn flower_menu_action(app: AppHandle, action: String) {
     windows::flower_menu_action(&app, &action);
@@ -330,6 +330,178 @@ pub fn tasks_delete(app: AppHandle, id: String) -> Result<(), String> {
     store::update_tasks(&app, |tasks| tasks.retain(|t| t.id != id))?;
     pins::close(&app, &id);
     Ok(())
+}
+
+// ── Ghi chú thường (notes.rs, bảng 🗒️ Ghi chú) ──────────────────────────────
+
+#[tauri::command]
+pub fn notes_list(app: AppHandle) -> Result<Vec<notes::Note>, String> {
+    store::load_notes(&app)
+}
+
+#[tauri::command]
+pub fn notes_add(app: AppHandle, title: String, body: String) -> Result<notes::Note, String> {
+    let (title, body) = notes::clean(&title, &body)?;
+    store::update_notes(&app, |list| {
+        let now = now_millis();
+        let note = notes::Note {
+            id: notes::next_id(list, now),
+            title,
+            body,
+            pinned: false,
+            created_at: now.to_string(),
+            updated_at: now.to_string(),
+            ..Default::default()
+        };
+        list.insert(0, note.clone());
+        note
+    })
+}
+
+/// Sửa tiêu đề + nội dung. Không còn ghi chú đó (đã xoá ở nơi khác) thì báo lỗi.
+#[tauri::command]
+pub fn notes_update(app: AppHandle, id: String, title: String, body: String) -> Result<(), String> {
+    let (title, body) = notes::clean(&title, &body)?;
+    let found = store::update_notes(&app, |list| {
+        let Some(n) = list.iter_mut().find(|n| n.id == id) else { return false };
+        if n.title != title || n.body != body {
+            n.title = title;
+            n.body = body;
+            n.updated_at = now_millis().to_string();
+        }
+        true
+    })?;
+    if !found {
+        return Err("Ghi chú này không còn nữa.".into());
+    }
+    note_pins::refresh(&app, &id);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn notes_set_pinned(app: AppHandle, id: String, pinned: bool) -> Result<(), String> {
+    store::update_notes(&app, |list| {
+        if let Some(n) = list.iter_mut().find(|n| n.id == id) {
+            n.pinned = pinned;
+        }
+    })
+}
+
+#[tauri::command]
+pub fn notes_delete(app: AppHandle, id: String) -> Result<(), String> {
+    store::update_notes(&app, |list| list.retain(|n| n.id != id))?;
+    note_pins::close(&app, &id);
+    Ok(())
+}
+
+// Tờ giấy ghi chú trên desktop (note_pins.rs). async: ghim dựng cửa sổ mới.
+#[tauri::command]
+pub async fn notes_set_desk(app: AppHandle, id: String, on: bool) -> Result<(), String> {
+    note_pins::set_desk(&app, &id, on)
+}
+
+/// Ghi chú của tờ giấy `id` (pin.js ở chế độ ghi chú gọi mỗi lần vẽ lại).
+#[tauri::command]
+pub fn note_pin_get(app: AppHandle, id: String) -> Option<notes::Note> {
+    store::load_notes(&app).ok()?.into_iter().find(|n| n.id == id)
+}
+
+#[tauri::command]
+pub fn note_pin_set_top(app: AppHandle, id: String, top: bool) -> Result<(), String> {
+    note_pins::set_top(&app, &id, top)
+}
+
+#[tauri::command]
+pub fn note_pin_resize(app: AppHandle, id: String, w: f64, h: f64) {
+    note_pins::resize(&app, &id, w, h);
+}
+
+#[tauri::command]
+pub fn open_notes(app: AppHandle) {
+    windows::open_notes(&app);
+}
+
+// ── Sự kiện lịch (events.rs, lịch ghim) ─────────────────────────────────────
+
+#[tauri::command]
+pub fn events_list(app: AppHandle) -> Result<Vec<events::CalEvent>, String> {
+    store::load_events(&app)
+}
+
+#[tauri::command]
+pub fn events_add(
+    app: AppHandle,
+    title: String,
+    date: String,
+    time: String,
+    repeat: String,
+    remind_days: Vec<u32>,
+) -> Result<events::CalEvent, String> {
+    let input = events::clean(&title, &date, &time, &repeat, &remind_days)?;
+    store::update_events(&app, |list| {
+        let now = now_millis();
+        let ev = events::CalEvent {
+            id: events::next_id(list, now),
+            title: input.title,
+            date: input.date,
+            time: input.time,
+            repeat: input.repeat,
+            remind_days: input.remind_days,
+            created_at: now.to_string(),
+            ..Default::default()
+        };
+        list.push(ev.clone());
+        ev
+    })
+}
+
+/// Sửa sự kiện. Đổi ngày / giờ / kiểu lặp / mốc nhắc thì nhắc lại từ đầu.
+#[tauri::command]
+pub fn events_update(
+    app: AppHandle,
+    id: String,
+    title: String,
+    date: String,
+    time: String,
+    repeat: String,
+    remind_days: Vec<u32>,
+) -> Result<(), String> {
+    let input = events::clean(&title, &date, &time, &repeat, &remind_days)?;
+    let found = store::update_events(&app, |list| {
+        let Some(e) = list.iter_mut().find(|e| e.id == id) else { return false };
+        let reset = e.date != input.date
+            || e.time != input.time
+            || e.repeat != input.repeat
+            || e.remind_days != input.remind_days;
+        e.title = input.title;
+        if reset {
+            e.date = input.date;
+            e.time = input.time;
+            e.repeat = input.repeat;
+            e.remind_days = input.remind_days;
+            e.occ_day = 0;
+            e.reminded = 0;
+            e.early_said.clear();
+        }
+        true
+    })?;
+    if found { Ok(()) } else { Err("Sự kiện này không còn nữa.".into()) }
+}
+
+/// Bảng Ghi chú → tab Sự kiện: mở lịch ghim tại ngày của sự kiện.
+#[tauri::command]
+pub async fn calendar_open_day(app: AppHandle, date: String) -> Result<(), String> {
+    crate::calendar_pin::open_day(&app, &date)
+}
+
+#[tauri::command]
+pub fn calendar_take_goto() -> Option<String> {
+    crate::calendar_pin::take_goto()
+}
+
+#[tauri::command]
+pub fn events_delete(app: AppHandle, id: String) -> Result<(), String> {
+    store::update_events(&app, |list| list.retain(|e| e.id != id))
 }
 
 // ── Tờ note ghim trên desktop (pins.rs) ─────────────────────────────────────

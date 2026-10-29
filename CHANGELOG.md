@@ -6,6 +6,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **🗒️ Notes, for the things you look up every day.** A separate board from
+  Tasks, with no due dates and nothing to tick off: Wi-Fi details, phone
+  numbers, links, commands you type often. Open it from the tray, the pet's
+  right-click list or 💞 Together in the ring menu.
+  - Search as you type, with or without Vietnamese accents ("mat khau" finds
+    "Mật khẩu").
+  - ⭐ keeps a note at the top; the rest show the most recently edited first.
+  - 📋 copies a note's content in one click; links open in the browser.
+  - 📌 pins a note to the desktop as a yellow sticky note, held by the same
+    pushpin as pinned tasks, with its own 📋 Copy button. Drag it anywhere,
+    📍 keeps it above other windows, ✕ takes it off the desktop.
+  - Select text in any app and pick 🗒️ **Save as note** on the flower: the
+    Notes board opens with a new note already holding that text, ready for a
+    title.
+  - Edit in place with ✏️ or a double-click; Ctrl+Enter saves, Esc cancels.
+    Ctrl+N starts a new note and Ctrl+F jumps to the search box.
+  - Long notes fold to eight lines; click to read the rest.
+  - Notes are kept in their own `notes.json`. If that file is ever damaged, the
+    board says so and refuses to overwrite it instead of starting over empty.
+    Every save also keeps the previous version as `notes.json.bak`, and the
+    error message points to it.
+- **🎗 Events on the pinned calendar, separate from tasks.** Memorials,
+  birthdays and anniversaries are no longer tasks: they never go overdue, do not
+  appear in the Tasks board and have nothing to tick off.
+  - **＋ Add** now asks whether it is a ✓ Task or a 🎗 Event. An event happens
+    once, every year on the same date (↻ Yearly), or every year on the same
+    **lunar** date (↻ Lunar), for death anniversaries and lunar birthdays.
+  - Lunar repeats follow the usual custom: a leap month does not repeat the
+    event, and a 30th falls back to the 29th in a month with only 29 days.
+    A yearly event on 29 February falls on the 28th in other years.
+  - The pet still reminds you: the chosen days before, on the morning, an hour
+    before and at the time, and again from the start next year. When she
+    cannot speak, a Windows notification goes out as for deadlines. On the
+    day itself her morning greeting names the event too.
+  - The 🎗 **Events** tab of the Notes board lists every event by how soon it
+    comes next ("Today", "Tomorrow", "In 9 days"), with its time, repeat and
+    lunar date. Click one to open the calendar on that day; past one-off
+    events sit at the bottom.
+  - Events show as a gold dot on the day and are listed first in the day panel,
+    with ↻ for repeating ones. The day's list now scrolls instead of cutting off
+    at two items.
+  - Click an event or a task to edit it, switch it between task and event, or
+    delete it (🗑, then confirm). Tasks you added from the calendar before stay
+    tasks until you switch them.
+  - Events are kept in their own `events.json`, protected against damage and
+    backed up to `events.json.bak` like notes.
+
 ## [0.9.11] - 2026-10-28
 
 ### Added

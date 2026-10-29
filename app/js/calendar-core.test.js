@@ -169,3 +169,67 @@ test('sửa việc: chỉ gọi những gì đổi', () => {
   assert.deepEqual(C.editChanges(task, 'Đám giỗ', 1000, []), { remind: [] });
   assert.equal(C.hhmm(new Date(2026, 10, 6, 8, 5).getTime()), '08:05');
 });
+
+// Cùng bộ ngày mẫu với events.rs (Rust) để hai bên không lệch nhau.
+const onKey = (ev, key) => {
+  const [y, m, d] = key.split('-').map(Number);
+  return C.eventOnDay(ev, y, m, d);
+};
+
+test('sự kiện một lần / hằng năm dương lịch', () => {
+  const once = { date: '2026-11-06', repeat: 'once' };
+  assert.ok(onKey(once, '2026-11-06'));
+  assert.ok(!onKey(once, '2027-11-06'));
+  const yearly = { date: '2026-03-15', repeat: 'yearly' };
+  assert.ok(onKey(yearly, '2027-03-15'));
+  assert.ok(!onKey(yearly, '2025-03-15'), 'không xảy ra trước ngày gốc');
+  const leap = { date: '2024-02-29', repeat: 'yearly' };
+  assert.ok(onKey(leap, '2025-02-28'));
+  assert.ok(!onKey(leap, '2028-02-28'));
+  assert.ok(onKey(leap, '2028-02-29'));
+});
+
+test('sự kiện lặp theo âm lịch', () => {
+  // 06/11/2026 = 28/9 âm Bính Ngọ.
+  const gio = { date: '2026-11-06', repeat: 'lunar' };
+  assert.ok(onKey(gio, '2027-10-27'));
+  assert.ok(onKey(gio, '2028-11-14'));
+  assert.ok(!onKey(gio, '2027-11-06'));
+  // Tháng 6 nhuận năm 2025: tháng thường khớp, tháng nhuận không.
+  const leapMonth = { date: '2024-07-15', repeat: 'lunar' };
+  assert.ok(onKey(leapMonth, '2025-07-04'));
+  assert.ok(!onKey(leapMonth, '2025-08-03'));
+  // 30/2 âm: tháng 2 năm 2025, 2026 chỉ có 29 ngày → dời về 29.
+  const d30 = { date: '2024-04-08', repeat: 'lunar' };
+  assert.ok(onKey(d30, '2025-03-28'));
+  assert.ok(onKey(d30, '2026-04-16'));
+  assert.ok(onKey(d30, '2027-04-06'));
+  assert.ok(!onKey(d30, '2027-04-05'), 'năm có ngày 30 thì không dời');
+});
+
+test('eventsOn sắp theo giờ, lọc mốc nhắc hỏng', () => {
+  const list = C.eventsOn([
+    { id: 'b', title: 'Tối', date: '2026-11-06', time: '19:00', repeat: 'once', remind_days: [1, 0, 'x'] },
+    { id: 'a', title: 'Sáng', date: '2026-11-06', time: '08:00', repeat: 'once' },
+    { id: 'c', title: 'Khác', date: '2026-11-07', time: '08:00', repeat: 'once' },
+    null,
+  ], 2026, 11, 6);
+  assert.deepEqual(list.map((e) => e.id), ['a', 'b']);
+  assert.deepEqual(list[1].remind, [1]);
+  assert.equal(list[0].repeat, 'once');
+});
+
+test('lần xảy ra kế tiếp và danh sách sắp tới', () => {
+  const gio = { id: 'g', title: 'Giỗ', date: '2026-11-06', time: '09:00', repeat: 'lunar' };
+  assert.equal(C.nextOccurrence(gio, '2026-10-29'), '2026-11-06');
+  assert.equal(C.nextOccurrence(gio, '2026-11-07'), '2027-10-27');
+  const once = { id: 'o', title: 'Họp lớp', date: '2026-11-01', time: '18:00', repeat: 'once' };
+  assert.equal(C.nextOccurrence(once, '2026-11-02'), null);
+  const sn = { id: 's', title: 'Sinh nhật', date: '2020-11-06', time: '08:00', repeat: 'yearly' };
+  const old = { id: 'x', title: 'Cũ hơn', date: '2026-10-01', time: '08:00', repeat: 'once' };
+  const rows = C.upcomingEvents([gio, once, sn, old, null], '2026-11-02');
+  assert.deepEqual(rows.map((r) => r.ev.id), ['s', 'g', 'o', 'x'], 'cùng ngày theo giờ; đã qua xuống cuối, mới qua trước');
+  assert.deepEqual(rows.map((r) => r.days), [4, 4, null, null]);
+  // Qua tháng 3 (giờ mùa hè ở máy chạy test) vẫn đếm đúng ngày.
+  assert.equal(C.daysBetween('2026-03-01', '2026-04-01'), 31);
+});

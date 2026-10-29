@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capabilities for all companion windows.",
-  "windows": ["main", "flower", "flower_menu", "popup", "quick", "tasks", "settings", "update", "pin-*", "side_*", "game", "guess", "mines", "arcade", "fx-*", "weather", "collection"],
+  "windows": ["main", "flower", "flower_menu", "popup", "quick", "tasks", "notes", "settings", "update", "pin-*", "notepin-*", "side_*", "game", "guess", "mines", "arcade", "fx-*", "weather", "collection"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
