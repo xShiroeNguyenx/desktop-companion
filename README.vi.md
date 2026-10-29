@@ -66,7 +66,8 @@ duyệt, Word…).
   được, khởi động cùng Windows. Chuột phải để mở **menu xoay tròn**.
 - **Dịch** — bôi đen văn bản ở **bất kỳ** ứng dụng nào → bông hoa 🌸 hiện cạnh con
   trỏ → **click** để dịch ngay, hoặc **nhấn giữ** để bung **menu xoay tròn**:
-  🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 💭 hỏi em · 📝 lưu vào task · 🗂️ mở bảng đầy đủ.
+  🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 💭 hỏi em · 📝 lưu vào task · 🗒️ lưu ghi chú ·
+  🗂️ mở bảng đầy đủ.
   Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
 - **Trò chuyện với pet** — chuột phải → 💬 **Chat nhanh**. Câu trả lời hiện dần
   từng chữ trong bong bóng, nét mặt pet đổi theo cảm xúc của câu nói. Pet biết giờ
@@ -98,6 +99,13 @@ duyệt, Word…).
 - **Ghim task lên desktop** — bấm 📌 để biến việc thành tờ note hồng, cây ghim mang
   mặt nhân vật. Kéo đi đâu cũng được; ✓ đóng dấu xong, ✕ gỡ ghim, 📍 giữ luôn nổi
   trên các cửa sổ khác. Link trong nội dung và ghi chú bấm được.
+- **🗒️ Ghi chú thông tin hằng ngày** — bảng riêng (khay, chuột phải → Ghi chú, hoặc
+  💞 trên menu tròn) cho những thứ tra hằng ngày: Wi-Fi, số điện thoại, link, lệnh
+  hay gõ. Không có hạn, không có "xong". Tìm ngay khi gõ, có dấu hay không dấu đều
+  được ("mat khau" ra "Mật khẩu"); ⭐ đưa ghi chú lên đầu, 📋 copy một chạm, ✏️ hoặc
+  bấm đúp để sửa tại chỗ. 📌 ghim ghi chú lên desktop thành tờ giấy vàng có sẵn nút
+  📋 Copy. Bôi đen ở đâu cũng được, chọn 🗒️ **Lưu ghi chú** trên bông hoa là có
+  ngay một ghi chú mới chứa đoạn đó.
 - **🍅 Phiên Tập trung** — 25 phút tập trung rồi nghỉ 5 phút (chỉnh được). Vòng đếm
   ngược hiện trên pet, pet giữ nét mặt tập trung, và chỉ hạn chót mới được chen ngang.
 - **Pet biết khi bạn rời máy** — 10 phút không đụng chuột/phím (hoặc khoá màn hình)
@@ -124,13 +132,18 @@ duyệt, Word…).
 - **📅 Lịch tháng trên màn hình** — ghim một lịch tháng nhỏ từ khay, 💞 → 📅 trên
   menu tròn hoặc Cài đặt. Mỗi ngày có ngày âm lịch, ngày lễ Việt Nam (Tết, Trung
   thu, Giỗ Tổ…) được đánh dấu, ngày nghỉ lễ tô đỏ, ngày có task tới hạn có chấm
-  (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn, hoặc thêm
-  việc có hạn vào ngày đó; ngày sinh của bạn có 🎂. Luôn nổi trên các cửa sổ khác,
+  (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn và sự kiện,
+  hoặc **＋ Thêm** một ✓ việc hay 🎗 **sự kiện** vào ngày đó; ngày sinh của bạn có
+  🎂. Sự kiện (giỗ, sinh nhật, kỷ niệm) tách riêng khỏi task: không bao giờ quá hạn,
+  lặp được **hằng năm theo dương lịch** hoặc **hằng năm theo âm lịch** (tháng nhuận
+  không lặp, ngày 30 mà tháng thiếu thì dời về 29). Sự kiện có chấm vàng; bấm vào
+  để sửa, đổi qua lại giữa việc và sự kiện, hoặc xoá. Tab 🎗 của bảng Ghi chú liệt
+  kê mọi sự kiện theo ngày gần nhất, bấm vào là lịch mở đúng ngày đó. Luôn nổi trên các cửa sổ khác,
   trừ khi bạn tắt 📍. Pet nhắc ngày lễ, Rằm, mùng 1, và tối hôm trước báo mai là
   ngày gì. Khi thêm sự kiện, chọn **nhắc sớm** (trước 1 ngày, 3 ngày, 1 tuần, 10
   ngày hoặc 1 tháng, chọn bao nhiêu cũng được); pet nhắc lúc 7 giờ sáng hôm đó, hoặc
-  Windows hiện thông báo. Sự kiện có nhắc sớm mang dấu 🔔, và bấm vào sự kiện là
-  sửa được tên, giờ hay lịch nhắc ngay trên lịch.
+  Windows hiện thông báo. Sự kiện có nhắc sớm mang dấu 🔔. Sáng hôm có sự kiện,
+  câu chào đầu ngày của pet cũng nhắc tên nó.
 - **🕐 Đồng hồ có giờ thế giới** — giờ máy kèm ngày âm, thêm tối đa 2 đồng hồ
   (Tokyo, Seoul, New York, London…) ghi chênh giờ và "ngày mai" / "hôm qua"; tự
   tính giờ mùa hè. Hàng 🍅 bắt đầu phiên Tập trung và đếm lùi.
@@ -222,7 +235,7 @@ Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · Thoát
+Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · Thoát
 
 ### Chuột phải vào pet
 
@@ -232,7 +245,7 @@ thành nút quay lại.
 
 Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
 nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 📅 lịch tháng, 🔕 Đừng làm phiền) ·
+💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 🔕 Đừng làm phiền) ·
 ☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân

@@ -66,7 +66,7 @@
 - **Translate** — select text in **any** app → a 🌸 flower appears near the cursor
   → **click** for an instant translation, or **press-and-hold** to fan out a
   **radial menu**: 🌐 translate · 📋 copy · 💬 reply · 💭 ask the pet · 📝 save as task ·
-  🗂️ full panel. **Ctrl+C** (while the flower is up) still copies the selected text.
+  🗒️ save as note · 🗂️ full panel. **Ctrl+C** (while the flower is up) still copies the selected text.
 - **Chat with the pet** — right-click → 💬 **Quick Chat**. The reply streams into
   the bubble word by word and the pet's face changes with the mood of what it
   says. It knows the time and your unfinished tasks, remembers the last 10 turns
@@ -103,6 +103,14 @@
   by a pushpin with your companion's face. Drag it anywhere; ✓ stamps it done,
   ✕ unpins it, 📍 keeps it above other windows. Links in tasks and notes are
   clickable.
+- **🗒️ Notes for everyday info** — a board of its own (tray, right-click → Ghi
+  chú, or 💞 on the ring) for the things you look up every day: Wi-Fi details,
+  phone numbers, links, commands you type often. No deadlines, nothing to tick
+  off. Search as you type, with or without Vietnamese accents ("mat khau" finds
+  "Mật khẩu"); ⭐ keeps a note at the top, 📋 copies it in one click, ✏️ or a
+  double-click edits it in place. 📌 pins a note to the desktop as a yellow
+  sticky note with its own 📋 Copy button. Select text anywhere and pick
+  🗒️ **Save as note** on the flower to start a note with it.
 - **🍅 Focus sessions** — 25 minutes of focus, then a 5-minute break (both
   adjustable). A ring on the pet counts down, she wears her focused face, and
   only a deadline may interrupt you.
@@ -136,14 +144,21 @@
   tray, 💞 → 📅 on the ring or Settings. Each day shows its Vietnamese lunar
   date, Vietnamese holidays (Tết, Mid-Autumn, Hùng Kings Day…) are marked and
   days off are in red, and days with tasks due get a dot (red when overdue).
-  Click a day for its full lunar date and what is due, or to add a task due
-  that day; your birthday gets a 🎂. It stays above other windows unless you
+  Click a day for its full lunar date, what is due and its events, or **＋ Add**
+  a ✓ task or a 🎗 **event** on that day; your birthday gets a 🎂. Events
+  (memorials, birthdays, anniversaries) are separate from tasks: they never go
+  overdue and can repeat **every year on the same date** or **every year on the
+  same lunar date** (a leap month does not repeat it, and a 30th falls back to
+  the 29th in a short month). Events show as a gold dot; click one to edit it,
+  switch it between task and event, or delete it. The 🎗 tab of the Notes board
+  lists every event by how soon it comes next, and clicking one opens the
+  calendar on that day. It stays above other windows unless you
   turn 📍 off. The pet mentions holidays, the full moon (*Rằm*) and the 1st of
   each lunar month, and the evening before reminds you they are tomorrow.
   Add an event and pick **early reminders** (1 day, 3 days, 1 week, 10 days or
   1 month before, any mix); she tells you at 7 am that day, or Windows shows a
-  notification. Events with early reminders show a 🔔, and clicking an event
-  lets you change its name, time or reminders right in the calendar.
+  notification. Events with early reminders show a 🔔. On the morning of an
+  event the pet's daily greeting names it too.
 - **🕐 Clock with world clocks** — your PC's time with the lunar date, plus up
   to two more clocks (Tokyo, Seoul, New York, London…) with the time
   difference and "tomorrow" / "yesterday"; summer time is handled. Its 🍅 row
@@ -241,7 +256,7 @@ Run it and the app launches automatically. It lives in the system tray.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · Quit
+Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · Quit
 
 ### Right-click the pet
 
@@ -251,7 +266,7 @@ pill into a back button.
 
 Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
 ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games, 📅 month calendar, 🔕 Do not disturb) · ☁️ Weather (forecast,
+(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 🔕 Do not disturb) · ☁️ Weather (forecast,
 effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
 
 **Model** and **Motion** open as two columns either side of the character, so it
