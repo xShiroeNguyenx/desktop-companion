@@ -6,6 +6,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-29
+
+### Added
+- **🛰 Site monitor.** Add up to eight websites in Settings → 🛰 (with a
+  **Test now** button) and the app checks them every 5 minutes (1, 2 or 10 if
+  you prefer). A new desktop widget lists each site with a green, gold or red
+  dot and its response time or a short reason ("502", "Timeout", "DNS
+  error"); click a site to open it.
+  - The pet tells you when a site **goes down** and when it is **back up**,
+    with how long it was down. When she is hidden it arrives as a Windows
+    notification, and it may interrupt a focus session.
+  - Built not to cry wolf: a site counts as down only after two failed checks
+    in a row, a check right after the PC wakes from sleep does not count, and
+    when every site fails with a network error at once she says once that you
+    seem to be offline instead of reporting each site.
+  - 🔔 on each site turns its alerts on or off. Only a GET request is sent; the
+    page itself is never read.
+- **🔎 Quick launcher.** Press **Ctrl+Alt+Space** anywhere (change or turn it
+  off in Settings) for a search box in the middle of the screen:
+  - type a few letters of a bookmark to open it, with or without accents;
+  - `!yt`, `!gh`, `!g`, `!w`, `!map`, `!tr`, `!so`, `!npm`, `!ddg` + words
+    search those sites, and Tab completes a bang name;
+  - type a web address to open it directly, or anything else to search on
+    Google (or DuckDuckGo / Bing).
+  - Add your own bangs in Settings, one per line (`!docs https://…{q}…`);
+    anything that would not open as a web link is refused with the line number.
+  - Esc or clicking elsewhere hides it; ↑ on an empty box brings back the last
+    search. Nothing you type is saved.
+- **🔖 Bookmarks**, a third tab in the Notes board: name, address and an
+  optional group, searchable, one click to open or copy. The quick launcher
+  searches them.
+
 ## [0.10.1] - 2026-10-29
 
 ### Added
@@ -823,6 +855,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.11.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.0
 [0.10.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.1
 [0.10.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.0
 [0.9.11]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.9.11
