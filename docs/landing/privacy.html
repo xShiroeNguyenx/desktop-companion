@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#140d18" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<title>Privacy Policy — Desktop Companion</title>
+<meta name="description" content="What Desktop Companion stores on your computer, what it sends over the network and to whom, and how to remove it." />
+<link rel="canonical" href="https://desktop.techdecoded.net/privacy.html" />
+<style>
+  :root {
+    --app: #140d18; --panel: #1b1320; --card: #1e1422;
+    --edge: #34243a; --text: #f1e9f2; --muted: #b9a7c2; --subtle: #7c6c86;
+    --accent: #ff73ab; --accent-soft: rgba(255,115,171,.14);
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--app); color: var(--text); font-family: var(--sans);
+    line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+  nav { border-bottom: 1px solid var(--edge); background: rgba(20,13,24,.72); }
+  nav .wrap { display: flex; align-items: center; gap: 10px; height: 60px; }
+  nav a { color: var(--text); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 40%, #ffe0ef, #ff9ccb 55%, #ff73ab); font-size: 17px; }
+  main { padding: 48px 0 64px; }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 0 0 8px; letter-spacing: -.02em; }
+  .meta { color: var(--subtle); margin: 0 0 32px; }
+  h2 { font-size: 21px; margin: 40px 0 10px; }
+  p, li { color: var(--muted); }
+  strong { color: var(--text); }
+  code { font-family: var(--mono); font-size: .9em; background: var(--card); border: 1px solid var(--edge);
+    border-radius: 6px; padding: 1px 6px; overflow-wrap: anywhere; }
+  .summary { background: var(--accent-soft); border: 1px solid var(--edge); border-radius: 14px; padding: 18px 22px; }
+  .summary p { margin: 0; color: var(--text); }
+  .table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--edge); }
+  th { color: var(--text); font-weight: 600; background: var(--panel); }
+  td { color: var(--muted); }
+  footer { border-top: 1px solid var(--edge); padding: 24px 0; color: var(--subtle); font-size: 14px; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap"><a href="./"><span class="logo">🌸</span> Desktop Companion</a></div></nav>
+
+<main class="wrap">
+  <h1>Privacy Policy</h1>
+  <p class="meta">Effective date: October 29, 2026</p>
+
+  <div class="summary">
+    <p><strong>In short:</strong> Desktop Companion has no account, no analytics and no telemetry, and we run no server
+    that receives your data. Everything is stored on your own computer. The app only goes online for features you
+    turn on, and it talks directly to the service that feature needs.</p>
+  </div>
+
+  <h2>Who we are</h2>
+  <p>Desktop Companion is a free, open-source desktop app made by TechDecoded. The source code is public at
+  <a href="https://github.com/xShiroeNguyenx/desktop-companion">github.com/xShiroeNguyenx/desktop-companion</a>,
+  so anything described here can be checked against the code.</p>
+
+  <h2>Data stored on your computer</h2>
+  <p>The app keeps its data as plain files in its own config folder on your computer. This includes:</p>
+  <ul>
+    <li><strong>Settings</strong>, including the AI API key you enter. The key is kept in the local settings file and
+    is only sent to the AI provider you picked.</li>
+    <li><strong>Chat history</strong> with your companion.</li>
+    <li><strong>Your content</strong>: tasks, notes, reminders, bookmarks, the websites you ask it to monitor, and the
+    city you choose for weather.</li>
+    <li><strong>Progress</strong>: candy, collection, unlocked characters and game achievements.</li>
+  </ul>
+  <p>None of this is uploaded to us. You can read, back up or delete these files at any time, and uninstalling the app
+  together with its config folder removes them.</p>
+
+  <h2>What the app reads on your computer</h2>
+  <ul>
+    <li><strong>Selected text.</strong> When you select text or press the capture shortcut, the app copies that text
+    (restoring your clipboard afterwards) so it can translate it or draft a reply. It does not record keystrokes.</li>
+    <li><strong>Activity state.</strong> To avoid interrupting you, it checks how long the mouse and keyboard have been
+    idle and whether a full-screen app is running or the screen is locked. It does <strong>not</strong> read window
+    titles, process names or screen contents for this.</li>
+    <li><strong>System stats.</strong> The optional system monitor reads CPU, memory, battery and the names of the
+    busiest processes to show them in the widget. These stay on your computer.</li>
+  </ul>
+
+  <h2>Data sent over the network</h2>
+  <p>Each connection below happens only when you use the feature, and goes straight from your computer to the
+  service listed. Their own privacy policies apply to what they receive.</p>
+  <div class="table">
+  <table>
+    <thead><tr><th>Feature</th><th>Sent to</th><th>What is sent</th></tr></thead>
+    <tbody>
+      <tr><td>AI chat, translation, quick reply</td>
+          <td>Anthropic (<code>api.anthropic.com</code>) or Google Gemini (<code>generativelanguage.googleapis.com</code>), whichever you choose</td>
+          <td>Your API key, your message or selected text, recent conversation context and the companion's persona instructions</td></tr>
+      <tr><td>Weather</td>
+          <td>Open-Meteo (<code>open-meteo.com</code>)</td>
+          <td>The name or coordinates of the city you picked. No IP or GPS location lookup</td></tr>
+      <tr><td>Site monitor</td>
+          <td>The websites you add</td>
+          <td>A plain request to check that the site is up. No cookies or personal data</td></tr>
+      <tr><td>Updates and character downloads</td>
+          <td>GitHub (<code>github.com</code>)</td>
+          <td>Standard download requests for new versions and character packs</td></tr>
+      <tr><td>Quick launcher and bookmarks</td>
+          <td>Your web browser</td>
+          <td>Opens the search or link you typed. The app itself sends nothing</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Like any internet request, these services can see your IP address. We do not receive any of this traffic.</p>
+
+  <h2>What we do not do</h2>
+  <ul>
+    <li>No account or sign-in.</li>
+    <li>No analytics, tracking, crash reporting or advertising.</li>
+    <li>No selling or sharing of data, since we never receive it.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>The app is not directed at children under 13 and does not knowingly collect information from them. Using the AI
+  features is also subject to the age requirements of the AI provider you choose.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If a new feature changes what data leaves your computer, we will update this page and its effective date before
+  that version is released. Past versions are kept in the project's public history on GitHub.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or concerns about privacy: open an issue at
+  <a href="https://github.com/xShiroeNguyenx/desktop-companion/issues">github.com/xShiroeNguyenx/desktop-companion/issues</a>.</p>
+</main>
+
+<footer>
+  <div class="wrap"><a href="./">← Back to Desktop Companion</a> · <a href="https://techdecoded.net/">Made by TechDecoded</a></div>
+</footer>
+
+</body>
+</html>
