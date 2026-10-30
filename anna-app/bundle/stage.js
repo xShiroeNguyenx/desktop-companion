@@ -13,9 +13,11 @@ const EMOTION_FX = {
 };
 
 export class Stage {
-  constructor(el, canvas, { onPat, onPoke } = {}) {
+  /** framing: 'bust' (head to thigh, room for a bubble on top) | 'full' (whole body, feet at the bottom). */
+  constructor(el, canvas, { onPat, onPoke, framing = 'bust' } = {}) {
     this.el = el;
     this.canvas = canvas;
+    this.framing = framing;
     this.onPat = onPat || (() => {});
     this.onPoke = onPoke || (() => {});
     this.pixi = null;
@@ -58,6 +60,14 @@ export class Stage {
     const h = this.el.clientHeight;
     pixi.renderer.resize(w, h);
     model.scale.set(1);
+    if (this.framing === 'full') {
+      // Whole body standing on the bottom edge; the bubble floats over the head.
+      const scale = Math.min((h * 0.8) / model.height, (w * 0.98) / model.width);
+      model.scale.set(scale);
+      model.x = (w - model.width) / 2;
+      model.y = h - model.height - 4;
+      return;
+    }
     // Head-to-thigh framing; the top ~22% is left for the speech bubble.
     const scale = Math.min((h * 1.45) / model.height, (w * 0.95) / model.width);
     model.scale.set(scale);

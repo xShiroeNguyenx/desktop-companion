@@ -2,6 +2,7 @@
 // Arrays are line pools the pet picks from (pickLine in core.js).
 export const STRINGS = {
   en: {
+    openPanel: 'Open chat, tools and games',
     loading: 'Loading…',
     tabChat: '💬 Chat',
     tabTranslate: '🌐 Translate',
@@ -116,6 +117,7 @@ export const STRINGS = {
     linesNight: ["It's late… don't stay up too long, okay?"],
   },
   vi: {
+    openPanel: 'Mở trò chuyện, công cụ và trò chơi',
     loading: 'Đang tải…',
     tabChat: '💬 Trò chuyện',
     tabTranslate: '🌐 Dịch',
@@ -230,6 +232,7 @@ export const STRINGS = {
     linesNight: ['Khuya rồi đó… đừng thức muộn quá nha.'],
   },
   ja: {
+    openPanel: 'チャット・ツール・ゲームを開く',
     loading: '読み込み中…',
     tabChat: '💬 チャット',
     tabTranslate: '🌐 翻訳',

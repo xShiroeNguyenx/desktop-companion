@@ -1,6 +1,6 @@
 {
   "slug": "desktop-companion",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "name": "Desktop Companion",
   "tagline": "A Live2D companion who chats, translates, drafts replies, keeps your tasks and plays games with you.",
   "description": "Desktop Companion brings the Live2D companion from the Desktop Companion app into Anna.\n\n• Chat with her and watch her react: she follows your cursor, loves head pats, and remembers tasks you ask her to keep.\n• Translate any text into 8 languages, or paste a message and get a ready-to-send reply in the tone you want.\n• Stay on track with a to-do list, notes, a 25-minute focus timer and a calendar with Vietnamese lunar dates and holidays.\n• Take a break with rock paper scissors, guess the number and Bomb Squad (minesweeper).\n• Earn candy as you use the app and unlock more outfits in the Collection.\n• Optional voice: turn on 🔊 and she reads her replies aloud with lip-sync.\n• Ask from any Anna chat: \"#Desktop Companion translate …\" opens her with the text ready.\n\nShe uses the AI model you already chose in Anna, so there is no API key to set up, and your chat, tasks and notes are saved to your Anna account.\n\nWant her on your real desktop, translating text you select in any app? Get the free Desktop Companion app for Windows from the homepage.",

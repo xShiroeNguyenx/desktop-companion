@@ -146,5 +146,17 @@ button.danger { color: var(--danger); }
 .card.locked img { filter: grayscale(.8) brightness(.7); }
 .card button { width: 100%; padding: 4px 6px; font-size: 12px; }
 
+/* Floating pet mode (view "pet", transparent window): only the stage, see-through. */
+.pet-mode, .pet-mode body { background: transparent; }
+.pet-mode .tabs, .pet-mode .panels, .pet-mode .foot, .pet-mode .model-pick, .pet-mode #voiceBtn { display: none; }
+.pet-mode .stage { flex: 1; min-height: 0; background: none; }
+.pet-mode .bubble { top: 6px; left: 8px; right: 8px; }
+.pet-mode .stage-bar { left: 6px; right: 6px; bottom: 6px; }
+.pet-mode .loading { background: none; }
+.open {
+  width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; font-size: 16px; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
 .foot { padding: 6px 10px; text-align: center; font-size: 12px; background: var(--panel); border-top: 1px solid var(--edge); }
 .foot a { color: var(--accent); text-decoration: none; }

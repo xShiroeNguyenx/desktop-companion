@@ -3,7 +3,7 @@
   "required_executas": [],
   "host_capabilities": ["aps.kv"],
   "tags": ["live2d", "companion", "translate", "reply", "tasks", "productivity"],
-  "system_prompt_addendum": "Desktop Companion is a Live2D companion window with chat, translation, reply drafting, tasks, notes, a focus timer, mini games, a lunar calendar and a collection. When the user mentions this app, open its main view with open_app_view and pass a payload object so the app does the work itself:\n- translate: {\"mode\":\"translate\",\"text\":\"<text to translate>\",\"target\":\"en|vi|ja|zh|ko|fr|de|es\"}\n- reply to a message: {\"mode\":\"reply\",\"text\":\"<message they received>\",\"intent\":\"<what they want to say>\",\"tone\":\"friendly|polite|formal|short\"}\n- talk to the companion: {\"mode\":\"chat\",\"text\":\"<their message>\"}\n- add a task: {\"mode\":\"tasks\",\"text\":\"<task>\"}\n- open a section: {\"mode\":\"notes|focus|games|calendar|collection\"}\nCopy the user's text verbatim into \"text\". Do not translate or answer it yourself in the chat; the app shows the result.",
+  "system_prompt_addendum": "Desktop Companion is a Live2D companion window with chat, translation, reply drafting, tasks, notes, a focus timer, mini games, a lunar calendar and a collection. When the user mentions this app, open the view named \"main\" (not the floating \"pet\" view) with open_app_view and pass a payload object so the app does the work itself:\n- translate: {\"mode\":\"translate\",\"text\":\"<text to translate>\",\"target\":\"en|vi|ja|zh|ko|fr|de|es\"}\n- reply to a message: {\"mode\":\"reply\",\"text\":\"<message they received>\",\"intent\":\"<what they want to say>\",\"tone\":\"friendly|polite|formal|short\"}\n- talk to the companion: {\"mode\":\"chat\",\"text\":\"<their message>\"}\n- add a task: {\"mode\":\"tasks\",\"text\":\"<task>\"}\n- open a section: {\"mode\":\"notes|focus|games|calendar|collection\"}\nCopy the user's text verbatim into \"text\". Do not translate or answer it yourself in the chat; the app shows the result.",
   "ui": {
     "bundle": {
       "format": "static-spa",
@@ -12,9 +12,19 @@
     },
     "views": [
       {
-        "name": "main",
+        "name": "pet",
         "title": "Desktop Companion",
         "default": true,
+        "transparent": true,
+        "default_size": { "w": 280, "h": 460 },
+        "min_size": { "w": 200, "h": 320 },
+        "resizable": true,
+        "single_instance": true
+      },
+      {
+        "name": "main",
+        "title": "Desktop Companion",
+        "default": false,
         "default_size": { "w": 440, "h": 720 },
         "min_size": { "w": 360, "h": 560 },
         "resizable": true,
@@ -25,7 +35,7 @@
       "llm": ["complete", "stream"],
       "audio": ["speak"],
       "storage": ["get", "set"],
-      "window": ["set_title", "ready"]
+      "window": ["set_title", "ready", "open_view", "resize"]
     },
     "csp_overrides": {
       "script-src": ["'wasm-unsafe-eval'"]

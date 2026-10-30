@@ -23,6 +23,8 @@ import { Stage } from './stage.js';
 import { Voice } from './voice.js';
 import { mountGames } from './games.js';
 import { mountCalendar, mountCollection, mountFocus, mountNotes } from './extras.js';
+import { connectHost, load, save } from './host.js';
+import { runPet } from './pet.js';
 
 const $ = (id) => document.getElementById(id);
 const KEY = { settings: 'settings', history: 'chat/history', tasks: 'tasks', progress: 'progress' };
@@ -49,37 +51,7 @@ const t = (key) => {
 let stage;
 const voice = new Voice((level) => stage && stage.setMouth(level));
 
-// ---------------------------------------------------------------- host / storage
-
-async function connectHost() {
-  try {
-    const { AnnaAppRuntime } = await import('/static/anna-apps/_sdk/latest/index.js');
-    state.anna = await AnnaAppRuntime.connect();
-  } catch (e) {
-    console.warn('[companion] no Anna host:', e);
-    state.anna = null;
-  }
-}
-
-async function load(key, fallback) {
-  if (!state.anna) return fallback;
-  try {
-    const r = unwrap(await state.anna.storage.get({ key }));
-    return r && r.exists !== false && r.value != null ? r.value : fallback;
-  } catch (e) {
-    console.warn('[companion] storage.get', key, e);
-    return fallback;
-  }
-}
-
-async function save(key, value) {
-  if (!state.anna) return;
-  try {
-    unwrap(await state.anna.storage.set({ key, value }));
-  } catch (e) {
-    console.warn('[companion] storage.set', key, e);
-  }
-}
+// ---------------------------------------------------------------- errors / LLM
 
 function errorText(e) {
   if (!state.anna) return t('errNoHost');
@@ -465,8 +437,11 @@ function wire() {
 }
 
 async function main() {
-  await connectHost();
+  state.anna = await connectHost();
   const anna = state.anna;
+  // The floating pet window (view "pet") shares this page but runs its own small mode.
+  const view = new URLSearchParams(location.search).get('view') || (anna && anna.viewMeta && anna.viewMeta.name);
+  if (view === 'pet') return runPet(anna);
   state.lang = uiLang((anna && anna.locale) || navigator.language);
   if (anna && typeof anna.onThemeChange === 'function') {
     anna.onThemeChange(({ theme }) => (document.documentElement.dataset.theme = theme));
