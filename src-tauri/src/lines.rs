@@ -134,6 +134,9 @@ pub enum Key {
     CalTomorrowNew,
     // ── Bộ sưu tập (collection.rs): vừa đổi kẹo lấy một món. Biến: {item}.
     ItemUnlocked,
+    // ── macOS: bắt chữ bôi đen cần quyền Trợ năng (selection.rs).
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    MacAccessibility,
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -218,6 +221,7 @@ impl Key {
         Key::CalTomorrowFull,
         Key::CalTomorrowNew,
         Key::ItemUnlocked,
+        Key::MacAccessibility,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -1429,6 +1433,19 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "You unlocked {item}, {you}! 🍬 I love it~",
             "Ta-da~ {item} is yours now! You earned it 💕",
             "{item} is all yours! Candy well spent 🍬✨",
+        ],
+
+        (MacAccessibility, Vi) => &[
+            "{You} ơi, muốn {me} dịch chữ {you} bôi đen thì mở Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Trợ năng rồi bật Desktop Companion nha~",
+            "{Me} chưa được phép đọc chữ {you} bôi đen 🥺 Bật Desktop Companion trong Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Trợ năng giúp {me} nhé!",
+        ],
+        (MacAccessibility, Ja) => &[
+            "選択した文字を翻訳するには、システム設定 > プライバシーとセキュリティ > アクセシビリティ で Desktop Companion をオンにしてね～",
+            "まだ選択した文字を読めないの🥺 システム設定 > プライバシーとセキュリティ > アクセシビリティ で Desktop Companion を許可してね！",
+        ],
+        (MacAccessibility, En) => &[
+            "To translate text you select, turn on Desktop Companion in System Settings > Privacy & Security > Accessibility~",
+            "I can't read the text you select yet 🥺 Please allow Desktop Companion in System Settings > Privacy & Security > Accessibility!",
         ],
     }
 }

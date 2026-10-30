@@ -25,11 +25,13 @@ impl Snapshot {
     }
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 /// Số giây idle từ hai mốc GetTickCount (mili giây, quay vòng sau ~49,7 ngày).
 pub fn idle_from_ticks(now_tick: u32, last_input_tick: u32) -> u64 {
     (now_tick.wrapping_sub(last_input_tick) / 1000) as u64
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 /// Giải mã QUERY_USER_NOTIFICATION_STATE → (fullscreen, locked).
 ///   1 NOT_PRESENT · 2 BUSY · 3 RUNNING_D3D_FULL_SCREEN · 4 PRESENTATION_MODE
 ///   5 ACCEPTS_NOTIFICATIONS · 6 QUIET_TIME · 7 APP (ứng dụng Store toàn màn hình)
@@ -68,9 +70,26 @@ pub fn snapshot() -> Snapshot {
     Snapshot { idle_secs, fullscreen, locked }
 }
 
-#[cfg(not(windows))]
+/// macOS: idle từ CoreGraphics, khoá màn hình từ phiên đăng nhập, toàn màn hình
+/// = cửa sổ trên cùng của app khác phủ kín một màn hình (macos.rs).
+#[cfg(target_os = "macos")]
+pub fn snapshot() -> Snapshot {
+    use crate::macos;
+    Snapshot { idle_secs: macos::idle_secs(), fullscreen: macos::frontmost_fullscreen(), locked: macos::screen_locked() }
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn snapshot() -> Snapshot {
     Snapshot::default()
+}
+
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+/// Khung cửa sổ (x, y, rộng, cao) phủ kín một trong các màn hình (lệch ≤ 1 điểm).
+pub fn covers_display(win: (f64, f64, f64, f64), displays: &[(f64, f64, f64, f64)]) -> bool {
+    let near = |a: f64, b: f64| (a - b).abs() <= 1.0;
+    displays
+        .iter()
+        .any(|d| d.2 > 0.0 && near(win.0, d.0) && near(win.1, d.1) && win.2 >= d.2 - 1.0 && win.3 >= d.3 - 1.0)
 }
 
 // ─── Có mặt / vắng mặt (Phase 11) ────────────────────────────────────────────
@@ -162,7 +181,12 @@ pub fn cpu_times() -> Option<CpuTimes> {
     ok.then(|| CpuTimes { idle: ft(idle), kernel: ft(kernel), user: ft(user) })
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+pub fn cpu_times() -> Option<CpuTimes> {
+    crate::macos::cpu_times().map(|(idle, kernel, user)| CpuTimes { idle, kernel, user })
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn cpu_times() -> Option<CpuTimes> {
     None
 }
@@ -179,7 +203,12 @@ pub fn ram_percent() -> Option<u32> {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+pub fn ram_percent() -> Option<u32> {
+    crate::macos::ram_percent()
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn ram_percent() -> Option<u32> {
     None
 }
@@ -220,6 +249,18 @@ impl Sustain {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn covers_display_needs_the_whole_screen() {
+        let displays = [(0.0, 0.0, 1512.0, 982.0), (1512.0, -200.0, 2560.0, 1440.0)];
+        assert!(covers_display((0.0, 0.0, 1512.0, 982.0), &displays));
+        // Màn hình phụ, lệch nửa điểm vẫn tính.
+        assert!(covers_display((1512.5, -200.0, 2560.0, 1440.0), &displays));
+        // Phóng to (chừa thanh menu) không phải toàn màn hình.
+        assert!(!covers_display((0.0, 33.0, 1512.0, 949.0), &displays));
+        assert!(!covers_display((100.0, 100.0, 800.0, 600.0), &displays));
+        assert!(!covers_display((0.0, 0.0, 1512.0, 982.0), &[]));
+    }
 
     fn snap(idle_secs: u64, locked: bool) -> Snapshot {
         Snapshot { idle_secs, fullscreen: false, locked }

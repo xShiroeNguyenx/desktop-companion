@@ -539,7 +539,11 @@ fn on_battery() -> bool {
     }
     st.ACLineStatus == 0
 }
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn on_battery() -> bool {
+    crate::macos::battery().is_some_and(|(_, ac)| !ac)
+}
+#[cfg(not(any(windows, target_os = "macos")))]
 fn on_battery() -> bool {
     false
 }

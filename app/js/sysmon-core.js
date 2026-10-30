@@ -86,6 +86,7 @@
       dh: '{d} ngày {h} giờ', hm: '{h} giờ {m} phút', m: '{m} phút',
       freeOf: 'còn trống {free} / {total}', usedOf: 'đã dùng {used} / {total}',
       back: 'Quay lại', taskmgr: 'Task Manager', taskmgrTitle: 'Mở Task Manager của Windows',
+      taskmgrMac: 'Activity Monitor', taskmgrMacTitle: 'Mở Activity Monitor của macOS', disk: 'Ổ',
       clickCpu: 'Bấm để xem ứng dụng dùng CPU nhiều nhất', clickRam: 'Bấm để xem ứng dụng dùng RAM nhiều nhất',
       procs: '{n} tiến trình', noProcs: 'Không đọc được danh sách ứng dụng.',
     },
@@ -95,6 +96,7 @@
       dh: '{d}日{h}時間', hm: '{h}時間{m}分', m: '{m}分',
       freeOf: '空き {free} / {total}', usedOf: '使用 {used} / {total}',
       back: '戻る', taskmgr: 'タスクマネージャー', taskmgrTitle: 'Windows のタスクマネージャーを開く',
+      taskmgrMac: 'アクティビティモニタ', taskmgrMacTitle: 'macOS のアクティビティモニタを開く', disk: 'ディスク',
       clickCpu: 'クリックで CPU を多く使うアプリを表示', clickRam: 'クリックでメモリを多く使うアプリを表示',
       procs: '{n} プロセス', noProcs: 'アプリの一覧を読めませんでした。',
     },
@@ -104,6 +106,7 @@
       dh: '{d}d {h}h', hm: '{h}h {m}m', m: '{m}m',
       freeOf: '{free} free of {total}', usedOf: '{used} used of {total}',
       back: 'Back', taskmgr: 'Task Manager', taskmgrTitle: 'Open Windows Task Manager',
+      taskmgrMac: 'Activity Monitor', taskmgrMacTitle: 'Open macOS Activity Monitor', disk: 'Disk',
       clickCpu: 'Click to see the apps using the most CPU', clickRam: 'Click to see the apps using the most RAM',
       procs: '{n} processes', noProcs: "Couldn't read the app list.",
     },
@@ -117,7 +120,14 @@
     return String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
   }
 
-  const api = { T, strings, fill, fmtBytes, fmtRate, fmtUptime, fmtPct, level, face, sparkPoints };
+  /** Nhãn ngắn của ổ đĩa trên widget: "C:" giữ nguyên, tên dài ("Macintosh HD") thành "Ổ". */
+  function diskLabel(drive, t) {
+    const d = String(drive || '').trim();
+    if (!d) return 'C:';
+    return d.length <= 3 ? d : t.disk;
+  }
+
+  const api = { T, strings, fill, diskLabel, fmtBytes, fmtRate, fmtUptime, fmtPct, level, face, sparkPoints };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SysmonCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

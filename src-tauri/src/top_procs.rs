@@ -143,7 +143,15 @@ pub fn processes() -> Vec<Proc> {
     out
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+pub fn processes() -> Vec<Proc> {
+    crate::macos::processes()
+        .into_iter()
+        .map(|(pid, exe, cpu_time, mem)| Proc { pid, exe, cpu_time, mem })
+        .collect()
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 pub fn processes() -> Vec<Proc> {
     Vec::new()
 }
@@ -175,7 +183,18 @@ pub fn top(by: &str) -> Vec<Row> {
     rows
 }
 
-/// Nút "Task Manager" trên bảng: chỉ mở Task Manager, không đóng ứng dụng nào.
+/// Nút "Task Manager" trên bảng: chỉ mở Task Manager (macOS: Activity Monitor),
+/// không đóng ứng dụng nào.
+#[cfg(target_os = "macos")]
+pub fn open_task_manager() -> Result<(), String> {
+    std::process::Command::new("/usr/bin/open")
+        .args(["-a", "Activity Monitor"])
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Không mở được Activity Monitor: {e}"))
+}
+
+#[cfg(not(target_os = "macos"))]
 pub fn open_task_manager() -> Result<(), String> {
     std::process::Command::new("taskmgr.exe")
         .spawn()

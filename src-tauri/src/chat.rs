@@ -473,7 +473,18 @@ fn local_time() -> LocalTime {
 
 #[cfg(not(windows))]
 fn local_time() -> LocalTime {
-    None
+    let local_secs = now_secs() as i64 + reminders::local_offset_min() as i64 * 60;
+    Some(weekday_hm(local_secs))
+}
+
+/// (thứ trong tuần 0 = Chủ nhật, giờ, phút) của một mốc giây đã cộng lệch múi giờ.
+#[cfg_attr(windows, allow(dead_code))]
+fn weekday_hm(local_secs: i64) -> (u16, u16, u16) {
+    let days = local_secs.div_euclid(86_400);
+    let sec_of_day = local_secs.rem_euclid(86_400);
+    // 1970-01-01 là thứ Năm (4).
+    let weekday = (days + 4).rem_euclid(7) as u16;
+    (weekday, (sec_of_day / 3600) as u16, (sec_of_day % 3600 / 60) as u16)
 }
 
 /// System prompt đầy đủ: persona + giờ + task chưa xong (đọc mới mỗi lượt).
@@ -884,6 +895,18 @@ pub fn proactive_line(app: &AppHandle) -> Result<Option<(String, Option<String>)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn weekday_hm_from_local_seconds() {
+        // 1970-01-01 00:00 là thứ Năm.
+        assert_eq!(weekday_hm(0), (4, 0, 0));
+        // 2026-10-29 14:05 (giờ địa phương) là thứ Năm; 20755 ngày kể từ 1970.
+        assert_eq!(weekday_hm(20_755 * 86_400 + 14 * 3600 + 5 * 60), (4, 14, 5));
+        // 2026-11-01 là Chủ nhật.
+        assert_eq!(weekday_hm(20_758 * 86_400 + 23 * 3600 + 59 * 60), (0, 23, 59));
+        // Trước 1970: 1969-12-31 23:30 là thứ Tư.
+        assert_eq!(weekday_hm(-30 * 60), (3, 23, 30));
+    }
 
     fn run(chunks: &[&str]) -> (String, Vec<&'static str>) {
         let mut f = EmotionFilter::default();

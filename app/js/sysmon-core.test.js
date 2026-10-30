@@ -56,3 +56,12 @@ test('biểu đồ CPU: điểm mới nhất ở mép phải', () => {
   assert.equal(S.sparkPoints([50, 50], 100, 20, 3), '50,10 100,10');
   assert.equal(S.sparkPoints([150, -5], 100, 20, 2), '0,0 100,20', 'kẹp 0..100');
 });
+
+test('nhãn ổ đĩa: tên ngắn giữ nguyên, tên dài thành chữ "Ổ"', () => {
+  const t = S.strings('vi');
+  assert.equal(S.diskLabel('C:', t), 'C:');
+  assert.equal(S.diskLabel('Macintosh HD', t), 'Ổ');
+  assert.equal(S.diskLabel('Macintosh HD', S.strings('en')), 'Disk');
+  assert.equal(S.diskLabel('', t), 'C:');
+  assert.equal(S.diskLabel(undefined, t), 'C:');
+});

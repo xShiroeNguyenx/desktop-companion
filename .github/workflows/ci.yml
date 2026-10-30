@@ -42,3 +42,24 @@ jobs:
 
       - name: JS tests
         run: npm test
+
+  # macOS: compile check only. Most OS hooks are Windows-only with no-op
+  # fallbacks, so this catches a new Windows API used without a cfg gate.
+  macos-check:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check --locked

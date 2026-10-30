@@ -33,8 +33,8 @@
     $('cpuBox').title = t.clickCpu;
     $('ramRow').title = t.clickRam;
     $('topBack').title = t.back;
-    $('taskmgr').textContent = t.taskmgr + ' ↗';
-    $('taskmgr').title = t.taskmgrTitle;
+    $('taskmgr').textContent = (data.mac ? t.taskmgrMac : t.taskmgr) + ' ↗';
+    $('taskmgr').title = data.mac ? t.taskmgrMacTitle : t.taskmgrTitle;
   }
 
   function renderStats() {
@@ -57,10 +57,10 @@
     setLevel($('ramRow'), ram && ram.pct);
 
     const disk = st.disk;
-    $('diskK').textContent = disk ? disk.drive : 'C:';
+    $('diskK').textContent = S.diskLabel(disk && disk.drive, t);
     $('diskBar').style.width = disk ? disk.pct + '%' : '0';
     $('diskV').textContent = disk ? `${disk.pct}% · ${S.fill(t.free, { x: S.fmtBytes(disk.total - disk.used) })}` : '–';
-    $('diskRow').title = disk ? S.fill(t.freeOf, { free: S.fmtBytes(disk.total - disk.used), total: S.fmtBytes(disk.total) }) : '';
+    $('diskRow').title = disk ? (disk.drive.length > 3 ? disk.drive + '\n' : '') + S.fill(t.freeOf, { free: S.fmtBytes(disk.total - disk.used), total: S.fmtBytes(disk.total) }) : '';
     setLevel($('diskRow'), disk && disk.pct);
 
     $('netDn').textContent = '↓ ' + (st.net ? S.fmtRate(st.net.rx) : '–');

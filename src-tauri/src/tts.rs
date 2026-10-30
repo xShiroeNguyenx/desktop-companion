@@ -422,7 +422,13 @@ fn windows_synthesize(voice: &str, text: &str) -> Result<Vec<u8>, String> {
     run().map_err(|e| format!("Giọng Windows lỗi: {}", e.message()))
 }
 
-#[cfg(not(windows))]
+/// macOS: engine "windows" (giọng có sẵn của hệ điều hành) dùng lệnh `say`.
+#[cfg(target_os = "macos")]
+fn windows_synthesize(voice: &str, text: &str) -> Result<Vec<u8>, String> {
+    crate::macos::say_synthesize(voice, text)
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn windows_synthesize(_voice: &str, _text: &str) -> Result<Vec<u8>, String> {
     Err("Giọng Windows chỉ có trên Windows.".to_string())
 }
@@ -440,9 +446,30 @@ fn windows_voices() -> Result<Vec<(String, String)>, String> {
     run().map_err(|e| format!("Không đọc được danh sách giọng Windows: {}", e.message()))
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn windows_voices() -> Result<Vec<(String, String)>, String> {
+    crate::macos::say_voices()
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn windows_voices() -> Result<Vec<(String, String)>, String> {
     Ok(Vec::new())
+}
+
+/// Đọc output của `say -v '?'`, mỗi dòng dạng
+/// "Eddy (English (UK)) en_GB    # Hello! My name is Eddy."
+/// → (id = tên giọng, nhãn "Tên (en_GB)"). Dòng không đúng dạng thì bỏ.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn parse_say_voices(out: &str) -> Vec<(String, String)> {
+    out.lines()
+        .filter_map(|line| {
+            let head = line.split(" # ").next()?.trim_end();
+            let (name, locale) = head.rsplit_once(char::is_whitespace)?;
+            let name = name.trim();
+            let locale_ok = locale.len() >= 2 && locale.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+            (!name.is_empty() && locale_ok).then(|| (name.to_string(), format!("{name} ({locale})")))
+        })
+        .collect()
 }
 
 // ─── API cho phần còn lại của app ────────────────────────────────────────────
@@ -588,6 +615,25 @@ impl Speaker {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parse_say_voices_reads_names_with_spaces() {
+        let out = "Alex                en_US    # Most people recognize me by my voice.
+                   Eddy (English (UK)) en_GB    # Hello! My name is Eddy.
+                   Linh                vi_VN    # Xin chào, tên tôi là Linh.
+                   
+                   garbage
+";
+        let v = parse_say_voices(out);
+        assert_eq!(
+            v,
+            vec![
+                ("Alex".to_string(), "Alex (en_US)".to_string()),
+                ("Eddy (English (UK))".to_string(), "Eddy (English (UK)) (en_GB)".to_string()),
+                ("Linh".to_string(), "Linh (vi_VN)".to_string()),
+            ]
+        );
+    }
 
     #[test]
     fn clean_strips_actions_brackets_and_emoji() {

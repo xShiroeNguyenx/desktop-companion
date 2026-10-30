@@ -233,7 +233,28 @@ Tải bộ cài mới nhất ở trang [Releases](../../releases):
 
 Chạy file đó, app sẽ tự khởi động và nằm ở khay hệ thống (system tray).
 
-> Hiện chỉ hỗ trợ Windows. Cần WebView2 runtime (đã có sẵn trên Windows 10/11).
+> Windows cần WebView2 runtime (đã có sẵn trên Windows 10/11).
+
+### macOS (bản thử)
+
+- **`Desktop Companion_x.y.z_universal.dmg`**: một file dùng cho cả Mac Intel lẫn Apple Silicon.
+
+Mở file rồi kéo app vào **Applications**. App chưa được Apple công chứng (notarize)
+nên lần đầu mở sẽ báo "bị hỏng" hoặc "không mở được". Chạy lệnh này một lần trong
+Terminal rồi mở lại app:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Desktop Companion.app"
+```
+
+Muốn dịch chữ bôi đen ở app khác, app cần quyền **Trợ năng** (Accessibility), vì
+nó gửi ⌘C để chép đoạn đang chọn. Lần đầu bạn bôi đen, macOS sẽ hỏi quyền này và pet
+chỉ chỗ bật: **Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng → Desktop
+Companion**. Không cấp quyền thì các tính năng khác vẫn chạy bình thường.
+
+> App chưa ký bằng Apple Developer ID nên sau mỗi lần cập nhật, macOS có thể coi nó
+> là app mới. Nếu bôi đen không còn hiện bông hoa, xoá Desktop Companion khỏi danh
+> sách Trợ năng bằng nút **−** rồi bật lại.
 
 ---
 

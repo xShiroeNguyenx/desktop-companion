@@ -222,7 +222,28 @@
 
 実行するとアプリが自動起動し、システムトレイに常駐します。
 
-> 現在は Windows のみ対応。WebView2 ランタイムが必要（Windows 10/11 にはプリインストール）。
+> Windows では WebView2 ランタイムが必要（Windows 10/11 にはプリインストール）。
+
+### macOS（プレビュー）
+
+- **`Desktop Companion_x.y.z_universal.dmg`**：Intel・Apple Silicon 両対応の 1 ファイル。
+
+開いてアプリを **アプリケーション** にドラッグします。Apple の公証（notarization）を
+受けていないため、初回起動時に「壊れている」「開けません」と表示されます。ターミナルで
+一度だけ次を実行してから、もう一度開いてください:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Desktop Companion.app"
+```
+
+他のアプリで選択した文字を翻訳するには **アクセシビリティ** の許可が必要です（選択部分を
+⌘C でコピーするため）。初めて文字を選択したときに macOS が許可を求め、ペットが設定場所を
+教えてくれます：**システム設定 → プライバシーとセキュリティ → アクセシビリティ →
+Desktop Companion**。許可しなくても、ほかの機能はそのまま使えます。
+
+> Apple Developer ID で署名していないため、アップデートのたびに macOS が別のアプリと
+> みなすことがあります。選択しても花が出なくなったら、アクセシビリティの一覧から
+> Desktop Companion を **−** で削除し、もう一度オンにしてください。
 
 ---
 

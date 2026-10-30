@@ -25,6 +25,8 @@ mod monitor_net;
 mod monitor_pin;
 mod lunar;
 mod llm;
+#[cfg(target_os = "macos")]
+mod macos;
 mod naming;
 mod note_pins;
 mod notes;
@@ -514,10 +516,16 @@ fn register_capture_hotkey(app: &AppHandle, spec: &str) -> bool {
 // app's clipboard. Never left registered, so the system Ctrl+C is untouched
 // the rest of the time — and the selection capture's own simulated Ctrl+C is
 // only fired after this has been released (see selection::worker).
+/// Phím "sao chép" của hệ điều hành: Ctrl+C, trên macOS là Cmd+C.
+#[cfg(target_os = "macos")]
+const COPY_MODIFIER: tauri_plugin_global_shortcut::Modifiers = tauri_plugin_global_shortcut::Modifiers::SUPER;
+#[cfg(not(target_os = "macos"))]
+const COPY_MODIFIER: tauri_plugin_global_shortcut::Modifiers = tauri_plugin_global_shortcut::Modifiers::CONTROL;
+
 pub(crate) fn set_copy_hotkey(app: &AppHandle, on: bool) {
-    use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+    use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Shortcut};
     let gs = app.global_shortcut();
-    let sc = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyC);
+    let sc = Shortcut::new(Some(COPY_MODIFIER), Code::KeyC);
     if on {
         let _ = gs.register(sc);
     } else {
@@ -543,7 +551,7 @@ fn main() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    use tauri_plugin_global_shortcut::{Code, Modifiers};
+                    use tauri_plugin_global_shortcut::Code;
                     if event.state() != ShortcutState::Pressed {
                         return;
                     }
@@ -556,7 +564,7 @@ fn main() {
                     } else if launcher::is_shortcut(shortcut) {
                         // 🔎 Ô mở nhanh.
                         launcher::toggle(app);
-                    } else if shortcut.matches(Modifiers::CONTROL, Code::KeyC) {
+                    } else if shortcut.matches(COPY_MODIFIER, Code::KeyC) {
                         let ok = selection::copy_last_selection();
                         if let Some(w) = app.get_webview_window("flower") {
                             let _ = w.emit("flower-copied", ok);

@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-30
+
+### Added
+- **🍎 macOS build (preview).** Each release now also ships
+  `Desktop Companion_x.y.z_universal.dmg` for Intel and Apple Silicon Macs,
+  with auto-update like on Windows. The app is not notarized yet, so the first
+  launch needs one Terminal command (see Install in the README).
+  - Selecting text in any app shows the flower, as on Windows. It needs the
+    Accessibility permission: macOS asks the first time and the pet tells you
+    where to turn it on.
+  - The system monitor widget reads CPU, memory, the startup disk, network,
+    battery and uptime, and its busiest-apps list opens Activity Monitor.
+  - The pet notices when you are away, the screen is locked or an app is
+    full screen, and weather effects pause on battery, like on Windows.
+
+### Fixed
+- On macOS, reminders, deadlines and the pet's sense of the time of day use
+  your local time zone instead of UTC.
+
 ## [0.11.0] - 2026-10-29
 
 ### Added
@@ -855,6 +874,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.11.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.1
 [0.11.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.0
 [0.10.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.1
 [0.10.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.0

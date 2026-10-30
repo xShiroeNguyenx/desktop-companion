@@ -164,23 +164,46 @@ fn uptime_secs() -> u64 {
     unsafe { windows_sys::Win32::System::SystemInformation::GetTickCount64() / 1000 }
 }
 
-#[cfg(not(windows))]
+// ─── macOS (macos.rs) ────────────────────────────────────────────────────────
+
+#[cfg(target_os = "macos")]
+fn ram_bytes() -> Option<(u64, u64)> {
+    crate::macos::ram_bytes()
+}
+#[cfg(target_os = "macos")]
+pub(crate) fn system_disk() -> Option<(String, u64, u64)> {
+    crate::macos::system_disk()
+}
+#[cfg(target_os = "macos")]
+fn net_totals() -> Option<NetTotals> {
+    crate::macos::net_totals().map(|(rx, tx)| NetTotals { rx, tx })
+}
+#[cfg(target_os = "macos")]
+pub(crate) fn battery() -> Option<(u32, bool)> {
+    crate::macos::battery()
+}
+#[cfg(target_os = "macos")]
+fn uptime_secs() -> u64 {
+    crate::macos::uptime_secs()
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn ram_bytes() -> Option<(u64, u64)> {
     None
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub(crate) fn system_disk() -> Option<(String, u64, u64)> {
     None
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn net_totals() -> Option<NetTotals> {
     None
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 pub(crate) fn battery() -> Option<(u32, bool)> {
     None
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn uptime_secs() -> u64 {
     0
 }
@@ -195,6 +218,8 @@ pub fn view(app: &AppHandle) -> Value {
     json!({
         "pinTop": s.sysmon_pin.top,
         "lang": a.lang.code(),
+        // Nút "Task Manager" thành "Activity Monitor" trên macOS.
+        "mac": cfg!(target_os = "macos"),
         "skin": crate::collection::effective_skin(&c),
         "deco": crate::collection::effective_widget_deco(&c),
         "miuDir": crate::collection::effective_miu_dir(&c),

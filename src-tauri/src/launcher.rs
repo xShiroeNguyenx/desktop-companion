@@ -122,7 +122,12 @@ fn cursor() -> (i32, i32) {
     (p.x, p.y)
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn cursor() -> (i32, i32) {
+    crate::macos::cursor_pos()
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn cursor() -> (i32, i32) {
     (0, 0)
 }

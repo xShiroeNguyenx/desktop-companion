@@ -110,7 +110,21 @@ pub fn local_offset_min() -> i32 {
     ((diff_min / 15.0).round() * 15.0) as i32
 }
 
-#[cfg(not(windows))]
+#[cfg(unix)]
+pub fn local_offset_min() -> i32 {
+    // SAFETY: time() và localtime_r() chỉ ghi vào biến ta truyền vào.
+    let gmtoff = unsafe {
+        let t = libc::time(std::ptr::null_mut());
+        let mut tm: libc::tm = std::mem::zeroed();
+        if libc::localtime_r(&t, &mut tm).is_null() {
+            return 0;
+        }
+        tm.tm_gmtoff
+    };
+    (gmtoff / 60) as i32
+}
+
+#[cfg(not(any(windows, unix)))]
 pub fn local_offset_min() -> i32 {
     0
 }

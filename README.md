@@ -259,7 +259,29 @@ Download the latest installer from the [Releases](../../releases) page:
 
 Run it and the app launches automatically. It lives in the system tray.
 
-> Windows only for now. Requires the WebView2 runtime (preinstalled on Windows 10/11).
+> Windows needs the WebView2 runtime (preinstalled on Windows 10/11).
+
+### macOS (preview)
+
+- **`Desktop Companion_x.y.z_universal.dmg`**: one file for both Intel and Apple Silicon Macs.
+
+Open it and drag the app to **Applications**. The app is not notarized by Apple,
+so the first launch says it "is damaged" or "can't be opened". Run this once in
+Terminal, then open the app again:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Desktop Companion.app"
+```
+
+To translate text you select in other apps, the app needs the **Accessibility**
+permission (it sends ⌘C to copy the selection). The first time you select text,
+macOS asks for it, and the pet tells you where to turn it on: **System Settings →
+Privacy & Security → Accessibility → Desktop Companion**. Without it, everything
+else still works.
+
+> After each update macOS may treat the app as new, because it is not signed with
+> an Apple Developer ID. If text capture stops working, remove Desktop Companion
+> from the Accessibility list with **−** and turn it on again.
 
 ---
 

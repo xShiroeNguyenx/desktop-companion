@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.11.0"
+version = "0.11.1"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -9,7 +9,9 @@ license = "MIT"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "image-png"] }
+# macos-private-api: cửa sổ trong suốt (pet, widget) trên macOS; đi cùng
+# `app.macOSPrivateApi` trong tauri.conf.json. Không ảnh hưởng bản Windows.
+tauri = { version = "2", features = ["tray-icon", "image-png", "macos-private-api"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
@@ -41,6 +43,10 @@ minisign-verify = "0.2"
 [dev-dependencies]
 # Test chữ ký manifest: sinh khoá lúc chạy, ký, rồi kiểm bằng minisign-verify.
 minisign = "0.7"
+
+# Giờ địa phương trên macOS (reminders::local_offset_min): localtime_r + tm_gmtoff.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 # Win32 access: click-through refresh, the WH_MOUSE_LL global hook, SendInput
 # (simulated Ctrl+C), and cursor position.

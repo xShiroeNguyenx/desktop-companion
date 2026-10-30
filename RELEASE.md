@@ -61,14 +61,42 @@ The site is served at **https://desktop.techdecoded.net/** (custom domain):
    ```
 
 3. **CI does the rest** (`.github/workflows/release.yml`):
-   - builds the NSIS + MSI installers,
+   - builds the NSIS + MSI installers (Windows) and a universal `.dmg` (macOS),
    - signs the update artifacts and generates `latest.json`,
    - creates a **draft** GitHub Release with everything attached.
 
-4. **Publish**: go to **Releases**, open the draft, click **Publish release**.
+4. **Check the draft** before publishing. Both matrix jobs (`windows-latest`,
+   `macos-latest`) must be green; with `fail-fast: false` one can fail while the
+   other still attaches its files. GitHub turns the space in file names into a
+   dot, so the draft should have:
+   - Windows: `Desktop.Companion_x.y.z_x64-setup.exe` and `…_x64_en-US.msi`, each with a `.sig`;
+   - macOS: `Desktop.Companion_x.y.z_universal.dmg` and an updater `….app.tar.gz` with its `.sig`;
+   - `latest.json` listing the `windows-x86_64*` platforms **and** macOS ones
+     (`darwin-aarch64` / `darwin-x86_64`, or `darwin-universal`). If the macOS
+     entries are missing, Macs will not see the update: re-run the macOS job
+     before publishing.
+
+5. **Publish**: go to **Releases**, open the draft, click **Publish release**.
 
 That's it. Every running app on an older version will detect the new release on
 its next launch and offer to update.
+
+## macOS build notes
+
+- The `.dmg` is **ad-hoc signed** (`bundle.macOS.signingIdentity: "-"`) and **not
+  notarized**, so no Apple secrets are needed in CI. Users clear the quarantine
+  flag once (`xattr -dr com.apple.quarantine …`, see Install in the README).
+- Because the signature is ad-hoc, macOS may treat each update as a new app and
+  drop its **Accessibility** permission (text capture). The README tells users to
+  remove and re-add the app in that list.
+- Transparent windows need Tauri's `macos-private-api` feature and
+  `app.macOSPrivateApi: true`; both are already set. Apps using the private API
+  cannot go to the Mac App Store, which is fine for GitHub releases.
+- CI's `macos-check` job only runs `cargo check`. The first real macOS build of
+  each release is the release workflow itself, so test the `.dmg` on a Mac
+  before publishing the draft.
+- To notarize later: add an Apple Developer ID certificate and the `APPLE_*`
+  secrets that `tauri-action` reads, and replace `signingIdentity: "-"`.
 
 ## Releasing a Live2D model (separate download)
 

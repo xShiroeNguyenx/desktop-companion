@@ -6,18 +6,18 @@
 <meta name="theme-color" content="#140d18" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <title>Desktop Companion — a Live2D pet that translates, replies & remembers</title>
-<meta name="description" content="A standalone Live2D desktop pet for Windows you can chat with: AI translation, quick reply and tasks over any app, plus reminders, focus sessions, a lunar calendar, weather widgets, mini games and a collection of characters to unlock. Powered by Claude or Gemini." />
+<meta name="description" content="A standalone Live2D desktop pet for Windows and macOS you can chat with: AI translation, quick reply and tasks over any app, plus reminders, focus sessions, a lunar calendar, weather widgets, mini games and a collection of characters to unlock. Powered by Claude or Gemini." />
 <link rel="canonical" href="https://desktop.techdecoded.net/" />
 <meta property="og:title" content="Desktop Companion — a Live2D pet that translates, replies & remembers" />
-<meta property="og:description" content="A standalone Live2D desktop pet for Windows with built-in AI translation, quick reply and task saving — works over any app." />
+<meta property="og:description" content="A standalone Live2D desktop pet for Windows and macOS with built-in AI translation, quick reply and task saving — works over any app." />
 <meta property="og:url" content="https://desktop.techdecoded.net/" />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://desktop.techdecoded.net/hiyori.png" />
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication",
  "name":"Desktop Companion","applicationCategory":"UtilitiesApplication",
- "operatingSystem":"Windows",
- "description":"A standalone Live2D desktop pet for Windows with built-in AI translation, quick reply and task saving.",
+ "operatingSystem":"Windows, macOS",
+ "description":"A standalone Live2D desktop pet for Windows and macOS with built-in AI translation, quick reply and task saving.",
  "url":"https://desktop.techdecoded.net/",
  "downloadUrl":"https://github.com/xShiroeNguyenx/desktop-companion/releases/latest",
  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
@@ -225,14 +225,14 @@
 
 <header class="hero" id="top">
   <div class="wrap">
-    <span class="eyebrow"><span class="dot"></span> Open-source · Local-first · Windows · Claude &amp; Gemini</span>
+    <span class="eyebrow"><span class="dot"></span> Open-source · Local-first · Windows &amp; macOS · Claude &amp; Gemini</span>
     <h1>A desktop pet that<br><span class="grad">translates, replies &amp; remembers.</span></h1>
-    <p class="lead">Desktop Companion is a standalone Live2D buddy for Windows. Highlight text in <b>any</b> app — Teams, browsers, Word — and a 🌸 appears: <b>translate instantly</b>, <b>draft a reply</b>, or <b>save it as a task</b>. Powered by your own Claude or Gemini key.</p>
+    <p class="lead">Desktop Companion is a standalone Live2D buddy for Windows and macOS. Highlight text in <b>any</b> app — Teams, browsers, Word — and a 🌸 appears: <b>translate instantly</b>, <b>draft a reply</b>, or <b>save it as a task</b>. Powered by your own Claude or Gemini key.</p>
     <div class="hero-cta">
-      <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download for Windows</a>
+      <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download for Windows / macOS</a>
       <a class="btn" href="#how">See how it works</a>
     </div>
-    <p class="hero-note">Free &amp; open-source · NSIS &amp; MSI installers on <a href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer" style="color:var(--accent)">Releases</a> — or build from source: <code>git clone … &amp;&amp; npm install &amp;&amp; npm run dev</code></p>
+    <p class="hero-note">Free &amp; open-source · Windows installers and a macOS <code>.dmg</code> (preview) on <a href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer" style="color:var(--accent)">Releases</a> — or build from source: <code>git clone … &amp;&amp; npm install &amp;&amp; npm run dev</code></p>
 
     <!-- hero scene -->
     <div class="scene">
@@ -276,7 +276,7 @@
       <div class="card reveal"><div class="ic">💞</div><h3>Chat with your pet</h3><p>Replies stream into the bubble while her face follows the mood. She knows your unfinished tasks, saves new ones when you ask, and now and then checks in on you.</p></div>
       <div class="card reveal"><div class="ic">💬</div><h3>Quick reply</h3><p>Type your reply in Vietnamese; the AI writes a natural answer in the message's language (EN / JA / …).</p></div>
       <div class="card reveal"><div class="ic">📝</div><h3>Save tasks</h3><p>Turn any selection into a TODO and manage it in the Tasks window — survives restarts.</p></div>
-      <div class="card reveal"><div class="ic">⏰</div><h3>Deadlines &amp; reminders</h3><p>Tasks with due times, Windows notifications, and gentle nudges to rest your eyes, drink water and stretch.</p></div>
+      <div class="card reveal"><div class="ic">⏰</div><h3>Deadlines &amp; reminders</h3><p>Tasks with due times, system notifications, and gentle nudges to rest your eyes, drink water and stretch.</p></div>
       <div class="card reveal"><div class="ic">🍅</div><h3>Focus sessions</h3><p>Pomodoro-style focus and break timers; the pet keeps quiet while you work and cheers when you finish.</p></div>
       <div class="card reveal"><div class="ic">💗</div><h3>A bond that grows</h3><p>Days together, finished tasks and focus sessions raise your friendship level — and she remembers your birthday.</p></div>
       <div class="card reveal"><div class="ic">🌦️</div><h3>Weather effects</h3><p>Rain, snow, cherry blossoms or the real weather in your city across the whole screen, never blocking your mouse.</p></div>
@@ -465,7 +465,7 @@ Dịch sang: Tiếng Việt</div>
     <div class="grid">
       <div class="card reveal"><div class="ic">💾</div><h3>Local storage</h3><p>Settings, tasks &amp; chat history are plain JSON in your app config folder — yours to inspect, back up or clear.</p></div>
       <div class="card reveal"><div class="ic">🔑</div><h3>Your own key</h3><p>Calls go directly from your machine to Anthropic / Google with the key you provide. No middle server.</p></div>
-      <div class="card reveal"><div class="ic">🪶</div><h3>Tiny &amp; fast</h3><p>Built on Tauri 2 — a ~33 MB installer and ~45 MB RAM, starting with Windows.</p></div>
+      <div class="card reveal"><div class="ic">🪶</div><h3>Tiny &amp; fast</h3><p>Built on Tauri 2 — a ~33 MB installer and ~45 MB RAM, starting with your computer.</p></div>
     </div>
   </div>
 </section>

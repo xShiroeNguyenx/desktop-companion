@@ -1,12 +1,13 @@
-// Global text-selection capture (Windows).
+// Global text-selection capture (Windows, macOS).
 //
 // Two triggers:
-//   - Auto: a low-level mouse hook (WH_MOUSE_LL) detects a drag-select
+//   - Auto: a low-level mouse hook (WH_MOUSE_LL; on macOS a 60 Hz poll of the
+//     cursor and left button) detects a drag-select
 //     (left button down → moved past a threshold → up) and queues a capture.
 //   - Hotkey: request_capture_at_cursor() is called from the global shortcut
 //     handler.
 //
-// Capture itself (save clipboard → simulated Ctrl+C → read → restore clipboard)
+// Capture itself (save clipboard → simulated Ctrl+C / Cmd+C → read → restore clipboard)
 // runs on a dedicated worker thread so the hook callback stays fast. On success
 // we emit "selection-captured" { text, x, y, source } to the app and log it.
 
@@ -101,6 +102,8 @@ pub fn init(app: &AppHandle) {
 
     #[cfg(target_os = "windows")]
     std::thread::spawn(hook_thread);
+    #[cfg(target_os = "macos")]
+    std::thread::spawn(mac_poll_thread);
 }
 
 pub fn set_auto_enabled(enabled: bool) {
@@ -155,9 +158,12 @@ fn lookat_emit_thread() {
 }
 
 pub fn request_capture_at_cursor() {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
+        #[cfg(target_os = "windows")]
         let (x, y) = unsafe { cursor_pos() };
+        #[cfg(target_os = "macos")]
+        let (x, y) = crate::macos::cursor_pos();
         if let Some(tx) = SENDER.get() {
             let _ = tx.send(CaptureReq {
                 x,
@@ -234,12 +240,21 @@ fn truncate(s: &str, max: usize) -> String {
 // Save the current clipboard text, fire Ctrl+C, poll for the clipboard to
 // change, then restore the original clipboard. Returns the newly copied text.
 fn capture_selection_text() -> Option<String> {
+    // macOS bỏ phím giả mà không báo lỗi nếu app chưa có quyền Trợ năng: kiểm
+    // trước, thiếu thì nhắc người dùng thay vì "bắt" mà không bao giờ ra chữ.
+    #[cfg(target_os = "macos")]
+    if !mac_can_send_keys() {
+        return None;
+    }
+
     let old = read_clipboard();
 
     #[cfg(target_os = "windows")]
     unsafe {
         send_ctrl_c();
     }
+    #[cfg(target_os = "macos")]
+    crate::macos::send_cmd_c();
 
     let mut captured: Option<String> = None;
     for _ in 0..12 {
@@ -392,6 +407,7 @@ fn is_blocked_foreground() -> bool {
 }
 
 #[cfg(not(target_os = "windows"))]
+#[allow(dead_code)]
 fn is_blocked_foreground() -> bool {
     false
 }
@@ -474,4 +490,65 @@ unsafe fn send_ctrl_c() {
         inputs.as_mut_ptr(),
         std::mem::size_of::<INPUT>() as i32,
     );
+}
+
+// ─── macOS ───────────────────────────────────────────────────────────────────
+
+/// Đã nhắc về quyền Trợ năng trong phiên này (mỗi phiên chỉ nhắc một lần).
+#[cfg(target_os = "macos")]
+static MAC_AX_ASKED: AtomicBool = AtomicBool::new(false);
+
+/// Có quyền gửi phím giả. Lần đầu thiếu quyền: macOS hiện hộp thoại mời mở
+/// Cài đặt > Quyền riêng tư & Bảo mật > Trợ năng, và pet nói cần làm gì.
+#[cfg(target_os = "macos")]
+fn mac_can_send_keys() -> bool {
+    if crate::macos::accessibility_trusted(false) {
+        return true;
+    }
+    if !MAC_AX_ASKED.swap(true, Ordering::SeqCst) {
+        log_sel("[selection] no Accessibility permission, asking");
+        crate::macos::accessibility_trusted(true);
+        if let Some(app) = APP.get() {
+            let a = crate::persona::address(&crate::store::load_settings(app));
+            let text = crate::lines::line(crate::lines::Key::MacAccessibility, &a, &[]);
+            let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": text }));
+        }
+    } else {
+        log_sel("[selection] skip: still no Accessibility permission");
+    }
+    false
+}
+
+/// Không có hook chuột toàn cục nào dùng được mà không xin quyền, nên đọc vị trí
+/// con trỏ và nút trái 60 lần mỗi giây (hai lời gọi CoreGraphics, rất nhẹ). Một cú
+/// kéo bôi đen kéo dài hơn nhiều so với 16 ms nên không bị lỡ.
+#[cfg(target_os = "macos")]
+fn mac_poll_thread() {
+    let mut was_down = false;
+    let mut last = (i32::MIN, i32::MIN);
+    loop {
+        std::thread::sleep(Duration::from_millis(16));
+        let (x, y) = crate::macos::cursor_pos();
+        if (x, y) != last {
+            last = (x, y);
+            MOVE_X.store(x, Ordering::Relaxed);
+            MOVE_Y.store(y, Ordering::Relaxed);
+            MOVE_SEQ.fetch_add(1, Ordering::Relaxed);
+        }
+        let down = crate::macos::left_button_down();
+        if down && !was_down {
+            DOWN_X.store(x, Ordering::SeqCst);
+            DOWN_Y.store(y, Ordering::SeqCst);
+            DOWN_ACTIVE.store(true, Ordering::SeqCst);
+        } else if !down && was_down && DOWN_ACTIVE.swap(false, Ordering::SeqCst) && AUTO_ENABLED.load(Ordering::SeqCst) {
+            let dx = (x - DOWN_X.load(Ordering::SeqCst)) as f64;
+            let dy = (y - DOWN_Y.load(Ordering::SeqCst)) as f64;
+            if (dx * dx + dy * dy).sqrt() >= DRAG_THRESHOLD_PX {
+                if let Some(tx) = SENDER.get() {
+                    let _ = tx.send(CaptureReq { x, y, source: Source::Drag });
+                }
+            }
+        }
+        was_down = down;
+    }
 }
