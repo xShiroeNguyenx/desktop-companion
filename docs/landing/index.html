@@ -187,6 +187,22 @@
     filter: drop-shadow(0 10px 18px rgba(255,115,171,.25)); }
   .cast figcaption { margin-top: 8px; font-weight: 700; }
   .cast small { display: block; color: var(--muted); font-weight: 400; font-size: 13px; }
+  /* Live2D characters, grouped by line (Kawaii, Pastel, Aristocrat, Angel/Lolita/Dancer) */
+  .lines { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 900px){ .lines { grid-template-columns: 1fr; } }
+  .line { background: linear-gradient(180deg, var(--card), var(--panel)); border: 1px solid var(--edge); border-radius: 18px; padding: 16px; }
+  .line-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .line-head h3 { margin: 0; font-size: 18px; }
+  .line-head span { color: var(--muted); font-size: 13px; }
+  .line-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+  .line-cards figure { margin: 0; text-align: center; }
+  .line-cards img { width: 100%; height: 230px; object-fit: contain; object-position: center bottom; }
+  .line-cards .gothic img { filter: drop-shadow(0 10px 16px rgba(192,132,252,.35)); }
+  .line-cards .pink img { filter: drop-shadow(0 10px 16px rgba(255,115,171,.35)); }
+  .line-cards .snow img { filter: drop-shadow(0 10px 16px rgba(124,140,255,.35)); }
+  .line-cards figcaption { margin-top: 6px; font-weight: 700; font-size: 14px; }
+  .line-cards small { display: block; color: var(--muted); font-weight: 400; font-size: 12.5px; }
+  .chars-note { margin: 18px auto 0; max-width: 760px; text-align: center; color: var(--muted); font-size: 14.5px; }
   .miu-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 26px 0 8px; }
   .miu-row figure { margin: 0; text-align: center; }
   .miu-row img { width: 130px; height: 130px; object-fit: contain; }
@@ -216,6 +232,7 @@
       <a class="hide-sm" href="#games">Mini Games</a>
       <a class="hide-sm" href="#widgets">Widgets</a>
       <a class="hide-sm" href="#collection">Collection</a>
+      <a class="hide-sm" href="#characters">Characters</a>
       <a class="hide-sm" href="#privacy">Privacy</a>
       <a class="btn" href="https://github.com/xShiroeNguyenx/desktop-companion" target="_blank" rel="noreferrer">★ GitHub</a>
       <a class="btn primary" href="https://github.com/xShiroeNguyenx/desktop-companion/releases/latest" target="_blank" rel="noreferrer">↓ Download</a>
@@ -357,6 +374,52 @@
       <figure><img class="shot" src="img/settings-neko.webp" alt="Settings in the Gothic Lolita theme" loading="lazy" width="1200" height="845" /><figcaption>…and Neko Lounge turns them gothic lolita.</figcaption></figure>
       <figure><img class="shot" src="img/collection.webp" alt="Collection window" loading="lazy" width="1100" height="720" /><figcaption><b>The Collection</b> — trade candy, preview effects, switch sets any time.</figcaption></figure>
     </div>
+  </div>
+</section>
+
+<section id="characters">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">13 Live2D characters to unlock</div>
+      <h2>🎭 Meet the cast</h2>
+      <p>Every character is a full Live2D model with smile, sad, angry, surprised, shy and wink expressions and her own motions. Unlock one with candy in the Collection, or win her from the 🎰 Candy Capsule. Press <b>Use</b> and she takes over your desktop right away.</p>
+    </div>
+    <div class="lines reveal">
+      <div class="line">
+        <div class="line-head"><h3>🐰 Kawaii</h3><span>oversized jackets &amp; bunny sneakers</span></div>
+        <div class="line-cards">
+          <figure class="gothic"><img src="img/model-gothic-kawaii.webp" alt="Gothic Kawaii" loading="lazy" width="342" height="512" /><figcaption>Gothic Kawaii<small>5000 🍬</small></figcaption></figure>
+          <figure class="pink"><img src="img/model-pink-kawaii.webp" alt="Pink Kawaii" loading="lazy" width="342" height="512" /><figcaption>Pink Kawaii<small>5000 🍬</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-kawaii.webp" alt="Snow Kawaii" loading="lazy" width="342" height="512" /><figcaption>Snow Kawaii<small>5000 🍬</small></figcaption></figure>
+        </div>
+      </div>
+      <div class="line">
+        <div class="line-head"><h3>🎀 Pastel</h3><span>frilly dresses in soft pastels</span></div>
+        <div class="line-cards">
+          <figure class="gothic"><img src="img/model-gothic-pastel.webp" alt="Gothic Pastel" loading="lazy" width="342" height="512" /><figcaption>Gothic Pastel<small>7500 🍬</small></figcaption></figure>
+          <figure class="pink"><img src="img/model-pink-pastel.webp" alt="Pink Pastel" loading="lazy" width="342" height="512" /><figcaption>Pink Pastel<small>7500 🍬</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-pastel.webp" alt="Snow Pastel" loading="lazy" width="342" height="512" /><figcaption>Snow Pastel<small>7500 🍬</small></figcaption></figure>
+        </div>
+      </div>
+      <div class="line">
+        <div class="line-head"><h3>👑 Aristocrat</h3><span>lace, ribbons &amp; long curls</span></div>
+        <div class="line-cards">
+          <figure class="gothic"><img src="img/model-gothic-aristocrat.webp" alt="Gothic Aristocrat" loading="lazy" width="342" height="512" /><figcaption>Gothic Aristocrat<small>10000 🍬</small></figcaption></figure>
+          <figure class="pink"><img src="img/model-pink-aristocrat.webp" alt="Pink Aristocrat" loading="lazy" width="342" height="512" /><figcaption>Pink Aristocrat<small>10000 🍬</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-aristocrat.webp" alt="Snow Aristocrat" loading="lazy" width="342" height="512" /><figcaption>Snow Aristocrat<small>10000 🍬</small></figcaption></figure>
+        </div>
+      </div>
+      <div class="line">
+        <div class="line-head"><h3>✨ Angel, Lolita &amp; Dancer</h3><span>one-of-a-kind outfits</span></div>
+        <div class="line-cards">
+          <figure class="pink"><img src="img/model-pink-angel.webp" alt="Pink Angel" loading="lazy" width="342" height="512" /><figcaption>Pink Angel<small>10000 🍬</small></figcaption></figure>
+          <figure class="gothic"><img src="img/model-gothic-lolita.webp" alt="Gothic Lolita" loading="lazy" width="342" height="512" /><figcaption>Gothic Lolita<small>5000 🍬</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-lolita.webp" alt="Snow Lolita" loading="lazy" width="342" height="512" /><figcaption>Snow Lolita<small>5000 🍬</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-dancer.webp" alt="Snow Dancer" loading="lazy" width="342" height="512" /><figcaption>Snow Dancer<small>5000 🍬</small></figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <p class="chars-note reveal">Characters are not in the installer: once unlocked she downloads in a few seconds (a few MB), is checked against a signed list, and updates herself when a new version comes out. The free sample models Hiyori, Haru, Mao and Miara are always included, and you can add your own Live2D models from a folder.</p>
   </div>
 </section>
 
