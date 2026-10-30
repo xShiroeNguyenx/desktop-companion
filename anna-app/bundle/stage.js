@@ -91,11 +91,26 @@ export class Stage {
     if (!this.model || !emotion) return;
     const [expression, motion] = EMOTION_FX[emotion] || [];
     try {
-      if (expression) this.model.expression(expression);
+      if (expression) this.express(expression);
       if (motion) this.motion(motion);
     } catch (e) {
       console.warn('[companion] react', e);
     }
+  }
+
+  /**
+   * Show an expression for `ms`, then go back to the neutral face. Live2D keeps an
+   * expression until it is replaced, so without the reset she would smile forever
+   * (the desktop app also gives every expression a duration).
+   */
+  express(name, ms = 5000) {
+    if (!this.model) return;
+    this.model.expression(name);
+    clearTimeout(this.faceTimer);
+    this.faceTimer = setTimeout(() => {
+      const em = this.model && this.model.internalModel.motionManager.expressionManager;
+      if (em) em.resetExpression();
+    }, ms);
   }
 
   setMouth(level) {
@@ -151,7 +166,7 @@ export class Stage {
 
   pat(p) {
     if (this.model) {
-      this.model.expression('Smile');
+      this.express('Smile');
       this.motion('TapHead');
     }
     this.burst(['💗', '💕', '✨'], p, 6);
@@ -160,7 +175,7 @@ export class Stage {
 
   poke(p) {
     if (this.model) {
-      this.model.expression('Surprised');
+      this.express('Surprised', 3000);
       this.motion('Shake');
     }
     this.burst(['💢', '❗'], p, 3);
