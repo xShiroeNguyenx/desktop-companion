@@ -512,9 +512,9 @@ pub const CATALOG: &[Item] = &[
         price: 5000,
         name: ["Pink Kawaii", "ピンク・カワイイ", "Pink Kawaii"],
         desc: [
-            "Cô gái tai mèo tóc hồng, áo khoác trắng rộng in thỏ, chân váy kẻ hồng và giày thỏ bông, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
-            "うさぎ柄の白いオーバーサイズジャケットにピンクのチェックスカート、うさぎのスニーカーの、ピンク髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
-            "A pink-haired cat girl in an oversized white bunny jacket, a pink plaid skirt and bunny sneakers becomes your main on-screen character, with full expressions and motions.",
+            "Cô gái tai mèo tóc hồng đeo kính, áo khoác trắng rộng nơ hồng, áo hai dây và chân váy xếp ly đen viền hồng, giày thỏ bông, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "ピンクのリボンの白いオーバーサイズジャケットにキャミソール、ピンク縁取りの黒いプリーツスカート、うさぎのスニーカーの、眼鏡をかけたピンク髪の猫耳少女。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A pink-haired cat girl in glasses, with an oversized white jacket with pink bows, a camisole, a black pleated skirt trimmed in pink and bunny sneakers, becomes your main on-screen character, with full expressions and motions.",
         ],
         asset: "pink-kawaii",
     },

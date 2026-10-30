@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.4] - 2026-10-30
+
+### Fixed
+- The Collection pictures of **Pink Kawaii** and **Pink Aristocrat** showed early
+  concept art with a different outfit; they now show the actual models, and Pink
+  Kawaii's description matches her outfit.
+
 ## [0.11.3] - 2026-10-30
 
 ### Added
@@ -905,6 +912,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.11.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.4
 [0.11.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.3
 [0.11.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.2
 [0.11.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.1
