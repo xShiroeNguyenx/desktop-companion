@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Desktop Companion</title>
+  <link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+  <section class="stage" id="stage">
+    <canvas id="live2d"></canvas>
+    <div class="loading" id="loading"><span class="spinner"></span><span data-i18n="loading"></span></div>
+    <div class="bubble" id="bubble" hidden><span id="bubbleText"></span></div>
+    <div class="stage-bar">
+      <span class="status" id="status"></span>
+      <button class="icon" id="voiceBtn" type="button">🔇</button>
+      <select class="model-pick" id="modelPick" aria-label="Character"></select>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="chat" class="active" data-i18n="tabChat"></button>
+    <button role="tab" data-tab="translate" data-i18n="tabTranslate"></button>
+    <button role="tab" data-tab="reply" data-i18n="tabReply"></button>
+    <button role="tab" data-tab="tasks" data-i18n="tabTasks"></button>
+    <button role="tab" data-tab="notes" data-i18n="tabNotes"></button>
+    <button role="tab" data-tab="focus" data-i18n="tabFocus"></button>
+    <button role="tab" data-tab="games" data-i18n="tabGames"></button>
+    <button role="tab" data-tab="calendar" data-i18n="tabCalendar"></button>
+    <button role="tab" data-tab="collection" data-i18n="tabCollection"></button>
+  </nav>
+
+  <main class="panels">
+    <section class="panel active" data-panel="chat">
+      <div class="log" id="chatLog"></div>
+      <form class="composer" id="chatForm">
+        <textarea id="chatInput" rows="2" data-i18n-placeholder="chatPlaceholder"></textarea>
+        <div class="row">
+          <button type="button" class="ghost" id="chatClear" data-i18n="clear"></button>
+          <button type="submit" class="primary" id="chatSend" data-i18n="send"></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" data-panel="translate">
+      <textarea id="trInput" rows="5" data-i18n-placeholder="trPlaceholder"></textarea>
+      <div class="row">
+        <label><span data-i18n="trTo"></span> <select id="trTarget"></select></label>
+        <button class="primary" id="trGo" data-i18n="translate"></button>
+      </div>
+      <div class="out" id="trOut" hidden><p id="trText"></p><button class="ghost copy" data-copy="trText" data-i18n="copy"></button></div>
+    </section>
+
+    <section class="panel" data-panel="reply">
+      <textarea id="rpMessage" rows="4" data-i18n-placeholder="rpMessage"></textarea>
+      <input id="rpIntent" type="text" data-i18n-placeholder="rpIntent" />
+      <div class="row">
+        <label><span data-i18n="rpTone"></span> <select id="rpTone"></select></label>
+        <button class="primary" id="rpGo" data-i18n="rpGo"></button>
+      </div>
+      <div class="out" id="rpOut" hidden><p id="rpText"></p><button class="ghost copy" data-copy="rpText" data-i18n="copy"></button></div>
+    </section>
+
+    <section class="panel" data-panel="tasks">
+      <form class="row" id="taskForm">
+        <input id="taskInput" type="text" data-i18n-placeholder="taskPlaceholder" />
+        <button class="primary" type="submit" data-i18n="add"></button>
+      </form>
+      <ul class="tasks" id="taskList"></ul>
+      <p class="hint" data-i18n="taskHint"></p>
+    </section>
+
+    <section class="panel" data-panel="notes" id="notesPanel"></section>
+    <section class="panel" data-panel="focus" id="focusPanel"></section>
+    <section class="panel" data-panel="games" id="gamesPanel"></section>
+    <section class="panel" data-panel="calendar" id="calendarPanel"></section>
+    <section class="panel" data-panel="collection" id="collectionPanel"></section>
+  </main>
+
+  <footer class="foot">
+    <a href="https://desktop.techdecoded.net/" target="_blank" rel="noreferrer" data-i18n="getDesktop"></a>
+  </footer>
+
+  <script src="./lib/live2dcubismcore.min.js"></script>
+  <script src="./lib/pixi.min.js"></script>
+  <script src="./lib/pixi-unsafe-eval.min.js"></script>
+  <script src="./lib/cubism4.min.js"></script>
+  <script src="./lib/games-core.js"></script>
+  <script src="./lib/mines-core.js"></script>
+  <script src="./lib/calendar-core.js"></script>
+  <script src="./lib/notes-core.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "desktop-companion-anna-app",
+  "private": true,
+  "type": "module",
+  "description": "Desktop Companion as an Anna App (UI bundle only, no executa).",
+  "scripts": {
+    "assets": "node scripts/sync-assets.mjs",
+    "test": "node --test test/",
+    "validate": "anna-app validate --strict",
+    "dev": "anna-app dev --slug desktop-companion --llm-app-slug desktop-companion --storage aps",
+    "publish": "npm run assets && npm test && anna-app validate --strict && anna-app apps publish"
+  }
+}
