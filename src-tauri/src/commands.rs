@@ -1155,6 +1155,23 @@ pub async fn collection_pull(app: AppHandle, count: u32) -> Result<Value, String
     let mut rand = crate::gacha::rng();
     let pulls = store::update_collection(&app, |c| crate::gacha::pull_many(c, count, now, &mut rand))?
         .map_err(|e| e.code())?;
+    Ok(pull_response(&app, &pulls))
+}
+
+/// 🎁 Quay `count` lượt quà (gacha::pull_gift): không tốn kẹo, chắc chắn có một
+/// model mới trong 20 lượt. Trả cùng dạng với `collection_pull`.
+#[tauri::command]
+pub async fn collection_pull_gift(app: AppHandle, count: u32) -> Result<Value, String> {
+    let now = now_millis() as u64;
+    let mut rand = crate::gacha::rng();
+    let pulls = store::update_collection(&app, |c| crate::gacha::pull_gift(c, count, now, &mut rand))?
+        .map_err(|e| e.code())?;
+    Ok(pull_response(&app, &pulls))
+}
+
+/// Kết quả từng lượt + view mới; pet khoe món mới hiếm nhất; model mới thì tải về.
+fn pull_response(app: &AppHandle, pulls: &[crate::gacha::Pull]) -> Value {
+    let app = app.clone();
     let a = persona::address(&store::load_settings(&app));
     let idx = crate::collection::lang_index(a.lang);
     let results: Vec<Value> = pulls
@@ -1179,7 +1196,7 @@ pub async fn collection_pull(app: AppHandle, count: u32) -> Result<Value, String
     for p in pulls.iter().filter(|p| !p.dup) {
         install_if_model(&app, p.item);
     }
-    Ok(serde_json::json!({ "results": results, "view": crate::collection::view(&app) }))
+    serde_json::json!({ "results": results, "view": crate::collection::view(&app) })
 }
 
 /// Mở Bộ sưu tập ở cửa hàng, đúng nhóm của món `id`, và chỉ vào thẻ của món đó
@@ -1197,7 +1214,25 @@ pub fn show_item(app: &AppHandle, id: &str) {
 pub fn gacha_free_status(app: AppHandle) -> Value {
     let ready = crate::companion::free_spin_pending(&app);
     let a = persona::address(&store::load_settings(&app));
+    announce_gift(&app, &a);
     serde_json::json!({ "ready": ready, "lang": a.lang.code() })
+}
+
+/// 🎁 Báo quà 20 lượt quay đúng một lần: lúc trang pet nạp (đã có người nghe
+/// "pet-message"), còn lượt quà mà chưa báo thì pet nói rồi đánh dấu đã báo.
+fn announce_gift(app: &AppHandle, a: &persona::Address) {
+    let told = store::update_collection(app, |c| {
+        if c.gift_told || c.gift_spins == 0 || !crate::gacha::enabled() {
+            return None;
+        }
+        c.gift_told = true;
+        Some(c.gift_spins)
+    });
+    if let Ok(Some(n)) = told {
+        let line = crate::lines::line(crate::lines::Key::GiftSpins, a, &[("n", &n.to_string())]);
+        let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
+        let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+    }
 }
 
 /// 🎁 Khung quay miễn phí cạnh pet (pet_command "gacha:free", app/media/webview/daily-gacha.js):

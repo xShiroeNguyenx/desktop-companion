@@ -749,6 +749,7 @@ fn main() {
             commands::open_collection,
             commands::collection_close,
             commands::collection_pull,
+            commands::collection_pull_gift,
             commands::collection_debug,
         ])
         .setup(move |app| {

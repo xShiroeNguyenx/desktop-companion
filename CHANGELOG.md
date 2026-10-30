@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-10-30
+
+### Added
+- **🎁 Welcome gift: 20 free Candy Capsule spins**, given once to everyone (new
+  and existing users) on Windows and macOS. The pet announces the gift, and while
+  gift spins are left both spin buttons in the Collection are free.
+  - One of the 20 gift spins is guaranteed to be a model you don't own yet: if
+    none has come up by the last gift spin, that spin gives one. This guarantee
+    applies only once.
+  - Gift spins cost no candy but count like other spins (guarantees, history,
+    duplicate refund).
+
 ## [0.11.1] - 2026-10-30
 
 ### Added
@@ -874,6 +886,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.11.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.2
 [0.11.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.1
 [0.11.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.0
 [0.10.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.10.1

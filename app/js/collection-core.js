@@ -29,6 +29,7 @@
         bubble: 'Hôm nay thử vận may nào? Cùng quay thật nhiều đồ xinh nhé! 💗',
         sign: 'Sweet Dreams', signSub: 'Skin, nhân vật, bộ mặt Miu, hiệu ứng và cả model Live2D, quay là có!',
         pull1: 'Quay 1 lần', pull10: 'Quay 10 lần', short: 'Thiếu {n} 🍬',
+        giftPull1: 'Quay 1 lần', giftPullN: 'Quay {n} lần', giftFree: '🎁 Miễn phí', giftNote: '🎁 Quà tặng: còn {n} lượt quay miễn phí', giftSure: 'Chắc chắn có 1 model mới!',
         ratesTitle: 'Tỷ lệ nhận vật phẩm',
         rateDesc: { common: 'Vật phẩm phổ biến', rare: 'Vật phẩm hiếm', epic: 'Vật phẩm rất hiếm', legendary: 'Model Live2D, cực hiếm' },
         pityRare: 'Còn {n} lượt chắc chắn ra Hiếm+', pityEpic: 'Còn {n} lượt chắc chắn ra Sử thi+',
@@ -43,7 +44,7 @@
         rvCommon: 'Mở nào~!', rvRare: '✦ HIẾM! ✦', rvEpic: '🌟 SỬ THI! 🌟', rvLegendary: '🌈 HUYỀN THOẠI! 🌈', rvSkip: 'Bấm để bỏ qua',
       },
       err: {
-        not_found: 'Không thấy món này.', already_owned: 'Đã có rồi mà~', not_enough: 'Còn thiếu {n} 🍬 nữa.',
+        not_found: 'Không thấy món này.', no_gift: 'Hết lượt quay quà rồi.', already_owned: 'Đã có rồi mà~', not_enough: 'Còn thiếu {n} 🍬 nữa.',
         wrong_category: 'Món này không dùng ở đây được.', not_owned: 'Chưa có món này.', locked: 'Model này chưa mở khoá.',
         downloading: 'Đang tải model, xong sẽ tự đổi.', busy: 'Đang tải rồi, đợi chút nhé.',
         offline: 'Không kết nối được máy chủ tải model. Kiểm tra mạng rồi thử lại nhé.',
@@ -72,6 +73,7 @@
         bubble: '今日の運だめし、してみる？かわいいもの、いっぱい出るといいね！💗',
         sign: 'Sweet Dreams', signSub: 'スキン・キャラ・ミウの表情・エフェクト、Live2Dモデルも出るよ！',
         pull1: '1回まわす', pull10: '10回まわす', short: 'あと {n} 🍬',
+        giftPull1: '1回まわす', giftPullN: '{n}回まわす', giftFree: '🎁 無料', giftNote: '🎁 プレゼント：無料ガチャ残り {n} 回', giftSure: '新しいモデルが必ず1つ！',
         ratesTitle: '排出率',
         rateDesc: { common: 'よく出るアイテム', rare: 'めずらしいアイテム', epic: 'とてもめずらしいアイテム', legendary: 'Live2Dモデル・超レア' },
         pityRare: 'あと {n} 回でレア以上確定', pityEpic: 'あと {n} 回でエピック以上確定',
@@ -86,7 +88,7 @@
         rvCommon: 'オープン～！', rvRare: '✦ レア！ ✦', rvEpic: '🌟 エピック！ 🌟', rvLegendary: '🌈 レジェンド！ 🌈', rvSkip: 'タップでスキップ',
       },
       err: {
-        not_found: 'アイテムが見つかりません。', already_owned: 'もう持ってるよ～', not_enough: 'あと {n} 🍬 足りないよ。',
+        not_found: 'アイテムが見つかりません。', no_gift: 'プレゼントのガチャは使い切ったよ。', already_owned: 'もう持ってるよ～', not_enough: 'あと {n} 🍬 足りないよ。',
         wrong_category: 'ここでは使えないアイテムです。', not_owned: 'まだ持っていません。', locked: 'このモデルはまだロックされています。',
         downloading: 'モデルをダウンロード中。終わったら自動で切り替わるよ。', busy: 'ダウンロード中だよ、ちょっと待ってね。',
         offline: 'モデルのダウンロードサーバーにつながりません。ネットワークを確認してもう一度試してね。',
@@ -115,6 +117,7 @@
         bubble: "Feeling lucky today? Let's spin for lots of cute things! 💗",
         sign: 'Sweet Dreams', signSub: 'Skins, characters, Miu faces, effects and even Live2D models inside!',
         pull1: 'Spin once', pull10: 'Spin 10 times', short: '{n} 🍬 short',
+        giftPull1: 'Spin once', giftPullN: 'Spin {n} times', giftFree: '🎁 Free', giftNote: '🎁 Gift: {n} free spins left', giftSure: 'One new model guaranteed!',
         ratesTitle: 'Drop rates',
         rateDesc: { common: 'Common items', rare: 'Rare items', epic: 'Very rare items', legendary: 'Live2D models, ultra rare' },
         pityRare: '{n} more spins to a sure Rare+', pityEpic: '{n} more spins to a sure Epic+',
@@ -129,7 +132,7 @@
         rvCommon: 'Open up~!', rvRare: '✦ RARE! ✦', rvEpic: '🌟 EPIC! 🌟', rvLegendary: '🌈 LEGENDARY! 🌈', rvSkip: 'Click to skip',
       },
       err: {
-        not_found: 'No such item.', already_owned: 'You already have it~', not_enough: 'Still {n} 🍬 short.',
+        not_found: 'No such item.', no_gift: 'No gift spins left.', already_owned: 'You already have it~', not_enough: 'Still {n} 🍬 short.',
         wrong_category: 'This item cannot be used here.', not_owned: "You don't have this item yet.", locked: 'This model is still locked.',
         downloading: 'Downloading the model; it switches over when done.', busy: 'Already downloading, hang on.',
         offline: "Can't reach the model download server. Check your connection and try again.",
@@ -271,6 +274,24 @@
     return need > 0 ? { ok: false, label: fill(g.short, { n: need }) } : { ok: true, label: '' };
   }
 
+  /**
+   * 🎁 Nút quay khi còn lượt quà (gacha.gift > 0): hai nút quay đổi sang quay quà
+   * (1 lượt và tối đa 10 lượt), không cần kẹo. Hết quà thì { active: false }.
+   */
+  function giftState(gacha, lang) {
+    const left = Math.max(0, Number(gacha && gacha.gift) || 0);
+    if (!left || !(gacha && gacha.enabled)) return { active: false };
+    const g = strings(lang).g;
+    const many = Math.min(10, left);
+    return {
+      active: true,
+      counts: [1, many],
+      labels: [g.giftPull1, many === 1 ? g.giftPull1 : fill(g.giftPullN, { n: many })],
+      cost: g.giftFree,
+      note: fill(g.giftNote, { n: left }) + (gacha.giftPromise ? ' · ' + g.giftSure : ''),
+    };
+  }
+
   /** Tóm tắt một lần quay: số món mới, tổng kẹo hoàn, hạng cao nhất. */
   function summarize(results) {
     const list = results || [];
@@ -303,7 +324,7 @@
     return lang === 'ja' ? `${p(d.getMonth() + 1)}/${p(d.getDate())} ${hm}` : `${hm} ${p(d.getDate())}/${p(d.getMonth() + 1)}`;
   }
 
-  const api = { sizeLabel, RARITY_RANK, MODES, pullState, summarize, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
+  const api = { sizeLabel, RARITY_RANK, MODES, pullState, giftState, summarize, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CollectionCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

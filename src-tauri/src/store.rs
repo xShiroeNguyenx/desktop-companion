@@ -704,7 +704,7 @@ static COLLECTION_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// File thiếu hoặc hỏng → bộ sưu tập trống, không lỗi.
 pub fn load_collection(app: &AppHandle) -> crate::collection::Collection {
-    collection_path(app)
+    let mut c = collection_path(app)
         .and_then(|p| std::fs::read_to_string(p).ok())
         .and_then(|raw| serde_json::from_str::<crate::collection::Collection>(&raw).ok())
         .map(|mut c| {
@@ -712,7 +712,11 @@ pub fn load_collection(app: &AppHandle) -> crate::collection::Collection {
             crate::collection::migrate(&mut c);
             c
         })
-        .unwrap_or_default()
+        .unwrap_or_default();
+    // 🎁 Quà 20 lượt quay, một lần trong đời (cả người dùng cũ lẫn mới). Như migrate:
+    // ghi xuống ở lần update_collection kế tiếp; tới lúc đó lần nạp nào cũng tặng y hệt.
+    crate::gacha::grant_gift(&mut c);
+    c
 }
 
 /// Đọc collection.json, cho `f` sửa, ghi lại — trong một khoá. Không đổi thì không ghi.

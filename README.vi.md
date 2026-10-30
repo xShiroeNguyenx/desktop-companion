@@ -195,6 +195,9 @@ duyệt, Word…).
 - **🎁 Mỗi ngày một lượt quay miễn phí** — mỗi ngày một viên capsule nhỏ hiện cạnh
   nhân vật; bấm vào là được quay Candy Capsule một lượt miễn phí, mở ngay trên pet.
   Lượt này tính như mọi lượt khác (bảo hiểm, lịch sử, hoàn kẹo khi trùng).
+- **🎁 Quà tặng 20 lượt quay** — mỗi người được tặng một lần 20 lượt quay Candy
+  Capsule miễn phí (pet sẽ báo khi quà tới). Còn lượt quà thì hai nút quay đều miễn
+  phí, và trong 20 lượt đó chắc chắn có một model bạn chưa có.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, thông số máy, theo dõi website, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
   thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.

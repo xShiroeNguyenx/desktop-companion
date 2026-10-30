@@ -12,6 +12,8 @@
 //!   không có bảo hiểm riêng, chỉ có phần của nó trong hai lần bảo hiểm trên.
 //! - Trùng món đã có → hoàn 10% giá đổi thẳng của món bằng kẹo. Không bao giờ nhận trùng vào `owned`.
 //! - Không bán kẹo bằng tiền thật: gacha hoàn toàn miễn phí nên không vướng luật loot box.
+//! - 🎁 Quà một lần (`grant_gift`): 20 lượt không tốn kẹo; trong 20 lượt đó chắc
+//!   chắn có một model chưa sở hữu (lượt quà cuối bị ép nếu chưa ra), chỉ một lần.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -173,7 +175,11 @@ fn pull_one(c: &mut Collection, now_ms: u64, rand: &mut impl FnMut() -> f64) -> 
         }
         bucket[((x * bucket.len() as f64) as usize).min(bucket.len() - 1)]
     });
+    record(c, item, now_ms, pity_hit)
+}
 
+/// Ghi một lượt đã chọn xong món: bảo hiểm, tổng lượt, `owned` hoặc hoàn kẹo, lịch sử.
+fn record(c: &mut Collection, item: &'static Item, now_ms: u64, pity_hit: bool) -> Pull {
     c.pity = if item.rarity >= Rarity::Rare { 0 } else { c.pity + 1 };
     c.epic_pity = if item.rarity >= Rarity::Epic { 0 } else { c.epic_pity + 1 };
     c.pulls = c.pulls.saturating_add(1);
@@ -233,6 +239,67 @@ pub fn pull_free(
     Ok(pull_one(c, now_ms, rand))
 }
 
+/// 🎁 Quà một lần trong đời: số lượt quay miễn phí tặng mỗi người dùng.
+pub const GIFT_SPINS: u32 = 20;
+
+/// Tặng `GIFT_SPINS` lượt nếu chưa từng tặng. Gọi mỗi lần nạp collection.json
+/// (store::load_collection), nên người dùng cũ lẫn mới đều nhận đúng một lần.
+pub fn grant_gift(c: &mut Collection) -> bool {
+    if c.gift_given {
+        return false;
+    }
+    c.gift_given = true;
+    c.gift_spins = c.gift_spins.saturating_add(GIFT_SPINS);
+    true
+}
+
+/// Model Huyền thoại chưa có, kèm tỉ lệ (‰): ứng viên cho lượt bảo đảm.
+fn unowned_models(c: &Collection) -> Vec<(&'static Item, u32)> {
+    legendary().filter(|(it, _)| !owns(c, it)).collect()
+}
+
+/// Lượt quà còn bảo đảm model mới không (cho UI ghi "chắc chắn có 1 model mới").
+pub fn gift_promise(c: &Collection) -> bool {
+    c.gift_spins > 0 && !c.gift_model && !unowned_models(c).is_empty()
+}
+
+/// Quay `n` lượt quà (tối đa số lượt còn lại), không tốn kẹo. Bảo đảm một lần:
+/// nếu tới lượt quà cuối mà chưa ra model mới thì lượt đó chắc chắn là một model
+/// chưa có (chọn theo `LEGENDARY_PCT`). Ra model mới tự nhiên sớm hơn thì thôi ép.
+pub fn pull_gift(
+    c: &mut Collection,
+    n: u32,
+    now_ms: u64,
+    rand: &mut impl FnMut() -> f64,
+) -> Result<Vec<Pull>, BuyError> {
+    if !enabled() {
+        return Err(BuyError::NotFound);
+    }
+    let n = n.min(c.gift_spins);
+    if n == 0 {
+        return Err(BuyError::NoGift);
+    }
+    let mut out = Vec::with_capacity(n as usize);
+    for _ in 0..n {
+        c.gift_spins -= 1;
+        let forced = if !c.gift_model && c.gift_spins == 0 {
+            let x = rand();
+            pick_weighted(&unowned_models(c), x)
+        } else {
+            None
+        };
+        let p = match forced {
+            Some(item) => record(c, item, now_ms, true),
+            None => pull_one(c, now_ms, rand),
+        };
+        if !p.dup && p.item.rarity == Rarity::Legendary {
+            c.gift_model = true;
+        }
+        out.push(p);
+    }
+    Ok(out)
+}
+
 /// Nguồn ngẫu nhiên cho bản chạy thật: SplitMix64, gieo từ đồng hồ nano giây
 /// trộn bộ đếm toàn cục (hai lần quay sát nhau vẫn khác). Đủ cho trò chơi,
 /// không dùng cho bảo mật; không thêm crate `rand`.
@@ -289,6 +356,9 @@ pub fn view_json(c: &Collection, lang_idx: usize) -> Value {
         "pityEpic": PITY_EPIC,
         "pulls": c.pulls,
         "history": history,
+        // 🎁 Quà 20 lượt: còn bao nhiêu, còn bảo đảm model mới không.
+        "gift": c.gift_spins,
+        "giftPromise": gift_promise(c),
     })
 }
 
@@ -455,6 +525,82 @@ mod tests {
         let q = pull_free(&mut c, day + 1, 9, &mut seq(&[0.0])).unwrap();
         assert!(q.dup);
         assert_eq!(c.candy, refund(q.item));
+    }
+
+    fn new_models(c: &Collection, before: &Collection) -> usize {
+        legendary().filter(|(it, _)| owns(c, it) && !owns(before, it)).count()
+    }
+
+    #[test]
+    fn gift_is_granted_once_in_a_lifetime() {
+        let mut c = Collection::default();
+        assert!(grant_gift(&mut c));
+        assert_eq!(c.gift_spins, GIFT_SPINS);
+        assert!(!grant_gift(&mut c), "lần nạp sau không tặng lại");
+        assert_eq!(c.gift_spins, GIFT_SPINS);
+        // Dùng hết rồi cũng không tặng lại.
+        pull_gift(&mut c, 10, 0, &mut seq(&[0.0])).unwrap();
+        pull_gift(&mut c, 10, 0, &mut seq(&[0.0])).unwrap();
+        assert!(!grant_gift(&mut c));
+        assert_eq!(c.gift_spins, 0);
+        assert_eq!(pull_gift(&mut c, 1, 0, &mut seq(&[0.0])).unwrap_err(), BuyError::NoGift);
+    }
+
+    #[test]
+    fn gift_guarantees_exactly_one_new_model_when_luck_never_gives_one() {
+        let mut c = Collection::default();
+        grant_gift(&mut c);
+        let before = c.clone();
+        // r = 0 → luôn Thường: tự nhiên không bao giờ ra Huyền thoại.
+        let mut r = seq(&[0.0]);
+        let a = pull_gift(&mut c, 10, 0, &mut r).unwrap();
+        assert_eq!(a.len(), 10);
+        assert!(gift_promise(&c), "chưa ra model thì vẫn còn bảo đảm");
+        let b = pull_gift(&mut c, 10, 0, &mut r).unwrap();
+        let last = b.last().unwrap();
+        assert_eq!(last.item.rarity, Rarity::Legendary);
+        assert!(!last.dup && last.pity_hit, "lượt quà cuối bị ép ra model mới");
+        assert_eq!(new_models(&c, &before), 1);
+        assert!(c.gift_model && !gift_promise(&c));
+        // Không trừ kẹo: kẹo đang có đúng bằng tổng tiền hoàn của các lượt trùng.
+        let refunds: u32 = a.iter().chain(b.iter()).map(|p| p.refund).sum();
+        assert_eq!((c.candy, c.spent_total, c.pulls), (refunds, 0, 20), "quà không tốn kẹo, vẫn tính lượt");
+    }
+
+    #[test]
+    fn gift_does_not_force_after_a_natural_new_model() {
+        let mut c = Collection::default();
+        grant_gift(&mut c);
+        // Lượt đầu ra Huyền thoại tự nhiên (r gần 1 rơi vào phần Huyền thoại ở cuối bảng).
+        let first = pull_gift(&mut c, 1, 0, &mut seq(&[0.9999, 0.0, 0.0])).unwrap();
+        assert_eq!(first[0].item.rarity, Rarity::Legendary);
+        assert!(c.gift_model);
+        let before = c.clone();
+        let rest = pull_gift(&mut c, 19, 0, &mut seq(&[0.0])).unwrap();
+        assert_eq!(rest.len(), 19);
+        assert!(rest.iter().all(|p| p.item.rarity != Rarity::Legendary), "không ép thêm model nào");
+        assert_eq!(new_models(&c, &before), 0);
+    }
+
+    #[test]
+    fn gift_with_every_model_owned_falls_back_to_normal_pulls() {
+        let mut c = Collection::default();
+        crate::collection::unlock_all(&mut c);
+        grant_gift(&mut c);
+        assert!(!gift_promise(&c));
+        let got = pull_gift(&mut c, 20, 0, &mut seq(&[0.0])).unwrap();
+        assert_eq!(got.len(), 20);
+        assert!(got.iter().all(|p| p.dup));
+    }
+
+    #[test]
+    fn gift_count_is_capped_by_spins_left() {
+        let mut c = Collection::default();
+        grant_gift(&mut c);
+        pull_gift(&mut c, 10, 0, &mut seq(&[0.0])).unwrap();
+        pull_gift(&mut c, 5, 0, &mut seq(&[0.0])).unwrap();
+        assert_eq!(pull_gift(&mut c, 10, 0, &mut seq(&[0.0])).unwrap().len(), 5);
+        assert_eq!(c.gift_spins, 0);
     }
 
     #[test]

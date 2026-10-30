@@ -217,6 +217,9 @@
 - **🎁 A free spin every day** — each day a small capsule appears next to the
   character; click it for one free Candy Capsule spin, opened right there on
   the pet. It counts like any other spin (guarantees, history, duplicate refund).
+- **🎁 Welcome gift: 20 free spins** — everyone gets 20 free Candy Capsule spins
+  once (the pet tells you when they arrive). While you have them, both spin buttons
+  are free, and one of those 20 spins is sure to be a model you don't own yet.
 - **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
   calendar, the clock, the weather widget, the system monitor and the site
   monitor, picks the

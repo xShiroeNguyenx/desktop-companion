@@ -822,6 +822,18 @@ pub struct Collection {
     /// Phiên bản bảng giá. File cũ (0) có kẹo theo giá ×1 → `migrate` nhân 10.
     #[serde(default)]
     pub econ: u32,
+    /// 🎁 Quà 20 lượt quay (gacha::grant_gift): đã tặng chưa (chỉ một lần trong đời).
+    #[serde(default)]
+    pub gift_given: bool,
+    /// Lượt quay quà còn lại (gacha::pull_gift, không tốn kẹo).
+    #[serde(default)]
+    pub gift_spins: u32,
+    /// Trong các lượt quà đã ra một model mới chưa (bảo đảm chỉ một lần).
+    #[serde(default)]
+    pub gift_model: bool,
+    /// Pet đã báo tin có quà chưa (commands::gacha_free_status).
+    #[serde(default)]
+    pub gift_told: bool,
 }
 
 fn default_skin() -> String {
@@ -863,6 +875,10 @@ impl Default for Collection {
             history: Vec::new(),
             free_day: 0,
             econ: ECON,
+            gift_given: false,
+            gift_spins: 0,
+            gift_model: false,
+            gift_told: false,
         }
     }
 }
@@ -950,6 +966,8 @@ pub enum BuyError {
     NotEnough { need: u32 },
     /// Lượt quay miễn phí hôm nay đã dùng (gacha::pull_free).
     UsedToday,
+    /// Hết lượt quay quà (gacha::pull_gift).
+    NoGift,
 }
 
 impl BuyError {
@@ -959,6 +977,7 @@ impl BuyError {
             BuyError::NotFound => "not_found".into(),
             BuyError::AlreadyOwned => "already_owned".into(),
             BuyError::UsedToday => "used_today".into(),
+            BuyError::NoGift => "no_gift".into(),
             BuyError::NotEnough { need } => format!("not_enough:{need}"),
         }
     }

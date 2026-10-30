@@ -232,12 +232,17 @@
     const g = gacha();
     $('gSign').textContent = s.g.sign;
     $('gSignSub').textContent = s.g.signSub;
-    for (const [n, cost] of [[1, g.cost1], [10, g.cost10]]) {
+    // 🎁 Còn lượt quà: hai nút quay thành quay miễn phí (C.giftState).
+    const gift = C.giftState(g, data.lang);
+    for (const [i, n, cost] of [[0, 1, g.cost1], [1, 10, g.cost10]]) {
       const st = C.pullState(cost, data.candy, g.enabled, data.lang);
-      $('pull' + n + 'Label').textContent = st.ok ? s.g['pull' + n] : st.label;
-      $('pull' + n + 'Cost').textContent = String(cost);
-      $('pull' + n).disabled = !st.ok || busy;
+      $('pull' + n).classList.toggle('gift', gift.active);
+      $('pull' + n + 'Label').textContent = gift.active ? gift.labels[i] : st.ok ? s.g['pull' + n] : st.label;
+      $('pull' + n + 'Cost').textContent = gift.active ? gift.cost : String(cost);
+      $('pull' + n).disabled = !(gift.active || st.ok) || busy;
     }
+    $('giftNote').hidden = !gift.active;
+    $('giftNote').textContent = gift.active ? gift.note : '';
     $('gLocked').hidden = !!g.enabled;
     $('gLocked').textContent = C.fill(s.g.locked, { n: g.minPool || 15 });
 
@@ -309,14 +314,18 @@
 
   const FX = window.GachaFx;
 
+  /** n = 1 | 10 (nút bấm). Còn lượt quà thì quay quà (số lượt theo C.giftState), không thì tốn kẹo. */
   async function pull(n) {
     if (busy) return;
     busy = true;
     lastCount = n;
     $('pull1').disabled = $('pull10').disabled = true;
+    const gift = C.giftState(gacha(), data.lang);
     let res;
     try {
-      res = await invoke('collection_pull', { count: n });
+      res = gift.active
+        ? await invoke('collection_pull_gift', { count: n === 1 ? gift.counts[0] : gift.counts[1] })
+        : await invoke('collection_pull', { count: n });
     } catch (e) {
       busy = false;
       toast(C.errorText(String(e), data.lang), true);
@@ -367,8 +376,9 @@
     const g = gacha();
     const cost = lastCount === 10 ? g.cost10 : g.cost1;
     const again = $('gresAgain');
-    again.textContent = C.fill(s.g.again, { c: cost });
-    again.disabled = !C.pullState(cost, data.candy, g.enabled, data.lang).ok;
+    const gift = C.giftState(g, data.lang);
+    again.textContent = gift.active ? gift.labels[lastCount === 10 ? 1 : 0] + ' · ' + gift.cost : C.fill(s.g.again, { c: cost });
+    again.disabled = !gift.active && !C.pullState(cost, data.candy, g.enabled, data.lang).ok;
     $('gresOk').textContent = s.g.ok;
     $('gres').hidden = false;
   }

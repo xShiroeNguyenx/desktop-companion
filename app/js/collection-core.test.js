@@ -122,3 +122,18 @@ test('model Live2D: tab riêng, hạng Huyền thoại, nút Dùng / Đang dùng
   assert.equal(C.summarize([{ rarity: 'epic' }, { rarity: 'legendary' }, { rarity: 'rare' }]).best, 'legendary');
   assert.equal(C.featured([item({ id: 'side.a', cat: 'side_set', rarity: 'epic', price: 3000 }), m], 1)[0].id, m.id, 'hiếm nhất lên đầu');
 });
+
+test('giftState: gift spins switch the pull buttons to free spins', () => {
+  assert.deepEqual(C.giftState({ enabled: true, gift: 0 }, 'vi'), { active: false });
+  assert.deepEqual(C.giftState({ enabled: false, gift: 20 }, 'vi'), { active: false });
+  const full = C.giftState({ enabled: true, gift: 20, giftPromise: true }, 'vi');
+  assert.deepEqual(full.counts, [1, 10]);
+  assert.deepEqual(full.labels, ['Quay 1 lần', 'Quay 10 lần']);
+  assert.equal(full.note, '🎁 Quà tặng: còn 20 lượt quay miễn phí · Chắc chắn có 1 model mới!');
+  const tail = C.giftState({ enabled: true, gift: 3, giftPromise: false }, 'en');
+  assert.deepEqual(tail.counts, [1, 3]);
+  assert.equal(tail.labels[1], 'Spin 3 times');
+  assert.equal(tail.note, '🎁 Gift: 3 free spins left');
+  assert.equal(C.giftState({ enabled: true, gift: 1 }, 'ja').labels[1], '1回まわす');
+  assert.equal(C.errorText('no_gift', 'en'), 'No gift spins left.');
+});

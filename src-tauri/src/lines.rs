@@ -134,6 +134,8 @@ pub enum Key {
     CalTomorrowNew,
     // ── Bộ sưu tập (collection.rs): vừa đổi kẹo lấy một món. Biến: {item}.
     ItemUnlocked,
+    // ── 🎁 Quà 20 lượt quay (gacha::grant_gift), báo một lần. Biến: {n}.
+    GiftSpins,
     // ── macOS: bắt chữ bôi đen cần quyền Trợ năng (selection.rs).
     #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     MacAccessibility,
@@ -221,6 +223,7 @@ impl Key {
         Key::CalTomorrowFull,
         Key::CalTomorrowNew,
         Key::ItemUnlocked,
+        Key::GiftSpins,
         Key::MacAccessibility,
     ];
 
@@ -305,6 +308,7 @@ impl Key {
             Key::WeatherBrief | Key::WeatherBriefRain => &["min", "max", "rain"],
             Key::CalHoliday | Key::CalTomorrowHoliday => &["holiday"],
             Key::ItemUnlocked => &["item"],
+            Key::GiftSpins => &["n"],
             _ => &[],
         }
     }
@@ -1433,6 +1437,19 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "You unlocked {item}, {you}! 🍬 I love it~",
             "Ta-da~ {item} is yours now! You earned it 💕",
             "{item} is all yours! Candy well spent 🍬✨",
+        ],
+
+        (GiftSpins, Vi) => &[
+            "🎁 {Me} có quà cho {you} nè: {n} lượt quay kẹo miễn phí, chắc chắn có một model mới! Mở Bộ sưu tập 🍬 thử liền đi~",
+            "Tèn ten~ {you} được tặng {n} lượt quay miễn phí 🎁 Trong đó chắc chắn có một bộ đồ mới cho {me} đó! Vào Bộ sưu tập quay nha~",
+        ],
+        (GiftSpins, Ja) => &[
+            "🎁 {you}にプレゼント！無料ガチャ{n}回、新しいモデルが必ず1つ出るよ！コレクション🍬で回してみて～",
+            "じゃーん～無料ガチャ{n}回をプレゼント🎁 新しい衣装が必ず1つもらえるよ！コレクションで回してね～",
+        ],
+        (GiftSpins, En) => &[
+            "🎁 A gift for you, {you}: {n} free capsule spins, with one new outfit guaranteed! Open the Collection 🍬 and give it a whirl~",
+            "Ta-da~ you got {n} free spins 🎁 One of them is sure to be a brand-new model for me! Spin them in the Collection~",
         ],
 
         (MacAccessibility, Vi) => &[
