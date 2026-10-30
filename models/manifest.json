@@ -3,10 +3,17 @@
   "models": [
     {
       "id": "gothic-aristocrat",
-      "version": 4,
-      "file": "gothic-aristocrat-4.zip",
-      "sha256": "1b13208114e2096153e8afbec97e0993d12cb7be75b3fbfd3357e1d2ec991f32",
-      "size": 4736976
+      "version": 5,
+      "file": "gothic-aristocrat-5.zip",
+      "sha256": "62e1b9006ef9ab6acdf8f4fd64646aa06ca734f070103b42bc135d54501ed70a",
+      "size": 4926893
+    },
+    {
+      "id": "gothic-kawaii",
+      "version": 1,
+      "file": "gothic-kawaii-1.zip",
+      "sha256": "e69b032b913dd46037b38df876a3976e95bfdc5696023b187d7ba4c9bd9f1e9c",
+      "size": 3292465
     },
     {
       "id": "gothic-lolita",
@@ -17,17 +24,17 @@
     },
     {
       "id": "gothic-pastel",
-      "version": 1,
-      "file": "gothic-pastel-1.zip",
-      "sha256": "3f6e8456ddcf67726b332553bded6a0cf988c217181950aa2d5131c5cf5f0d6f",
-      "size": 2380403
+      "version": 2,
+      "file": "gothic-pastel-2.zip",
+      "sha256": "19e74575d7ede7ccfcfb0c98b07e8f0f85bf0e94a0e9ba40cb192930453dbf3a",
+      "size": 2470385
     },
     {
       "id": "pink-angel",
-      "version": 2,
-      "file": "pink-angel-2.zip",
-      "sha256": "ab813f80f4928938a7f17d4ca5dfad667274c04506a832a0d614244da36ad6db",
-      "size": 3060938
+      "version": 3,
+      "file": "pink-angel-3.zip",
+      "sha256": "b8770e1bea01b41e1d981a3d206a6453208c88b97090c30045dc22ee58d00580",
+      "size": 3654332
     },
     {
       "id": "pink-aristocrat",
@@ -45,17 +52,17 @@
     },
     {
       "id": "pink-pastel",
-      "version": 1,
-      "file": "pink-pastel-1.zip",
-      "sha256": "f7a6b3fb24bc347e9f93e984945fe8e8134e698ec84de3792272315ab6f46ff2",
-      "size": 2068081
+      "version": 2,
+      "file": "pink-pastel-2.zip",
+      "sha256": "ba2a4bd255be916589bc87accd418a606ae5dda907f765fb71182c0ee363da14",
+      "size": 2421774
     },
     {
       "id": "snow-aristocrat",
-      "version": 3,
-      "file": "snow-aristocrat-3.zip",
-      "sha256": "e5ff97c5152dc52c4f85c28971a3b3cc96dbb60df9755b8ff3189b20b1a1ea1e",
-      "size": 2993755
+      "version": 4,
+      "file": "snow-aristocrat-4.zip",
+      "sha256": "b180e5ce7cdeac313e9373d13f00af3d086427605449dc1479987f242cd389da",
+      "size": 3051606
     },
     {
       "id": "snow-dancer",
@@ -80,10 +87,10 @@
     },
     {
       "id": "snow-pastel",
-      "version": 1,
-      "file": "snow-pastel-1.zip",
-      "sha256": "5b45573ff4d87f162e9384d3dd82356f9b79ff1f6c9415047228a4af41fec12b",
-      "size": 2270454
+      "version": 2,
+      "file": "snow-pastel-2.zip",
+      "sha256": "916bdc2cbd2ba9eb2031037b30e8ceed20bb6c629d13f61d8b0b5f81ba1a385d",
+      "size": 2281763
     }
   ]
 }

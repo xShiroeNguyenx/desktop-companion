@@ -16,6 +16,7 @@
         "title": "Desktop Companion",
         "default": true,
         "transparent": true,
+        "chrome": "vibrancy",
         "default_size": { "w": 280, "h": 460 },
         "min_size": { "w": 200, "h": 320 },
         "resizable": true,

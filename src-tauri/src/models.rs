@@ -52,58 +52,31 @@ pub const BUILTIN: &[Builtin] = &[
     Builtin { id: "mao", dir: "Mao", entry: "mao_pro.model3.json", name: "Mao", desc: "Cô gái tai mèo", item: None, preview: None },
     Builtin { id: "miara", dir: "Miara", entry: "miara_pro_t03.model3.json", name: "Miara", desc: "Phép thuật thiếu nữ", item: None, preview: None },
     Builtin {
-        id: "gothic-aristocrat",
-        dir: "Gothic_Aristocrat",
+        id: "gothic-kawaii",
+        dir: "Gothic_Kawaii",
         entry: crate::model_pack::PACK_ENTRY,
-        name: "Gothic Aristocrat",
-        desc: "Tiểu thư gothic quý tộc 🌈",
-        item: Some("model.gothic-aristocrat"),
-        preview: Some("media/model-previews/gothic-aristocrat.png"),
+        name: "Gothic Kawaii",
+        desc: "Cô gái tai mèo áo khoác thỏ tím 🦇",
+        item: Some("model.gothic-kawaii"),
+        preview: Some("media/model-previews/gothic-kawaii.png"),
     },
     Builtin {
-        id: "pink-angel",
-        dir: "Pink_Angel",
+        id: "pink-kawaii",
+        dir: "Pink_Kawaii",
         entry: crate::model_pack::PACK_ENTRY,
-        name: "Pink Angel",
-        desc: "Cô gái tai mèo tóc hồng 🌈",
-        item: Some("model.pink-angel"),
-        preview: Some("media/model-previews/pink-angel.png"),
+        name: "Pink Kawaii",
+        desc: "Cô gái tai mèo áo khoác thỏ hồng 🐰",
+        item: Some("model.pink-kawaii"),
+        preview: Some("media/model-previews/pink-kawaii.png"),
     },
     Builtin {
-        id: "snow-lolita",
-        dir: "Snow_Lolita",
+        id: "snow-kawaii",
+        dir: "Snow_Kawaii",
         entry: crate::model_pack::PACK_ENTRY,
-        name: "Snow Lolita",
-        desc: "Cô gái tai mèo áo lông bông tuyết ❄️",
-        item: Some("model.snow-lolita"),
-        preview: Some("media/model-previews/snow-lolita.png"),
-    },
-    Builtin {
-        id: "snow-aristocrat",
-        dir: "Snow_Aristocrat",
-        entry: crate::model_pack::PACK_ENTRY,
-        name: "Snow Aristocrat",
-        desc: "Tiểu thư tai mèo váy bèo tuyết ❄️",
-        item: Some("model.snow-aristocrat"),
-        preview: Some("media/model-previews/snow-aristocrat.png"),
-    },
-    Builtin {
-        id: "gothic-lolita",
-        dir: "Gothic_Lolita",
-        entry: crate::model_pack::PACK_ENTRY,
-        name: "Gothic Lolita",
-        desc: "Cô gái tai mèo gothic tím 🦇",
-        item: Some("model.gothic-lolita"),
-        preview: Some("media/model-previews/gothic-lolita.png"),
-    },
-    Builtin {
-        id: "snow-dancer",
-        dir: "Snow_Dancer",
-        entry: crate::model_pack::PACK_ENTRY,
-        name: "Snow Dancer",
-        desc: "Vũ công đường phố mũ bông tuyết ❄️",
-        item: Some("model.snow-dancer"),
-        preview: Some("media/model-previews/snow-dancer.png"),
+        name: "Snow Kawaii",
+        desc: "Cô gái tai mèo đeo kính nơ xanh ❄️",
+        item: Some("model.snow-kawaii"),
+        preview: Some("media/model-previews/snow-kawaii.png"),
     },
     Builtin {
         id: "gothic-pastel",
@@ -133,6 +106,15 @@ pub const BUILTIN: &[Builtin] = &[
         preview: Some("media/model-previews/snow-pastel.png"),
     },
     Builtin {
+        id: "gothic-aristocrat",
+        dir: "Gothic_Aristocrat",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Gothic Aristocrat",
+        desc: "Tiểu thư gothic quý tộc 🌈",
+        item: Some("model.gothic-aristocrat"),
+        preview: Some("media/model-previews/gothic-aristocrat.png"),
+    },
+    Builtin {
         id: "pink-aristocrat",
         dir: "Pink_Aristocrat",
         entry: crate::model_pack::PACK_ENTRY,
@@ -142,22 +124,49 @@ pub const BUILTIN: &[Builtin] = &[
         preview: Some("media/model-previews/pink-aristocrat.png"),
     },
     Builtin {
-        id: "pink-kawaii",
-        dir: "Pink_Kawaii",
+        id: "snow-aristocrat",
+        dir: "Snow_Aristocrat",
         entry: crate::model_pack::PACK_ENTRY,
-        name: "Pink Kawaii",
-        desc: "Cô gái tai mèo áo khoác thỏ hồng 🐰",
-        item: Some("model.pink-kawaii"),
-        preview: Some("media/model-previews/pink-kawaii.png"),
+        name: "Snow Aristocrat",
+        desc: "Tiểu thư tai mèo váy bèo tuyết ❄️",
+        item: Some("model.snow-aristocrat"),
+        preview: Some("media/model-previews/snow-aristocrat.png"),
     },
     Builtin {
-        id: "snow-kawaii",
-        dir: "Snow_Kawaii",
+        id: "pink-angel",
+        dir: "Pink_Angel",
         entry: crate::model_pack::PACK_ENTRY,
-        name: "Snow Kawaii",
-        desc: "Cô gái tai mèo đeo kính nơ xanh ❄️",
-        item: Some("model.snow-kawaii"),
-        preview: Some("media/model-previews/snow-kawaii.png"),
+        name: "Pink Angel",
+        desc: "Thiên thần tai mèo cánh trắng hào quang 🌸",
+        item: Some("model.pink-angel"),
+        preview: Some("media/model-previews/pink-angel.png"),
+    },
+    Builtin {
+        id: "gothic-lolita",
+        dir: "Gothic_Lolita",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Gothic Lolita",
+        desc: "Cô gái tai mèo gothic tím 🦇",
+        item: Some("model.gothic-lolita"),
+        preview: Some("media/model-previews/gothic-lolita.png"),
+    },
+    Builtin {
+        id: "snow-lolita",
+        dir: "Snow_Lolita",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Snow Lolita",
+        desc: "Cô gái tai mèo áo lông bông tuyết ❄️",
+        item: Some("model.snow-lolita"),
+        preview: Some("media/model-previews/snow-lolita.png"),
+    },
+    Builtin {
+        id: "snow-dancer",
+        dir: "Snow_Dancer",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Snow Dancer",
+        desc: "Vũ công đường phố mũ bông tuyết ❄️",
+        item: Some("model.snow-dancer"),
+        preview: Some("media/model-previews/snow-dancer.png"),
     },
 ];
 
@@ -290,12 +299,12 @@ mod tests {
         assert_eq!(effective("custom-9", &c, &mine, &none), DEFAULT_ID);
         assert_eq!(effective("nope", &c, &[], &none), DEFAULT_ID);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), DEFAULT_ID, "đã tải (máy khác chép sang) nhưng chưa mua");
-        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel", "snow-lolita", "snow-aristocrat", "gothic-lolita", "snow-dancer", "gothic-pastel", "pink-pastel", "snow-pastel", "pink-aristocrat", "pink-kawaii", "snow-kawaii"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "pink-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
         c.owned.push("model.gothic-aristocrat".into());
         assert_eq!(effective("gothic-aristocrat", &c, &[], &none), DEFAULT_ID, "đã mua nhưng chưa tải xong");
-        assert_eq!(locked(&c, &none), vec!["gothic-aristocrat", "pink-angel", "snow-lolita", "snow-aristocrat", "gothic-lolita", "snow-dancer", "gothic-pastel", "pink-pastel", "snow-pastel", "pink-aristocrat", "pink-kawaii", "snow-kawaii"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "pink-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), "gothic-aristocrat");
-        assert_eq!(locked(&c, &got), vec!["pink-angel", "snow-lolita", "snow-aristocrat", "gothic-lolita", "snow-dancer", "gothic-pastel", "pink-pastel", "snow-pastel", "pink-aristocrat", "pink-kawaii", "snow-kawaii"]);
+        assert_eq!(locked(&c, &got), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "pink-aristocrat", "snow-aristocrat", "pink-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
     }
 
     #[test]

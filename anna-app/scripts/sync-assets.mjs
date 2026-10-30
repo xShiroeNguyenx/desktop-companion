@@ -15,11 +15,19 @@ const LIBS = ['live2dcubismcore.min.js', 'pixi.min.js', 'cubism4.min.js'];
 const SHARED_CORES = ['games-core.js', 'mines-core.js', 'calendar-core.js', 'notes-core.js'];
 // Same list the desktop app downloads: models/manifest.json (latest version of each model).
 const titleCase = (id) => id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
-export const MODELS = JSON.parse(readFileSync(join(repoRoot, 'models', 'manifest.json'), 'utf8')).models.map((m) => ({
-  id: m.id,
-  zip: m.file,
-  name: titleCase(m.id),
-}));
+// Same order as the desktop Collection: by line, then purple (gothic) → pink → snow.
+// Ids are "<colour>-<line>"; unknown lines / colours go last, by id.
+const LINES = ['kawaii', 'pastel', 'aristocrat', 'angel', 'lolita', 'dancer'];
+const COLOURS = ['gothic', 'pink', 'snow'];
+const rank = (list, v) => (list.includes(v) ? list.indexOf(v) : list.length);
+export function seriesOrder(a, b) {
+  const [ca, la] = a.split('-');
+  const [cb, lb] = b.split('-');
+  return rank(LINES, la) - rank(LINES, lb) || rank(COLOURS, ca) - rank(COLOURS, cb) || a.localeCompare(b);
+}
+export const MODELS = JSON.parse(readFileSync(join(repoRoot, 'models', 'manifest.json'), 'utf8'))
+  .models.map((m) => ({ id: m.id, zip: m.file, name: titleCase(m.id) }))
+  .sort((a, b) => seriesOrder(a.id, b.id));
 const RELEASE = 'https://github.com/xShiroeNguyenx/desktop-companion/releases/download/models/';
 
 /** Minimal zip reader (stored + deflate) via the central directory. */

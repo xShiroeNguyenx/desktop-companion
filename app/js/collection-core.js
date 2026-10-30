@@ -161,7 +161,9 @@
   /** Đang dùng / đang bật lên đầu, rồi món đã có, rồi rẻ trước. Không đổi mảng vào. */
   function sortItems(items) {
     const rank = (i) => (i.selected || i.on ? 0 : i.owned ? 1 : 2);
-    return [...(items || [])].sort((a, b) => rank(a) - rank(b) || a.price - b.price || String(a.id).localeCompare(String(b.id)));
+    // Cùng giá: theo thứ tự catalog (Rust gửi `order`), không có thì theo id.
+    const ord = (a, b) => (Number.isFinite(a.order) && Number.isFinite(b.order) ? a.order - b.order : 0);
+    return [...(items || [])].sort((a, b) => rank(a) - rank(b) || a.price - b.price || ord(a, b) || String(a.id).localeCompare(String(b.id)));
   }
 
   /**

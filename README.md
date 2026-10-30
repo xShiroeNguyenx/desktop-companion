@@ -41,20 +41,21 @@
 </p>
 
 <p align="center">
-  <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
-  <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
-  <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
-  <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
-  <img src="docs/landing/img/model-gothic-pastel.png" height="180" alt="Gothic Pastel" />
-  <img src="docs/landing/img/model-pink-pastel.png" height="180" alt="Pink Pastel" />
-  <br />
-  <img src="docs/landing/img/model-snow-pastel.png" height="180" alt="Snow Pastel" />
-  <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
-  <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
-  <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
+  <img src="docs/landing/img/model-gothic-kawaii.png" height="180" alt="Gothic Kawaii" />
   <img src="docs/landing/img/model-pink-kawaii.png" height="180" alt="Pink Kawaii" />
   <img src="docs/landing/img/model-snow-kawaii.png" height="180" alt="Snow Kawaii" />
-  <br /><sub>🎭 Live2D models in the Collection: Gothic Aristocrat · Pink Angel · Snow Aristocrat · Pink Aristocrat · Gothic Pastel · Pink Pastel · Snow Pastel · Snow Lolita · Gothic Lolita · Snow Dancer · Pink Kawaii · Snow Kawaii</sub>
+  <img src="docs/landing/img/model-gothic-pastel.png" height="180" alt="Gothic Pastel" />
+  <img src="docs/landing/img/model-pink-pastel.png" height="180" alt="Pink Pastel" />
+  <img src="docs/landing/img/model-snow-pastel.png" height="180" alt="Snow Pastel" />
+  <br />
+  <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
+  <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
+  <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
+  <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
+  <br /><sub>🎭 Live2D models in the Collection: Gothic Kawaii · Pink Kawaii · Snow Kawaii · Gothic Pastel · Pink Pastel · Snow Pastel · Gothic Aristocrat · Pink Aristocrat · Snow Aristocrat · Pink Angel · Gothic Lolita · Snow Lolita · Snow Dancer</sub>
 </p>
 
 ---
@@ -193,14 +194,14 @@
   Lounge), Miu face sets (❄️ Snow, 🦇 Gothic) and Live2D models. Snow, Neko
   and Fox Lounge also restyle every panel (icy blue / gothic lolita / fox
   shrine). Decorations only; never sold for real money.
-- **🎭 Live2D models in the Collection** — twelve extra characters, each with
+- **🎭 Live2D models in the Collection** — thirteen extra characters, each with
   smile, sad, angry, surprised, shy and wink expressions and her own motions:
 
   | Model | Price | Capsule rate |
   |---|---|---|
-  | 🦇 Gothic Aristocrat · 🌸 Pink Angel · ❄️ Snow Aristocrat · 🌸 Pink Aristocrat | 10000 🍬 | 0.1% each |
+  | 🦇 Gothic Aristocrat · 🌸 Pink Aristocrat · ❄️ Snow Aristocrat · 👼 Pink Angel | 10000 🍬 | 0.1% each |
   | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.2% each |
-  | ❄️ Snow Lolita · 🦇 Gothic Lolita · ❄️ Snow Dancer · 🐰 Pink Kawaii · ❄️ Snow Kawaii | 5000 🍬 | 0.4% each |
+  | 🦇 Gothic Kawaii · 🐰 Pink Kawaii · ❄️ Snow Kawaii · 🦇 Gothic Lolita · ❄️ Snow Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.4% each |
 
   They are not in the installer: once unlocked, the model downloads (a few MB,
   progress on its card), is checked against a signed list, and updates itself
@@ -208,8 +209,8 @@
   she replaces the character on screen right away. Hiyori, Haru, Mao and Miara
   stay free, and so do models you add from a folder.
 - **🎰 Candy Capsule** — spin the bunny capsule machine in the Collection:
-  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 62% ·
-  Rare 25% · Epic 10% · 🌈 Legendary 3%, Live2D models only). Every 10th spin
+  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 61.6% ·
+  Rare 25% · Epic 10% · 🌈 Legendary 3.4%, Live2D models only). Every 10th spin
   without a Rare is a sure Rare or better, every 50th without an Epic a sure
   Epic or better, and duplicates refund 10% of the item's price. Each rarity
   bursts open with its own light show, with rainbow rays and heavy confetti

@@ -137,3 +137,12 @@ test('giftState: gift spins switch the pull buttons to free spins', () => {
   assert.equal(C.giftState({ enabled: true, gift: 1 }, 'ja').labels[1], '1回まわす');
   assert.equal(C.errorText('no_gift', 'en'), 'No gift spins left.');
 });
+
+test('sortItems: same price follows the catalog order Rust sends', () => {
+  const m = (id, order) => item({ id, cat: 'model', rarity: 'legendary', price: 5000, order });
+  const got = C.sortItems([m('model.snow-dancer', 12), m('model.gothic-kawaii', 0), m('model.pink-kawaii', 1), m('model.gothic-lolita', 10)]);
+  assert.deepEqual(got.map((i) => i.id), ['model.gothic-kawaii', 'model.pink-kawaii', 'model.gothic-lolita', 'model.snow-dancer']);
+  // Without `order` (older data) it still falls back to id.
+  const old = C.sortItems([item({ id: 'b', price: 1 }), item({ id: 'a', price: 1 })]);
+  assert.deepEqual(old.map((i) => i.id), ['a', 'b']);
+});

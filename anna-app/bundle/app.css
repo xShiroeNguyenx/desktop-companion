@@ -146,9 +146,15 @@ button.danger { color: var(--danger); }
 .card.locked img { filter: grayscale(.8) brightness(.7); }
 .card button { width: 100%; padding: 4px 6px; font-size: 12px; }
 
-/* Floating pet mode (view "pet", transparent window): only the stage, see-through. */
+/* Floating pet mode (view "pet", transparent window): only the stage, see-through.
+   color-scheme must match the host page (normal): when an iframe's color-scheme differs
+   from its embedder's, Chrome paints an opaque Canvas backdrop (black in dark) behind it. */
+.pet-mode { color-scheme: normal !important; }
 .pet-mode, .pet-mode body { background: transparent; }
 .pet-mode .tabs, .pet-mode .panels, .pet-mode .foot, .pet-mode .model-pick, .pet-mode #voiceBtn { display: none; }
+/* The see-through look comes from the host: the "pet" view declares `transparent: true`
+   with `chrome: "vibrancy"` (Anna's frosted-glass window, forum changelog #176), so the
+   page itself paints nothing behind the character. */
 .pet-mode .stage { flex: 1; min-height: 0; background: none; }
 .pet-mode .bubble { top: 6px; left: 8px; right: 8px; }
 .pet-mode .stage-bar { left: 6px; right: 6px; bottom: 6px; }

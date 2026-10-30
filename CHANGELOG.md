@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-30
+
+### Added
+- **🦇 Gothic Kawaii**, a new Live2D model in the Collection (5000 🍬, 0.4% in the
+  Candy Capsule): the purple member of the Kawaii line next to Pink and Snow Kawaii.
+  With 13 models the Legendary rate is now 3.4% (Common 61.6%); each model keeps
+  the rate that matches its price.
+
+### Changed
+- Models in the Collection are grouped by line: Kawaii, Pastel, Aristocrat, Angel,
+  Lolita, Dancer, each in purple → pink → snow order.
+- Gothic Pastel, Pink Pastel, Snow Pastel, Gothic Aristocrat and Snow Aristocrat
+  have updated model files; installed copies update themselves at launch.
+
+### Fixed
+- **Pink Angel** downloaded the Pink Aristocrat model by mistake, and its picture
+  and description showed Pink Aristocrat too. She is now the real Pink Angel, with
+  white wings and a halo; installed copies update themselves at launch.
+
 ## [0.11.2] - 2026-10-30
 
 ### Added
@@ -886,6 +905,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.11.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.3
 [0.11.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.2
 [0.11.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.1
 [0.11.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.0
