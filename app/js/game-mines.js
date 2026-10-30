@@ -134,6 +134,20 @@
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* ignore */ }
   }
 
+  // Ván đang chơi dở: đóng cửa sổ là huỷ hẳn (trả RAM), nên lưu lại sau mỗi
+  // nước đi để mở lại chơi tiếp được. Ván xong / chưa bắt đầu thì xoá.
+  const GAME_KEY = 'minesGame';
+  function saveGame() {
+    try {
+      if (!state || !state.placed || state.done) { localStorage.removeItem(GAME_KEY); return; }
+      const sec = ticker ? Math.floor((Date.now() - started) / 1000) : elapsed;
+      localStorage.setItem(GAME_KEY, JSON.stringify({ level: opts.level, state, elapsed: sec, hints: hintsLeft }));
+    } catch (_) { /* ignore */ }
+  }
+  function loadGame() {
+    try { return M.resumable(JSON.parse(localStorage.getItem(GAME_KEY) || 'null'), opts.level); } catch (_) { return null; }
+  }
+
   const cap = (w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w);
   const low = (w) => (w ? w.charAt(0).toLowerCase() + w.slice(1) : w);
   function words(extra) {
@@ -340,6 +354,7 @@
     mood('idle');
     say(L.sayIdle, true);
     nextTip();
+    saveGame();
   }
 
   // Kết quả của một lần mở (mở thường hoặc mở nhanh).
@@ -373,11 +388,17 @@
     drawHintBtn();
   }
 
+  function openAndSave(i) {
+    openCell(i);
+    saveGame();
+  }
+
   function flagCell(i) {
     if (!state || state.done) return;
     if (!M.toggleFlag(state, i)) return;
     drawCell(i, false);
     drawCounters();
+    saveGame();
     if (state.cells[i].flag) {
       mood('think');
       say(L.sayFlag);
@@ -392,6 +413,7 @@
       return;
     }
     hintsLeft -= 1;
+    saveGame();
     drawHintBtn();
     cellEls[i].classList.add('hint');
     mood('think');
@@ -443,11 +465,17 @@
     }
   }
 
+  // Đóng hẳn (Rust huỷ cửa sổ để trả RAM, windows::close_panel); ván dở đã lưu.
   function hideWindow() {
     if (ticker) stopClock();
+    saveGame();
     const w = window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow();
-    if (w) w.hide().catch(() => {});
+    if (w) w.close().catch(() => w.hide().catch(() => {}));
   }
+  // Đóng bằng Alt+F4 / thanh tác vụ không qua hideWindow: lưu lúc cửa sổ bị ẩn.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) saveGame();
+  });
 
   // ─── Sự kiện ─────────────────────────────────────────────────────────────
   const board = $('board');
@@ -457,7 +485,7 @@
   };
   board.addEventListener('click', (e) => {
     const i = cellIndex(e);
-    if (i >= 0) openCell(i);
+    if (i >= 0) openAndSave(i);
   });
   board.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -516,8 +544,9 @@
     }
   });
 
-  // Mỗi lần mở cửa sổ (dựng sẵn một lần): lấy ngôn ngữ, tên, xưng hô. Ván đang
-  // chơi dở thì giữ nguyên; ván đã xong (hoặc chưa có) thì bắt đầu ván mới.
+  // Mỗi lần mở cửa sổ (dựng mới, hoặc hiện lại khi chưa kịp huỷ): lấy ngôn ngữ,
+  // tên, xưng hô. Ván đang chơi dở (trong trang hoặc đã lưu) thì chơi tiếp; ván
+  // đã xong (hoặc chưa có) thì bắt đầu ván mới.
   async function open() {
     try {
       const info = await invoke('game_info');
@@ -535,6 +564,21 @@
     applyTexts();
     drawLevels();
     drawStats();
+    // Cửa sổ vừa dựng lại: lấy ván dở đã lưu lúc đóng lần trước.
+    if (!state) {
+      const saved = loadGame();
+      if (saved) {
+        state = saved.state;
+        hintsLeft = saved.hints;
+        elapsed = saved.elapsed;
+        started = 1; // ván đã bắt đầu: đồng hồ chạy tiếp từ `elapsed` bên dưới
+        $('result').hidden = true;
+        drawBoard();
+        drawCounters();
+        mood('idle');
+        say(L.sayIdle, true);
+      }
+    }
     if (!state || state.done || !state.placed) newGame();
     else {
       if (started && !ticker) startClock(elapsed);

@@ -440,10 +440,11 @@
     $('lblBest').textContent = L.best;
   }
 
+  // Đóng hẳn (không chỉ ẩn): cửa sổ được dựng khi mở (windows::LAZY).
   function hideWindow() {
     hideResult();
     const w = window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow();
-    if (w) w.hide().catch(() => {});
+    if (w) w.close().catch(() => w.hide().catch(() => {}));
   }
 
   // ─── Sự kiện ─────────────────────────────────────────────────────────────

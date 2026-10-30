@@ -319,12 +319,19 @@ fn pet_command(app: AppHandle, payload: Value) {
         // Menu tròn 🎮: mở trang Mini Games; từ đó mỗi trò mở cửa sổ riêng (open_mini_game).
         "games:show" => companion::show_games(&app),
         // Menu tròn 💞 → 🍬: Bộ sưu tập (kẹo, skin, hiệu ứng, bộ nhân vật).
-        "shop:show" => windows::open_collection(&app),
+        "shop:show" => {
+            windows::open_collection(&app);
+        }
         // Khung 🎁 quay miễn phí mỗi ngày cạnh pet. Luồng riêng: free_spin ghi file
         // và báo mọi cửa sổ (collection::changed), như weather:pin.
         "gacha:free" => {
             let app2 = app.clone();
             std::thread::spawn(move || commands::free_spin(&app2));
+        }
+        // Khung 🎁 "lượt quay quà" trên đầu pet: mở Bộ sưu tập ở máy quay kẹo,
+        // nơi hai nút quay đang là quay quà miễn phí.
+        "gacha:gift" => {
+            windows::open_collection_at(&app, serde_json::json!({ "mode": "gacha" }));
         }
         // Nút "Xem" trên thẻ quà: mở Bộ sưu tập ở đúng món vừa quay.
         "gacha:view" => {
@@ -748,6 +755,7 @@ fn main() {
             commands::collection_preview_fx,
             commands::open_collection,
             commands::collection_close,
+            commands::collection_take_focus,
             commands::collection_pull,
             commands::collection_pull_gift,
             commands::collection_debug,
@@ -1034,15 +1042,13 @@ fn main() {
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
             }
+            // Bảng tạo khi mở (windows::LAZY) đóng là đóng thật để trả RAM; bảng
+            // dựng sẵn thì chỉ ẩn (thoát hẳn app qua tray). Cả hai đều nhả pet
+            // và huỷ nhân vật bám mép. Không huỷ ngay ở đây (main thread → treo
+            // WebView2): close_panel ẩn ngay rồi huỷ ở luồng riêng.
             WindowEvent::CloseRequested { api, .. } => {
-                // All windows are persistent (pre-created and reused), so closing
-                // any of them just hides it. The user fully quits via the tray.
                 api.prevent_close();
-                let _ = window.hide();
-                // Đóng bảng đang giữ pet: trả pet về chỗ cũ, cho click vào lại.
-                windows::undock_pet_from(window.app_handle(), window.label());
-                // Nhân vật bám ngoài mép bảng ẩn theo bảng.
-                sidegirl::hide(window.app_handle(), window.label());
+                windows::close_panel(window.app_handle(), window.label());
             }
             WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
                 match window.label() {

@@ -272,6 +272,7 @@ window.addEventListener('message', (event) => {
     // Khung 🎁 quay miễn phí mỗi ngày (companion.rs offer_free_spin, commands.rs free_spin).
     case 'gacha:offer':
     case 'gacha:result':
+    case 'gacha:gift':
       handleDailyGachaMessage(event.data);
       break;
     // Đổi "Ngôn ngữ chữ" từ bảng Cài đặt. Nhớ qua sessionStorage vì trang pet

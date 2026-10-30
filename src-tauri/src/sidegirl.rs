@@ -197,33 +197,56 @@ pub fn set_side_set(app: &AppHandle, id: &str) {
     }
 }
 
-/// Dựng sẵn (ẩn) cửa sổ nhân vật. Gọi trong setup(), SAU khi bảng đã dựng.
+/// Gọi trong setup(): nạp công tắc + bộ đang chọn. KHÔNG dựng cửa sổ nào —
+/// nhân vật được dựng khi bảng của nó mở (`ensure`) và huỷ khi bảng đóng
+/// (windows::close_panel), để khỏi giữ 6 tiến trình WebView2 nằm không.
 pub fn precreate(app: &AppHandle) {
     ENABLED.store(crate::store::load_settings(app).side_girls, Ordering::SeqCst);
     let idx = set_index(crate::collection::effective_side_set(&crate::store::load_collection(app)));
     SET_IDX.store(idx, Ordering::SeqCst);
-    for h in &HOSTS {
-        let Some(host) = app.get_webview_window(h.host) else { continue };
-        // Ảnh lúc dựng; đổi bộ sau đó đi qua sự kiện side-layout.
-        let img = girl_in(idx, h.host).map_or("", |g| g.img);
-        let builder = WebviewWindowBuilder::new(app, h.label, WebviewUrl::App("side.html".into()))
-            .initialization_script(&format!("window.__SIDE_IMG__ = {:?};", img))
-            .inner_size(300.0, 450.0)
-            .transparent(true)
-            .decorations(false)
-            .shadow(false)
-            .skip_taskbar(true)
-            .resizable(false)
-            .focused(false)
-            .visible(false);
-        let built = builder.parent(&host).and_then(|b| b.build());
-        match built {
-            Ok(w) => {
-                let _ = w.set_ignore_cursor_events(true);
-                crate::windows::set_no_activate(&w);
-            }
-            Err(e) => eprintln!("[sidegirl] dựng {} lỗi: {e}", h.label),
+}
+
+/// Dựng (ẩn) nhân vật của một bảng, nếu bảng đã có và nhân vật chưa có. Chờ
+/// trang nạp xong để side-layout gửi ngay sau đó không bị lỡ, nên phải chạy
+/// ngoài main thread.
+fn build(app: &AppHandle, h: &Host) {
+    if app.get_webview_window(h.label).is_some() {
+        return;
+    }
+    let Some(host) = app.get_webview_window(h.host) else { return };
+    // Ảnh lúc dựng; đổi bộ sau đó đi qua sự kiện side-layout.
+    let img = girl_in(SET_IDX.load(Ordering::SeqCst), h.host).map_or("", |g| g.img);
+    let builder = WebviewWindowBuilder::new(app, h.label, WebviewUrl::App("side.html".into()))
+        .initialization_script(&format!("window.__SIDE_IMG__ = {:?};", img))
+        .inner_size(300.0, 450.0)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .skip_taskbar(true)
+        .resizable(false)
+        .focused(false)
+        .visible(false);
+    let built = builder.parent(&host).and_then(crate::windows::build_and_wait);
+    match built {
+        Ok(w) => {
+            let _ = w.set_ignore_cursor_events(true);
+            crate::windows::set_no_activate(&w);
         }
+        Err(e) => eprintln!("[sidegirl] dựng {} lỗi: {e}", h.label),
+    }
+}
+
+/// Bảng `host` vừa được dựng / mở: dựng nhân vật đi kèm (ngoài main thread).
+pub fn ensure(app: &AppHandle, host: &str) {
+    if let Some(h) = HOSTS.iter().find(|h| h.host == host) {
+        build(app, h);
+    }
+}
+
+/// Bảng `host` sắp bị huỷ: huỷ luôn nhân vật đi kèm (nó là cửa sổ con của bảng).
+pub fn destroy(app: &AppHandle, host: &str) {
+    if let Some(girl) = label_for(host).and_then(|l| app.get_webview_window(l)) {
+        let _ = girl.destroy();
     }
 }
 

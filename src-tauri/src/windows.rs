@@ -2,9 +2,11 @@
 // (translate / reply / save-task), the tasks list, and settings.
 //
 // IMPORTANT threading note: Tauri command handlers and tray menu callbacks
-// already run on the main thread, so they build windows DIRECTLY. Only
-// show_flower / hide_flower are also reachable from the selection worker thread,
-// so those marshal onto the main thread via run_on_main_thread.
+// already run on the main thread. Showing / hiding windows there is fine, but
+// BUILDING or DESTROYING one there hangs WebView2 — panels created on demand
+// (LAZY) are built on another thread via off_thread. show_flower / hide_flower
+// are also reachable from the selection worker thread, so those marshal onto
+// the main thread via run_on_main_thread.
 
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 
@@ -184,15 +186,6 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
-    let _ = WebviewWindowBuilder::new(app, "tasks", WebviewUrl::App("tasks.html".into()))
-        .title("Công việc (Tasks)")
-        // Rộng để chứa 2 cột (chưa làm | đã làm) ôm lấy pet ở giữa.
-        .inner_size(820.0, 580.0)
-        .min_inner_size(420.0, 380.0)
-        .resizable(true)
-        .visible(false)
-        .build();
-
     // 🔎 Ô mở nhanh (launcher.rs): không viền, luôn nổi, không hiện trên taskbar.
     let _ = WebviewWindowBuilder::new(app, crate::launcher::LABEL, WebviewUrl::App("launcher.html".into()))
         .title("Mở nhanh")
@@ -206,103 +199,11 @@ pub fn precreate(app: &AppHandle) {
         .visible(false)
         .build();
 
-    let _ = WebviewWindowBuilder::new(app, "notes", WebviewUrl::App("notes.html".into()))
-        .title("Ghi chú")
-        .inner_size(560.0, 600.0)
-        .min_inner_size(360.0, 360.0)
-        .resizable(true)
-        .visible(false)
-        .build();
+    // Cài đặt, Công việc, Ghi chú, hộp cập nhật và các bảng trò chơi / tiện ích:
+    // KHÔNG dựng sẵn — tạo khi mở, huỷ khi đóng (LAZY bên dưới). Mỗi cửa sổ ẩn
+    // vẫn giữ một tiến trình WebView2 (~30–50 MB), mà các bảng này ít khi mở.
 
-    let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings.html".into()))
-        .title("Cài đặt")
-        // Rộng để chứa 2 cột ôm lấy nhân vật ở giữa; hẹp hơn 560px thì
-        // CSS tự bỏ nhân vật và cho 2 cột chia đôi.
-        .inner_size(880.0, 600.0)
-        .min_inner_size(420.0, 420.0)
-        .resizable(true)
-        .visible(false)
-        .build();
-
-    // Hộp thoại "có bản mới" — hiện tự động khi app khởi động và phát hiện
-    // bản mới, nên phải được warm sẵn ở đây như các cửa sổ phụ khác.
-    let _ = WebviewWindowBuilder::new(app, "update", WebviewUrl::App("update.html".into()))
-        .title("Có bản cập nhật mới")
-        .inner_size(UPDATE_W, UPDATE_H)
-        .min_inner_size(360.0, 240.0)
-        .always_on_top(true)
-        .skip_taskbar(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Cửa sổ Oẳn tù tì: trong suốt, không viền (khung bo góc vẽ bằng CSS).
-    let _ = WebviewWindowBuilder::new(app, "game", WebviewUrl::App("game.html".into()))
-        .title("Oẳn tù tì")
-        .inner_size(GAME_W, GAME_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Cửa sổ Đoán số: cùng kiểu và cùng kích thước với cửa sổ Oẳn tù tì.
-    let _ = WebviewWindowBuilder::new(app, "guess", WebviewUrl::App("guess.html".into()))
-        .title("Đoán số")
-        .inner_size(GAME_W, GAME_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Thẻ dự báo thời tiết (weather.html), mở từ tray / menu tròn 💞 → ☁️.
-    let _ = WebviewWindowBuilder::new(app, "weather", WebviewUrl::App("weather.html".into()))
-        .title("Thời tiết")
-        .inner_size(WEATHER_W, WEATHER_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Trang Mini Games: chọn trò (mở từ menu tròn 💞 → 🎮).
-    let _ = WebviewWindowBuilder::new(app, "arcade", WebviewUrl::App("arcade.html".into()))
-        .title("Mini Games")
-        .inner_size(ARCADE_W, ARCADE_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // 🍬 Bộ sưu tập (menu tròn 💞 → 🍬, ô 🎁 Mini Games, Cài đặt → Diện mạo).
-    let _ = WebviewWindowBuilder::new(app, "collection", WebviewUrl::App("collection.html".into()))
-        .title("Bộ sưu tập")
-        .inner_size(COLLECTION_W, COLLECTION_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Cửa sổ Gỡ mìn: cùng kiểu, to hơn một chút cho bàn 16×16.
-    let _ = WebviewWindowBuilder::new(app, "mines", WebviewUrl::App("mines.html".into()))
-        .title("Gỡ mìn")
-        .inner_size(MINES_W, MINES_H)
-        .transparent(true)
-        .decorations(false)
-        .shadow(false)
-        .resizable(false)
-        .visible(false)
-        .build();
-
-    // Nhân vật bám ngoài mép bảng Cài đặt / Công việc (cần bảng đã dựng).
+    // Nhân vật bám mép bảng: chỉ nạp công tắc + bộ đang chọn; cửa sổ dựng theo bảng.
     crate::sidegirl::precreate(app);
 
     dbg_log("[windows] precreate done");
@@ -319,31 +220,22 @@ const UPDATE_H: f64 = 260.0;
 /// thoại khỏi phải gọi lại qua mạng. `None` khi người dùng tự bấm mở: lúc đó
 /// hộp thoại tự kiểm tra.
 pub fn show_update(app: &AppHandle, info: Option<serde_json::Value>) {
-    let Some(w) = app.get_webview_window("update") else {
-        dbg_log("[windows] update window missing (precreate failed?)");
-        return;
-    };
-    // Canh giữa màn hình chính; center() của Tauri đã lo phần đa màn hình.
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
-    let _ = app.emit_to("update", "update-refresh", info.clone());
-    force_repaint(app, "update");
-    // Phát lại sau một nhịp: nếu cửa sổ vừa được dựng (precreate hụt) thì
-    // listener của update.js có thể chưa kịp đăng ký lúc emit đầu tiên.
-    let app_retry = app.clone();
-    std::thread::spawn(move || {
+    off_thread(app, move |app| {
+        // Canh giữa màn hình chính; center() của Tauri đã lo phần đa màn hình.
+        if show_lazy(app, "update", true).is_none() {
+            return;
+        }
+        let _ = app.emit_to("update", "update-refresh", info.clone());
+        // Phát lại sau một nhịp, đề phòng listener của update.js chưa kịp đăng ký
+        // (update.js bỏ qua lần lặp này nếu lần đầu đã tới).
         std::thread::sleep(std::time::Duration::from_millis(400));
-        let _ = app_retry.emit_to("update", "update-refresh", info);
+        let _ = app.emit_to("update", "update-refresh", info);
+        dbg_log("[windows] update dialog shown");
     });
-    dbg_log("[windows] update dialog shown");
 }
 
 pub fn hide_update(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("update") {
-        let _ = w.hide();
-    }
+    close_panel(app, "update");
 }
 
 pub fn show_flower(app: &AppHandle, x: i32, y: i32) {
@@ -490,7 +382,12 @@ fn open_popup_tab(app: &AppHandle, x: i32, y: i32, tab: &str) {
         let _ = w.set_focus();
         let _ = w.emit("popup-refresh", tab.to_string());
         force_repaint(app, "popup");
-        crate::sidegirl::sync(app, "popup", true);
+        // Bảng dựng sẵn nhưng nhân vật bám mép thì dựng khi mở (đóng là huỷ, xem
+        // close_panel) — ở luồng riêng, vì hàm này chạy trên main thread.
+        off_thread(app, |app| {
+            crate::sidegirl::ensure(app, "popup");
+            crate::sidegirl::sync(app, "popup", true);
+        });
         dbg_log("[windows] popup shown");
     } else {
         dbg_log("[windows] popup window missing (precreate failed?)");
@@ -520,100 +417,288 @@ const COLLECTION_H: f64 = 475.0;
 const WEATHER_W: f64 = 475.0;
 const WEATHER_H: f64 = 396.0;
 
-/// Tray / menu tròn → thẻ dự báo giữa màn hình. weather.js nghe "weather-data";
-/// mở thẻ cũng là một lý do để hỏi Open-Meteo (weather_net::needed).
-pub fn open_weather(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("weather") else {
-        dbg_log("[windows] weather window missing (precreate failed?)");
-        return;
+// ─── Bảng tạo khi mở, huỷ khi đóng ──────────────────────────────────────────
+// Dựng sẵn (ẩn) thì mỗi bảng giữ một tiến trình WebView2 suốt đời app; tạo
+// theo yêu cầu thì đóng là trả lại RAM.
+//
+// Bảng CÓ NỀN tạo lúc chạy từng bị trắng trơn: cửa sổ hiện ra trước khi trang
+// vẽ xong, và WebView2 không vẽ lại cho tới lần đổi cỡ đầu tiên. Vì vậy bảng
+// vừa dựng chỉ hiện SAU khi trang nạp xong (build_and_wait), rồi vẫn nhích 1px
+// (force_repaint) như mọi bảng khác. Chờ trang nạp cũng giúp sự kiện gửi ngay
+// sau khi mở (notes-compose, update-refresh…) không bị lỡ.
+pub const LAZY: [&str; 10] = [
+    "game", "guess", "weather", "arcade", "collection", "mines", "settings", "tasks", "notes", "update",
+];
+
+pub fn is_lazy(label: &str) -> bool {
+    LAZY.contains(&label)
+}
+
+/// Dựng cửa sổ rồi chờ trang nạp xong (tối đa 5s). Phải chạy NGOÀI main
+/// thread: sự kiện nạp trang tới từ vòng lặp chính, chờ ở đó là treo.
+pub(crate) fn build_and_wait(
+    builder: WebviewWindowBuilder<'_, tauri::Wry, AppHandle>,
+) -> tauri::Result<tauri::WebviewWindow> {
+    let (tx, rx) = std::sync::mpsc::channel::<()>();
+    let tx = std::sync::Mutex::new(Some(tx));
+    let win = builder
+        .on_page_load(move |_, payload| {
+            if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                if let Some(tx) = tx.lock().unwrap().take() {
+                    let _ = tx.send(());
+                }
+            }
+        })
+        .build()?;
+    if rx.recv_timeout(std::time::Duration::from_secs(5)).is_err() {
+        dbg_log(&format!("[windows] {} nạp trang quá 5s", win.label()));
+    }
+    // listen() trong trang là lời gọi IPC bất đồng bộ: chờ thêm một nhịp cho
+    // nó đăng ký xong rồi mới phát sự kiện.
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    Ok(win)
+}
+
+/// Bảng trong suốt, không viền (trò chơi, thẻ tiện ích).
+fn overlay<'a>(
+    app: &'a AppHandle,
+    label: &str,
+    page: &str,
+    title: &str,
+    w: f64,
+    h: f64,
+) -> WebviewWindowBuilder<'a, tauri::Wry, AppHandle> {
+    WebviewWindowBuilder::new(app, label, WebviewUrl::App(page.into()))
+        .title(title)
+        .inner_size(w, h)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .resizable(false)
+        .visible(false)
+}
+
+/// Bảng có nền + khung cửa sổ thường.
+fn framed<'a>(
+    app: &'a AppHandle,
+    label: &str,
+    page: &str,
+    title: &str,
+    w: f64,
+    h: f64,
+) -> WebviewWindowBuilder<'a, tauri::Wry, AppHandle> {
+    WebviewWindowBuilder::new(app, label, WebviewUrl::App(page.into()))
+        .title(title)
+        .inner_size(w, h)
+        .visible(false)
+}
+
+/// Hai lần mở cùng lúc (bấm đúp) không được dựng trùng một label.
+static BUILD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Lấy bảng `label`, chưa có thì dựng (ẩn) và chờ trang nạp xong. Trả
+/// `(cửa sổ, vừa dựng)`. Chạy ngoài main thread (xem off_thread).
+fn ensure(app: &AppHandle, label: &str) -> Option<(tauri::WebviewWindow, bool)> {
+    let _guard = BUILD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(w) = app.get_webview_window(label) {
+        return Some((w, false));
+    }
+    let builder = match label {
+        "game" => overlay(app, label, "game.html", "Oẳn tù tì", GAME_W, GAME_H),
+        "guess" => overlay(app, label, "guess.html", "Đoán số", GAME_W, GAME_H),
+        "weather" => overlay(app, label, "weather.html", "Thời tiết", WEATHER_W, WEATHER_H),
+        "arcade" => overlay(app, label, "arcade.html", "Mini Games", ARCADE_W, ARCADE_H),
+        "collection" => overlay(app, label, "collection.html", "Bộ sưu tập", COLLECTION_W, COLLECTION_H),
+        // To hơn trò khác một chút cho bàn 16×16.
+        "mines" => overlay(app, label, "mines.html", "Gỡ mìn", MINES_W, MINES_H),
+        // Rộng để chứa 2 cột ôm lấy pet ở giữa; hẹp hơn 560px thì CSS tự bỏ
+        // pet và cho 2 cột chia đôi.
+        "settings" => framed(app, label, "settings.html", "Cài đặt", 880.0, 600.0)
+            .min_inner_size(420.0, 420.0)
+            .resizable(true),
+        // Rộng để chứa 2 cột (chưa làm | đã làm) ôm lấy pet ở giữa.
+        "tasks" => framed(app, label, "tasks.html", "Công việc (Tasks)", 820.0, 580.0)
+            .min_inner_size(420.0, 380.0)
+            .resizable(true),
+        "notes" => framed(app, label, "notes.html", "Ghi chú", 560.0, 600.0)
+            .min_inner_size(360.0, 360.0)
+            .resizable(true),
+        "update" => framed(app, label, "update.html", "Có bản cập nhật mới", UPDATE_W, UPDATE_H)
+            .min_inner_size(360.0, 240.0)
+            .always_on_top(true)
+            .resizable(false),
+        _ => return None,
     };
-    let _ = w.center();
+    match build_and_wait(builder) {
+        Ok(win) => {
+            // Nhân vật bám mép (nếu bảng này có) đi theo vòng đời của bảng.
+            crate::sidegirl::ensure(app, label);
+            dbg_log(&format!("[windows] {label} created"));
+            Some((win, true))
+        }
+        Err(e) => {
+            dbg_log(&format!("[windows] dựng {label} lỗi: {e}"));
+            None
+        }
+    }
+}
+
+/// Dựng nếu chưa có rồi hiện bảng lên trước. `center`: canh giữa màn hình mỗi
+/// lần mở; không thì chỉ canh lần vừa dựng (bảng giữ chỗ người dùng kéo tới
+/// cho tới khi đóng). Trả `(cửa sổ, vừa dựng)`.
+fn show_lazy(app: &AppHandle, label: &str, center: bool) -> Option<(tauri::WebviewWindow, bool)> {
+    let (w, fresh) = ensure(app, label)?;
+    if center || fresh {
+        let _ = w.center();
+    }
     let _ = w.show();
     let _ = w.unminimize();
     let _ = w.set_focus();
+    force_repaint(app, label);
+    Some((w, fresh))
+}
+
+/// Chạy `f` ở luồng riêng. Dựng / huỷ cửa sổ ngay trong command đồng bộ hay
+/// callback của tray / pet_command (đều chạy trên main thread) làm treo WebView2
+/// (xem "weather:pin" trong main.rs); ở luồng khác thì Tauri tự chuyển việc
+/// dựng về vòng lặp chính và không treo.
+fn off_thread(app: &AppHandle, f: impl FnOnce(&AppHandle) + Send + 'static) {
+    let app = app.clone();
+    std::thread::spawn(move || f(&app));
+}
+
+/// Đóng bảng `label` (nút ×, Alt+F4, Esc, chuyển sang trò khác): ẩn ngay, nhả
+/// pet nếu bảng đang giữ nó, rồi huỷ ở luồng riêng cửa sổ (bảng LAZY) và nhân
+/// vật bám mép. Bảng dựng sẵn (popup…) thì chỉ ẩn, nhưng nhân vật vẫn bị huỷ.
+pub fn close_panel(app: &AppHandle, label: &str) {
+    if let Some(w) = app.get_webview_window(label) {
+        let _ = w.hide();
+    }
+    // Đóng bảng đang giữ pet: trả pet về chỗ cũ, cho click vào lại.
+    undock_pet_from(app, label);
+    crate::sidegirl::hide(app, label);
+    let lazy = is_lazy(label);
+    let label = label.to_string();
+    off_thread(app, move |app| {
+        let _guard = BUILD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(w) = app.get_webview_window(&label) else { return };
+        // Vừa đóng đã mở lại (cửa sổ hiện lại trước khi tới lượt huỷ): giữ nguyên.
+        if w.is_visible().unwrap_or(false) {
+            return;
+        }
+        crate::sidegirl::destroy(app, &label);
+        if lazy {
+            // destroy(): không qua CloseRequested.
+            let _ = w.destroy();
+            dbg_log(&format!("[windows] {label} destroyed"));
+        }
+    });
+}
+
+/// Tray / menu tròn → thẻ dự báo giữa màn hình. weather.js nghe "weather-data";
+/// mở thẻ cũng là một lý do để hỏi Open-Meteo (weather_net::needed).
+pub fn open_weather(app: &AppHandle) {
+    off_thread(app, open_weather_now);
+}
+
+fn open_weather_now(app: &AppHandle) {
+    if show_lazy(app, "weather", true).is_none() {
+        return;
+    }
     // Cô cáo bám mép trái (Bunny Lounge); thiếu chỗ bên trái thì dịch thẻ sang phải.
     crate::sidegirl::sync(app, "weather", true);
     crate::weather_net::broadcast(app);
     crate::weather_net::wake();
-    force_repaint(app, "weather");
 }
 
 /// Menu tròn 🎮 → trang Mini Games giữa màn hình (arcade.js nghe "arcade-refresh"
 /// để đọc lại điểm thân thiết và thành tích).
 pub fn open_arcade(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("arcade") else {
-        dbg_log("[windows] arcade window missing (precreate failed?)");
+    off_thread(app, open_arcade_now);
+}
+
+fn open_arcade_now(app: &AppHandle) {
+    if show_lazy(app, "arcade", true).is_none() {
         return;
-    };
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
+    }
     // Cô mèo gothic bám mép trái (Bunny Lounge); thiếu chỗ thì dịch trang sang phải.
     crate::sidegirl::sync(app, "arcade", true);
     let _ = app.emit_to("arcade", "arcade-refresh", ());
-    force_repaint(app, "arcade");
+}
+
+/// Chỗ cần chỉ tới khi Bộ sưu tập vừa được dựng (collection.js hỏi lại bằng
+/// `collection_take_focus` sau khi nạp xong, đề phòng sự kiện tới trước khi
+/// trang đọc xong dữ liệu).
+static PENDING_FOCUS: std::sync::Mutex<Option<serde_json::Value>> = std::sync::Mutex::new(None);
+
+/// Mở Bộ sưu tập và chỉ tới một nhóm / món (`{tab, item?}` hoặc `{mode}`, như
+/// "collection-focus").
+pub fn open_collection_at(app: &AppHandle, focus: serde_json::Value) {
+    off_thread(app, move |app| {
+        if open_collection_now(app) {
+            *PENDING_FOCUS.lock().unwrap() = Some(focus);
+        } else {
+            let _ = app.emit_to("collection", "collection-focus", focus);
+        }
+    });
+}
+
+/// Lấy (và xoá) chỗ cần chỉ tới đang chờ — xem `open_collection_at`.
+pub fn take_collection_focus() -> Option<serde_json::Value> {
+    PENDING_FOCUS.lock().unwrap().take()
 }
 
 /// 🍬 Bộ sưu tập: hiện giữa màn hình, trang đọc lại dữ liệu (collection-refresh).
 pub fn open_collection(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("collection") else {
-        dbg_log("[windows] collection window missing (precreate failed?)");
-        return;
-    };
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
+    off_thread(app, |app| {
+        open_collection_now(app);
+    });
+}
+
+/// Trả `true` nếu cửa sổ vừa được dựng.
+fn open_collection_now(app: &AppHandle) -> bool {
+    let Some((_, fresh)) = show_lazy(app, "collection", true) else { return false };
+    if !fresh {
+        PENDING_FOCUS.lock().unwrap().take();
+    }
     // Nhân vật bám mép trái như các khung khác; thiếu chỗ thì dịch khung sang phải.
     crate::sidegirl::sync(app, "collection", true);
     let _ = app.emit_to("collection", "collection-refresh", ());
-    force_repaint(app, "collection");
+    fresh
 }
 
 /// Bảng mini game trên pet → Oẳn tù tì: hiện cửa sổ game giữa màn hình, bắt
 /// đầu ván mới (game-rps.js nghe "game-refresh").
 pub fn open_game(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("game") else {
-        dbg_log("[windows] game window missing (precreate failed?)");
-        return;
-    };
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
-    let _ = app.emit_to("game", "game-refresh", ());
-    force_repaint(app, "game");
+    off_thread(app, open_game_now);
+}
+
+fn open_game_now(app: &AppHandle) {
+    if show_lazy(app, "game", true).is_some() {
+        let _ = app.emit_to("game", "game-refresh", ());
+    }
 }
 
 /// Bảng mini game trên pet → Đoán số: hiện cửa sổ giữa màn hình, ván mới
 /// (game-guess.js nghe "guess-refresh").
 pub fn open_guess(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("guess") else {
-        dbg_log("[windows] guess window missing (precreate failed?)");
-        return;
-    };
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
-    let _ = app.emit_to("guess", "guess-refresh", ());
-    force_repaint(app, "guess");
+    off_thread(app, open_guess_now);
 }
 
-/// Bảng mini game trên pet → Gỡ mìn: hiện cửa sổ giữa màn hình; ván đang chơi
-/// dở thì giữ nguyên (game-mines.js nghe "mines-refresh").
+fn open_guess_now(app: &AppHandle) {
+    if show_lazy(app, "guess", true).is_some() {
+        let _ = app.emit_to("guess", "guess-refresh", ());
+    }
+}
+
+/// Bảng mini game trên pet → Gỡ mìn: hiện cửa sổ giữa màn hình. Ván đang chơi
+/// dở được game-mines.js lưu lại (localStorage) nên đóng rồi mở vẫn còn.
 pub fn open_mines(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("mines") else {
-        dbg_log("[windows] mines window missing (precreate failed?)");
-        return;
-    };
-    let _ = w.center();
-    let _ = w.show();
-    let _ = w.unminimize();
-    let _ = w.set_focus();
-    let _ = app.emit_to("mines", "mines-refresh", ());
-    force_repaint(app, "mines");
+    off_thread(app, |app| {
+        if let Some((_, false)) = show_lazy(app, "mines", true) {
+            let _ = app.emit_to("mines", "mines-refresh", ());
+        }
+    });
 }
 
 /// Menu chuột phải của pet → "Mở đầy đủ": Trợ lý văn bản ở chế độ tự gõ, đặt
@@ -640,22 +725,31 @@ pub fn open_assistant(app: &AppHandle) {
 }
 
 pub fn open_tasks(app: &AppHandle) {
-    open_simple(app, "tasks", "tasks.html", "Công việc (Tasks)", 820.0, 580.0);
-    dock_pet_to(app, "tasks");
-    crate::sidegirl::sync(app, "tasks", true);
+    off_thread(app, |app| {
+        if open_simple(app, "tasks") {
+            dock_pet_to(app, "tasks");
+            crate::sidegirl::sync(app, "tasks", true);
+        }
+    });
 }
 
 /// Bảng 🗒️ Ghi chú (notes.html). Không ghép pet vào giữa như Công việc: chỉ
 /// một cột, mở để tra nhanh rồi đóng.
 pub fn open_notes(app: &AppHandle) {
-    open_simple(app, "notes", "notes.html", "Ghi chú", 560.0, 600.0);
+    off_thread(app, |app| {
+        open_simple(app, "notes");
+    });
 }
 
 /// Bông hoa → 🗒️ Lưu ghi chú: mở bảng Ghi chú, ô soạn mới điền sẵn `text`
 /// (notes.js nghe "notes-compose") để người dùng thêm tiêu đề rồi lưu.
 pub fn open_notes_compose(app: &AppHandle, text: &str) {
-    open_notes(app);
-    let _ = app.emit_to("notes", "notes-compose", text);
+    let text = text.to_string();
+    off_thread(app, move |app| {
+        if open_simple(app, "notes") {
+            let _ = app.emit_to("notes", "notes-compose", text);
+        }
+    });
 }
 
 // ─── Ghép pet vào giữa cửa sổ Cài đặt / Công việc ───────────────────────────
@@ -818,23 +912,22 @@ pub fn host_minimize_changed(app: &AppHandle, label: &str) {
 }
 
 pub fn open_settings(app: &AppHandle) {
-    open_simple(app, "settings", "settings.html", "Cài đặt", 880.0, 600.0);
-    dock_pet_to(app, "settings");
-    crate::sidegirl::sync(app, "settings", true);
+    off_thread(app, |app| {
+        if open_simple(app, "settings") {
+            dock_pet_to(app, "settings");
+            crate::sidegirl::sync(app, "settings", true);
+        }
+    });
 }
 
-fn open_simple(app: &AppHandle, label: &str, _html: &str, _title: &str, _w: f64, _h: f64) {
-    dbg_log(&format!("[windows] open_simple ENTER {label}"));
-    if let Some(win) = app.get_webview_window(label) {
-        let _ = win.show();
-        let _ = win.unminimize();
-        let _ = win.set_focus();
-        // Pre-created windows ran their JS once at startup; tell them to reload
-        // their data each time they are shown.
-        let _ = win.emit(&format!("{label}-refresh"), ());
-        force_repaint(app, label);
-        dbg_log(&format!("[windows] {label} shown"));
-    } else {
-        dbg_log(&format!("[windows] {label} window missing (precreate failed?)"));
+/// Mở bảng có nền (dựng nếu chưa có). Bảng đang mở sẵn thì bảo trang nạp lại
+/// dữ liệu ("{label}-refresh"); bảng vừa dựng đã tự nạp lúc khởi chạy JS.
+/// Chạy ngoài main thread. Trả `false` nếu không dựng được.
+fn open_simple(app: &AppHandle, label: &str) -> bool {
+    let Some((_, fresh)) = show_lazy(app, label, false) else { return false };
+    if !fresh {
+        let _ = app.emit_to(label, &format!("{label}-refresh"), ());
     }
+    dbg_log(&format!("[windows] {label} shown"));
+    true
 }

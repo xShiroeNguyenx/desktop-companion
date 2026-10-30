@@ -157,7 +157,26 @@
     return fallback;
   }
 
-  const api = { LEVELS, minesNew, neighbors, reveal, toggleFlag, chord, minesLeft, safeHint };
+  /**
+   * Ván lưu lại lúc đóng cửa sổ (`{ level, state, elapsed, hints }`) còn chơi
+   * tiếp được không: đúng mức đang chọn, đã bắt đầu, chưa xong và bàn nguyên vẹn
+   * (dữ liệu localStorage có thể cũ hoặc hỏng). Trả `null` nếu không.
+   */
+  function resumable(saved, level) {
+    const s = saved && saved.state;
+    const cfg = LEVELS[level];
+    if (!s || !cfg || saved.level !== level || !s.placed || s.done) return null;
+    if (s.rows !== cfg.rows || s.cols !== cfg.cols || s.mines !== cfg.mines) return null;
+    if (!Array.isArray(s.cells) || s.cells.length !== s.rows * s.cols) return null;
+    if (!s.cells.every((c) => c && typeof c === 'object' && typeof c.adj === 'number')) return null;
+    return {
+      state: s,
+      elapsed: Math.max(0, Number(saved.elapsed) | 0),
+      hints: Math.max(0, Number(saved.hints) | 0),
+    };
+  }
+
+  const api = { LEVELS, minesNew, neighbors, reveal, toggleFlag, chord, minesLeft, safeHint, resumable };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MinesCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

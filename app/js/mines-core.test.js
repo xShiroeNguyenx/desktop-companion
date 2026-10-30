@@ -105,3 +105,21 @@ test('gợi ý trả ô an toàn cạnh vùng đã mở', () => {
   assert.ok(h >= 0 && !s.cells[h].mine && !s.cells[h].open);
   assert.ok(M.neighbors(s, h).includes(4));
 });
+
+test('resumable: chỉ chơi tiếp ván đang dở, đúng mức, bàn nguyên vẹn', () => {
+  const s = M.minesNew('easy');
+  M.reveal(s, 0, () => 0.5);
+  const saved = JSON.parse(JSON.stringify({ level: 'easy', state: s, elapsed: 42, hints: 1 }));
+  const r = M.resumable(saved, 'easy');
+  assert.ok(r);
+  assert.equal(r.elapsed, 42);
+  assert.equal(r.hints, 1);
+  assert.equal(r.state.cells.length, 64);
+  // Đổi mức, ván chưa bắt đầu, ván đã xong, dữ liệu hỏng → ván mới.
+  assert.equal(M.resumable(saved, 'hard'), null);
+  assert.equal(M.resumable({ ...saved, state: M.minesNew('easy') }, 'easy'), null);
+  assert.equal(M.resumable({ ...saved, state: { ...saved.state, done: true } }, 'easy'), null);
+  assert.equal(M.resumable({ ...saved, state: { ...saved.state, cells: [] } }, 'easy'), null);
+  assert.equal(M.resumable(null, 'easy'), null);
+  assert.equal(M.resumable({ level: 'easy' }, 'easy'), null);
+});

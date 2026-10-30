@@ -396,10 +396,12 @@
     $('rTitle').textContent = L.reward;
   }
 
+  // Đóng hẳn (không chỉ ẩn): cửa sổ game được dựng khi mở (windows::LAZY),
+  // đóng là trả lại RAM; mở lại thì dựng mới.
   function hideWindow() {
     clearTimers();
     const w = window.__TAURI__ && window.__TAURI__.window && window.__TAURI__.window.getCurrentWindow();
-    if (w) w.hide().catch(() => {});
+    if (w) w.close().catch(() => w.hide().catch(() => {}));
   }
 
   // ─── Sự kiện ───────────────────────────────────────────────────────────────

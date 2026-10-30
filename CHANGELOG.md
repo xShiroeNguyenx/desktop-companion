@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.5] - 2026-10-30
+
+### Added
+- **🎁 Gift spin reminder above the pet.** While you still have gift spins from the
+  20-spin welcome gift (and today's free spin is used), the little capsule above
+  her head shows "Gift · N left"; click it to open the capsule machine, where both
+  spin buttons are free. The count updates as you spin and the capsule goes away
+  when none are left; × hides it until the next launch.
+
+### Changed
+- **Uses less memory.** Settings, Tasks, Notes, the update dialog, the Mini Games
+  page, Rock paper scissors, Guess the number, Bomb Squad, the Collection and the
+  weather card are now created when you open them and closed for real when you
+  close them (together with the character leaning on their edge), instead of
+  staying hidden in memory all the time. Each one held its own WebView process
+  (about 30–50 MB). A Bomb Squad game in progress is saved, so closing the window
+  and opening it again lets you carry on. Panels now appear only once their page
+  has loaded, so they no longer open blank.
+  They may take a moment longer to appear the first time you open them.
+  With the pet and five widgets on screen, the app went from about 1.5 GB to
+  about 0.9 GB of private memory on our test machine.
+- Settings, Tasks and Notes open in the middle of the screen each time; while one
+  stays open it keeps wherever you dragged it.
+
 ## [0.11.4] - 2026-10-30
 
 ### Fixed

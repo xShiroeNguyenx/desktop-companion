@@ -2,6 +2,11 @@
 // nằm góc phải). Rust (companion.rs offer_free_spin) gửi gacha:offer khi hôm nay
 // còn lượt; bấm vào thì gửi gacha:free, Rust quay (gacha::pull_free) và trả
 // gacha:result để khung mở capsule ra món trúng.
+//
+// Cùng khung đó nhắc 🎁 lượt quay quà (gacha::grant_gift, 20 lượt một lần trong
+// đời) khi còn lượt và hôm nay không còn lượt free: bấm vào thì mở máy quay trong
+// Bộ sưu tập (gacha:gift) — quay quà theo lô 1 / 10 ở đó, không quay trên đầu pet.
+// Rust gửi gacha:gift {gift} sau mỗi lần quay quà để đổi số / ẩn khung.
 import { vscode, debugLog, state } from './core.js';
 
 const LABELS = {
@@ -9,18 +14,21 @@ const LABELS = {
     free: 'Quay free', title: 'Lượt quay miễn phí hôm nay, bấm để quay!', hide: 'Ẩn',
     fresh: 'Mới!', dup: 'Trùng · +{n} 🍬', view: '🍬 Xem', error: 'Chưa quay được, thử lại sau nha',
     gift: 'Quà hôm nay',
+    giftTag: 'Quà · còn {n} lượt', giftTitle: 'Bạn còn {n} lượt quay quà miễn phí, bấm để mở máy quay!',
     rarity: { common: 'Thường', rare: 'Hiếm', epic: 'Sử thi', legendary: 'Huyền thoại' },
   },
   ja: {
     free: '無料ガチャ', title: '今日の無料ガチャ、クリックでまわす！', hide: '閉じる',
     fresh: 'NEW!', dup: 'ダブり · +{n} 🍬', view: '🍬 見る', error: 'まわせませんでした。あとでもう一度',
     gift: '今日のごほうび',
+    giftTag: 'プレゼント · 残り{n}回', giftTitle: '無料のプレゼントガチャが{n}回残っているよ、クリックでマシンを開く！',
     rarity: { common: 'ノーマル', rare: 'レア', epic: 'エピック', legendary: 'レジェンド' },
   },
   en: {
     free: 'Free spin', title: "Today's free spin, click to spin!", hide: 'Hide',
     fresh: 'New!', dup: 'Duplicate · +{n} 🍬', view: '🍬 View', error: "Couldn't spin, try again later",
     gift: "Today's gift",
+    giftTag: 'Gift · {n} left', giftTitle: 'You have {n} free gift spins, click to open the capsule machine!',
     rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
   },
 };
@@ -49,6 +57,10 @@ let spinAt = 0;
 let replyTimer = 0;
 let closeTimer = 0;
 let placeTimer = 0;
+// Khung đang nhắc lượt quay quà (không phải lượt free hôm nay).
+let giftMode = false;
+// Người dùng bấm × trên khung quà: không nhắc lại tới lần mở app sau.
+let giftHidden = false;
 
 function L() {
   return LABELS[lang] || LABELS.vi;
@@ -475,25 +487,38 @@ function spin() {
   vscode.postMessage({ command: 'gacha:free' });
 }
 
+// Khung quà: bấm là mở máy quay trong Bộ sưu tập (Rust: pet_command gacha:gift).
+function openGiftMachine() {
+  vscode.postMessage({ command: 'gacha:gift' });
+}
+
+/** `data.gift` > 0 và không phải lượt free hôm nay (`data.giftMode`) → khung nhắc lượt quay quà. */
 function offer(data) {
   injectStyle();
   close();
   if (['vi', 'ja', 'en'].includes(data.lang)) lang = data.lang;
   const S = L();
+  giftMode = !!data.giftMode;
+  const n = String(data.gift || 0);
+  const title = giftMode ? S.giftTitle.replace('{n}', n) : S.title;
   box = el('div', 'daily-gacha');
   const btn = el('button', 'dg-btn');
   btn.type = 'button';
-  btn.title = S.title;
-  btn.setAttribute('aria-label', S.title);
+  btn.title = title;
+  btn.setAttribute('aria-label', title);
   btn.append(el('span', 'dg-cap'), el('span', 'dg-spark', '✨'));
-  btn.addEventListener('click', spin);
+  btn.addEventListener('click', giftMode ? openGiftMachine : spin);
   // Ẩn tới lần mở app sau (lượt vẫn còn, tick không đưa lại trong ngày).
   const x = el('button', 'dg-x', '×');
   x.type = 'button';
   x.title = S.hide;
   x.setAttribute('aria-label', S.hide);
-  x.addEventListener('click', close);
-  box.append(x, btn, el('span', 'dg-tag', S.free), el('div', 'dg-card'), el('div', 'dg-err'));
+  x.addEventListener('click', () => {
+    if (giftMode) giftHidden = true;
+    close();
+  });
+  const tag = el('span', 'dg-tag', giftMode ? S.giftTag.replace('{n}', n) : S.free);
+  box.append(x, btn, tag, el('div', 'dg-card'), el('div', 'dg-err'));
   isolate(box);
   // Cả cửa sổ pet, không chỉ vùng nhân vật: thẻ quà cao dùng được cả khoảng trống
   // phía trên đầu (chỗ bong bóng thoại) để khỏi che mặt.
@@ -545,20 +570,26 @@ function reveal(data) {
   view.addEventListener('click', (e) => {
     e.stopPropagation();
     vscode.postMessage({ command: 'gacha:view', id: data.id || '' });
-    close();
+    closeThenRecheck();
   });
   card.appendChild(view);
-  card.addEventListener('click', close);
+  card.addEventListener('click', closeThenRecheck);
   place();
-  closeTimer = setTimeout(close, RESULT_CLOSE_MS);
+  closeTimer = setTimeout(closeThenRecheck, RESULT_CLOSE_MS);
+}
+
+// Đóng thẻ kết quả lượt free, rồi hỏi lại: còn lượt quay quà thì khung quà hiện tiếp.
+function closeThenRecheck() {
+  close();
+  setTimeout(initDailyGacha, 400);
 }
 
 function result(data) {
   clearTimeout(replyTimer);
   if (!box) return;
   if (data.error === 'used_today') {
-    // Đã quay ở nơi khác (hay đồng hồ đổi ngày): không còn gì để hiện.
-    close();
+    // Đã quay ở nơi khác (hay đồng hồ đổi ngày): hết lượt free — còn quà thì nhắc quà.
+    closeThenRecheck();
     return;
   }
   if (data.error) {
@@ -576,6 +607,13 @@ export function handleDailyGachaMessage(data) {
       case 'gacha:offer':
         // Đang mở kết quả thì để yên (lệnh tới từ tick ngày mới hiếm khi trùng lúc).
         if (!box || !box.classList.contains('open')) offer(data);
+        return true;
+      case 'gacha:gift':
+        // Vừa quay quà trong Bộ sưu tập: đổi số lượt trên khung quà, hết thì ẩn.
+        if (box && giftMode) {
+          if ((data.gift || 0) > 0) offer({ lang: data.lang, giftMode: true, gift: data.gift });
+          else close();
+        }
         return true;
       case 'gacha:result':
         result(data);
@@ -596,7 +634,10 @@ export function initDailyGacha() {
   if (!invoke) return;
   invoke('gacha_free_status')
     .then((s) => {
-      if (s && s.ready) handleDailyGachaMessage({ command: 'gacha:offer', lang: s.lang });
+      if (!s) return;
+      // Lượt free hôm nay trước (quay ngay trên đầu pet); hết thì nhắc lượt quay quà.
+      if (s.ready) handleDailyGachaMessage({ command: 'gacha:offer', lang: s.lang });
+      else if (s.gift > 0 && !giftHidden) handleDailyGachaMessage({ command: 'gacha:offer', lang: s.lang, giftMode: true, gift: s.gift });
     })
     .catch((err) => debugLog('gacha_free_status failed: ' + err));
 }

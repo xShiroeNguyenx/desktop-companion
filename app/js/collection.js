@@ -473,17 +473,32 @@
     c.classList.add('spot');
     setTimeout(() => c.classList.remove('spot'), 2600);
   }
-  listen('collection-focus', (e) => {
-    const t = e && e.payload && e.payload.tab;
+  // Chỉ tới một nhóm / món: {tab, item?}; hoặc một màn: {mode} (vd. 'gacha'
+  // từ khung 🎁 lượt quay quà trên đầu pet).
+  function focusOn(p) {
+    if (p && C.MODES.includes(p.mode)) {
+      closeResults();
+      setMode(p.mode);
+      return;
+    }
+    const t = p && p.tab;
     if (!t || !C.CATS.includes(t)) return;
     tab = t;
     try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
     closeResults();
     setMode('shop');
-    const id = e.payload.item;
-    if (id) requestAnimationFrame(() => spotlight(id));
-  });
+    if (p.item) requestAnimationFrame(() => spotlight(p.item));
+  }
+  listen('collection-focus', (e) => focusOn(e && e.payload));
   FX.buildMachine($('machine'));
   renderHead();
-  refresh();
+  // Cửa sổ được dựng khi mở (windows::LAZY): nếu được mở để chỉ tới một món thì
+  // sự kiện collection-focus đã gửi trước khi trang nạp xong — hỏi lại sau khi có dữ liệu.
+  invoke('collection_get')
+    .then((v) => {
+      receive(v);
+      return invoke('collection_take_focus');
+    })
+    .then((p) => p && focusOn(p))
+    .catch((e) => log('[collection] init: ' + e));
 })();

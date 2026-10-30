@@ -276,10 +276,7 @@ pub fn open_mini_game(app: AppHandle, kind: String) -> Result<(), String> {
         "mines" => crate::windows::open_mines,
         _ => return Err(format!("không có game '{kind}'")),
     };
-    if let Some(w) = app.get_webview_window("arcade") {
-        let _ = w.hide();
-    }
-    crate::sidegirl::hide(&app, "arcade");
+    crate::windows::close_panel(&app, "arcade");
     open(&app);
     Ok(())
 }
@@ -1058,12 +1055,10 @@ pub async fn focus_toggle(app: AppHandle) {
     crate::companion::toggle_focus(&app);
 }
 
-/// Nút × / Esc trên trang Mini Games: ẩn trang và nhân vật bám mép của nó.
+/// Nút × / Esc trên trang Mini Games: đóng trang và nhân vật bám mép của nó.
 #[tauri::command]
 pub async fn arcade_close(app: AppHandle) -> Result<(), String> {
-    let w = app.get_webview_window("arcade").ok_or("không thấy trang Mini Games")?;
-    w.hide().map_err(|e| e.to_string())?;
-    crate::sidegirl::hide(&app, "arcade");
+    crate::windows::close_panel(&app, "arcade");
     Ok(())
 }
 
@@ -1166,6 +1161,10 @@ pub async fn collection_pull_gift(app: AppHandle, count: u32) -> Result<Value, S
     let mut rand = crate::gacha::rng();
     let pulls = store::update_collection(&app, |c| crate::gacha::pull_gift(c, count, now, &mut rand))?
         .map_err(|e| e.code())?;
+    // Khung nhắc trên đầu pet đổi số lượt còn lại, hết thì tự ẩn.
+    let left = store::load_collection(&app).gift_spins;
+    let a = persona::address(&store::load_settings(&app));
+    let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "gacha:gift", "lang": a.lang.code(), "gift": left }));
     Ok(pull_response(&app, &pulls))
 }
 
@@ -1202,9 +1201,11 @@ fn pull_response(app: &AppHandle, pulls: &[crate::gacha::Pull]) -> Value {
 /// Mở Bộ sưu tập ở cửa hàng, đúng nhóm của món `id`, và chỉ vào thẻ của món đó
 /// (collection.js nghe "collection-focus"). Id lạ thì chỉ mở Bộ sưu tập.
 pub fn show_item(app: &AppHandle, id: &str) {
-    windows::open_collection(app);
-    if let Some(it) = crate::collection::item(id) {
-        let _ = app.emit_to("collection", "collection-focus", serde_json::json!({ "tab": it.cat.code(), "item": it.id }));
+    match crate::collection::item(id) {
+        Some(it) => windows::open_collection_at(app, serde_json::json!({ "tab": it.cat.code(), "item": it.id })),
+        None => {
+            windows::open_collection(app);
+        }
     }
 }
 
@@ -1215,7 +1216,9 @@ pub fn gacha_free_status(app: AppHandle) -> Value {
     let ready = crate::companion::free_spin_pending(&app);
     let a = persona::address(&store::load_settings(&app));
     announce_gift(&app, &a);
-    serde_json::json!({ "ready": ready, "lang": a.lang.code() })
+    // 🎁 Lượt quay quà còn lại: còn thì khung trên đầu pet nhắc quay (daily-gacha.js).
+    let gift = if crate::gacha::enabled() { store::load_collection(&app).gift_spins } else { 0 };
+    serde_json::json!({ "ready": ready, "lang": a.lang.code(), "gift": gift })
 }
 
 /// 🎁 Báo quà 20 lượt quay đúng một lần: lúc trang pet nạp (đã có người nghe
@@ -1292,8 +1295,7 @@ pub async fn pet_set_model(app: AppHandle, id: String) -> Result<(), String> {
     let c = store::load_collection(&app);
     let installed = crate::model_dl::installed_ids(&app);
     if !crate::models::usable(&id, &c, &s.custom_models, &installed) {
-        windows::open_collection(&app);
-        let _ = app.emit_to("collection", "collection-focus", serde_json::json!({ "tab": "model" }));
+        windows::open_collection_at(&app, serde_json::json!({ "tab": "model" }));
         let owned_not_installed = crate::models::builtin(&id).is_some_and(|m| m.downloadable() && crate::models::owned(m, &c));
         if !owned_not_installed {
             return Err("locked".into());
@@ -1332,24 +1334,27 @@ fn install_if_model(app: &AppHandle, item: &crate::collection::Item) {
 
 #[tauri::command]
 pub async fn open_collection(app: AppHandle) {
-    windows::open_collection(&app);
+    let _ = windows::open_collection(&app);
 }
 
-/// Nút × / Esc trên Bộ sưu tập: chỉ ẩn (cửa sổ dựng sẵn, dùng lại).
+/// Nút × / Esc trên Bộ sưu tập: đóng hẳn (windows::LAZY, mở lại thì dựng mới).
 #[tauri::command]
 pub async fn collection_close(app: AppHandle) -> Result<(), String> {
-    let w = app.get_webview_window("collection").ok_or("không thấy Bộ sưu tập")?;
-    w.hide().map_err(|e| e.to_string())?;
-    crate::sidegirl::hide(&app, "collection");
+    crate::windows::close_panel(&app, "collection");
     Ok(())
+}
+
+/// Bộ sưu tập vừa nạp xong: chỗ cần chỉ tới nếu nó được mở bằng
+/// `windows::open_collection_at` lúc chưa có cửa sổ (sự kiện khi đó bị lỡ).
+#[tauri::command]
+pub fn collection_take_focus() -> Option<Value> {
+    crate::windows::take_collection_focus()
 }
 
 /// Nút × / Esc trên thẻ dự báo.
 #[tauri::command]
 pub async fn weather_close(app: AppHandle) -> Result<(), String> {
-    let w = app.get_webview_window("weather").ok_or("không thấy cửa sổ thời tiết")?;
-    w.hide().map_err(|e| e.to_string())?;
-    crate::sidegirl::hide(&app, "weather");
+    crate::windows::close_panel(&app, "weather");
     Ok(())
 }
 
