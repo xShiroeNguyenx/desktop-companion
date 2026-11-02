@@ -36,6 +36,15 @@
       },
       g: {
         bubble: 'Hôm nay thử vận may nào? Cùng quay thật nhiều đồ xinh nhé! 💗',
+        // Miu cạnh máy: lúc quay, lúc capsule hiếm bung, và sau khi có kết quả (miuReaction).
+        react: {
+          think: 'Hồi hộp quá… ra gì đây ta? 🤔',
+          wow: 'Ối! Ánh sáng này…! 😳',
+          legendary: 'Trời ơi, Huyền thoại luôn! {pet} vui muốn xỉu! 🌈',
+          epic: 'Sử thi nè! Xịn quá đi! ✨',
+          fresh: 'Có món mới rồi nè, xinh ghê! 💗',
+          dup: 'Hic, trùng hết rồi… nhưng vẫn được hoàn kẹo mà! 🥺',
+        },
         sign: 'Sweet Dreams', signSub: 'Skin, nhân vật, bộ mặt Miu, hiệu ứng và cả model Live2D, quay là có!',
         pull1: 'Quay 1 lần', pull10: 'Quay 10 lần', short: 'Thiếu {n} 🍬',
         giftPull1: 'Quay 1 lần', giftPullN: 'Quay {n} lần', giftFree: '🎁 Miễn phí', giftNote: '🎁 Quà tặng: còn {n} lượt quay miễn phí', giftSure: 'Chắc chắn có 1 model mới!',
@@ -89,6 +98,14 @@
       },
       g: {
         bubble: '今日の運だめし、してみる？かわいいもの、いっぱい出るといいね！💗',
+        react: {
+          think: 'ドキドキ…何が出るかな？🤔',
+          wow: 'わっ！この光は…！😳',
+          legendary: 'うそっ、レジェンド！{pet}、うれしすぎる！🌈',
+          epic: 'エピックだ！すごーい！✨',
+          fresh: '新しいのが出たよ、かわいい！💗',
+          dup: 'うう、ぜんぶかぶっちゃった…でもキャンディは少し戻ってくるよ！🥺',
+        },
         sign: 'Sweet Dreams', signSub: 'スキン・キャラ・ミウの表情・エフェクト、Live2Dモデルも出るよ！',
         pull1: '1回まわす', pull10: '10回まわす', short: 'あと {n} 🍬',
         giftPull1: '1回まわす', giftPullN: '{n}回まわす', giftFree: '🎁 無料', giftNote: '🎁 プレゼント：無料ガチャ残り {n} 回', giftSure: '新しいモデルが必ず1つ！',
@@ -142,6 +159,14 @@
       },
       g: {
         bubble: "Feeling lucky today? Let's spin for lots of cute things! 💗",
+        react: {
+          think: 'So nervous... what will it be? 🤔',
+          wow: 'Whoa! That light...! 😳',
+          legendary: 'No way, a Legendary! {pet} is over the moon! 🌈',
+          epic: 'An Epic! So fancy! ✨',
+          fresh: 'Something new, how cute! 💗',
+          dup: "Aww, all duplicates... but you get some candy back! 🥺",
+        },
         sign: 'Sweet Dreams', signSub: 'Skins, characters, Miu faces, effects and even Live2D models inside!',
         pull1: 'Spin once', pull10: 'Spin 10 times', short: '{n} 🍬 short',
         giftPull1: 'Spin once', giftPullN: 'Spin {n} times', giftFree: '🎁 Free', giftNote: '🎁 Gift: {n} free spins left', giftSure: 'One new model guaranteed!',
@@ -333,6 +358,22 @@
     };
   }
 
+  /**
+   * Miu cạnh máy phản ứng với một lần quay (PLAN.md 14.6): mặt (tên ảnh rps-<mặt>)
+   * và khoá câu trong strings.g.react. Xét món MỚI hiếm nhất: ra Huyền thoại trùng
+   * mà kèm một món Thường mới thì vẫn là "có món mới". Không có món mới nào → phụng phịu.
+   */
+  function miuReaction(results) {
+    const list = results || [];
+    if (!list.length) return null;
+    let best = -1;
+    for (const r of list) if (!r.dup) best = Math.max(best, RARITY_RANK[r.rarity] || 0);
+    if (best < 0) return { face: 'pout', key: 'dup' };
+    if (best === RARITY_RANK.legendary) return { face: 'cheer', key: 'legendary' };
+    if (best === RARITY_RANK.epic) return { face: 'cheer', key: 'epic' };
+    return { face: 'wink', key: 'fresh' };
+  }
+
   /** Món nổi bật dưới máy kẹo: chưa có trước, hiếm trước, món có ảnh trước. Tối đa `n`. */
   function featured(items, n) {
     const hasPic = (i) => (i.cat === 'side_set' || i.cat === 'miu_set' || (i.cat === 'model' && i.thumb) ? 0 : 1);
@@ -353,7 +394,7 @@
     return lang === 'ja' ? `${p(d.getMonth() + 1)}/${p(d.getDate())} ${hm}` : `${hm} ${p(d.getDate())}/${p(d.getMonth() + 1)}`;
   }
 
-  const api = { sizeLabel, RARITY_RANK, MODES, pullState, giftState, summarize, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
+  const api = { sizeLabel, RARITY_RANK, MODES, pullState, giftState, summarize, miuReaction, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CollectionCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

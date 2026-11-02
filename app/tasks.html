@@ -248,6 +248,42 @@
     .tk-status { font-size: 11px; color: var(--danger); min-height: 0; }
     .tk-status:empty { display: none; }
 
+    /* ─── 📊 Tuần này (week-stats.js) ─────────────────────────────────── */
+    .tk-week {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 150, 190, 0.28);
+      background: rgba(255, 183, 213, 0.08);
+      font-size: 12px;
+    }
+    .tk-week > summary {
+      cursor: pointer;
+      padding: 6px 10px;
+      list-style: none;
+      display: flex; gap: 8px; align-items: baseline;
+    }
+    .tk-week > summary::-webkit-details-marker { display: none; }
+    .tk-week > summary::after { content: "▾"; margin-left: auto; color: var(--muted); }
+    .tk-week[open] > summary::after { content: "▴"; }
+    .tk-week > summary b { font-weight: 700; }
+    .tk-week .wk-sum { color: var(--muted); }
+    .wk-days {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+      padding: 2px 12px 4px;
+    }
+    .wk-day { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .wk-bar {
+      width: 100%; max-width: 26px; height: 46px;
+      display: flex; align-items: flex-end;
+      border-radius: 6px; background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+    .wk-bar i { display: block; width: 100%; background: linear-gradient(0deg, #ff73ab, #ffb3cf); border-radius: 6px; }
+    .wk-day .wk-n { font-size: 11px; color: var(--text); min-height: 14px; }
+    .wk-day .wk-l { font-size: 10.5px; color: var(--muted); }
+    .wk-day.today .wk-l { color: var(--accent); font-weight: 700; }
+    .wk-day.future { opacity: 0.4; }
+    .wk-foot { padding: 2px 12px 8px; color: var(--muted); font-size: 11px; }
+
     .tk-empty {
       color: var(--muted);
       text-align: center;
@@ -269,6 +305,11 @@
       <button class="action" id="addBtn" style="flex: 0 0 auto;">Thêm</button>
     </div>
     <output class="tk-status" id="tkStatus"></output>
+    <details class="tk-week" id="tkWeek">
+      <summary><b>📊 Tuần này</b> <span class="wk-sum" id="wkSum"></span></summary>
+      <div class="wk-days" id="wkDays"></div>
+      <div class="wk-foot" id="wkFoot"></div>
+    </details>
   </div>
 
   <div class="tk-grid">
@@ -289,6 +330,7 @@
   <script src="js/theme-apply.js"></script>
   <script src="js/due.js"></script>
   <script src="js/linkify.js"></script>
+  <script src="js/week-stats.js"></script>
   <script src="js/tasks.js"></script>
 </body>
 </html>

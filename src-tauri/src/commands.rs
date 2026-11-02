@@ -301,6 +301,16 @@ pub async fn quests_reroll(app: AppHandle, slot: usize) -> Result<Value, String>
     Ok(crate::collection::view(&app))
 }
 
+/// Thẻ "Tuần này" trong bảng Công việc (stats.rs).
+#[tauri::command]
+pub fn stats_week(app: AppHandle) -> Value {
+    let (today, _) = crate::companion::today_and_hour(now_millis() as u64 / 1000);
+    let b = store::load_bond(&app);
+    let streak = crate::stats::live_streak(b.streak, b.last_active_day, today);
+    let full_days = store::load_collection(&app).quests.full_days;
+    crate::stats::week_json(&store::load_stats(&app), today, &full_days, streak)
+}
+
 /// Nút "Gửi thử" thông báo Windows trong Cài đặt.
 #[tauri::command]
 pub fn notify_test(app: AppHandle) -> Result<(), String> {

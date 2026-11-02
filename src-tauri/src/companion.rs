@@ -334,8 +334,20 @@ fn say_now(app: &AppHandle, key: Key, vars: &[(&str, &str)]) {
 }
 
 pub fn set_focus_tray_item(app: &AppHandle, item: tauri::menu::MenuItem<tauri::Wry>) {
+    // Phiên khôi phục từ focus.json có trước khi tray dựng xong: chữ phải khớp ngay.
+    if focus_active(app) {
+        let _ = item.set_text("⏹ Dừng tập trung");
+    }
     if let Ok(mut t) = app.state::<CompanionState>().focus_item.lock() {
         *t = Some(item);
+    }
+}
+
+/// Ghi phiên ra focus.json (hết phiên thì xoá file). Lỗi chỉ ghi log: mất file
+/// thì chỉ mất khả năng khôi phục, phiên trong RAM vẫn chạy.
+fn persist_focus(app: &AppHandle, s: &Session) {
+    if let Err(e) = store::save_focus(app, s) {
+        eprintln!("[focus] lưu phiên lỗi: {e}");
     }
 }
 
@@ -352,6 +364,12 @@ pub fn sync_focus(app: &AppHandle) {
         }
     }
     pet(app, json!({ "command": "focusState", "on": on }));
+    // Pet nạp lại trang (đổi model, mở lại app giữa phiên) thì mất nét mặt đang giữ.
+    match focus_info(app).0 {
+        "focus" => hold_expression(app, "focus"),
+        "break" => hold_expression(app, "happy"),
+        _ => {}
+    }
     // Đồng hồ ghim có hàng 🍅: báo pha mới.
     crate::clock_pin::broadcast(app);
     if !on {
@@ -373,16 +391,16 @@ pub fn focus_info(app: &AppHandle) -> (&'static str, u64, u64) {
 pub fn toggle_focus(app: &AppHandle) {
     let settings = store::load_settings(app);
     let state = app.state::<CompanionState>();
-    let started = {
+    let (started, session) = {
         let Ok(mut f) = state.focus.lock() else { return };
         if f.active() {
             *f = Session::default();
-            false
         } else {
             *f = Session::start(now_secs(), settings.focus_min, settings.break_min);
-            true
         }
+        (f.active(), *f)
     };
+    persist_focus(app, &session);
     if started {
         hold_expression(app, "focus");
         let min = settings.focus_min.max(1).to_string();
@@ -401,13 +419,18 @@ fn focus_loop(app: AppHandle) {
         std::thread::sleep(std::time::Duration::from_secs(1));
         let now = now_secs();
         let state = app.state::<CompanionState>();
-        let (event, session) = {
+        let (event, session, focus_len) = {
             let Ok(mut f) = state.focus.lock() else { continue };
             if !f.active() {
                 continue;
             }
-            (f.tick(now), *f)
+            // Độ dài pha tập trung, đọc trước khi tick đổi sang pha nghỉ.
+            let focus_len = f.length;
+            (f.tick(now), *f, focus_len)
         };
+        if event.is_some() || !session.active() {
+            persist_focus(&app, &session);
+        }
         if session.active() {
             let phase = if session.phase == Phase::Break { "break" } else { "focus" };
             pet(
@@ -431,6 +454,9 @@ fn focus_loop(app: AppHandle) {
         let tag = match event {
             FocusEvent::FocusDone => {
                 bond_award(&app, crate::bond::Event::FocusDone);
+                let (today, _) = today_and_hour(now);
+                let minutes = (focus_len / 60) as u32;
+                record_stats(&app, |s| crate::stats::record_focus(s, today, minutes));
                 // Hết phiên thay luôn cho lượt nhắc nghỉ mắt / đứng dậy của chu kỳ này.
                 if let Ok(mut clock) = state.health.lock() {
                     clock.reset(&[Health::Eyes, Health::Stand]);
@@ -482,12 +508,25 @@ pub fn bond_award_game(app: &AppHandle, ev: crate::bond::Event, game: Option<&st
     // 📋 Nhiệm vụ đếm mọi lần, kể cả khi điểm thân thiết đã chạm trần hôm nay.
     crate::collection::quest_event(app, ev, game);
     let (today, _) = today_and_hour(now_secs());
+    if ev == crate::bond::Event::TaskDone {
+        record_stats(app, |s| crate::stats::record_task(s, today));
+    }
     match store::update_bond(app, |b| crate::bond::award(b, ev, today)) {
         // Kẹo đi song song điểm thân thiết (collection.rs). gain = 0 (đã chạm
         // trần, hay "có mặt" mỗi 30 giây) thì không đụng tới collection.json.
         Ok(gain) if gain > 0 => crate::collection::earn_from(app, ev, gain),
         Ok(_) => {}
         Err(e) => eprintln!("[bond] lưu điểm lỗi: {e}"),
+    }
+}
+
+/// Ghi thống kê tuần (stats.rs); bảng Công việc đang mở thì vẽ lại thẻ "Tuần này".
+fn record_stats(app: &AppHandle, f: impl FnOnce(&mut crate::stats::Stats)) {
+    match store::update_stats(app, f) {
+        Ok(()) => {
+            let _ = app.emit_to("tasks", "stats-changed", ());
+        }
+        Err(e) => eprintln!("[stats] lưu lỗi: {e}"),
     }
 }
 
@@ -1296,6 +1335,12 @@ fn tick(app: &AppHandle) {
 /// Luồng nền của trọng tài. Gọi một lần lúc setup.
 pub fn start(app: AppHandle) {
     chat::touch_activity(&app);
+    // Phiên Tập trung còn dở lúc tắt app: chạy tiếp. Pet hỏi lại trạng thái
+    // (focus:sync) khi trang nạp xong, lúc đó mới đặt nét mặt và vòng đếm.
+    let restored = store::load_focus(&app).restore(now_secs());
+    if let Ok(mut f) = app.state::<CompanionState>().focus.lock() {
+        *f = restored;
+    }
     let focus_app = app.clone();
     std::thread::spawn(move || focus_loop(focus_app));
     std::thread::spawn(move || loop {

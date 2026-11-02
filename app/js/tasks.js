@@ -259,7 +259,54 @@
       'Chưa có việc nào.<br/>Bôi đen văn bản → bông hoa → Lưu task,<br/>hoặc thêm ở ô trên.'
     );
     fillList($('doneList'), done, 'Chưa hoàn thành việc nào.');
+    renderWeek();
   }
+
+  // ─── 📊 Tuần này (stats.rs → stats_week, chữ trong week-stats.js) ─────────
+  async function renderWeek() {
+    const W = window.WeekStats;
+    let week;
+    try {
+      week = await invoke('stats_week');
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+    $('wkSum').textContent = W.summary(week);
+    const box = $('wkDays');
+    box.textContent = '';
+    const heights = W.bars(week.days);
+    (week.days || []).forEach((d, i) => {
+      const col = document.createElement('div');
+      col.className = 'wk-day' + (d.today ? ' today' : '') + (d.future ? ' future' : '');
+      col.title = W.dayTitle(d, i);
+      const n = document.createElement('div');
+      n.className = 'wk-n';
+      n.textContent = d.tasks ? '✅' + d.tasks : '';
+      const bar = document.createElement('div');
+      bar.className = 'wk-bar';
+      const fill = document.createElement('i');
+      fill.style.height = heights[i] + '%';
+      bar.append(fill);
+      const label = document.createElement('div');
+      label.className = 'wk-l';
+      label.textContent = W.DAY_LABELS[i] + (d.quests ? ' ⭐' : '');
+      col.append(n, bar, label);
+      box.append(col);
+    });
+    $('wkFoot').textContent = W.footer(week);
+  }
+
+  // Nhớ thẻ đang mở hay gập (chỉ là tiện ích, không có cũng không sao).
+  const weekBox = $('tkWeek');
+  try {
+    weekBox.open = localStorage.getItem('tasks.weekOpen') === '1';
+  } catch (_) { /* không có storage */ }
+  weekBox.addEventListener('toggle', () => {
+    try {
+      localStorage.setItem('tasks.weekOpen', weekBox.open ? '1' : '0');
+    } catch (_) { /* không có storage */ }
+  });
 
   async function add() {
     const inp = $('newTask');
@@ -277,6 +324,8 @@
 
   // Reload the list each time the window is shown (it's pre-created once).
   listen('tasks-refresh', render);
+  // Hết phiên 🍅 hay xong việc ở chỗ khác (tờ note, chat): vẽ lại thẻ tuần.
+  listen('stats-changed', renderWeek);
   // "Còn 20 phút" phải tự đếm xuống khi bảng đang mở. Bỏ qua lúc đang sửa
   // hạn / ghi chú, để không xoá mất ô người dùng đang nhập.
   setInterval(() => {

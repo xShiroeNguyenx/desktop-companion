@@ -746,6 +746,51 @@ pub fn update_bond<R>(app: &AppHandle, f: impl FnOnce(&mut crate::bond::Bond) ->
     Ok(out)
 }
 
+// ─── stats.json (thống kê tuần, stats.rs) ───────────────────────────────────
+
+static STATS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// File thiếu hoặc hỏng → bắt đầu đếm lại, không lỗi.
+pub fn load_stats(app: &AppHandle) -> crate::stats::Stats {
+    config_file(app, "stats.json")
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Đọc stats.json, cho f sửa, ghi lại, trong một khoá như update_bond.
+pub fn update_stats(app: &AppHandle, f: impl FnOnce(&mut crate::stats::Stats)) -> Result<(), String> {
+    let _guard = STATS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut s = load_stats(app);
+    f(&mut s);
+    let path = config_file(app, "stats.json").ok_or("no config dir")?;
+    let json = serde_json::to_string(&s).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+// ─── focus.json (phiên Tập trung đang chạy, focus.rs) ────────────────────────
+
+/// Phiên đang chạy lúc tắt app. Không có file / hỏng → không có phiên.
+pub fn load_focus(app: &AppHandle) -> crate::focus::Session {
+    config_file(app, "focus.json")
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Ghi phiên mỗi lần đổi pha; hết phiên thì xoá file.
+pub fn save_focus(app: &AppHandle, s: &crate::focus::Session) -> Result<(), String> {
+    let path = config_file(app, "focus.json").ok_or("no config dir")?;
+    if !s.active() {
+        return match std::fs::remove_file(&path) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.to_string()),
+            _ => Ok(()),
+        };
+    }
+    let json = serde_json::to_string(s).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
 // ─── collection.json (kẹo + đồ đã mở, collection.rs) ─────────────────────────
 // Cố ý KHÔNG nằm trong Settings: settings_set chép lại các trường không có trên
 // form từ bản cũ, thêm trường mà quên là mất đồ đã mở. Cùng khuôn với bond.json.

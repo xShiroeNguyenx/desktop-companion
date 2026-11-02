@@ -1,8 +1,11 @@
 // Phiên Tập trung (Pomodoro), PLAN.md 12.6: Tập trung N phút → Nghỉ M phút →
 // xong (không tự chạy phiên mới — người dùng tự bấm). Phần thuần ở đây; vòng
-// đếm 1 giây + lời nói nằm trong companion.rs.
+// đếm 1 giây + lời nói nằm trong companion.rs. Phiên được ghi ra focus.json
+// (store.rs) mỗi lần đổi pha, nên tắt app giữa chừng mở lại vẫn chạy tiếp.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Phase {
     Idle,
     Focus,
@@ -17,7 +20,7 @@ pub enum FocusEvent {
     BreakDone,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Session {
     pub phase: Phase,
     /// Lúc bắt đầu pha hiện tại (giây unix).
@@ -42,6 +45,14 @@ impl Session {
             length: focus_min.max(1) as u64 * 60,
             break_len: break_min as u64 * 60,
         }
+    }
+
+    /// Phiên đọc lại từ focus.json lúc mở app. Dữ liệu vô lý (pha rỗng, độ dài 0,
+    /// bắt đầu ở tương lai vì đồng hồ máy bị chỉnh lùi) thì bỏ. Phiên đã quá giờ
+    /// cứ giữ: `tick` lo chuyển pha, hay về Idle im lặng nếu đã quá cả giờ nghỉ.
+    pub fn restore(self, now: u64) -> Session {
+        let sane = self.phase != Phase::Idle && self.length > 0 && self.started <= now + 60;
+        if sane { self } else { Session::default() }
     }
 
     pub fn active(&self) -> bool {
@@ -113,6 +124,21 @@ mod tests {
         let mut s = Session::start(T, 25, 5);
         assert_eq!(s.tick(T + 27 * 60), Some(FocusEvent::FocusDone));
         assert_eq!(s.remaining(T + 27 * 60), 3 * 60);
+    }
+
+    #[test]
+    fn restore_keeps_a_live_session_and_drops_nonsense() {
+        let s = Session::start(T, 25, 5);
+        let back: Session = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert_eq!(back.restore(T + 600), s);
+        assert_eq!(back.restore(T + 600).remaining(T + 600), 15 * 60);
+        // Đồng hồ máy lùi về trước lúc bắt đầu: bỏ.
+        assert!(!s.restore(T - 3600).active());
+        assert!(!Session { length: 0, ..s }.restore(T).active());
+        assert!(!Session::default().restore(T).active());
+        // Tắt app giữa lúc tập trung, mở lại trong giờ nghỉ: tick báo xong như thường.
+        let mut late = s.restore(T + 27 * 60);
+        assert_eq!(late.tick(T + 27 * 60), Some(FocusEvent::FocusDone));
     }
 
     #[test]

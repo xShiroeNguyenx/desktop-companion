@@ -173,7 +173,9 @@
     $('title').textContent = s.title;
     $('subtitle').textContent = C.fill(s.subtitle, { pet });
     const bubble = mode === 'gacha' ? s.g.bubble : mode === 'quests' ? s.q.bubble : s.bubble;
-    $('bubble').textContent = C.fill(bubble, { pet, Pet: pet });
+    const said = mode === 'gacha' && reaction && Date.now() < reaction.until ? reaction.text : bubble;
+    $('bubble').textContent = C.fill(said, { pet, Pet: pet });
+    setMiuFace(said === bubble ? 'wink' : reaction.face);
     $('candyLabel').textContent = s.candyLabel;
     $('candy').textContent = String(data.candy || 0);
     $('candyWord').textContent = s.candy;
@@ -374,6 +376,28 @@
 
   const FX = window.GachaFx;
 
+  // ─── Miu cạnh máy phản ứng (PLAN.md 14.6) ──────────────────────────────
+  // Đặt ảnh theo đường dẫn bộ gốc; miu-skin.js đổi sang bộ Miu đang dùng.
+  const miuImg = document.querySelector('.body > .side > img');
+  function setMiuFace(face) {
+    const src = 'media/game/rps-' + face + '.png';
+    if (miuImg && miuImg.dataset.miuFace !== face) miuImg.setAttribute('src', src);
+  }
+  /** Câu + mặt giữ `ms` mili giây, qua cả các lần render() trong lúc đó. */
+  let reaction = null;
+  let reactionTimer = null;
+  function miuSay(face, key, ms) {
+    const pet = petName();
+    reaction = { face, text: S().g.react[key], until: Date.now() + ms };
+    $('bubble').textContent = C.fill(reaction.text, { pet, Pet: pet });
+    setMiuFace(face);
+    clearTimeout(reactionTimer);
+    reactionTimer = setTimeout(() => {
+      reaction = null;
+      render();
+    }, ms);
+  }
+
   /** n = 1 | 10 (nút bấm). Còn lượt quà thì quay quà (số lượt theo C.giftState), không thì tốn kẹo. */
   async function pull(n) {
     if (busy) return;
@@ -394,10 +418,12 @@
       return;
     }
     const sum = C.summarize(res.results);
+    miuSay('think', 'think', 60_000);
     // Hoạt cảnh theo hạng cao nhất: máy quay rồi mở capsule (bấm để bỏ qua).
     const m = $('machine');
     try {
       await FX.spin(m, sum.best);
+      if (sum.best === 'epic' || sum.best === 'legendary') miuSay('surprised', 'wow', 60_000);
       // Món hiếm nhất (ưu tiên món mới) hiện ra lúc capsule bung.
       const rank = C.RARITY_RANK;
       const best = [...res.results].sort((x, y) => (rank[y.rarity] || 0) - (rank[x.rarity] || 0) || Number(x.dup) - Number(y.dup))[0];
@@ -408,6 +434,8 @@
     }
     m.classList.remove('spin', 'spin-rare', 'spin-epic', 'spin-legendary');
     busy = false;
+    const react = C.miuReaction(res.results);
+    if (react) miuSay(react.face, react.key, 8000);
     receive(res.view);
     showResults(res.results, sum);
   }

@@ -68,6 +68,9 @@ const BLEND_SPEED = 0.08; // per-frame interpolation toward target
 let currentExpression = {};
 let targetExpression = {};
 let expressionResetTimer = null;
+// Nét mặt giữ lâu (duration null: "focus", "sleepy"…). Nét mặt tạm (câu chat
+// 8 giây, vuốt đầu) hết giờ thì quay về nét này, không về neutral.
+let heldExpression = 'neutral';
 
 export function setExpression(name, durationMs) {
   const preset = EXPRESSIONS[name];
@@ -77,10 +80,13 @@ export function setExpression(name, durationMs) {
   targetExpression = { ...EXPRESSIONS.neutral, ...preset };
 
   if (expressionResetTimer) clearTimeout(expressionResetTimer);
+  expressionResetTimer = null;
   if (durationMs) {
     expressionResetTimer = setTimeout(() => {
-      targetExpression = { ...EXPRESSIONS.neutral };
+      targetExpression = { ...EXPRESSIONS.neutral, ...EXPRESSIONS[heldExpression] };
     }, durationMs);
+  } else {
+    heldExpression = name;
   }
 }
 

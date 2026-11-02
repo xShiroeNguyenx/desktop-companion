@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.7] - 2026-11-02
+
+### Added
+- **📊 This week, in the Tasks panel.** A small card under the input shows the tasks you
+  finished, your 🍅 focus time and your day streak. Open it for a bar per day (Monday to
+  Sunday) with the focus minutes and tasks of each day, a ⭐ on days you finished all 3
+  daily quests, and a comparison with last week.
+- **Miu reacts to the Candy Capsule.** She thinks while the machine spins, gasps when an
+  Epic or Legendary capsule lights up, cheers for new items and pouts when everything is
+  a duplicate, with a line for each (Vietnamese, Japanese, English).
+
+### Fixed
+- **A 🍅 focus session survives closing the app.** It is saved at every phase change and
+  picks up where it was when the app starts again; if the whole session ran out while the
+  app was closed, it ends quietly.
+- **The pet keeps her focus or sleepy face after a chat reply.** A short expression (a
+  reply, a headpat) now returns to the face she was holding instead of a neutral one.
+
 ## [0.11.6] - 2026-11-02
 
 ### Added

@@ -45,6 +45,7 @@ mod fx;
 mod gacha;
 mod weather;
 mod weather_net;
+mod stats;
 mod store;
 mod sysmon_pin;
 mod top_procs;
@@ -694,6 +695,7 @@ fn main() {
             commands::open_mini_game,
             commands::game_result,
             commands::quests_reroll,
+            commands::stats_week,
             commands::pin_get,
             commands::pin_done,
             commands::pin_set_top,

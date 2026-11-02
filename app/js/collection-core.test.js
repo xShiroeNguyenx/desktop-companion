@@ -146,3 +146,17 @@ test('sortItems: same price follows the catalog order Rust sends', () => {
   const old = C.sortItems([item({ id: 'b', price: 1 }), item({ id: 'a', price: 1 })]);
   assert.deepEqual(old.map((i) => i.id), ['a', 'b']);
 });
+
+test('miuReaction: the rarest NEW item decides Miu face; all duplicates pout', () => {
+  const r = (rarity, dup = false) => ({ id: 'x', rarity, dup });
+  assert.equal(C.miuReaction([]), null);
+  assert.deepEqual(C.miuReaction([r('common', true), r('rare', true)]), { face: 'pout', key: 'dup' });
+  assert.deepEqual(C.miuReaction([r('legendary'), r('common')]), { face: 'cheer', key: 'legendary' });
+  assert.deepEqual(C.miuReaction([r('epic'), r('rare', true)]), { face: 'cheer', key: 'epic' });
+  // Huyền thoại trùng không tính; món Thường mới thì vẫn là "có món mới".
+  assert.deepEqual(C.miuReaction([r('legendary', true), r('common')]), { face: 'wink', key: 'fresh' });
+  for (const lang of ['vi', 'ja', 'en']) {
+    const react = C.strings(lang).g.react;
+    for (const k of ['think', 'wow', 'legendary', 'epic', 'fresh', 'dup']) assert.ok(react[k], lang + ' ' + k);
+  }
+});
