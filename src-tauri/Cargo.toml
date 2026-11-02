@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.11.5"
+version = "0.11.6"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -17,6 +17,9 @@ tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
+# API key AI (secrets.rs): Windows Credential Manager / Keychain macOS. Thiếu
+# feature nền tảng thì keyring 3 lặng lẽ dùng kho giả trong RAM, mất khi tắt app.
+keyring = { version = "3", features = ["windows-native", "apple-native"] }
 
 # Self-update: check GitHub Releases, download + install signed updates,
 # then relaunch via the process plugin.

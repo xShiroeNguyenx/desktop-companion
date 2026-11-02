@@ -52,11 +52,14 @@ duyệt, Word…).
   <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
   <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
   <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-gothic-angel.png" height="180" alt="Gothic Angel" />
   <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-angel.png" height="180" alt="Snow Angel" />
+  <br />
   <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
   <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
   <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
-  <br /><sub>🎭 Model Live2D trong Bộ sưu tập: Gothic Kawaii · Pink Kawaii · Snow Kawaii · Gothic Pastel · Pink Pastel · Snow Pastel · Gothic Aristocrat · Pink Aristocrat · Snow Aristocrat · Pink Angel · Gothic Lolita · Snow Lolita · Snow Dancer</sub>
+  <br /><sub>🎭 Model Live2D trong Bộ sưu tập: Gothic Kawaii · Pink Kawaii · Snow Kawaii · Gothic Pastel · Pink Pastel · Snow Pastel · Gothic Aristocrat · Pink Aristocrat · Snow Aristocrat · Gothic Angel · Pink Angel · Snow Angel · Gothic Lolita · Snow Lolita · Snow Dancer</sub>
 </p>
 
 ---
@@ -174,12 +177,12 @@ duyệt, Word…).
   Miu (❄️ tuyết, 🦇 Gothic) và model Live2D. Xứ Tuyết, Neko Lounge và Hồ ly còn đổi
   giao diện mọi khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí;
   không bán bằng tiền thật.
-- **🎭 Model Live2D trong Bộ sưu tập** — mười ba nhân vật thêm, ai cũng có biểu cảm
+- **🎭 Model Live2D trong Bộ sưu tập** — mười lăm nhân vật thêm, ai cũng có biểu cảm
   cười, buồn, giận, ngạc nhiên, ngại, nháy mắt và chuyển động riêng:
 
   | Model | Giá | Tỉ lệ Capsule |
   |---|---|---|
-  | 🦇 Gothic Aristocrat · 🌸 Pink Aristocrat · ❄️ Snow Aristocrat · 👼 Pink Angel | 10000 🍬 | 0.1% mỗi model |
+  | 🦇 Gothic Aristocrat · 🌸 Pink Aristocrat · ❄️ Snow Aristocrat · 🦇 Gothic Angel · 👼 Pink Angel · ❄️ Snow Angel | 10000 🍬 | 0.1% mỗi model |
   | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.2% mỗi model |
   | 🦇 Gothic Kawaii · 🐰 Pink Kawaii · ❄️ Snow Kawaii · 🦇 Gothic Lolita · ❄️ Snow Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.4% mỗi model |
 
@@ -188,8 +191,8 @@ duyệt, Word…).
   cập nhật app. Bấm **Dùng** là nhân vật trên màn hình đổi ngay. Hiyori, Haru, Mao,
   Miara vẫn miễn phí, model bạn tự thêm từ thư mục cũng vậy.
 - **🎰 Candy Capsule** — quay máy kẹo thỏ trong Bộ sưu tập: 100 🍬 một lượt, 1000 🍬
-  mười lượt, tỉ lệ ghi ngay trên máy (Thường 61.6% · Hiếm 25% · Sử thi 10% · 🌈 Huyền
-  thoại 3.4%, chỉ gồm model Live2D). Lượt thứ 10 chưa ra Hiếm thì chắc chắn từ Hiếm trở
+  mười lượt, tỉ lệ ghi ngay trên máy (Thường 61.4% · Hiếm 25% · Sử thi 10% · 🌈 Huyền
+  thoại 3.6%, chỉ gồm model Live2D). Lượt thứ 10 chưa ra Hiếm thì chắc chắn từ Hiếm trở
   lên, lượt thứ 50 chưa ra Sử thi thì chắc chắn từ Sử thi trở lên; trùng món được hoàn
   10% giá món đó. Mỗi hạng bung capsule với hiệu ứng riêng, Huyền thoại có tia cầu vồng
   và mưa pháo giấy dày. Đổi thẳng trong cửa hàng vẫn luôn có.

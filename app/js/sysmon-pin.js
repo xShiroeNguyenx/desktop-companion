@@ -158,8 +158,9 @@
     const T = window.__TAURI__ || {};
     return (T.window && T.window.getCurrentWindow && T.window.getCurrentWindow()) || null;
   }
+  // Kéo ở nền. Nút và ô CPU / RAM là để bấm (startDragging nuốt click).
   $('card').addEventListener('mousedown', (e) => {
-    if (e.button !== 0 || e.target.closest('button')) return;
+    if (e.button !== 0 || e.target.closest('button, .clickable')) return;
     const w = currentWindow();
     if (w && w.startDragging) w.startDragging().catch(() => {});
   });

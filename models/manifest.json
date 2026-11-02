@@ -2,6 +2,13 @@
   "format": 1,
   "models": [
     {
+      "id": "gothic-angel",
+      "version": 1,
+      "file": "gothic-angel-1.zip",
+      "sha256": "6d9c7d50cd0181ba69bba5fb0e0206c2bf0e444dc9b5ae6498d40fa179fce332",
+      "size": 5521120
+    },
+    {
       "id": "gothic-aristocrat",
       "version": 5,
       "file": "gothic-aristocrat-5.zip",
@@ -56,6 +63,13 @@
       "file": "pink-pastel-2.zip",
       "sha256": "ba2a4bd255be916589bc87accd418a606ae5dda907f765fb71182c0ee363da14",
       "size": 2421774
+    },
+    {
+      "id": "snow-angel",
+      "version": 1,
+      "file": "snow-angel-1.zip",
+      "sha256": "3f009a7cffe0065458803e461ecc4e6630cb8a3563e4e5b656b9ddb339aa3776",
+      "size": 5106845
     },
     {
       "id": "snow-aristocrat",

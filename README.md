@@ -51,11 +51,14 @@
   <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
   <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
   <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-gothic-angel.png" height="180" alt="Gothic Angel" />
   <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-angel.png" height="180" alt="Snow Angel" />
+  <br />
   <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
   <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
   <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
-  <br /><sub>🎭 Live2D models in the Collection: Gothic Kawaii · Pink Kawaii · Snow Kawaii · Gothic Pastel · Pink Pastel · Snow Pastel · Gothic Aristocrat · Pink Aristocrat · Snow Aristocrat · Pink Angel · Gothic Lolita · Snow Lolita · Snow Dancer</sub>
+  <br /><sub>🎭 Live2D models in the Collection: Gothic Kawaii · Pink Kawaii · Snow Kawaii · Gothic Pastel · Pink Pastel · Snow Pastel · Gothic Aristocrat · Pink Aristocrat · Snow Aristocrat · Gothic Angel · Pink Angel · Snow Angel · Gothic Lolita · Snow Lolita · Snow Dancer</sub>
 </p>
 
 ---
@@ -194,12 +197,12 @@
   Lounge), Miu face sets (❄️ Snow, 🦇 Gothic) and Live2D models. Snow, Neko
   and Fox Lounge also restyle every panel (icy blue / gothic lolita / fox
   shrine). Decorations only; never sold for real money.
-- **🎭 Live2D models in the Collection** — thirteen extra characters, each with
+- **🎭 Live2D models in the Collection** — fifteen extra characters, each with
   smile, sad, angry, surprised, shy and wink expressions and her own motions:
 
   | Model | Price | Capsule rate |
   |---|---|---|
-  | 🦇 Gothic Aristocrat · 🌸 Pink Aristocrat · ❄️ Snow Aristocrat · 👼 Pink Angel | 10000 🍬 | 0.1% each |
+  | 🦇 Gothic Aristocrat · 🌸 Pink Aristocrat · ❄️ Snow Aristocrat · 🦇 Gothic Angel · 👼 Pink Angel · ❄️ Snow Angel | 10000 🍬 | 0.1% each |
   | 🦇 Gothic Pastel · 🌸 Pink Pastel · ❄️ Snow Pastel | 7500 🍬 | 0.2% each |
   | 🦇 Gothic Kawaii · 🐰 Pink Kawaii · ❄️ Snow Kawaii · 🦇 Gothic Lolita · ❄️ Snow Lolita · ❄️ Snow Dancer | 5000 🍬 | 0.4% each |
 
@@ -209,8 +212,8 @@
   she replaces the character on screen right away. Hiyori, Haru, Mao and Miara
   stay free, and so do models you add from a folder.
 - **🎰 Candy Capsule** — spin the bunny capsule machine in the Collection:
-  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 61.6% ·
-  Rare 25% · Epic 10% · 🌈 Legendary 3.4%, Live2D models only). Every 10th spin
+  100 🍬 a spin, 1000 🍬 for ten, rates shown on the machine (Common 61.4% ·
+  Rare 25% · Epic 10% · 🌈 Legendary 3.6%, Live2D models only). Every 10th spin
   without a Rare is a sure Rare or better, every 50th without an Epic a sure
   Epic or better, and duplicates refund 10% of the item's price. Each rarity
   bursts open with its own light show, with rainbow rays and heavy confetti

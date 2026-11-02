@@ -288,7 +288,7 @@
       localStorage.setItem('rpsStats', JSON.stringify(st));
     } catch (_) { /* ignore */ }
     try {
-      await invoke('game_result', { won: userWon });
+      await invoke('game_result', { won: userWon, game: 'rps' });
     } catch (e) {
       log('[rps] game_result: ' + e);
     }

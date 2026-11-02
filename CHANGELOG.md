@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.6] - 2026-11-02
+
+### Added
+- **📋 Daily quests** in the Collection. Each day brings 3 small quests, one from each group:
+  🌸 with the pet (headpats or chat), 🍅 a focus session, 🎮 a mini game (any game, the
+  game of the day, or two different games). Each quest gives +20 🍬. Finishing all 3 adds
+  a free spin 🎁, and finishing 5 days in one week (Monday to Sunday) adds 2 more.
+  "Finish 1 task" is a bonus quest: it pays candy but is never required, since some days
+  have no tasks. You can swap one quest a day. The pet tells you when a quest is done.
+  Skipping a day costs nothing.
+- **👼 Gothic Angel and Snow Angel join the Collection**, completing the Angel line next
+  to Pink Angel: cat-eared angels with white wings and a halo, one in lavender with
+  purple crystals, one in silver-blue with snowflakes. Each costs 10000 🍬 and drops at
+  0.1% from the Candy Capsule, so the Legendary tier is now 3.6% (Common 61.4%).
+
+### Security
+- **AI API keys move into the system keychain** (Windows Credential Manager, Keychain on
+  macOS) instead of sitting as plain text in `settings.json`. Existing keys move over on
+  the first start, and the file is rewritten without them. Settings no longer shows the
+  key back: the field says a key is saved, typing a new one replaces it, and a
+  **Clear key** button removes it. If the keychain refuses a key, saving says so instead
+  of keeping it somewhere else.
+
+### Fixed
+- **Saving Settings no longer resets things changed elsewhere.** The form now sends only
+  its own fields, so pinned widgets, the weather city, the chosen model and similar
+  settings keep their values, including ones added in future versions.
+- **Clicking CPU or RAM on the 📊 System widget opens the "top apps" list again.** The
+  click was being taken as the start of a window drag.
+
 ## [0.11.5] - 2026-10-30
 
 ### Added

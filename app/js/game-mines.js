@@ -459,7 +459,7 @@
       box.hidden = false;
     }, RESULT_DELAY_MS);
     try {
-      await invoke('game_result', { won });
+      await invoke('game_result', { won, game: 'mines' });
     } catch (e) {
       log('[mines] game_result: ' + e);
     }

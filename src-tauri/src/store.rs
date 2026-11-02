@@ -11,11 +11,13 @@ use crate::chat::ChatMsg;
 pub struct Settings {
     #[serde(default = "default_provider")]
     pub provider: String,
-    #[serde(default)]
+    /// Chỉ có trong RAM, đọc từ két hệ điều hành (secrets.rs). Đọc được từ
+    /// settings.json của bản cũ để chuyển sang két, không bao giờ ghi ra.
+    #[serde(default, skip_serializing)]
     pub api_key: String,
     #[serde(default = "default_model")]
     pub model: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing)]
     pub gemini_key: String,
     #[serde(default = "default_gemini_model")]
     pub gemini_model: String,
@@ -471,16 +473,68 @@ fn tasks_path(app: &AppHandle) -> Option<PathBuf> {
 }
 
 pub fn load_settings(app: &AppHandle) -> Settings {
-    settings_path(app)
+    let mut s: Settings = settings_path(app)
         .and_then(|p| std::fs::read_to_string(p).ok())
         .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    // Trong file chỉ còn key ở bản cũ (hoặc két không nhận): secrets chuyển / giữ.
+    s.api_key = crate::secrets::get("api_key", &s.api_key).value;
+    s.gemini_key = crate::secrets::get("gemini_key", &s.gemini_key).value;
+    s
 }
 
 pub fn save_settings(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     let path = settings_path(app).ok_or("no config dir")?;
-    let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
+    let mut value = serde_json::to_value(settings).map_err(|e| e.to_string())?;
+    // Key két không nhận: ghi lại chỗ cũ, bỏ đi thì người dùng mất key.
+    if let Some(obj) = value.as_object_mut() {
+        for (field, key) in crate::secrets::plaintext_fallback() {
+            obj.insert(field.to_string(), key.into());
+        }
+    }
+    let json = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
     std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
+/// Bản cũ để API key dạng chữ trong settings.json: chuyển sang két rồi ghi lại
+/// file không còn key. Gọi một lần lúc khởi động.
+pub fn migrate_secrets(app: &AppHandle) {
+    let raw = settings_path(app).and_then(|p| std::fs::read_to_string(p).ok()).unwrap_or_default();
+    let Ok(serde_json::Value::Object(obj)) = serde_json::from_str::<serde_json::Value>(&raw) else { return };
+    let has_plain = crate::secrets::FIELDS
+        .iter()
+        .any(|(f, _)| obj.get(*f).and_then(|v| v.as_str()).is_some_and(|v| !v.trim().is_empty()));
+    if !has_plain {
+        return;
+    }
+    let settings = load_settings(app);
+    match save_settings(app, &settings) {
+        Ok(()) if crate::secrets::plaintext_fallback().is_empty() => {
+            eprintln!("[secrets] đã chuyển API key từ settings.json vào két hệ điều hành");
+        }
+        Ok(()) => eprintln!("[secrets] két không nhận, API key vẫn nằm trong settings.json"),
+        Err(e) => eprintln!("[secrets] chưa ghi lại được settings.json: {e}"),
+    }
+}
+
+/// Lưu Cài đặt (PLAN.md 15.1 A1): form chỉ gửi các trường nó có, trường không
+/// có trong `patch` giữ giá trị cũ. Nhờ vậy trường mới (đổi ở widget, menu pet…)
+/// không cần ai nhớ chép lại. Key lạ hay sai kiểu thì báo lỗi, không lưu ngầm.
+/// API key không đi qua đây (secrets::set).
+pub fn merge_patch(old: &Settings, patch: &serde_json::Map<String, serde_json::Value>) -> Result<Settings, String> {
+    let mut value = serde_json::to_value(old).map_err(|e| e.to_string())?;
+    let obj = value.as_object_mut().ok_or("settings không phải object")?;
+    for (k, v) in patch {
+        if !obj.contains_key(k) {
+            return Err(format!("Cài đặt không có trường \"{k}\"."));
+        }
+        obj.insert(k.clone(), v.clone());
+    }
+    let mut merged: Settings = serde_json::from_value(value).map_err(|e| format!("Cài đặt sai kiểu dữ liệu: {e}"))?;
+    // Không serialize nên không có trong `value`: lấy lại từ bản cũ.
+    merged.api_key = old.api_key.clone();
+    merged.gemini_key = old.gemini_key.clone();
+    Ok(merged)
 }
 
 pub fn load_tasks(app: &AppHandle) -> Vec<Task> {
@@ -782,6 +836,49 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    fn patch(v: serde_json::Value) -> serde_json::Map<String, serde_json::Value> {
+        v.as_object().unwrap().clone()
+    }
+
+    #[test]
+    fn merge_patch_keeps_fields_the_form_does_not_send() {
+        let mut old = Settings::default();
+        old.pet_model = "gothic-aristocrat".into();
+        old.muted = true;
+        old.weather_city = "Đà Lạt".into();
+        old.calendar_pin = true;
+        old.api_key = "sk-ant-x".into();
+        old.gemini_key = "AIza".into();
+        let m = merge_patch(&old, &patch(serde_json::json!({ "pet_name": "Miu", "focus_min": 50 }))).unwrap();
+        assert_eq!((m.pet_name.as_str(), m.focus_min), ("Miu", 50));
+        assert_eq!(m.pet_model, "gothic-aristocrat");
+        assert!(m.muted && m.calendar_pin);
+        assert_eq!(m.weather_city, "Đà Lạt");
+        assert_eq!((m.api_key.as_str(), m.gemini_key.as_str()), ("sk-ant-x", "AIza"));
+    }
+
+    #[test]
+    fn merge_patch_rejects_unknown_and_wrong_types() {
+        let old = Settings::default();
+        let e = merge_patch(&old, &patch(serde_json::json!({ "pet_nmae": "Miu" }))).err().unwrap();
+        assert!(e.contains("pet_nmae"), "{e}");
+        assert!(merge_patch(&old, &patch(serde_json::json!({ "focus_min": "nhiều" }))).is_err());
+        // Key AI không có trong file nên không đi qua merge (settings_set tách ra trước).
+        assert!(merge_patch(&old, &patch(serde_json::json!({ "api_key": "x" }))).is_err());
+    }
+
+    #[test]
+    fn api_keys_are_never_written_to_settings_json() {
+        let mut s = Settings::default();
+        s.api_key = "sk-ant-x".into();
+        s.gemini_key = "AIza".into();
+        let json = serde_json::to_string(&s).unwrap();
+        assert!(!json.contains("sk-ant-x") && !json.contains("AIza") && !json.contains("api_key"), "{json}");
+        // File của bản cũ vẫn đọc được key để chuyển sang két.
+        let old: Settings = serde_json::from_str(r#"{"api_key":"sk-ant-x","gemini_key":"AIza"}"#).unwrap();
+        assert_eq!((old.api_key.as_str(), old.gemini_key.as_str()), ("sk-ant-x", "AIza"));
     }
 
     #[test]

@@ -10,7 +10,7 @@
 
   let data = { candy: 0, today: 0, todayCap: 35, items: [], lang: 'vi', pet: '', you: '' };
   let tab = 'skin';
-  // Chế độ: 'gacha' (🎰 Candy Capsule) · 'shop' (đổi thẳng) · 'history'.
+  // Chế độ: 'gacha' (🎰 Candy Capsule) · 'shop' (đổi thẳng) · 'quests' (📋) · 'history'.
   let mode = 'gacha';
   try {
     tab = localStorage.getItem('collectionTab') || tab;
@@ -172,7 +172,8 @@
     document.documentElement.lang = data.lang;
     $('title').textContent = s.title;
     $('subtitle').textContent = C.fill(s.subtitle, { pet });
-    $('bubble').textContent = C.fill(mode === 'gacha' ? s.g.bubble : s.bubble, { pet, Pet: pet });
+    const bubble = mode === 'gacha' ? s.g.bubble : mode === 'quests' ? s.q.bubble : s.bubble;
+    $('bubble').textContent = C.fill(bubble, { pet, Pet: pet });
     $('candyLabel').textContent = s.candyLabel;
     $('candy').textContent = String(data.candy || 0);
     $('candyWord').textContent = s.candy;
@@ -202,7 +203,7 @@
     const s = S();
     const nav = $('modes');
     nav.textContent = '';
-    const icons = { gacha: '🎰', shop: '🛍️', history: '📜' };
+    const icons = { gacha: '🎰', shop: '🛍️', quests: '📋', history: '📜' };
     for (const m of C.MODES) {
       const b = el('button', 'mode' + (m === mode ? ' on' : ''));
       b.type = 'button';
@@ -212,6 +213,7 @@
     }
     $('shopView').hidden = mode !== 'shop';
     $('gachaView').hidden = mode !== 'gacha';
+    $('questView').hidden = mode !== 'quests';
     $('histView').hidden = mode !== 'history';
   }
 
@@ -219,6 +221,7 @@
     renderHead();
     renderModes();
     if (mode === 'gacha') renderGacha();
+    else if (mode === 'quests') renderQuests();
     else if (mode === 'history') renderHistory();
     else renderShop();
   }
@@ -288,6 +291,63 @@
         setMode('shop');
       });
       row.append(b);
+    }
+  }
+
+  /** 📋 Nhiệm vụ: 3 nhiệm vụ chính (một mỗi nhóm) + nhiệm vụ phụ, thưởng ngày / tuần. */
+  function renderQuests() {
+    const s = S();
+    const q = data.quests;
+    const pet = petName();
+    $('qTitle').textContent = s.q.title;
+    $('qSub').textContent = C.fill(s.q.sub, { n: q ? q.fullSpins : 1 });
+    const list = $('qList');
+    list.textContent = '';
+    if (!q) return;
+    const row = (it, label, opt) => {
+      const r = el('div', 'q-row' + (it.done ? ' done' : '') + (opt ? ' opt' : ''));
+      const txt = el('div', 'qt');
+      const bar = el('div', 'qbar');
+      const fillBar = el('i');
+      fillBar.style.width = Math.round((Math.min(it.have, it.goal) * 100) / (it.goal || 1)) + '%';
+      bar.append(fillBar);
+      txt.append(el('small', null, label), el('b', null, it.title), bar);
+      r.append(txt, el('span', 'qn', it.have + ' / ' + it.goal), el('span', 'qr', it.done ? s.q.done : C.fill(s.q.reward, { n: it.candy })));
+      if (it.canReroll) {
+        const b = el('button', null, s.q.reroll);
+        b.type = 'button';
+        b.addEventListener('click', () => reroll(it.slot));
+        r.append(b);
+      } else if (!opt && !it.done && q.rerolled) {
+        r.title = s.q.rerollUsed;
+      }
+      return r;
+    };
+    (q.main || []).forEach((it, i) => list.append(row(it, C.fill(s.q.groups[i] || '', { pet }), false)));
+    if (q.optional) list.append(row(q.optional, s.q.optional, true));
+
+    const left = (q.main || []).filter((it) => !it.done).length;
+    const full = $('qFull');
+    full.className = 'q-full' + (q.fullToday ? ' ok' : '');
+    full.textContent = '';
+    full.append(el('b', null, '🎁 ' + s.q.full), el('small', null, q.fullToday ? C.fill(s.q.fullDone, { n: q.fullSpins }) : C.fill(s.q.fullTodo, { n: left })));
+
+    $('qWeekTitle').textContent = '🏆 ' + s.q.week;
+    const days = $('qDays');
+    days.textContent = '';
+    (q.week || []).forEach((on, i) => {
+      days.append(el('span', (on ? 'on' : '') + (i === q.weekToday ? ' today' : ''), s.q.days[i]));
+    });
+    $('qWeekNote').textContent = q.weekClaimed ? s.q.weekDone : C.fill(s.q.weekNote, { goal: q.weekGoal, n: q.weekSpins });
+    $('qNote').textContent = s.q.noPenalty;
+  }
+
+  async function reroll(slot) {
+    try {
+      receive(await invoke('quests_reroll', { slot }));
+    } catch (e) {
+      toast(C.errorText(String(e), data.lang), true);
+      log('[collection] quests_reroll: ' + e);
     }
   }
 

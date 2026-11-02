@@ -228,7 +228,10 @@
         <div id="anthropicBlock" class="set-group">
           <div class="set-field">
             <label for="apiKey">Anthropic API key</label>
-            <input type="password" id="apiKey" placeholder="sk-ant-..." />
+            <div class="row tight">
+              <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" style="flex:1;" />
+              <button class="ghost" id="clearApiKey" style="flex:0 0 auto;" type="button" hidden>Xoá key</button>
+            </div>
           </div>
           <div class="set-field">
             <label for="model">Claude model</label>
@@ -247,7 +250,10 @@
         <div id="geminiBlock" class="set-group">
           <div class="set-field">
             <label for="geminiKey">Gemini API key</label>
-            <input type="password" id="geminiKey" placeholder="AIza..." />
+            <div class="row tight">
+              <input type="password" id="geminiKey" placeholder="AIza..." autocomplete="off" style="flex:1;" />
+              <button class="ghost" id="clearGeminiKey" style="flex:0 0 auto;" type="button" hidden>Xoá key</button>
+            </div>
           </div>
           <div class="set-field">
             <label for="geminiModel">Gemini model</label>

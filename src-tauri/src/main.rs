@@ -35,8 +35,10 @@ mod power_warn;
 mod notify;
 mod pins;
 mod pin_widget;
+mod quests;
 mod reminders;
 mod rewards;
+mod secrets;
 mod selection;
 mod sidegirl;
 mod fx;
@@ -691,6 +693,7 @@ fn main() {
             commands::game_info,
             commands::open_mini_game,
             commands::game_result,
+            commands::quests_reroll,
             commands::pin_get,
             commands::pin_done,
             commands::pin_set_top,
@@ -763,6 +766,8 @@ fn main() {
         .setup(move |app| {
             let app_handle = app.handle().clone();
 
+            // API key dạng chữ của bản cũ → két hệ điều hành (secrets.rs).
+            store::migrate_secrets(&app_handle);
             let settings = store::load_settings(&app_handle);
             selection::set_auto_enabled(settings.auto_flower);
 

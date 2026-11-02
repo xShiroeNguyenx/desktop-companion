@@ -581,6 +581,34 @@
     .hrow .hs.new { background: #dff7ea; color: #23845a; }
     .hrow .hs.dup { background: #f3e6f0; color: var(--ink-soft); }
 
+    /* 📋 Nhiệm vụ hằng ngày. */
+    .view.quests h3 { margin: 0; font-size: 16px; color: var(--ink); }
+    .q-list { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+    .q-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--card); border: 1px solid #f1e2ef; }
+    .q-row.done { background: #f0fbf5; border-color: #c9ecd8; }
+    .q-row.opt { border-style: dashed; }
+    .q-row .qt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .q-row .qt small { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+    .q-row .qt b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .q-row .qbar { height: 7px; border-radius: 4px; background: #f3e6f0; overflow: hidden; }
+    .q-row .qbar i { display: block; height: 100%; border-radius: 4px; background: #ff5fa2; }
+    .q-row.done .qbar i { background: #3fbf7f; }
+    .q-row .qn { min-width: 44px; text-align: right; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+    .q-row .qr { font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #fff0f7; color: #d63d82; white-space: nowrap; }
+    .q-row.done .qr { background: #dff7ea; color: #23845a; }
+    .q-row button { border: 1px solid #f1cfe2; background: #fff; color: var(--ink); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .q-row button:hover { background: #fff0f7; }
+    .q-bonus { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .q-full, .q-week { padding: 10px 14px; border-radius: 14px; background: var(--card); border: 1px solid #f1e2ef; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    .q-full.ok { background: #f0fbf5; border-color: #c9ecd8; }
+    .q-full b, .q-week b { font-size: 14px; }
+    .q-full small, .q-week small { color: var(--ink-soft); }
+    .q-days { display: flex; gap: 4px; }
+    .q-days span { flex: 1; text-align: center; font-size: 11px; font-weight: 700; padding: 3px 0; border-radius: 8px; background: #f3e6f0; color: var(--ink-soft); }
+    .q-days span.on { background: #3fbf7f; color: #fff; }
+    .q-days span.today { outline: 2px solid #ff5fa2; outline-offset: -2px; }
+    .q-note { color: var(--ink-soft); font-size: 12px; }
+
     /* ─── Kết quả quay ─────────────────────────────────────────────────────── */
     .gres {
       position: absolute; inset: 0; z-index: 30;
@@ -726,6 +754,16 @@
             <div class="feat-head"><h3 id="featTitle"></h3><button class="link" id="seeAll" type="button"></button></div>
             <div class="feat-row" id="featRow"></div>
           </div>
+        </section>
+        <!-- 📋 Nhiệm vụ hằng ngày (Rust quests.rs). -->
+        <section class="view quests" id="questView" hidden>
+          <div class="hist-head"><h3 id="qTitle"></h3><span id="qSub"></span></div>
+          <div class="q-list" id="qList"></div>
+          <div class="q-bonus">
+            <div class="q-full" id="qFull"></div>
+            <div class="q-week"><b id="qWeekTitle"></b><div class="q-days" id="qDays"></div><small id="qWeekNote"></small></div>
+          </div>
+          <small class="q-note" id="qNote"></small>
         </section>
         <!-- 📜 Lịch sử quay (50 lượt gần nhất). -->
         <section class="view hist" id="histView" hidden>

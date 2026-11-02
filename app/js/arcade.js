@@ -6,6 +6,7 @@
   const { invoke, listen, log } = window.DC;
   const G = window.GamesCore;
   const $ = (id) => document.getElementById(id);
+  // ĐỒNG BỘ với quests::GAMES (Rust): cùng thứ tự để "game của ngày" khớp nhiệm vụ.
   const GAMES = ['rps', 'guess', 'mines'];
 
   // {you}/{You} = gọi người chơi, {me}/{Me} = pet tự xưng, {pet} = tên pet.

@@ -51,11 +51,14 @@
   <img src="docs/landing/img/model-gothic-aristocrat.png" height="180" alt="Gothic Aristocrat" />
   <img src="docs/landing/img/model-pink-aristocrat.png" height="180" alt="Pink Aristocrat" />
   <img src="docs/landing/img/model-snow-aristocrat.png" height="180" alt="Snow Aristocrat" />
+  <img src="docs/landing/img/model-gothic-angel.png" height="180" alt="Gothic Angel" />
   <img src="docs/landing/img/model-pink-angel.png" height="180" alt="Pink Angel" />
+  <img src="docs/landing/img/model-snow-angel.png" height="180" alt="Snow Angel" />
+  <br />
   <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
   <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
   <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
-  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Kawaii・Pink Kawaii・Snow Kawaii・Gothic Pastel・Pink Pastel・Snow Pastel・Gothic Aristocrat・Pink Aristocrat・Snow Aristocrat・Pink Angel・Gothic Lolita・Snow Lolita・Snow Dancer</sub>
+  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Kawaii・Pink Kawaii・Snow Kawaii・Gothic Pastel・Pink Pastel・Snow Pastel・Gothic Aristocrat・Pink Aristocrat・Snow Aristocrat・Gothic Angel・Pink Angel・Snow Angel・Gothic Lolita・Snow Lolita・Snow Dancer</sub>
 </p>
 
 ---
@@ -167,12 +170,12 @@
   （🐰 バニー・🐱 ネコ・🦊 狐・❄️ 雪の国）、ミウの表情セット（❄️ 雪・🦇 ゴシック）、
   Live2D モデルと交換できます。雪の国・ネコ・狐は全パネルの見た目も変えます
   （氷・ゴシックロリータ・狐の社）。飾りだけで、お金では買えません。
-- **🎭 コレクションの Live2D モデル** — 13 人の追加キャラクター。笑顔・悲しみ・怒り・
+- **🎭 コレクションの Live2D モデル** — 15 人の追加キャラクター。笑顔・悲しみ・怒り・
   驚き・照れ・ウインクの表情と、それぞれのモーションつき：
 
   | モデル | 価格 | カプセル排出率 |
   |---|---|---|
-  | 🦇 Gothic Aristocrat・🌸 Pink Aristocrat・❄️ Snow Aristocrat・👼 Pink Angel | 10000 🍬 | 各 0.1% |
+  | 🦇 Gothic Aristocrat・🌸 Pink Aristocrat・❄️ Snow Aristocrat・🦇 Gothic Angel・👼 Pink Angel・❄️ Snow Angel | 10000 🍬 | 各 0.1% |
   | 🦇 Gothic Pastel・🌸 Pink Pastel・❄️ Snow Pastel | 7500 🍬 | 各 0.2% |
   | 🦇 Gothic Kawaii・🐰 Pink Kawaii・❄️ Snow Kawaii・🦇 Gothic Lolita・❄️ Snow Lolita・❄️ Snow Dancer | 5000 🍬 | 各 0.4% |
 
@@ -181,8 +184,8 @@
   自動で更新されます。**使う** を押すと画面のキャラクターがすぐに入れ替わります。Hiyori・
   Haru・Mao・Miara とフォルダから追加したモデルは引き続き無料です。
 - **🎰 キャンディカプセル** — コレクションのうさぎカプセルマシンをまわせます。1回 100 🍬、
-  10回 1000 🍬、排出率はマシンに表示（ノーマル 61.6%・レア 25%・エピック 10%・🌈 レジェンド
-  3.4%、Live2D モデルのみ）。レアが出ないまま10回目はレア以上確定、エピックが出ないまま
+  10回 1000 🍬、排出率はマシンに表示（ノーマル 61.4%・レア 25%・エピック 10%・🌈 レジェンド
+  3.6%、Live2D モデルのみ）。レアが出ないまま10回目はレア以上確定、エピックが出ないまま
   50回目はエピック以上確定、ダブりはそのアイテムの価格の 10% がキャンディで返ってきます。
   レア度ごとに専用の演出で開き、レジェンドは虹色の光と大量の紙吹雪。ショップでの交換も
   いつでもできます。

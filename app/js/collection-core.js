@@ -15,7 +15,7 @@
       title: 'Bộ sưu tập', subtitle: 'Thu thập và mở khoá những điều dễ thương cùng {pet}! 💗',
       candyLabel: 'Kẹo hiện tại', candy: 'kẹo', todayLabel: 'Hôm nay đã nhận', today: '{n} / {cap}',
       bubble: '{Pet} thích những chủ đề xinh xắn lắm đó! Cùng thu thập thêm nhé! 💗',
-      howTitle: 'Cách nhận kẹo', earn: ['✅ Hoàn thành việc', '🍅 Xong phiên Tập trung', '🎮 Thắng mini game', '💗 Chat & vuốt đầu', '🏆 Đạt cột mốc'],
+      howTitle: 'Cách nhận kẹo', earn: ['✅ Hoàn thành việc', '🍅 Xong phiên Tập trung', '🎮 Thắng mini game', '💗 Chat & vuốt đầu', '🏆 Đạt cột mốc', '📋 Nhiệm vụ hằng ngày'],
       noMoney: 'Không thể mua kẹo bằng tiền thật.',
       howTo: 'Kẹo đến từ việc đã xong, phiên Tập trung, chat, vuốt đầu và thắng game (có trần mỗi ngày). Mỗi cột mốc thân thiết +200 🍬. Không bán, không mua bằng tiền thật.',
       tabs: { skin: 'Skin widget', widget_deco: 'Trang trí', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model' },
@@ -24,7 +24,16 @@
       preview: 'Xem thử', free: 'Có sẵn', empty: 'Chưa có món nào ở nhóm này.', close: 'Đóng',
       download: '⬇ Tải về{size}', downloadingPct: 'Đang tải {n}%', update: '⬆ Cập nhật v{v}', installed: 'Đã tải xong {item}! Bấm Dùng để đổi nhé.',
       bought: '{item} là của {you} rồi! 🍬', sideOff: 'Bunny Lounge đang tắt: bật trong Cài đặt → 🎨 Diện mạo để thấy nhân vật.',
-      modes: { gacha: 'Candy Capsule', shop: 'Cửa hàng kẹo', history: 'Lịch sử' },
+      modes: { gacha: 'Candy Capsule', shop: 'Cửa hàng kẹo', quests: 'Nhiệm vụ', history: 'Lịch sử' },
+      q: {
+        bubble: 'Mỗi ngày 3 nhiệm vụ nhỏ thôi, làm cùng {pet} nhé! 💗',
+        title: 'Nhiệm vụ hôm nay', sub: 'Xong cả 3 nhiệm vụ: +{n} lượt quay 🎁. Mỗi ngày được đổi 1 nhiệm vụ.',
+        groups: ['🌸 Với {pet}', '🍅 Tập trung', '🎮 Giải trí'], optional: '✨ Nhiệm vụ phụ (tuỳ chọn)',
+        reroll: '🔄 Đổi', rerollUsed: 'Hôm nay đã đổi 1 nhiệm vụ rồi.', done: '✓ Xong', reward: '+{n} 🍬',
+        full: 'Xong cả 3 nhiệm vụ hôm nay', fullDone: 'Đã nhận +{n} lượt quay 🎁', fullTodo: 'Còn {n} nhiệm vụ',
+        week: 'Tuần này', weekNote: 'Xong đủ {goal} ngày trong tuần: +{n} lượt quay 🎁', weekDone: 'Đã nhận thưởng tuần 🏆',
+        days: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'], noPenalty: 'Bỏ một ngày cũng không sao, không mất gì cả.',
+      },
       g: {
         bubble: 'Hôm nay thử vận may nào? Cùng quay thật nhiều đồ xinh nhé! 💗',
         sign: 'Sweet Dreams', signSub: 'Skin, nhân vật, bộ mặt Miu, hiệu ứng và cả model Live2D, quay là có!',
@@ -44,7 +53,7 @@
         rvCommon: 'Mở nào~!', rvRare: '✦ HIẾM! ✦', rvEpic: '🌟 SỬ THI! 🌟', rvLegendary: '🌈 HUYỀN THOẠI! 🌈', rvSkip: 'Bấm để bỏ qua',
       },
       err: {
-        not_found: 'Không thấy món này.', no_gift: 'Hết lượt quay quà rồi.', already_owned: 'Đã có rồi mà~', not_enough: 'Còn thiếu {n} 🍬 nữa.',
+        not_found: 'Không thấy món này.', no_gift: 'Hết lượt quay quà rồi.', reroll_used: 'Hôm nay đã đổi 1 nhiệm vụ rồi.', reroll_done: 'Nhiệm vụ đã xong thì không đổi nữa.', already_owned: 'Đã có rồi mà~', not_enough: 'Còn thiếu {n} 🍬 nữa.',
         wrong_category: 'Món này không dùng ở đây được.', not_owned: 'Chưa có món này.', locked: 'Model này chưa mở khoá.',
         downloading: 'Đang tải model, xong sẽ tự đổi.', busy: 'Đang tải rồi, đợi chút nhé.',
         offline: 'Không kết nối được máy chủ tải model. Kiểm tra mạng rồi thử lại nhé.',
@@ -59,7 +68,7 @@
       title: 'コレクション', subtitle: '{pet}といっしょに、かわいいものを集めて解放しよう！💗',
       candyLabel: '今のキャンディ', candy: '個', todayLabel: '今日もらった数', today: '{n} / {cap}',
       bubble: 'かわいいテーマ、大好き！いっしょに集めようね！💗',
-      howTitle: 'キャンディのもらい方', earn: ['✅ タスク完了', '🍅 集中セッション', '🎮 ミニゲーム勝利', '💗 チャット・なでなで', '🏆 節目の達成'],
+      howTitle: 'キャンディのもらい方', earn: ['✅ タスク完了', '🍅 集中セッション', '🎮 ミニゲーム勝利', '💗 チャット・なでなで', '🏆 節目の達成', '📋 毎日のミッション'],
       noMoney: 'キャンディはお金では買えません。',
       howTo: 'キャンディはタスク完了・集中セッション・チャット・なでなで・ゲーム勝利でもらえます（1日の上限あり）。なかよし度の節目ごとに +200 🍬。販売も課金もありません。',
       tabs: { skin: 'ウィジェットスキン', widget_deco: 'デコ', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル' },
@@ -68,7 +77,16 @@
       preview: 'プレビュー', free: '最初から', empty: 'このグループにはまだアイテムがありません。', close: '閉じる',
       download: '⬇ ダウンロード{size}', downloadingPct: 'ダウンロード中 {n}%', update: '⬆ v{v} に更新', installed: '{item} のダウンロード完了！「使う」で切り替えてね。',
       bought: '{item} は{you}のもの！🍬', sideOff: 'バニーラウンジはオフです：設定 → 🎨 Diện mạo でオンにするとキャラクターが見えます。',
-      modes: { gacha: 'キャンディカプセル', shop: 'キャンディショップ', history: '履歴' },
+      modes: { gacha: 'キャンディカプセル', shop: 'キャンディショップ', quests: 'ミッション', history: '履歴' },
+      q: {
+        bubble: '毎日ちいさなミッションが3つ。{pet}といっしょにやろうね！💗',
+        title: '今日のミッション', sub: '3つ全部クリアでガチャ+{n}回🎁。1日1回ミッションを交換できます。',
+        groups: ['🌸 {pet}と', '🍅 集中', '🎮 あそび'], optional: '✨ おまけミッション（任意）',
+        reroll: '🔄 交換', rerollUsed: '今日はもう交換したよ。', done: '✓ クリア', reward: '+{n} 🍬',
+        full: '今日のミッション3つ', fullDone: 'ガチャ+{n}回もらったよ🎁', fullTodo: 'あと{n}つ',
+        week: '今週', weekNote: '週に{goal}日クリアでガチャ+{n}回🎁', weekDone: '今週のごほうび受け取り済み🏆',
+        days: ['月', '火', '水', '木', '金', '土', '日'], noPenalty: '休んでも大丈夫、なにも減らないよ。',
+      },
       g: {
         bubble: '今日の運だめし、してみる？かわいいもの、いっぱい出るといいね！💗',
         sign: 'Sweet Dreams', signSub: 'スキン・キャラ・ミウの表情・エフェクト、Live2Dモデルも出るよ！',
@@ -88,7 +106,7 @@
         rvCommon: 'オープン～！', rvRare: '✦ レア！ ✦', rvEpic: '🌟 エピック！ 🌟', rvLegendary: '🌈 レジェンド！ 🌈', rvSkip: 'タップでスキップ',
       },
       err: {
-        not_found: 'アイテムが見つかりません。', no_gift: 'プレゼントのガチャは使い切ったよ。', already_owned: 'もう持ってるよ～', not_enough: 'あと {n} 🍬 足りないよ。',
+        not_found: 'アイテムが見つかりません。', no_gift: 'プレゼントのガチャは使い切ったよ。', reroll_used: '今日はもう交換したよ。', reroll_done: 'クリアしたミッションは交換できないよ。', already_owned: 'もう持ってるよ～', not_enough: 'あと {n} 🍬 足りないよ。',
         wrong_category: 'ここでは使えないアイテムです。', not_owned: 'まだ持っていません。', locked: 'このモデルはまだロックされています。',
         downloading: 'モデルをダウンロード中。終わったら自動で切り替わるよ。', busy: 'ダウンロード中だよ、ちょっと待ってね。',
         offline: 'モデルのダウンロードサーバーにつながりません。ネットワークを確認してもう一度試してね。',
@@ -103,7 +121,7 @@
       title: 'Collection', subtitle: 'Collect and unlock cute things with {pet}! 💗',
       candyLabel: 'Candy now', candy: 'candy', todayLabel: 'Earned today', today: '{n} / {cap}',
       bubble: "I love pretty themes! Let's collect more together! 💗",
-      howTitle: 'How to earn candy', earn: ['✅ Finish tasks', '🍅 Focus sessions', '🎮 Win mini games', '💗 Chat & headpats', '🏆 Reach milestones'],
+      howTitle: 'How to earn candy', earn: ['✅ Finish tasks', '🍅 Focus sessions', '🎮 Win mini games', '💗 Chat & headpats', '🏆 Reach milestones', '📋 Daily quests'],
       noMoney: 'Candy can never be bought with real money.',
       howTo: 'Candy comes from finished tasks, focus sessions, chat, headpats and game wins (daily caps apply). Every friendship milestone adds +200 🍬. Never sold, never bought with real money.',
       tabs: { skin: 'Widget skins', widget_deco: 'Decor', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models' },
@@ -112,7 +130,16 @@
       preview: 'Preview', free: 'Included', empty: 'Nothing in this group yet.', close: 'Close',
       download: '⬇ Download{size}', downloadingPct: 'Downloading {n}%', update: '⬆ Update to v{v}', installed: '{item} is downloaded! Press Use to switch.',
       bought: '{item} is yours now! 🍬', sideOff: 'Bunny Lounge is off: turn it on in Settings → 🎨 Diện mạo to see the characters.',
-      modes: { gacha: 'Candy Capsule', shop: 'Candy shop', history: 'History' },
+      modes: { gacha: 'Candy Capsule', shop: 'Candy shop', quests: 'Quests', history: 'History' },
+      q: {
+        bubble: "Just 3 little quests a day. Let's do them with {pet}! 💗",
+        title: "Today's quests", sub: 'Finish all 3: +{n} spin 🎁. You can swap 1 quest a day.',
+        groups: ['🌸 With {pet}', '🍅 Focus', '🎮 Fun'], optional: '✨ Bonus quest (optional)',
+        reroll: '🔄 Swap', rerollUsed: 'You already swapped a quest today.', done: '✓ Done', reward: '+{n} 🍬',
+        full: 'All 3 quests today', fullDone: 'Got +{n} spin 🎁', fullTodo: '{n} to go',
+        week: 'This week', weekNote: 'Finish {goal} days this week: +{n} spins 🎁', weekDone: 'Weekly reward claimed 🏆',
+        days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], noPenalty: 'Skipping a day is fine, you lose nothing.',
+      },
       g: {
         bubble: "Feeling lucky today? Let's spin for lots of cute things! 💗",
         sign: 'Sweet Dreams', signSub: 'Skins, characters, Miu faces, effects and even Live2D models inside!',
@@ -132,7 +159,7 @@
         rvCommon: 'Open up~!', rvRare: '✦ RARE! ✦', rvEpic: '🌟 EPIC! 🌟', rvLegendary: '🌈 LEGENDARY! 🌈', rvSkip: 'Click to skip',
       },
       err: {
-        not_found: 'No such item.', no_gift: 'No gift spins left.', already_owned: 'You already have it~', not_enough: 'Still {n} 🍬 short.',
+        not_found: 'No such item.', no_gift: 'No gift spins left.', reroll_used: 'You already swapped a quest today.', reroll_done: "Finished quests can't be swapped.", already_owned: 'You already have it~', not_enough: 'Still {n} 🍬 short.',
         wrong_category: 'This item cannot be used here.', not_owned: "You don't have this item yet.", locked: 'This model is still locked.',
         downloading: 'Downloading the model; it switches over when done.', busy: 'Already downloading, hang on.',
         offline: "Can't reach the model download server. Check your connection and try again.",
@@ -265,7 +292,7 @@
   }
 
   /** Thứ tự chế độ trên thanh trên cùng. */
-  const MODES = ['gacha', 'shop', 'history'];
+  const MODES = ['gacha', 'shop', 'quests', 'history'];
   const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
   /** Nút quay: đủ kẹo thì bấm được, thiếu thì báo thiếu bao nhiêu; máy khoá thì tắt. */

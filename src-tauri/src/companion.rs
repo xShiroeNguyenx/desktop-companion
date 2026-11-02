@@ -474,6 +474,13 @@ pub(crate) fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
 /// Cộng điểm thân thiết cho một sự kiện (xong việc, chat, vuốt đầu…). Lỗi ghi
 /// file chỉ ghi log: điểm thân thiết không đáng làm hỏng việc đang làm.
 pub fn bond_award(app: &AppHandle, ev: crate::bond::Event) {
+    bond_award_game(app, ev, None);
+}
+
+/// Như `bond_award`, kèm id trò vừa chơi cho nhiệm vụ "game của ngày" / "2 trò".
+pub fn bond_award_game(app: &AppHandle, ev: crate::bond::Event, game: Option<&str>) {
+    // 📋 Nhiệm vụ đếm mọi lần, kể cả khi điểm thân thiết đã chạm trần hôm nay.
+    crate::collection::quest_event(app, ev, game);
     let (today, _) = today_and_hour(now_secs());
     match store::update_bond(app, |b| crate::bond::award(b, ev, today)) {
         // Kẹo đi song song điểm thân thiết (collection.rs). gain = 0 (đã chạm
@@ -596,8 +603,8 @@ pub fn game_info(app: &AppHandle) -> serde_json::Value {
 }
 
 /// Hết một ván trong cửa sổ game: cộng điểm, pet ngoài desktop đổi nét mặt.
-pub fn game_result(app: &AppHandle, user_won: bool) {
-    bond_award(app, crate::bond::Event::Game);
+pub fn game_result(app: &AppHandle, user_won: bool, game: Option<&str>) {
+    bond_award_game(app, crate::bond::Event::Game, game);
     let expression = if user_won { "shy" } else { "happy" };
     pet(app, json!({ "command": "setExpression", "expression": expression, "duration": EXPRESSION_MS }));
 }

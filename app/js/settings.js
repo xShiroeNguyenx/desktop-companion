@@ -10,6 +10,25 @@
     $('geminiBlock').style.display = p === 'gemini' ? '' : 'none';
   }
 
+  // API key nằm trong két hệ điều hành; trang chỉ biết đã lưu hay chưa. Ô nhập để
+  // trống = giữ key cũ; gõ = thay; "Xoá key" rồi Lưu = xoá (field: '').
+  const keyFields = {
+    api_key: { input: 'apiKey', clear: 'clearApiKey', ph: 'sk-ant-...', saved: false, clearing: false },
+    gemini_key: { input: 'geminiKey', clear: 'clearGeminiKey', ph: 'AIza...', saved: false, clearing: false },
+  };
+  function renderKey(k) {
+    const f = keyFields[k];
+    $(f.input).value = '';
+    $(f.input).placeholder = f.clearing ? 'Sẽ xoá key khi bấm Lưu' : f.saved ? '•••••••• đã lưu (gõ key mới để thay)' : f.ph;
+    $(f.clear).hidden = !f.saved || f.clearing;
+  }
+  for (const k of Object.keys(keyFields)) {
+    $(keyFields[k].clear).addEventListener('click', () => {
+      keyFields[k].clearing = true;
+      renderKey(k);
+    });
+  }
+
   let contexts = [];
   let customModels = [];
   // Giọng đã chọn cho từng engine — đổi engine qua lại không mất lựa chọn.
@@ -524,7 +543,12 @@
     try {
       const s = await invoke('settings_get');
       $('provider').value = s.provider || 'anthropic';
-      $('apiKey').value = s.api_key || '';
+      keyFields.api_key.saved = s.has_api_key === true;
+      keyFields.gemini_key.saved = s.has_gemini_key === true;
+      for (const k of Object.keys(keyFields)) {
+        keyFields[k].clearing = false;
+        renderKey(k);
+      }
       // Saved Claude model may come from a dynamic fetch — add it if missing.
       const cm = s.model || 'claude-haiku-4-5-20251001';
       const mSel = $('model');
@@ -534,7 +558,6 @@
         mSel.insertBefore(opt, mSel.firstChild);
       }
       mSel.value = cm;
-      $('geminiKey').value = s.gemini_key || '';
       // Saved model may not be one of the static <option>s (it could come from a
       // dynamic fetch) — add it so the selection sticks.
       const gm = s.gemini_model || 'gemini-2.5-flash';
@@ -662,7 +685,8 @@
   $('loadGeminiModels').addEventListener('click', async () => {
     const key = $('geminiKey').value.trim();
     const st = $('geminiModelStatus');
-    if (!key) { st.className = 'status err'; st.textContent = 'Nhập Gemini API key trước.'; return; }
+    // Ô trống mà đã lưu key: Rust dùng key đã lưu.
+    if (!key && !keyFields.gemini_key.saved) { st.className = 'status err'; st.textContent = 'Nhập Gemini API key trước.'; return; }
     st.className = 'status'; st.textContent = 'Đang tải danh sách model...';
     try {
       const models = await invoke('gemini_models', { apiKey: key });
@@ -690,7 +714,7 @@
   $('loadClaudeModels').addEventListener('click', async () => {
     const key = $('apiKey').value.trim();
     const st = $('claudeModelStatus');
-    if (!key) { st.className = 'status err'; st.textContent = 'Nhập Anthropic API key trước.'; return; }
+    if (!key && !keyFields.api_key.saved) { st.className = 'status err'; st.textContent = 'Nhập Anthropic API key trước.'; return; }
     st.className = 'status'; st.textContent = 'Đang tải danh sách model...';
     try {
       const models = await invoke('anthropic_models', { apiKey: key });
@@ -724,9 +748,7 @@
     const settings = {
       birthday,
       provider: $('provider').value,
-      api_key: $('apiKey').value.trim(),
       model: $('model').value,
-      gemini_key: $('geminiKey').value.trim(),
       gemini_model: $('geminiModel').value,
       translate_target: $('target').value,
       contexts: contexts,
@@ -774,10 +796,22 @@
       weather_pause_battery: $('weatherBattery').checked,
       weather_shortcut: $('weatherShortcut').value.trim(),
     };
+    for (const [k, f] of Object.entries(keyFields)) {
+      const typed = $(f.input).value.trim();
+      if (typed) settings[k] = typed;
+      else if (f.clearing) settings[k] = '';
+    }
 
     const status = $('status');
     try {
       await invoke('settings_set', { settings });
+      for (const [k, f] of Object.entries(keyFields)) {
+        if (k in settings) {
+          f.saved = settings[k] !== '';
+          f.clearing = false;
+          renderKey(k);
+        }
+      }
       await invoke('autostart_set', { enabled: $('autostart').checked });
       // Apply the hotkey (registers it live + persists hotkey field).
       try {

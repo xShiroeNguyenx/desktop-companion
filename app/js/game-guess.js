@@ -367,7 +367,7 @@
       showResult('out', String(state.secret), L.out, fill(L.subOut, words({ secret: state.secret })), L.again, newGame, L.close, hideWindow);
     }
     try {
-      await invoke('game_result', { won });
+      await invoke('game_result', { won, game: 'guess' });
     } catch (e) {
       log('[guess] game_result: ' + e);
     }

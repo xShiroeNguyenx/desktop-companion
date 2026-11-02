@@ -281,10 +281,24 @@ pub fn open_mini_game(app: AppHandle, kind: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Cửa sổ game: hết một ván.
+/// Cửa sổ game: hết một ván. `game` = id trò (quests::GAMES) cho nhiệm vụ.
 #[tauri::command]
-pub fn game_result(app: AppHandle, won: bool) {
-    crate::companion::game_result(&app, won);
+pub fn game_result(app: AppHandle, won: bool, game: Option<String>) {
+    crate::companion::game_result(&app, won, game.as_deref());
+}
+
+/// 📋 Đổi nhiệm vụ ở ô `slot` (mỗi ngày một lần). Trả view mới của Bộ sưu tập.
+#[tauri::command]
+pub async fn quests_reroll(app: AppHandle, slot: usize) -> Result<Value, String> {
+    let (today, _) = crate::companion::today_and_hour(now_millis() as u64 / 1000);
+    let out = store::update_collection(&app, |c| {
+        let out = crate::quests::reroll(&mut c.quests, today, slot)?;
+        crate::collection::apply_quest_reward(c, &out);
+        Ok::<_, crate::quests::RerollError>(out)
+    })?
+    .map_err(|e| e.code().to_string())?;
+    crate::collection::quests_changed(&app, &out);
+    Ok(crate::collection::view(&app))
 }
 
 /// Nút "Gửi thử" thông báo Windows trong Cài đặt.
@@ -548,14 +562,17 @@ pub fn pin_avatar(app: AppHandle) -> String {
 
 // ── Settings / autostart ────────────────────────────────────────────────────
 
+// Nút ↻ tải danh sách model: ô key để trống thì dùng key đã lưu (UI không có nó).
 #[tauri::command]
-pub async fn gemini_models(api_key: String) -> Result<Vec<(String, String)>, String> {
-    llm::gemini_list_models(&api_key).await
+pub async fn gemini_models(app: AppHandle, api_key: String) -> Result<Vec<(String, String)>, String> {
+    let key = if api_key.trim().is_empty() { store::load_settings(&app).gemini_key } else { api_key };
+    llm::gemini_list_models(&key).await
 }
 
 #[tauri::command]
-pub async fn anthropic_models(api_key: String) -> Result<Vec<(String, String)>, String> {
-    llm::anthropic_list_models(&api_key).await
+pub async fn anthropic_models(app: AppHandle, api_key: String) -> Result<Vec<(String, String)>, String> {
+    let key = if api_key.trim().is_empty() { store::load_settings(&app).api_key } else { api_key };
+    llm::anthropic_list_models(&key).await
 }
 
 // Scan a user-chosen folder for a *.model3.json and register it as a custom
@@ -642,42 +659,36 @@ pub fn remove_custom_model(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Settings cho UI: không có API key (secrets.rs), chỉ cờ đã lưu hay chưa.
 #[tauri::command]
-pub fn settings_get(app: AppHandle) -> store::Settings {
-    store::load_settings(&app)
+pub fn settings_get(app: AppHandle) -> Result<serde_json::Value, String> {
+    let s = store::load_settings(&app);
+    let mut v = serde_json::to_value(&s).map_err(|e| e.to_string())?;
+    if let Some(obj) = v.as_object_mut() {
+        obj.insert("has_api_key".into(), (!s.api_key.trim().is_empty()).into());
+        obj.insert("has_gemini_key".into(), (!s.gemini_key.trim().is_empty()).into());
+    }
+    Ok(v)
 }
 
+/// Lưu form Cài đặt. `settings` là bản vá: chỉ các trường form có, trường khác
+/// giữ nguyên (store::merge_patch). `api_key` / `gemini_key`: không gửi = giữ
+/// key đã lưu, chuỗi rỗng = xoá, còn lại = lưu vào két (secrets.rs).
 #[tauri::command]
-pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(), String> {
+pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), String> {
+    let serde_json::Value::Object(mut patch) = settings else {
+        return Err("Cài đặt gửi lên không đúng dạng.".into());
+    };
+    let mut keys = Vec::new();
+    for (field, _) in crate::secrets::FIELDS {
+        match patch.remove(field) {
+            None => {}
+            Some(serde_json::Value::String(k)) => keys.push((field, k)),
+            Some(_) => return Err(format!("Cài đặt sai kiểu dữ liệu: {field}")),
+        }
+    }
     let old = store::load_settings(&app);
-    // Form Cài đặt không có các trường này; giữ giá trị cũ thay vì để serde xoá
-    // về mặc định.
-    settings.skip_update_version = old.skip_update_version.clone();
-    // Model đổi ở menu Diện mạo / Bộ sưu tập (pet_set_model), form không có ô chọn
-    // model: lấy từ form thì Lưu Cài đặt sau khi đổi model sẽ ghi đè về model cũ.
-    settings.pet_model = old.pet_model.clone();
-    // Tắt tiếng bật / tắt ở menu Âm thanh trên pet, không ở form.
-    settings.muted = old.muted;
-    settings.name_asks = old.name_asks;
-    settings.name_asked_at = old.name_asked_at;
-    settings.address_asked = old.address_asked;
-    settings.weather_last_mode = old.weather_last_mode.clone();
-    // Thành phố, đơn vị và widget ghim đổi ở thẻ dự báo / widget, không ở form Cài đặt.
-    settings.weather_city = old.weather_city.clone();
-    settings.weather_lat = old.weather_lat;
-    settings.weather_lon = old.weather_lon;
-    settings.weather_units = old.weather_units.clone();
-    settings.weather_pin = old.weather_pin;
-    settings.weather_pin_pos = old.weather_pin_pos;
-    settings.weather_pin_top = old.weather_pin_top;
-    settings.weather_pin_size = old.weather_pin_size.clone();
-    // Lịch ghim cũng chỉnh ngay trên widget.
-    settings.calendar_pin = old.calendar_pin;
-    settings.calendar_pin_pos = old.calendar_pin_pos;
-    settings.calendar_pin_top = old.calendar_pin_top;
-    settings.clock_pin = old.clock_pin;
-    settings.sysmon_pin = old.sysmon_pin;
-    settings.monitor_pin = old.monitor_pin;
+    let mut settings = store::merge_patch(&old, &patch)?;
     settings.monitor_interval_min = crate::monitor::clean_interval(settings.monitor_interval_min);
     settings.search_engine = crate::launcher::clean_engine(&settings.search_engine);
     settings.launcher_hotkey = settings.launcher_hotkey.trim().to_string();
@@ -704,6 +715,13 @@ pub fn settings_set(app: AppHandle, mut settings: store::Settings) -> Result<(),
     }
     if !persona::JA_HONORIFICS.contains(&settings.ja_honorific.as_str()) {
         settings.ja_honorific = old.ja_honorific.clone();
+    }
+
+    // Sau khi mọi trường đã hợp lệ: két lỗi thì báo, không lưu gì thêm.
+    for (field, key) in keys {
+        crate::secrets::set(field, &key)?;
+        let key = key.trim().to_string();
+        if field == "api_key" { settings.api_key = key } else { settings.gemini_key = key }
     }
 
     selection::set_auto_enabled(settings.auto_flower);

@@ -610,6 +610,19 @@ pub const CATALOG: &[Item] = &[
         asset: "snow-aristocrat",
     },
     Item {
+        id: "model.gothic-angel",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 10000,
+        name: ["Gothic Angel", "ゴシック・エンジェル", "Gothic Angel"],
+        desc: [
+            "Thiên thần tai mèo tóc tím lavender đeo kính, đôi cánh trắng và vòng hào quang pha lê tím, váy bèo trắng tím điểm hoa hồng và thánh giá vàng, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "白い翼と紫のクリスタルの光輪をもつ、眼鏡をかけたラベンダー髪の猫耳エンジェル。バラと金の十字架で飾った白と紫のフリルドレス。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A lavender-haired cat-eared angel in glasses, with white wings and a purple crystal halo, in a white-and-purple frilled dress with roses and golden crosses, becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "gothic-angel",
+    },
+    Item {
         id: "model.pink-angel",
         cat: Category::Model,
         rarity: Rarity::Legendary,
@@ -621,6 +634,19 @@ pub const CATALOG: &[Item] = &[
             "A pink-haired cat-eared angel with white wings and a golden halo, in a pink-and-white frilled dress with bows and plush bunnies, becomes your main on-screen character, with full expressions and motions.",
         ],
         asset: "pink-angel",
+    },
+    Item {
+        id: "model.snow-angel",
+        cat: Category::Model,
+        rarity: Rarity::Legendary,
+        price: 10000,
+        name: ["Snow Angel", "スノー・エンジェル", "Snow Angel"],
+        desc: [
+            "Thiên thần tai mèo tóc bạch kim ánh xanh đeo kính, đôi cánh trắng và vòng hào quang bông tuyết, váy ren trắng điểm nơ xanh và pha lê băng, thay nhân vật chính trên màn hình với đủ biểu cảm và động tác.",
+            "白い翼と雪の結晶の光輪をもつ、眼鏡をかけた青みがかった銀髪の猫耳エンジェル。青いリボンと氷のクリスタルで飾った白いレースのドレス。画面のメインキャラクターになり、表情もモーションもそろっています。",
+            "A cat-eared angel in glasses with blue-tinted silver hair, white wings and a snowflake halo, in a white lace dress with blue bows and ice crystals, becomes your main on-screen character, with full expressions and motions.",
+        ],
+        asset: "snow-angel",
     },
     Item {
         id: "model.gothic-lolita",
@@ -847,6 +873,9 @@ pub struct Collection {
     /// Pet đã báo tin có quà chưa (commands::gacha_free_status).
     #[serde(default)]
     pub gift_told: bool,
+    /// 📋 Nhiệm vụ hằng ngày (quests.rs).
+    #[serde(default)]
+    pub quests: crate::quests::Quests,
 }
 
 fn default_skin() -> String {
@@ -892,6 +921,7 @@ impl Default for Collection {
             gift_spins: 0,
             gift_model: false,
             gift_told: false,
+            quests: Default::default(),
         }
     }
 }
@@ -967,6 +997,27 @@ pub fn grant(c: &mut Collection, amount: u32) -> u32 {
 /// Kẹo kiếm được hôm nay, suy từ bảng điểm hôm nay của bond.json.
 pub fn earned_today(b: &crate::bond::Bond, today: crate::bond::Day) -> u32 {
     DAILY_EVENTS.iter().map(|&ev| crate::bond::earned_today(b, ev, today) * candy_mult(ev)).sum()
+}
+
+/// 📋 Thưởng nhiệm vụ: kẹo + lượt quay (cộng vào lượt quà, cùng nút quay miễn
+/// phí và khung nhắc trên pet). Trả số lượt quay đã cộng.
+pub fn apply_quest_reward(c: &mut Collection, out: &crate::quests::Outcome) -> u32 {
+    grant(c, out.candy);
+    if out.spins == 0 {
+        return 0;
+    }
+    if !crate::gacha::enabled() {
+        // Máy kẹo chưa mở: đổi lượt quay ra đúng giá kẹo của nó.
+        grant(c, out.spins * crate::gacha::PULL_COST);
+        return 0;
+    }
+    // Hết lượt quà rồi thì lời hứa "chắc chắn có model mới" đã dùng xong;
+    // lượt thưởng không được mở lại nó (gacha::pull_gift).
+    if c.gift_spins == 0 {
+        c.gift_model = true;
+    }
+    c.gift_spins = c.gift_spins.saturating_add(out.spins);
+    out.spins
 }
 
 // ─── Mua / chọn ──────────────────────────────────────────────────────────────
@@ -1201,6 +1252,8 @@ mod glue {
             ),
             // 🎰 Candy Capsule: giá, tỉ lệ, bảo hiểm, lịch sử.
             "gacha": crate::gacha::view_json(&c, lang_idx),
+            // 📋 Nhiệm vụ hằng ngày.
+            "quests": crate::quests::view_json(&c.quests, today, lang_idx, &a.pet),
             // Bunny Lounge đang tắt thì trang nhắc bật trong Cài đặt.
             "sideGirls": s.side_girls,
             // Bản dev (npm run dev): trang hiện nút thử +1000 kẹo / mở hết.
@@ -1253,6 +1306,47 @@ mod glue {
         }
     }
 
+    /// Báo kết quả cập nhật nhiệm vụ: pet nói, khung 🎁 trên pet cập nhật số lượt,
+    /// trang Bộ sưu tập nhận view mới.
+    pub fn quests_changed(app: &AppHandle, out: &crate::quests::Outcome) {
+        if out.completed.is_empty() && out.spins == 0 {
+            return;
+        }
+        let a = persona::address(&store::load_settings(app));
+        if let Some(text) = crate::quests::announce(out, lang_index(a.lang), &a.pet) {
+            let _ = app.emit_to("main", "pet-message", json!({ "command": "setExpression", "expression": "happy", "duration": 6000 }));
+            let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": text }));
+        }
+        if out.spins > 0 {
+            let gift = store::load_collection(app).gift_spins;
+            let _ = app.emit_to("main", "pet-message", json!({ "command": "gacha:gift", "lang": a.lang.code(), "gift": gift }));
+        }
+        let _ = app.emit("collection-changed", view(app));
+    }
+
+    /// Một sự kiện (vuốt đầu, chat, xong phiên 🍅, chơi game, xong việc) → tiến độ nhiệm vụ.
+    pub fn quest_event(app: &AppHandle, ev: Event, game: Option<&str>) {
+        if matches!(ev, Event::Present | Event::Named) {
+            return;
+        }
+        let (today, _) = crate::companion::today_and_hour(crate::commands::now_millis() as u64 / 1000);
+        let res = store::update_collection(app, |c| {
+            let out = crate::quests::record(&mut c.quests, today, crate::quests::Happened { ev, game });
+            super::apply_quest_reward(c, &out);
+            out
+        });
+        match res {
+            Ok(out) if !out.completed.is_empty() || out.spins > 0 => quests_changed(app, &out),
+            // Chỉ tiến độ đổi (1/3 → 2/3): báo trang Bộ sưu tập nếu đang mở.
+            Ok(_) => {
+                if app.get_webview_window("collection").is_some() {
+                    let _ = app.emit_to("collection", "collection-changed", view(app));
+                }
+            }
+            Err(e) => eprintln!("[quests] lưu nhiệm vụ lỗi: {e}"),
+        }
+    }
+
     /// Thưởng cột mốc (+MILESTONE_BONUS).
     pub fn grant_bonus(app: &AppHandle, amount: u32) {
         match store::update_collection(app, |c| grant(c, amount)) {
@@ -1287,6 +1381,21 @@ pub use glue::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn quest_reward_adds_candy_and_spins_without_reopening_the_gift_promise() {
+        let out = crate::quests::Outcome { candy: 20, spins: 1, ..Default::default() };
+        // Đã quay hết 20 lượt quà: lượt thưởng là lượt thường, không ép model.
+        let mut c = Collection { gift_given: true, gift_spins: 0, gift_model: false, ..Default::default() };
+        assert_eq!(apply_quest_reward(&mut c, &out), 1);
+        assert_eq!((c.candy, c.earned_total, c.gift_spins), (20, 20, 1));
+        assert!(c.gift_model);
+        // Còn lượt quà: cộng thêm, lời hứa vẫn như cũ.
+        let mut c = Collection { gift_given: true, gift_spins: 5, gift_model: false, ..Default::default() };
+        apply_quest_reward(&mut c, &out);
+        assert_eq!(c.gift_spins, 6);
+        assert!(!c.gift_model);
+    }
 
     #[test]
     fn catalog_is_sane() {
