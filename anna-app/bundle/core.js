@@ -34,6 +34,39 @@ export function unwrap(res) {
   return res;
 }
 
+/**
+ * Window size to restore after a game page. `back` is the page size before
+ * ("WxH"); Anna's window.resize sets the outer size, title bar included. The
+ * game ran at `wide` (outer), so wide − inner is that chrome. Null without `back`.
+ */
+export function restoreSize(back, wide, inner) {
+  const m = /^(\d+)x(\d+)$/.exec(back || '');
+  if (!m) return null;
+  const chrome = (outer, page) => Math.min(Math.max(outer - page, 0), 80);
+  return { w: Number(m[1]) + chrome(wide.w, inner.w), h: Number(m[2]) + chrome(wide.h, inner.h) };
+}
+
+// The pet window tells an already-open full panel to pick up "openTab" now.
+export const PANEL_CHANNEL = 'desktop-companion/panel';
+
+// The app's own URL keys; everything else on the URL belongs to Anna.
+export const OWN_URL_KEYS = ['view', 'tab', 'game', 'wins', 'back', 'glang'];
+
+/**
+ * Query string for a page switch inside the app window (game pages and back).
+ * Anna's iframe URL carries the window identity and context (wid, t, theme,
+ * themeMode, lang); without them the SDK cannot connect and the page falls back
+ * to defaults. So keep every Anna key, swap in the latest token (Anna refreshes
+ * it while the page runs) and set the app's own keys from `own`.
+ */
+export function pageQuery(search, own = {}, token = '') {
+  const q = new URLSearchParams(search);
+  for (const k of OWN_URL_KEYS) q.delete(k);
+  if (token) q.set('t', token);
+  for (const [k, v] of Object.entries(own)) if (v != null && v !== '') q.set(k, String(v));
+  return q.toString();
+}
+
 export function chatSystemPrompt({ petName = '', tasks = [], now = new Date() } = {}) {
   const identity = petName
     ? `Your name is "${petName}", a name the user gave you.`
@@ -298,4 +331,40 @@ export function applyTaskTags(tasks, { tasks: added = [], done = [] }, rand) {
     if (!exists) out.push({ id: newTaskId(out, rand), text, done: false });
   }
   return out;
+}
+
+// ---------------------------------------------------------------- right-click menu
+
+/** Tab label without its leading emoji ("💬 Chat" → "Chat"). */
+const bare = (label) => String(label).replace(/^\S+\s+/, '');
+
+/**
+ * Entries of the pet's right-click ring (radial.js), like the desktop pet's.
+ * `view` "pet" (floating window: tabs open the full panel) or "main".
+ * `models` = the models the user owns ({ id, name, preview }), `current` = shown one.
+ * Actions: "tab:<name>", "model:<id>", "voice", "pat", "open".
+ */
+export function petMenuItems({ view = 'main', voice = false, models = [], current = '', t }) {
+  const tab = (id, icon) => ({ icon, label: bare(t('tab' + id[0].toUpperCase() + id.slice(1))), action: 'tab:' + id });
+  const items = [
+    tab('chat', '💬'),
+    { id: 'tools', icon: '🛠️', label: t('menuTools'), items: [tab('translate', '🌐'), tab('reply', '✍️')] },
+    tab('tasks', '📝'),
+    {
+      id: 'together',
+      icon: '💞',
+      label: t('menuTogether'),
+      items: [tab('focus', '🍅'), tab('games', '🎮'), tab('calendar', '📅'), tab('notes', '🗒️'), tab('collection', '🍬')],
+    },
+    {
+      id: 'model',
+      icon: '👗',
+      label: t('menuModel'),
+      items: models.map((m) => ({ icon: '👗', img: m.preview, label: m.name, action: 'model:' + m.id, active: m.id === current })),
+    },
+    { icon: '💗', label: t('menuPat'), action: 'pat' },
+  ];
+  if (view === 'pet') items.unshift({ icon: '🗂️', label: t('menuOpen'), action: 'open' });
+  else items.splice(5, 0, { icon: voice ? '🔊' : '🔇', label: t(voice ? 'voiceOn' : 'voiceOff'), action: 'voice' });
+  return items;
 }

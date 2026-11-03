@@ -20,6 +20,8 @@
   }
 }
 * { box-sizing: border-box; }
+/* `hidden` must win over the display: flex of .row, .editor and friends. */
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body {
   display: flex; flex-direction: column; background: var(--bg); color: var(--text);
@@ -93,6 +95,7 @@ button:disabled { opacity: .55; cursor: default; }
 .tasks li button { border: 0; background: none; color: var(--muted); cursor: pointer; }
 .tasks .empty { justify-content: center; color: var(--muted); background: none; }
 .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+.hint.error { color: var(--danger); }
 
 .row.center { justify-content: center; flex-wrap: wrap; }
 .seg { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -105,9 +108,14 @@ button:disabled { opacity: .55; cursor: default; }
 .game .status { text-align: center; font-weight: 600; background: none; border: 0; }
 button.danger { color: var(--danger); }
 
-.mines { display: grid; gap: 2px; user-select: none; }
-.mines .cell { aspect-ratio: 1; min-width: 0; border: 0; border-radius: 4px; background: color-mix(in srgb, var(--accent-2) 55%, var(--card)); box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); font-size: 12px; font-weight: 700; padding: 0; cursor: pointer; }
+.mines { display: grid; gap: 2px; user-select: none; align-self: center; max-width: 100%; }
+.mines .cell { min-width: 0; min-height: 0; border: 0; border-radius: 4px; background: color-mix(in srgb, var(--accent-2) 55%, var(--card)); box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); font-size: var(--fs, 12px); font-weight: 700; line-height: 1; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .mines .cell.open { background: var(--panel); box-shadow: inset 0 0 0 1px var(--edge); cursor: default; }
+/* 🐾 on every unopened cell, like the desktop Bomb Squad (dropped on tiny cells). */
+.mines .cell:not(.open):empty::before { content: '🐾'; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-weight: 400; opacity: .35; filter: grayscale(.4); }
+.mines.dense { gap: 1px; }
+.mines.dense .cell:not(.open):empty::before { content: none; }
+.seg .again { flex: 0 0 auto; padding: 5px 10px; font-weight: 700; }
 .mines .n1 { color: #5b8cff; } .mines .n2 { color: #3fbf7f; } .mines .n3 { color: #ff6b6b; } .mines .n4 { color: #b067ff; }
 .mines .n5 { color: #ff9f43; } .mines .n6 { color: #2ec4c4; } .mines .n7, .mines .n8 { color: var(--muted); }
 
@@ -151,7 +159,7 @@ button.danger { color: var(--danger); }
    from its embedder's, Chrome paints an opaque Canvas backdrop (black in dark) behind it. */
 .pet-mode { color-scheme: normal !important; }
 .pet-mode, .pet-mode body { background: transparent; }
-.pet-mode .tabs, .pet-mode .panels, .pet-mode .foot, .pet-mode .model-pick, .pet-mode #voiceBtn { display: none; }
+.pet-mode .tabs, .pet-mode .panels, .pet-mode .model-pick, .pet-mode #voiceBtn { display: none; }
 /* The see-through look comes from the host: the "pet" view declares `transparent: true`
    with `chrome: "vibrancy"` (Anna's frosted-glass window, forum changelog #176), so the
    page itself paints nothing behind the character. */
@@ -159,10 +167,55 @@ button.danger { color: var(--danger); }
 .pet-mode .bubble { top: 6px; left: 8px; right: 8px; }
 .pet-mode .stage-bar { left: 6px; right: 6px; bottom: 6px; }
 .pet-mode .loading { background: none; }
-.open {
+.open-panel {
   width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer; font-size: 16px; color: #fff;
   background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 12px rgba(0,0,0,.2);
 }
 
-.foot { padding: 6px 10px; text-align: center; font-size: 12px; background: var(--panel); border-top: 1px solid var(--edge); }
-.foot a { color: var(--accent); text-decoration: none; }
+
+/* Right-click ring on the pet (radial.js), same look as the desktop pet's. */
+.radial { position: fixed; inset: 0; z-index: 1000; display: none; pointer-events: none; }
+.radial.show { display: block; }
+.radial-center {
+  position: absolute; left: var(--radial-x); top: var(--radial-y); transform: translate(-50%, -50%);
+  min-width: 46px; max-width: 124px; padding: 4px 9px; border: 1px solid rgba(255, 150, 190, .6); border-radius: 999px;
+  background: rgba(36, 22, 34, .8); color: #ffe6f1; font-size: 11px; font-weight: 700; line-height: 1.25; text-align: center;
+  cursor: pointer; pointer-events: auto; backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(255, 150, 190, .22);
+}
+.radial-center.is-back { background: rgba(120, 50, 85, .85); }
+.radial-center:hover { border-color: rgba(255, 150, 190, .95); background: rgba(150, 60, 105, .9); }
+.radial-item {
+  position: absolute; left: var(--radial-x); top: var(--radial-y); width: 34px; height: 34px; margin: -17px 0 0 -17px; padding: 0;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border: 1px solid rgba(255, 150, 190, .6); border-radius: 50%;
+  background: linear-gradient(160deg, rgba(255, 183, 213, .75), rgba(255, 218, 233, .55));
+  backdrop-filter: blur(8px); box-shadow: 0 6px 16px rgba(255, 150, 190, .25), inset 0 1px 0 rgba(255, 255, 255, .35);
+  font-size: 15px; line-height: 1; cursor: pointer; pointer-events: auto;
+  /* Collapsed at the centre until the ring bursts out. */
+  opacity: 0; transform: scale(.3);
+  transition: transform .28s cubic-bezier(.34, 1.56, .64, 1), opacity .18s ease; transition-delay: calc(var(--i) * 22ms);
+}
+/* rotate → push out → rotate back keeps the icon upright at its slot. */
+.radial-ring.is-out .radial-item { opacity: 1; transform: rotate(var(--angle)) translate(var(--radial-radius)) rotate(calc(-1 * var(--angle))); }
+.radial-ring.is-out .radial-item:hover {
+  transition-delay: 0ms; border-color: rgba(255, 150, 190, .95);
+  background: linear-gradient(160deg, rgba(255, 150, 190, .9), rgba(255, 183, 213, .7));
+  transform: rotate(var(--angle)) translate(var(--radial-radius)) rotate(calc(-1 * var(--angle))) scale(1.14);
+}
+.radial-item img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; }
+.radial-item.active { border: 2px solid var(--accent); box-shadow: 0 0 0 2px rgba(255, 150, 190, .5), 0 6px 16px rgba(255, 150, 190, .3); }
+
+/* Games: a list first; the chosen game then covers the window (html.game-full). */
+.game-list { display: flex; flex-direction: column; gap: 8px; }
+.game-pick {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; cursor: pointer;
+  padding: 12px 14px; border: 1px solid var(--edge); border-radius: 14px; background: var(--card);
+}
+.game-pick:hover { border-color: var(--accent); }
+.game-pick b { font-size: 15px; }
+.game-pick small { color: var(--muted); font-size: 12px; }
+.game-head { display: flex; align-items: center; gap: 10px; }
+.game-head[hidden], .game[hidden], .game-list[hidden] { display: none; }
+.game-back { padding: 5px 12px; }
+.game-title { font-weight: 700; }
+.game-full .stage, .game-full .tabs { display: none; }

@@ -149,7 +149,8 @@ export class Stage {
       this.rub = null;
     });
     this.el.addEventListener('pointerdown', (e) => {
-      if (e.target !== this.canvas) return;
+      // Left button only: the right button opens the menu (radial.js).
+      if (e.target !== this.canvas || e.button !== 0) return;
       const p = local(e);
       const part = this.part(p.x, p.y);
       if (part === 'head') this.rub = { x: p.x, dist: 0, at: p };

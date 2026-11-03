@@ -1,7 +1,7 @@
 // Copy the Live2D runtime libs and the bundled models into anna-app/bundle/.
 // Models come from ../dist-models/<id>.zip, or the GitHub "models" release when
 // the zip is not on disk. Output folders are gitignored; run `npm run assets`.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
@@ -100,7 +100,53 @@ async function main() {
     console.log(`  ✓ ${m.id}: ${files.length} files`);
   }
   writeFileSync(join(modelsDir, 'index.json'), JSON.stringify(index, null, 2) + '\n');
-  console.log(`✓ libs + ${index.length} models → bundle/`);
+  syncDeskGames();
+  console.log(`✓ libs + ${index.length} models + desktop games → bundle/`);
+}
+
+/**
+ * The desktop Rock paper scissors / Guess the number pages, as they are (Miu's
+ * faces, the big character, sounds), into bundle/desk/. bundle/desk-shim.js
+ * replaces the Tauri bridge and bundle/desk-host.js connects the page to Anna;
+ * the collection theme is desktop-only. Anna's CSP has no 'unsafe-inline', so
+ * the page's <style> block moves to `<name>.css`. Returns { html, css }.
+ */
+export function deskPage(html, name) {
+  let css = '';
+  const out = html
+    .replace(/<style>([\s\S]*?)<\/style>/g, (_, block) => {
+      css += block;
+      return css.length === block.length ? `<link rel="stylesheet" href="${name}.css" />` : '';
+    })
+    .replace(
+      '<script src="js/tauri-api.js"></script>',
+      '<script src="../desk-shim.js"></script>\n  <script type="module" src="../desk-host.js"></script>'
+    )
+    .replace(/\s*<script src="js\/theme-apply\.js"><\/script>/, '')
+    .replace(/\s*<link rel="stylesheet" href="theme-pages\.css" \/>/, '');
+  if (!out.includes('../desk-shim.js')) throw new Error('desktop game page: tauri-api.js script tag not found');
+  if (/<script>|<style|\son[a-z]+="|\sstyle="/.test(out)) throw new Error('desktop game page: inline script / style left');
+  return { html: out, css };
+}
+
+function syncDeskGames() {
+  const app = join(repoRoot, 'app');
+  const desk = join(bundle, 'desk');
+  rmSync(desk, { recursive: true, force: true });
+  const copy = (rel) => {
+    mkdirSync(dirname(join(desk, rel)), { recursive: true });
+    copyFileSync(join(app, rel), join(desk, rel));
+  };
+  mkdirSync(desk, { recursive: true });
+  for (const name of ['game', 'guess']) {
+    const { html, css } = deskPage(readFileSync(join(app, `${name}.html`), 'utf8'), name);
+    writeFileSync(join(desk, `${name}.html`), html);
+    writeFileSync(join(desk, `${name}.css`), css);
+  }
+  for (const js of ['games-core.js', 'game-rps.js', 'game-guess.js', 'miu-skin.js']) copy(`js/${js}`);
+  for (const f of readdirSync(join(app, 'media', 'game'))) if (/^rps-.*\.png$/.test(f)) copy(`media/game/${f}`);
+  for (const f of ['popup-girl.png', 'settings-girl.png', 'tasks-girl.png']) copy(`media/side/${f}`);
+  for (const voice of ['en', 'ja', 'vi']) for (const f of ['headpat.mp3', 'poke.mp3']) copy(`media/audio/${voice}/${f}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -31,11 +31,14 @@ export async function load(key, fallback) {
   }
 }
 
+/** Resolves true once Anna storage accepted the value, false otherwise. */
 export async function save(key, value) {
-  if (!host.anna) return;
+  if (!host.anna) return false;
   try {
     unwrap(await host.anna.storage.set({ key, value }));
+    return true;
   } catch (e) {
     console.warn('[companion] storage.set', key, e);
+    return false;
   }
 }

@@ -4,6 +4,7 @@ import {
   applyTaskTags,
   chatSystemPrompt,
   parseReply,
+  petMenuItems,
   replyPrompt,
   streamingText,
   translatePrompt,
@@ -22,6 +23,8 @@ import {
   modelCost,
   newProgress,
   normalizePayload,
+  pageQuery,
+  restoreSize,
   pickLine,
   unlockModel,
 } from '../bundle/core.js';
@@ -152,4 +155,60 @@ test('prompts carry the right instructions', () => {
   const rp = replyPrompt({ message: 'Hi!', intent: 'say thanks', tone: 'formal' });
   assert.match(rp.systemPrompt, /formal and professional/);
   assert.match(rp.messages[0].content, /say thanks/);
+});
+
+test('petMenuItems: same ring as the desktop pet, per window', () => {
+  const t = (k) => STRINGS.vi[k];
+  const models = [
+    { id: 'a', name: 'A', preview: 'models/a/preview.png' },
+    { id: 'b', name: 'B', preview: 'models/b/preview.png' },
+  ];
+  const main = petMenuItems({ view: 'main', voice: true, models, current: 'b', t });
+  const actions = (items) => items.flatMap((i) => (i.items ? actions(i.items) : [i.action]));
+  assert.deepEqual(actions(main).filter((a) => a.startsWith('tab:')).sort(), [
+    'tab:calendar', 'tab:chat', 'tab:collection', 'tab:focus', 'tab:games', 'tab:notes', 'tab:reply', 'tab:tasks', 'tab:translate',
+  ]);
+  assert.ok(actions(main).includes('voice'));
+  assert.equal(main.find((i) => i.action === 'voice').icon, '🔊');
+  assert.ok(!actions(main).includes('open'));
+  const model = main.find((i) => i.id === 'model');
+  assert.deepEqual(model.items.map((i) => [i.action, !!i.active]), [['model:a', false], ['model:b', true]]);
+  assert.equal(model.items[0].img, 'models/a/preview.png');
+  // Labels drop the tab emoji and every entry has a label in this language.
+  assert.equal(main[0].label, bareLabel(STRINGS.vi.tabChat));
+  for (const i of [...main, ...main.flatMap((x) => x.items || [])]) assert.ok(i.label, JSON.stringify(i));
+
+  const pet = petMenuItems({ view: 'pet', models, current: 'a', t });
+  assert.equal(pet[0].action, 'open');
+  assert.ok(!actions(pet).includes('voice'), 'the floating pet has no voice');
+  assert.ok(pet.length <= 8, 'the ring fits a small window');
+});
+
+function bareLabel(s) {
+  return s.replace(/^\S+\s+/, '');
+}
+
+test('pageQuery keeps Anna\'s window keys across game pages, with the latest token', () => {
+  const anna = '?wid=w1&t=old&theme=light&themeMode=light&lang=en-US';
+  const toGame = new URLSearchParams(pageQuery(anna + '&view=main', { glang: 'vi', game: 'rps', back: '440x720' }, 'fresh'));
+  assert.equal(toGame.get('wid'), 'w1');
+  assert.equal(toGame.get('t'), 'fresh');
+  assert.equal(toGame.get('lang'), 'en-US');
+  assert.equal(toGame.get('theme'), 'light');
+  assert.equal(toGame.get('glang'), 'vi');
+  assert.equal(toGame.get('view'), null);
+  const back = new URLSearchParams(pageQuery('?' + toGame + '&tab=games&wins=2', { view: 'main' }));
+  assert.deepEqual([...back.keys()].sort(), ['lang', 't', 'theme', 'themeMode', 'view', 'wid']);
+  assert.equal(back.get('t'), 'fresh');
+  assert.equal(pageQuery(anna, {}, ''), 'wid=w1&t=old&theme=light&themeMode=light&lang=en-US');
+});
+
+test('restoreSize gives back the outer size, adding the title bar the game window measured', () => {
+  const WIDE = { w: 720, h: 580 };
+  // Anna: 720×580 outer showed a 718×542 page → 2×38 of chrome.
+  assert.deepEqual(restoreSize('438x682', WIDE, { w: 718, h: 542 }), { w: 440, h: 720 });
+  assert.equal(restoreSize('', WIDE, { w: 718, h: 542 }), null);
+  assert.equal(restoreSize('junk', WIDE, { w: 718, h: 542 }), null);
+  // A game window the user made bigger never shrinks the result.
+  assert.deepEqual(restoreSize('438x682', WIDE, { w: 900, h: 700 }), { w: 438, h: 682 });
 });

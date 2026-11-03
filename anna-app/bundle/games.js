@@ -1,5 +1,5 @@
-// 🎮 Mini games. Rules come from the desktop app's pure modules
-// (lib/games-core.js → window.GamesCore, lib/mines-core.js → window.MinesCore).
+// 🎮 Mini games: the desktop Rock paper scissors / Guess the number pages
+// (bundle/desk/, see desk-shim.js) and Bomb Squad, whose rules come from lib/mines-core.js.
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -7,22 +7,35 @@ const el = (tag, cls, text) => {
   if (text != null) n.textContent = text;
   return n;
 };
-const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : ''));
 
 export function mountGames(root, ctx) {
-  const G = window.GamesCore;
   const M = window.MinesCore;
-  const picker = el('div', 'seg');
+  // Two screens: a list of games, then the chosen game taking the whole window
+  // (html.game-full hides the character and tabs) with only a back button.
+  const picker = el('div', 'game-list');
+  const head = el('div', 'game-head');
+  const back = el('button', 'ghost game-back');
+  const title = el('span', 'game-title');
+  head.append(back, title);
   const body = el('div', 'game');
-  root.append(picker, body);
-  const games = { rps, guess, mines };
-  let current = 'rps';
+  root.append(picker, head, body);
+  const games = { mines };
+  const ids = ['rps', 'guess', 'mines'];
+  const label = (id) => ctx.t('game' + id[0].toUpperCase() + id.slice(1));
+  let current = null;
+
+  back.addEventListener('click', () => leave());
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && current && !e.defaultPrevented) leave();
+  });
 
   function renderPicker() {
     picker.textContent = '';
-    for (const id of Object.keys(games)) {
-      const b = el('button', id === current ? 'active' : '', ctx.t('game' + id[0].toUpperCase() + id.slice(1)));
+    for (const id of ids) {
+      const b = el('button', 'game-pick');
+      b.append(el('b', '', label(id)), el('small', '', ctx.t('game' + id[0].toUpperCase() + id.slice(1) + 'Desc')));
       b.addEventListener('click', () => {
+        if (DESK[id]) return ctx.playDesk(DESK[id], id);
         current = id;
         render();
       });
@@ -31,86 +44,34 @@ export function mountGames(root, ctx) {
   }
 
   function render() {
-    renderPicker();
+    const playing = !!current;
+    document.documentElement.classList.toggle('game-full', playing);
+    picker.hidden = playing;
+    head.hidden = !playing;
+    body.hidden = !playing;
     body.textContent = '';
+    if (!playing) {
+      if (fitObserver) fitObserver.disconnect();
+      renderPicker();
+      return;
+    }
+    back.textContent = '← ' + ctx.t('menuBack');
+    title.textContent = label(current);
     games[current]();
   }
 
-  // ✊ rock paper scissors — first to 3, pet plays "normal" (random).
-  function rps() {
-    let state = G.rpsNew();
-    const history = [];
-    const score = el('p', 'score');
-    const status = el('p', 'status', '');
-    const row = el('div', 'row center');
-    const again = el('button', 'ghost', ctx.t('newGame'));
-    const draw = () => (score.textContent = fill(ctx.t('rpsScore'), state));
-    for (const move of G.MOVES) {
-      const b = el('button', 'primary', ctx.t(move));
-      b.addEventListener('click', () => {
-        if (state.over) return;
-        const pet = G.rpsPetMove(history, 'normal', Math.random);
-        history.push(move);
-        const result = G.rpsRound(move, pet);
-        state = G.rpsScore(state, result);
-        status.textContent = `${ctx.t(move)} vs ${ctx.t(pet)} — ${ctx.t(result === 'win' ? 'rpsWin' : result === 'lose' ? 'rpsLose' : 'rpsDraw')}`;
-        ctx.react(result === 'win' ? 'sad' : result === 'lose' ? 'happy' : 'surprised');
-        if (state.over) {
-          const won = state.winner === 'user';
-          ctx.say(ctx.t(won ? 'rpsGameWin' : 'rpsGameLose'));
-          if (won) ctx.earn('rpsWin');
-        }
-        draw();
-      });
-      row.appendChild(b);
-    }
-    again.addEventListener('click', () => render());
-    draw();
-    body.append(score, row, status, again);
+  /** Back to the list of games (also when another tab is opened). */
+  function leave() {
+    if (!current) return;
+    current = null;
+    render();
   }
 
-  // 🔢 guess the number 1..100 in 7 turns.
-  function guess() {
-    let state = G.guessNew(Math.random);
-    const intro = el('p', '', ctx.t('guessPrompt'));
-    const form = el('form', 'row');
-    const input = el('input');
-    input.type = 'number';
-    input.min = String(G.GUESS_MIN);
-    input.max = String(G.GUESS_MAX);
-    const go = el('button', 'primary', ctx.t('guessGo'));
-    go.type = 'submit';
-    form.append(input, go);
-    const status = el('p', 'status');
-    const left = el('p', 'hint');
-    const again = el('button', 'ghost', ctx.t('newGame'));
-    const drawLeft = () => (left.textContent = `${ctx.t('guessLeft')}${state.maxTurns - state.turns} · ${state.low}–${state.high}`);
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (state.done) return;
-      const r = G.guess(state, input.value);
-      state = r.state;
-      input.value = '';
-      if (r.hint === 'invalid') status.textContent = ctx.t('guessInvalid');
-      else if (r.hint === 'correct') {
-        status.textContent = fill(ctx.t('guessWin'), { n: state.secret });
-        ctx.react('happy');
-        ctx.earn('guessWin');
-      } else if (state.done) {
-        status.textContent = fill(ctx.t('guessLose'), { n: state.secret });
-        ctx.react('wink');
-      } else {
-        status.textContent = ctx.t(r.hint === 'higher' ? 'guessHigher' : 'guessLower');
-        const w = G.warmth(state.secret, Number(state.history.at(-1).n));
-        ctx.react(w === 'hot' ? 'surprised' : w === 'warm' ? 'happy' : 'thinking');
-      }
-      drawLeft();
-    });
-    again.addEventListener('click', () => render());
-    drawLeft();
-    body.append(intro, form, status, left, again);
-    input.focus();
-  }
+  // ✊ Rock paper scissors and 🔢 Guess the number: the desktop app's own pages
+  // (bundle/desk/, copied by scripts/sync-assets.mjs) with Miu's faces and sounds.
+  // Anna blocks frames, so the window switches to that page (app.js playDesk)
+  // and desk-shim.js brings it back here.
+  const DESK = { rps: 'game.html', guess: 'guess.html' };
 
   // 💣 minesweeper.
   let level = 'easy';
@@ -127,9 +88,13 @@ export function mountGames(root, ctx) {
     }
     const info = el('p', 'hint');
     const grid = el('div', 'mines');
-    grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
+    grid.style.gridTemplateColumns = `repeat(${state.cols}, minmax(0, 1fr))`;
+    grid.style.gridTemplateRows = `repeat(${state.rows}, minmax(0, 1fr))`;
     const status = el('p', 'status');
-    const again = el('button', 'ghost', ctx.t('newGame'));
+    // "New game" sits on the level row so the board gets the height.
+    const again = el('button', 'again', '↻');
+    again.title = ctx.t('newGame');
+    levels.appendChild(again);
     const cells = state.cells.map((_, i) => {
       const b = el('button', 'cell');
       b.addEventListener('click', () => open(i));
@@ -170,9 +135,33 @@ export function mountGames(root, ctx) {
     }
     again.addEventListener('click', () => render());
     draw();
-    body.append(levels, info, grid, status, again);
+    body.append(levels, info, grid, status);
+    fitBoard(grid, status, state.cols);
+  }
+
+  // Square board as big as the panel allows WITHOUT scrolling: the smaller of
+  // the panel width and the height left under the level row. Cells never go
+  // below MIN_CELL px (then the panel scrolls, as before).
+  const MIN_CELL = 14;
+  let fitObserver = null;
+  function fitBoard(grid, status, cols) {
+    if (fitObserver) fitObserver.disconnect();
+    const panel = grid.closest('.panel') || root;
+    const fit = () => {
+      if (!grid.isConnected) return fitObserver && fitObserver.disconnect();
+      const box = panel.getBoundingClientRect();
+      const pad = parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+      const room = box.bottom - pad - grid.getBoundingClientRect().top - status.offsetHeight - 8;
+      const size = Math.max(cols * MIN_CELL, Math.floor(Math.min(body.clientWidth, room)));
+      grid.style.width = grid.style.height = size + 'px';
+      grid.style.setProperty('--fs', Math.max(9, Math.round((size / cols) * 0.6)) + 'px');
+      grid.classList.toggle('dense', size / cols < 16);
+    };
+    fitObserver = new ResizeObserver(fit);
+    fitObserver.observe(panel);
+    fit();
   }
 
   render();
-  return { refresh: render };
+  return { refresh: render, leave };
 }

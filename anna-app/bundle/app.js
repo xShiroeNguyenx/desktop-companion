@@ -9,7 +9,11 @@ import {
   newProgress,
   newTaskId,
   normalizePayload,
+  PANEL_CHANNEL,
+  pageQuery,
   parseReply,
+  restoreSize,
+  petMenuItems,
   pickLine,
   replyPrompt,
   streamingText,
@@ -25,9 +29,11 @@ import { mountGames } from './games.js';
 import { mountCalendar, mountCollection, mountFocus, mountNotes } from './extras.js';
 import { connectHost, load, save } from './host.js';
 import { runPet } from './pet.js';
+import { createRadialMenu } from './radial.js';
 
 const $ = (id) => document.getElementById(id);
-const KEY = { settings: 'settings', history: 'chat/history', tasks: 'tasks', progress: 'progress' };
+// openTab: a tab the floating pet's right-click menu asked the full panel to show.
+const KEY = { settings: 'settings', history: 'chat/history', tasks: 'tasks', progress: 'progress', openTab: 'openTab' };
 const IDLE_MS = [4 * 60_000, 7 * 60_000];
 
 const state = {
@@ -346,10 +352,83 @@ async function useModel(id) {
 // ---------------------------------------------------------------- tabs & Anna chat payloads
 
 function showTab(name) {
+  // A game covering the window goes back to the game list first.
+  if (state.panels.games) state.panels.games.leave();
   document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === name));
   const btn = document.querySelector(`.tabs button[data-tab="${name}"]`);
   if (btn) btn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+}
+
+/** Show the tab the floating pet's menu asked for (KEY.openTab), once. */
+async function takeOpenTab() {
+  const tab = await load(KEY.openTab, null);
+  if (!tab) return;
+  await save(KEY.openTab, null);
+  showTab(tab);
+}
+
+// ---------------------------------------------------------------- landscape games
+
+// The desktop game pages (games.js → bundle/desk/) are landscape. Anna blocks
+// frames, so the window itself switches to the page: it grows to WIDE (if
+// narrower) and desk-shim.js comes back with the old size and the wins.
+const WIDE = { w: 720, h: 580 };
+const DESK_REWARD = { rps: 'rpsWin', guess: 'guessWin' };
+
+function resizeWindow(size) {
+  const win = state.anna && state.anna.window;
+  if (!win || typeof win.resize !== 'function') return Promise.resolve();
+  return win.resize(size).catch((e) => console.warn('[companion] resize', e));
+}
+
+async function playDesk(page, id) {
+  // Only a window that grew needs its size back afterwards.
+  const grow = window.innerWidth < WIDE.w;
+  const back = grow ? `${window.innerWidth}x${window.innerHeight}` : '';
+  if (grow) await resizeWindow(WIDE);
+  const q = pageQuery(location.search, { glang: state.lang, game: id, back }, state.anna && state.anna.token);
+  location.assign(`desk/${page}?${q}`);
+}
+
+/** Back from a desktop game page (?tab=games&game=…&wins=…&back=WxH). */
+async function returnFromDesk() {
+  const q = new URLSearchParams(location.search);
+  const game = q.get('game');
+  if (!game) return;
+  const size = restoreSize(q.get('back'), WIDE, { w: window.innerWidth, h: window.innerHeight });
+  if (size) resizeWindow(size);
+  const wins = Math.min(Number(q.get('wins')) || 0, 20);
+  for (let i = 0; i < wins && DESK_REWARD[game]; i++) await earn(DESK_REWARD[game]);
+  if (wins) stage.react('happy');
+  showTab(q.get('tab') || 'games');
+  // Reloading the panel must not count the same wins again.
+  history.replaceState(null, '', location.pathname + '?' + pageQuery(location.search, { view: 'main' }, state.anna && state.anna.token));
+}
+
+// ---------------------------------------------------------------- right-click menu on the pet
+
+function wireMenu() {
+  const menu = createRadialMenu({
+    getItems: () =>
+      petMenuItems({
+        view: 'main',
+        voice: state.settings.voice,
+        models: state.models.filter((m) => isUnlocked(state.progress, m.id)),
+        current: state.settings.model,
+        t,
+      }),
+    onAction: (action) => {
+      const [kind, arg] = action.split(':');
+      if (kind === 'tab') showTab(arg);
+      else if (kind === 'model') useModel(arg);
+      else if (kind === 'voice') $('voiceBtn').click();
+      else if (kind === 'pat') stage.pat(null);
+    },
+    labels: () => ({ title: t('menuTitle'), back: t('menuBack'), close: t('menuClose') }),
+  });
+  // Only on the character: text boxes keep the normal copy / paste menu.
+  menu.attach($('stage'));
 }
 
 /** Anna's assistant opened us (open_app_view) with a payload, e.g. "#Desktop Companion translate …". */
@@ -477,6 +556,7 @@ async function main() {
   for (const [code, name] of Object.entries(LANGS)) target.add(new Option(name, code));
   target.value = state.settings.translateTarget || (state.lang === 'en' ? 'vi' : 'en');
   wire();
+  wireMenu();
   renderChat();
   renderTasks();
 
@@ -501,11 +581,12 @@ async function main() {
     settings: () => state.settings,
     models: state.models,
     useModel,
+    playDesk,
   };
   state.panels.games = mountGames($('gamesPanel'), ctx);
   state.panels.calendar = mountCalendar($('calendarPanel'), ctx);
   state.panels.collection = mountCollection($('collectionPanel'), ctx);
-  await Promise.all([mountNotes($('notesPanel'), ctx), mountFocus($('focusPanel'), ctx)]);
+  [state.panels.notes, state.panels.focus] = await Promise.all([mountNotes($('notesPanel'), ctx), mountFocus($('focusPanel'), ctx)]);
 
   if (anna && typeof anna.onLocaleChange === 'function') {
     anna.onLocaleChange(({ lang }) => {
@@ -530,6 +611,14 @@ async function main() {
   stage.react('happy');
   if (before !== state.progress.day) stage.burst(['🍬', '✨', '💗'], null, 6);
   if (anna && anna.entryPayload) applyPayload(anna.entryPayload);
+  await takeOpenTab();
+  await returnFromDesk();
+  // The panel may already be open when the pet's menu asks for a tab. Anna
+  // brings it forward without a DOM focus event, so the pet also says so here.
+  window.addEventListener('focus', () => takeOpenTab().catch(() => {}));
+  if (typeof BroadcastChannel === 'function') {
+    new BroadcastChannel(PANEL_CHANNEL).onmessage = () => takeOpenTab().catch(() => {});
+  }
   scheduleIdle();
 }
 

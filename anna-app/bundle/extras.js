@@ -19,35 +19,64 @@ export async function mountNotes(root, ctx) {
   if (!Array.isArray(notes)) notes = [];
   let query = '';
   let openId = null;
-  let saveTimer;
+  let saveTimer = null;
+  let saveSeq = 0;
 
   const top = el('div', 'row');
   const search = el('input');
   search.type = 'text';
-  search.placeholder = ctx.t('notesSearch');
-  const add = el('button', 'primary', ctx.t('notesNew'));
+  const add = el('button', 'primary');
   top.append(search, add);
   const list = el('ul', 'notes');
   const editor = el('div', 'editor');
   editor.hidden = true;
   const title = el('input');
   title.type = 'text';
-  title.placeholder = ctx.t('noteTitle');
   const body = el('textarea');
   body.rows = 6;
-  body.placeholder = ctx.t('noteBody');
   const bar = el('div', 'row');
   const back = el('button', 'ghost', '←');
-  const pin = el('button', 'ghost', '📌 ' + ctx.t('notePin'));
-  const del = el('button', 'ghost danger', ctx.t('noteDelete'));
+  const pin = el('button', 'ghost');
+  const del = el('button', 'ghost danger');
+  const label = () => {
+    search.placeholder = ctx.t('notesSearch');
+    add.textContent = ctx.t('notesNew');
+    title.placeholder = ctx.t('noteTitle');
+    body.placeholder = ctx.t('noteBody');
+    pin.textContent = '📌 ' + ctx.t('notePin');
+    del.textContent = ctx.t('noteDelete');
+  };
+  label();
   bar.append(back, pin, del);
-  editor.append(bar, title, body);
+  const status = el('p', 'hint');
+  status.setAttribute('aria-live', 'polite');
+  editor.append(bar, status, title, body);
   root.append(top, list, editor);
 
+  // Saves now and tells the user whether Anna storage took it; only the latest
+  // write may update the status line.
+  async function flush() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    const seq = ++saveSeq;
+    const ok = await ctx.save('notes', notes);
+    if (seq !== saveSeq) return;
+    status.textContent = ctx.t(ok ? 'noteSaved' : 'noteSaveFailed');
+    status.classList.toggle('error', !ok);
+  }
   const persist = () => {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => ctx.save('notes', notes), 500);
+    status.textContent = '';
+    saveTimer = setTimeout(flush, 500);
   };
+  // Closing the window right after typing must not drop the last edit.
+  const flushPending = () => {
+    if (saveTimer) flush();
+  };
+  window.addEventListener('pagehide', flushPending);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPending();
+  });
   const current = () => notes.find((n) => n.id === openId);
 
   function renderList() {
@@ -66,6 +95,7 @@ export async function mountNotes(root, ctx) {
     const n = current();
     title.value = n.title || '';
     body.value = n.body || '';
+    status.textContent = '';
     editor.hidden = false;
     list.hidden = top.hidden = true;
     body.focus();
@@ -76,7 +106,7 @@ export async function mountNotes(root, ctx) {
     openId = null;
     editor.hidden = true;
     list.hidden = top.hidden = false;
-    persist();
+    flush();
     renderList();
   }
   const edit = () => {
@@ -110,6 +140,13 @@ export async function mountNotes(root, ctx) {
     closeNote();
   });
   renderList();
+  return {
+    refresh() {
+      label();
+      status.textContent = '';
+      renderList();
+    },
+  };
 }
 
 // ---------------------------------------------------------------- focus
@@ -142,6 +179,9 @@ export async function mountFocus(root, ctx) {
   });
 
   function draw() {
+    start.textContent = ctx.t('focusStart');
+    rest.textContent = ctx.t('focusBreakBtn');
+    stop.textContent = ctx.t('focusStop');
     if (state.day !== dayOf()) state = { ...state, day: dayOf(), sessions: 0 };
     const left = focusLeft(state);
     label.textContent = state.running ? ctx.t(state.phase === 'work' ? 'focusWork' : 'focusBreak') : ctx.t('focusIdle');
@@ -166,6 +206,7 @@ export async function mountFocus(root, ctx) {
     draw();
   }, 1000);
   draw();
+  return { refresh: draw };
 }
 
 // ---------------------------------------------------------------- calendar
