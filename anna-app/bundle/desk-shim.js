@@ -46,6 +46,9 @@
   };
   addEventListener('resize', fit);
   fit();
+  // The desktop's daily friendship-point meter isn't wired here (wins become
+  // candy back in the panel), so hide it rather than show a stuck 0/1.
+  document.querySelectorAll('.reward').forEach((el) => (el.hidden = true));
   // The page's × becomes the way back to the panel.
   const btn = document.getElementById('closeBtn');
   if (btn) {

@@ -10,12 +10,14 @@ import {
   newTaskId,
   normalizePayload,
   PANEL_CHANNEL,
+  pendingTab,
   pageQuery,
   parseReply,
   restoreSize,
   petMenuItems,
   pickLine,
   replyPrompt,
+  withLanguageHint,
   streamingText,
   translatePrompt,
   trimHistory,
@@ -201,7 +203,7 @@ async function sendChat(text) {
     const raw = await ask(
       {
         systemPrompt: chatSystemPrompt({ petName: state.settings.petName || '', tasks: state.tasks }),
-        messages: history,
+        messages: withLanguageHint(history),
         maxTokens: 600,
         temperature: 0.8,
       },
@@ -362,7 +364,7 @@ function showTab(name) {
 
 /** Show the tab the floating pet's menu asked for (KEY.openTab), once. */
 async function takeOpenTab() {
-  const tab = await load(KEY.openTab, null);
+  const tab = pendingTab(await load(KEY.openTab, null));
   if (!tab) return;
   await save(KEY.openTab, null);
   showTab(tab);
@@ -617,7 +619,9 @@ async function main() {
   // brings it forward without a DOM focus event, so the pet also says so here.
   window.addEventListener('focus', () => takeOpenTab().catch(() => {}));
   if (typeof BroadcastChannel === 'function') {
-    new BroadcastChannel(PANEL_CHANNEL).onmessage = () => takeOpenTab().catch(() => {});
+    // Only switch here: the request stays in storage for a panel that is still
+    // starting (Anna may open a second one), and pendingTab lets it expire.
+    new BroadcastChannel(PANEL_CHANNEL).onmessage = (e) => e.data && e.data.tab && showTab(e.data.tab);
   }
   scheduleIdle();
 }

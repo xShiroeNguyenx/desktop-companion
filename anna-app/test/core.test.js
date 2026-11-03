@@ -24,7 +24,9 @@ import {
   newProgress,
   normalizePayload,
   pageQuery,
+  pendingTab,
   restoreSize,
+  withLanguageHint,
   pickLine,
   unlockModel,
 } from '../bundle/core.js';
@@ -155,6 +157,8 @@ test('prompts carry the right instructions', () => {
   const rp = replyPrompt({ message: 'Hi!', intent: 'say thanks', tone: 'formal' });
   assert.match(rp.systemPrompt, /formal and professional/);
   assert.match(rp.messages[0].content, /say thanks/);
+  // The reply language rule closes the message, after the (other-language) note.
+  assert.match(rp.messages[0].content, /say thanks[\s\S]*language of the original message\.$/);
 });
 
 test('petMenuItems: same ring as the desktop pet, per window', () => {
@@ -211,4 +215,27 @@ test('restoreSize gives back the outer size, adding the title bar the game windo
   assert.equal(restoreSize('junk', WIDE, { w: 718, h: 542 }), null);
   // A game window the user made bigger never shrinks the result.
   assert.deepEqual(restoreSize('438x682', WIDE, { w: 900, h: 700 }), { w: 438, h: 682 });
+});
+
+test('withLanguageHint adds the reminder to a copy of the last user turn only', () => {
+  const history = [
+    { role: 'user', content: 'Chào' },
+    { role: 'assistant', content: 'Chào bạn!' },
+    { role: 'user', content: 'How are you?' },
+  ];
+  const sent = withLanguageHint(history);
+  assert.equal(sent[2].content, 'How are you?\n\n(Reply in the language of this message.)');
+  assert.equal(sent[0].content, 'Chào');
+  assert.equal(history[2].content, 'How are you?');
+  assert.deepEqual(withLanguageHint([{ role: 'assistant', content: 'x' }]), [{ role: 'assistant', content: 'x' }]);
+  assert.deepEqual(withLanguageHint(null), []);
+});
+
+test('pendingTab takes a fresh pet request only', () => {
+  const now = 1_000_000;
+  assert.equal(pendingTab({ tab: 'tasks', at: now - 2000 }, now), 'tasks');
+  assert.equal(pendingTab({ tab: 'tasks', at: now - 60_000 }, now), null);
+  assert.equal(pendingTab('notes', now), 'notes');
+  assert.equal(pendingTab(null, now), null);
+  assert.equal(pendingTab({ at: now }, now), null);
 });

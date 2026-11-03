@@ -110,7 +110,7 @@ export async function runPet(anna) {
       const [kind, arg] = action.split(':');
       if (kind === 'open') openMain();
       else if (kind === 'tab') {
-        await save('openTab', arg);
+        await save('openTab', { tab: arg, at: Date.now() });
         if (typeof BroadcastChannel === 'function') new BroadcastChannel(PANEL_CHANNEL).postMessage({ tab: arg });
         openMain();
       } else if (kind === 'pat') stage.pat(null);
