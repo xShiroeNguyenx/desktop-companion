@@ -5,9 +5,34 @@
 (function () {
   const { invoke, listen, log } = window.DC;
   const $ = (id) => document.getElementById(id);
+  const T = (key, vars) => window.I18n.t(key, vars);
 
   let version = '';
   let installing = false;
+  // Trạng thái đang hiện, để vẽ lại chữ khi đổi ngôn ngữ:
+  // 'checking' | 'latest' | 'available' | 'failed' (+ info), và % tải (null = chưa tải).
+  let view = { kind: 'checking', info: null };
+  let percent = null;
+
+  function paint() {
+    const info = view.info || {};
+    $('title').textContent = view.kind === 'available' ? T('update.titleV', { v: info.version }) : T('update.title');
+    $('versions').textContent =
+      view.kind === 'latest' ? T('update.latest', { v: info.current })
+      : view.kind === 'available' ? T('update.current', { v: info.current })
+      : view.kind === 'failed' ? T('update.checkFail')
+      : T('update.checking');
+    if (view.kind === 'available') {
+      const notes = (info.notes || '').trim();
+      $('notes').textContent = notes || T('update.noNotes');
+      $('notes').classList.toggle('empty', !notes);
+    } else if ($('notes').classList.contains('empty')) {
+      $('notes').textContent = T('update.noNotes');
+    }
+    if (percent != null) {
+      $('status').textContent = percent < 0 ? T('update.downloading') : T('update.downloadingPct', { p: percent });
+    }
+  }
 
   function setErr(msg) {
     const el = $('errStatus');
@@ -15,18 +40,18 @@
     el.textContent = msg || '';
   }
 
-  function setProgress(percent) {
+  function setProgress(p) {
+    percent = p;
     $('progressWrap').classList.add('show');
     const bar = $('bar');
-    if (percent < 0) {
+    if (p < 0) {
       // Server không trả Content-Length → chạy sọc vô định.
       bar.classList.add('indeterminate');
-      $('status').textContent = 'Đang tải bản mới...';
     } else {
       bar.classList.remove('indeterminate');
-      $('barFill').style.width = percent + '%';
-      $('status').textContent = 'Đang tải bản mới... ' + percent + '%';
+      $('barFill').style.width = p + '%';
     }
+    paint();
   }
 
   // Nạp thông tin bản mới mỗi lần hộp thoại được hiện. `known` là kết quả
@@ -38,23 +63,24 @@
     $('progressWrap').classList.remove('show');
     $('installBtn').disabled = false;
     $('skipBtn').disabled = false;
-    $('versions').textContent = 'Đang kiểm tra...';
+    percent = null;
+    view = { kind: 'checking', info: null };
+    paint();
     try {
       const info = known || (await invoke('check_update'));
       if (!info.available) {
         // Bản mới vừa biến mất (hiếm) → không giữ hộp thoại vô nghĩa.
-        $('versions').textContent = 'Bạn đang dùng bản mới nhất (v' + info.current + ').';
+        view = { kind: 'latest', info };
+        paint();
         $('installBtn').disabled = true;
         return;
       }
       version = info.version;
-      $('title').textContent = 'Có bản mới v' + info.version + '!';
-      $('versions').textContent = 'Bạn đang dùng v' + info.current + ' — bấm tải về để cập nhật.';
-      const notes = (info.notes || '').trim();
-      $('notes').textContent = notes || '(không có ghi chú phát hành)';
-      $('notes').classList.toggle('empty', !notes);
+      view = { kind: 'available', info };
+      paint();
     } catch (e) {
-      $('versions').textContent = 'Không kiểm tra được bản cập nhật.';
+      view = { kind: 'failed', info: null };
+      paint();
       setErr(String(e));
       $('installBtn').disabled = true;
     }
@@ -72,6 +98,7 @@
       await invoke('install_update');
     } catch (e) {
       installing = false;
+      percent = null;
       setErr(String(e));
       $('progressWrap').classList.remove('show');
       $('installBtn').disabled = false;
@@ -91,6 +118,8 @@
     }
     invoke('close_update_dialog').catch(() => {});
   });
+
+  window.I18n.onChange(paint);
 
   listen('update-progress', (event) => {
     if (installing) setProgress(Number(event.payload));

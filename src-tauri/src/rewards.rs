@@ -38,6 +38,17 @@ pub fn reward_key(reward: Reward, source: Source) -> Key {
     }
 }
 
+/// Khung "mở khoá thành tựu" trên pet cho mốc lớn: (câu tiêu đề, hạng màu).
+/// Hạng là class CSS của .companion-achievement-toast (companion.css).
+pub fn achievement(reward: Reward) -> Option<(Key, &'static str)> {
+    match reward {
+        Reward::AllDone => Some((Key::AchAllDone, "legendary")),
+        Reward::Milestone(n) if n >= 10 => Some((Key::AchMilestone, "epic")),
+        Reward::Milestone(_) => Some((Key::AchMilestone, "rare")),
+        Reward::Early | Reward::Normal => None,
+    }
+}
+
 /// Đánh dấu task `id` đã xong. Trả nội dung task.
 pub fn complete(app: &AppHandle, id: &str, source: Source) -> Result<String, String> {
     let now = now_ms();
@@ -102,14 +113,28 @@ fn react(app: &AppHandle, reward: Reward, source: Source, text: &str, done_today
             crate::collection::fx(app, "petals");
         }
     }
+    let a = persona::address(&store::load_settings(app));
+    if let Some((key, rarity)) = achievement(reward) {
+        let count = done_today.to_string();
+        let _ = app.emit_to(
+            "main",
+            "pet-message",
+            json!({
+                "command": "achievementUnlocked",
+                "kicker": lines::line(Key::AchKicker, &a, &[]),
+                "achievement": { "title": lines::line(key, &a, &[("count", count.as_str())]), "rarity": rarity },
+            }),
+        );
+    }
     if source == Source::Chat {
         return;
     }
-    let a = persona::address(&store::load_settings(app));
     let task = pins::short_task(text);
     let count = done_today.to_string();
-    let line = lines::line(
+    // Cấp thân thiết / gói 📜 mở thêm câu khen (lines::bonus_keys).
+    let line = lines::line_unlocked(
         reward_key(reward, source),
+        companion::unlocks(app),
         &a,
         &[("task", task.as_str()), ("count", count.as_str())],
     );
@@ -127,5 +152,14 @@ mod tests {
         assert_eq!(reward_key(Reward::Early, Source::Pin), Key::TaskDoneEarly);
         assert_eq!(reward_key(Reward::Normal, Source::Pin), Key::PinDone);
         assert_eq!(reward_key(Reward::Normal, Source::Panel), Key::TaskDone);
+    }
+
+    #[test]
+    fn big_rewards_get_an_achievement_card() {
+        assert_eq!(achievement(Reward::AllDone), Some((Key::AchAllDone, "legendary")));
+        assert_eq!(achievement(Reward::Milestone(3)), Some((Key::AchMilestone, "rare")));
+        assert_eq!(achievement(Reward::Milestone(10)), Some((Key::AchMilestone, "epic")));
+        assert_eq!(achievement(Reward::Early), None);
+        assert_eq!(achievement(Reward::Normal), None);
     }
 }

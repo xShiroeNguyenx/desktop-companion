@@ -274,12 +274,19 @@ pub fn set_tray_item(app: &AppHandle, item: tauri::menu::MenuItem<tauri::Wry>) {
     sync_tray(app);
 }
 
-fn sync_tray(_app: &AppHandle) {
+/// Đổi ngôn ngữ (tray_text::relabel): viết lại chữ mục hiệu ứng thời tiết.
+pub fn refresh_tray(app: &AppHandle) {
+    sync_tray(app);
+}
+
+fn sync_tray(app: &AppHandle) {
+    let lang = crate::tray_text::lang(app);
     let Ok(rt) = RT.lock() else { return };
     let Some(item) = rt.tray.as_ref() else { return };
     let on = rt.conf.as_ref().is_some_and(|c| c.mode != Mode::Off);
     let keys = if rt.shortcut.is_some() { format!(" ({})", rt.shortcut_text) } else { String::new() };
-    let text = if on { "🌦 Tắt hiệu ứng thời tiết" } else { "🌦 Bật hiệu ứng thời tiết" };
+    use crate::tray_text::{text, Tray};
+    let text = text(if on { Tray::WeatherOff } else { Tray::WeatherOn }, lang);
     let _ = item.set_text(format!("{text}{keys}"));
 }
 

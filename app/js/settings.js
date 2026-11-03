@@ -3,6 +3,28 @@
 (function () {
   const { invoke, listen, log } = window.DC;
   const $ = (id) => document.getElementById(id);
+  const t = (key, vars) => window.I18n.t(key, vars);
+
+  // Dòng mô tả dưới tiêu đề nhóm (h3[data-sub], giao diện bộ nhân vật vẽ bằng
+  // CSS attr()): i18n.js không dịch thuộc tính này nên dịch ở đây.
+  function applySubs() {
+    for (const el of document.querySelectorAll('[data-i18n-sub]')) el.dataset.sub = t(el.dataset.i18nSub);
+  }
+
+  // Ô chọn số phút dựng sẵn trong HTML (kể cả dòng lạ do selectValue thêm vào):
+  // chữ theo ngôn ngữ, vẽ lại mỗi lần đổi ngôn ngữ.
+  const MINUTE_LABELS = {
+    quietGap: (v) => t('settings.minutes', { n: v }),
+    monInterval: (v) => t('settings.minutes', { n: v }),
+    focusMin: (v) => t('settings.minutes', { n: v }),
+    breakMin: (v) => (v ? t('settings.minutes', { n: v }) : t('settings.focus.noBreak')),
+    sleepyIdle: (v) => (v ? t('settings.pc.after', { n: v }) : t('settings.off')),
+  };
+  function relabelMinutes() {
+    for (const [id, label] of Object.entries(MINUTE_LABELS)) {
+      for (const o of $(id).options) o.textContent = label(Number(o.value));
+    }
+  }
 
   function syncProviderBlocks() {
     const p = $('provider').value;
@@ -16,10 +38,14 @@
     api_key: { input: 'apiKey', clear: 'clearApiKey', ph: 'sk-ant-...', saved: false, clearing: false },
     gemini_key: { input: 'geminiKey', clear: 'clearGeminiKey', ph: 'AIza...', saved: false, clearing: false },
   };
+  function keyPlaceholder(k) {
+    const f = keyFields[k];
+    $(f.input).placeholder = f.clearing ? t('settings.ai.keyClearing') : f.saved ? t('settings.ai.keySaved') : f.ph;
+  }
   function renderKey(k) {
     const f = keyFields[k];
     $(f.input).value = '';
-    $(f.input).placeholder = f.clearing ? 'Sẽ xoá key khi bấm Lưu' : f.saved ? '•••••••• đã lưu (gõ key mới để thay)' : f.ph;
+    keyPlaceholder(k);
     $(f.clear).hidden = !f.saved || f.clearing;
   }
   for (const k of Object.keys(keyFields)) {
@@ -35,14 +61,17 @@
   const ttsVoices = { windows: '', edge: 'vi-VN-HoaiMyNeural' };
 
   const TTS_NOTES = {
-    off: '',
-    windows: 'Chạy ngay trên máy, không gửi gì ra ngoài. Giọng hơi máy móc.',
-    edge: 'Giọng tự nhiên, có tiếng Việt. Đây là dịch vụ không chính thức của Microsoft: câu em nói được gửi lên máy chủ Microsoft, và dịch vụ có thể ngừng bất cứ lúc nào.',
+    windows: 'settings.tts.noteWindows',
+    edge: 'settings.tts.noteEdge',
   };
+  function ttsNote() {
+    const key = TTS_NOTES[$('ttsEngine').value];
+    $('ttsEngineNote').textContent = key ? t(key) : '';
+  }
 
   async function syncTtsBlock() {
     const engine = $('ttsEngine').value;
-    $('ttsEngineNote').textContent = TTS_NOTES[engine] || '';
+    ttsNote();
     $('ttsVoiceBlock').style.display = engine === 'off' ? 'none' : '';
     if (engine === 'off') return;
     const sel = $('ttsVoice');
@@ -60,7 +89,7 @@
     if (engine !== $('ttsEngine').value) return; // đã đổi engine trong lúc chờ
     if (engine === 'windows') {
       const def = document.createElement('option');
-      def.value = ''; def.textContent = 'Mặc định của Windows';
+      def.value = ''; def.textContent = t('settings.tts.windowsDefault');
       sel.appendChild(def);
     }
     for (const [id, name] of voices) {
@@ -72,7 +101,7 @@
     sel.value = [...sel.options].some((o) => o.value === wanted) ? wanted : (sel.options[0]?.value ?? '');
     ttsVoices[engine] = sel.value;
     if (engine === 'windows' && !voices.some(([, name]) => /vi-VN/i.test(name))) {
-      st.textContent = 'Máy chưa có giọng tiếng Việt. Thêm ở: Cài đặt Windows → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói.';
+      st.textContent = t('settings.tts.noViVoice');
     }
   }
 
@@ -82,7 +111,7 @@
     if (!customModels.length) {
       const hint = document.createElement('div');
       hint.className = 'status';
-      hint.textContent = 'Chưa có model tự thêm.';
+      hint.textContent = t('settings.look.noModels');
       list.appendChild(hint);
       return;
     }
@@ -95,7 +124,7 @@
       span.title = m.dir;
       span.style.cssText = 'flex:1; font-size:12.5px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
       const del = document.createElement('button');
-      del.className = 'task-del'; del.textContent = '🗑'; del.title = 'Xoá'; del.type = 'button';
+      del.className = 'task-del'; del.textContent = '🗑'; del.title = t('settings.delete'); del.type = 'button';
       del.style.flex = '0 0 auto';
       del.addEventListener('click', async () => {
         await invoke('remove_custom_model', { id: m.id });
@@ -142,12 +171,12 @@
     if (e.metaKey) mods.push('Super');
     const key = codeToToken(e);
     const st = $('hotkeyStatus');
-    if (!key) { st.className = 'status'; st.textContent = 'Nhấn thêm phím chính (chữ/số/F1...).'; return; }
+    if (!key) { st.className = 'status'; st.textContent = t('settings.sys.needKey'); return; }
     if (!mods.length && !/^F\d/.test(key)) {
       st.className = 'status err';
-      st.textContent = 'Nên có ít nhất 1 phím bổ trợ (Ctrl/Shift/Alt) để tránh trùng.';
+      st.textContent = t('settings.sys.needMod');
     } else {
-      st.className = 'status'; st.textContent = 'Đã ghi nhận. Bấm Lưu để áp dụng.';
+      st.className = 'status'; st.textContent = t('settings.sys.hotkeyOk');
     }
     setHotkeyDisplay([...mods, key].join('+'));
   });
@@ -155,21 +184,21 @@
   $('hotkeyReset').addEventListener('click', () => {
     setHotkeyDisplay('Ctrl+Shift+Space');
     $('hotkeyStatus').className = 'status';
-    $('hotkeyStatus').textContent = 'Đã đặt về mặc định. Bấm Lưu để áp dụng.';
+    $('hotkeyStatus').textContent = t('settings.sys.hotkeyReset');
   });
 
   $('addModelFolder').addEventListener('click', async () => {
     const st = $('modelFolderStatus');
-    st.className = 'status'; st.textContent = 'Đang mở hộp thoại chọn thư mục...';
+    st.className = 'status'; st.textContent = t('settings.look.opening');
     try {
       const dialog = window.__TAURI__.dialog;
-      const dir = await dialog.open({ directory: true, multiple: false, title: 'Chọn thư mục model Live2D' });
+      const dir = await dialog.open({ directory: true, multiple: false, title: t('settings.look.dialogTitle') });
       if (!dir) { st.textContent = ''; return; }
       const model = await invoke('add_model_folder', { dir });
       if (!customModels.some((m) => m.id === model.id)) customModels.push(model);
       renderCustomModels();
       st.className = 'status ok';
-      st.textContent = 'Đã thêm: ' + model.name + ' ✓ (mở menu chuột phải → Diện mạo để chọn)';
+      st.textContent = t('settings.look.added', { name: model.name });
     } catch (e) {
       st.className = 'status err';
       st.textContent = String(e);
@@ -189,7 +218,7 @@
       // Màu theo biến của ui.css để giao diện Xứ Tuyết (theme-snow.css) cũng đổi theo.
       span.style.cssText = 'flex:1; font-size:12.5px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 8px;';
       const del = document.createElement('button');
-      del.className = 'task-del'; del.textContent = '🗑'; del.title = 'Xoá'; del.type = 'button';
+      del.className = 'task-del'; del.textContent = '🗑'; del.title = t('settings.delete'); del.type = 'button';
       del.style.flex = '0 0 auto';
       del.addEventListener('click', () => { contexts.splice(i, 1); renderContexts(); });
       row.append(span, del);
@@ -198,7 +227,8 @@
 
     const dc = $('defaultContext');
     const prev = dc.value;
-    dc.innerHTML = '<option value="">(Không dùng ngữ cảnh)</option>';
+    dc.innerHTML = '';
+    dc.add(new Option(t('settings.tr.noContext'), ''));
     for (const c of contexts) {
       const opt = document.createElement('option');
       opt.value = c; opt.textContent = c;
@@ -243,7 +273,7 @@
     for (const v of values) {
       const opt = document.createElement('option');
       opt.value = String(v);
-      opt.textContent = v === 0 ? 'Tắt' : `Sau ${v} phút ngồi máy`;
+      opt.textContent = v === 0 ? t('settings.off') : t('settings.remind.every', { n: v });
       sel.appendChild(opt);
     }
     sel.value = String(value);
@@ -259,7 +289,7 @@
     for (const v of values) {
       const opt = document.createElement('option');
       opt.value = String(v);
-      opt.textContent = `Từ ${v}%`;
+      opt.textContent = t('settings.pc.from', { n: v });
       sel.appendChild(opt);
     }
     sel.value = String(value);
@@ -282,11 +312,16 @@
   (function fillBirthday() {
     const day = $('bdayDay');
     const month = $('bdayMonth');
-    day.add(new Option('Ngày —', ''));
-    month.add(new Option('Tháng —', ''));
-    for (let d = 1; d <= 31; d++) day.add(new Option(`Ngày ${d}`, String(d).padStart(2, '0')));
-    for (let m = 1; m <= 12; m++) month.add(new Option(`Tháng ${m}`, String(m).padStart(2, '0')));
+    day.add(new Option('', ''));
+    month.add(new Option('', ''));
+    for (let d = 1; d <= 31; d++) day.add(new Option('', String(d).padStart(2, '0')));
+    for (let m = 1; m <= 12; m++) month.add(new Option('', String(m).padStart(2, '0')));
+    labelBirthday();
   })();
+  function labelBirthday() {
+    for (const o of $('bdayDay').options) o.textContent = o.value ? t('settings.pal.day', { n: Number(o.value) }) : t('settings.pal.dayNone');
+    for (const o of $('bdayMonth').options) o.textContent = o.value ? t('settings.pal.month', { n: Number(o.value) }) : t('settings.pal.monthNone');
+  }
   function setBirthday(value) {
     const m = /^(\d{2})-(\d{2})$/.exec(value || '');
     $('bdayMonth').value = m ? m[1] : '';
@@ -312,21 +347,20 @@
     try {
       await invoke('notify_test');
       st.className = 'status ok';
-      st.textContent = 'Đã gửi. Không thấy thông báo thì kiểm tra Cài đặt Windows → Hệ thống → Thông báo (và chế độ Không làm phiền / Focus).';
+      st.textContent = t('settings.remind.toastSent');
     } catch (e) {
       st.className = 'status err';
-      st.textContent = 'Không gửi được thông báo: ' + e;
+      st.textContent = t('settings.remind.toastFail', { err: String(e) });
     }
   });
 
   // Nhóm Thời tiết: áp dụng ngay để xem trước, không chờ Lưu (giống Bunny Lounge).
-  const WEATHER_HINT = $('weatherStatus').textContent;
   async function showWeatherStatus() {
     const st = $('weatherStatus');
     let msg = '';
     try { msg = await invoke('weather_fx_status'); } catch (_) { /* ignore */ }
     st.className = msg ? 'status err' : 'status';
-    st.textContent = msg || WEATHER_HINT;
+    st.textContent = msg || t('settings.wx.hint');
   }
   async function applyWeather() {
     try {
@@ -344,22 +378,22 @@
     } catch (e) {
       const st = $('weatherStatus');
       st.className = 'status err';
-      st.textContent = 'Không đổi được: ' + e;
+      st.textContent = t('settings.changeFail', { err: String(e) });
     }
   }
   // "Theo mùa" tự chọn hiệu ứng → ô chọn hiệu ứng chỉ dùng cho chế độ chọn tay.
   const WEATHER_MODE_HINT = {
-    off: '',
-    manual: 'Hiệu ứng bạn chọn ở ô bên dưới.',
-    season: 'Xuân hoa anh đào · hè nắng · thu lá bay · đông tuyết · đêm có sao. Không cần mạng.',
-    live: 'Theo trời thật ở thành phố bạn chọn (cập nhật 30 phút/lần). Trời nhiều mây thì không vẽ gì.',
+    manual: 'settings.wx.modeManual',
+    season: 'settings.wx.modeSeason',
+    live: 'settings.wx.modeLive',
   };
   function syncWeatherFields() {
     const mode = $('weatherMode').value;
     $('weatherKind').disabled = mode !== 'manual';
     $('weatherIntensity').disabled = mode === 'live';
     $('weatherLightning').disabled = mode !== 'live';
-    $('weatherModeHint').textContent = WEATHER_MODE_HINT[mode] || '';
+    const hint = WEATHER_MODE_HINT[mode];
+    $('weatherModeHint').textContent = hint ? t(hint) : '';
   }
   $('weatherOpen').addEventListener('click', () => invoke('open_weather').catch((e) => log('open_weather: ' + e)));
   $('openCollection').addEventListener('click', () => invoke('open_collection').catch((e) => log('open_collection: ' + e)));
@@ -386,11 +420,11 @@
       try {
         if (id === 'weather') await invoke('weather_pin_set', { pinned: want });
         else await invoke('widget_pin_set', { id, pinned: want });
-        widgetMsg(want ? 'Đã ghim lên màn hình ✓' : 'Đã gỡ khỏi màn hình.', true);
+        widgetMsg(want ? t('settings.widget.pinned') : t('settings.widget.unpinned'), true);
       } catch (e) {
         // Thời tiết chưa chọn thành phố: mở thẻ dự báo để chọn (như menu tròn).
         if (id === 'weather') invoke('open_weather').catch(() => {});
-        widgetMsg('Không ghim được: ' + e, false);
+        widgetMsg(t('settings.widget.pinFail', { err: String(e) }), false);
         log('widget ' + id + ': ' + e);
       }
       syncWidgets();
@@ -399,20 +433,30 @@
   $('widgetsTidy').addEventListener('click', async () => {
     try {
       await invoke('widgets_tidy');
-      widgetMsg('Đã xếp gọn các widget đang ghim ✓', true);
+      widgetMsg(t('settings.widget.tidied'), true);
     } catch (e) {
-      widgetMsg('Không xếp được: ' + e, false);
+      widgetMsg(t('settings.widget.tidyFail', { err: String(e) }), false);
     }
   });
   // Ô chọn đồng hồ thêm: danh sách thành phố của clock-core.js, lưu cùng nút Lưu.
   for (const id of ['clockZone1', 'clockZone2']) {
     const sel = $(id);
-    sel.append(new Option(window.ClockCore.T.vi.none, ''));
-    for (const [zone, vi] of window.ClockCore.ZONES) sel.append(new Option(vi, zone));
+    sel.append(new Option('', ''));
+    for (const [zone] of window.ClockCore.ZONES) sel.append(new Option('', zone));
   }
+  // Tên thành phố theo ngôn ngữ hiện tại (clock-core.js có sẵn vi / ja / en).
+  function labelZones() {
+    const lang = window.I18n.lang();
+    for (const id of ['clockZone1', 'clockZone2']) {
+      for (const o of $(id).options) {
+        o.textContent = o.value ? window.ClockCore.zoneName(o.value, lang) : window.ClockCore.strings(lang).none;
+      }
+    }
+  }
+  labelZones();
   function setZone(sel, zone) {
     // Múi lưu từ trước nhưng không có trong danh sách: vẫn giữ, hiện tên theo đuôi.
-    if (zone && ![...sel.options].some((o) => o.value === zone)) sel.append(new Option(window.ClockCore.zoneName(zone, 'vi'), zone));
+    if (zone && ![...sel.options].some((o) => o.value === zone)) sel.append(new Option(window.ClockCore.zoneName(zone, window.I18n.lang()), zone));
     sel.value = zone || '';
   }
   window.addEventListener('focus', syncWidgets);
@@ -424,7 +468,10 @@
     st.className = ok == null ? 'status' : ok ? 'status ok' : 'status err';
     st.textContent = text;
   }
+  let lastMonitors = null; // để vẽ lại khi đổi ngôn ngữ
   function renderMonitors(v) {
+    lastMonitors = v;
+    const lang = window.I18n.lang();
     const list = $('monList');
     list.textContent = '';
     for (const s of (v && v.sites) || []) {
@@ -441,12 +488,12 @@
       n.append(b, small);
       const val = document.createElement('span');
       val.className = 'v';
-      val.textContent = MC.resultText(s.last, 'vi');
+      val.textContent = MC.resultText(s.last, lang);
       const bell = document.createElement('button');
       bell.type = 'button';
       bell.textContent = '🔔';
       bell.className = s.notify ? '' : 'off';
-      bell.title = s.notify ? 'Em đang báo khi site này sập. Bấm để tắt báo' : 'Bấm để em báo khi site này sập';
+      bell.title = s.notify ? t('settings.mon.bellOn') : t('settings.mon.bellOff');
       bell.addEventListener('click', async () => {
         try {
           await invoke('monitor_update', { id: s.id, name: s.name, url: s.url, notify: !s.notify });
@@ -458,11 +505,11 @@
       const del = document.createElement('button');
       del.type = 'button';
       del.textContent = '🗑';
-      del.title = 'Xoá (bấm 2 lần)';
+      del.title = t('settings.mon.delete');
       del.addEventListener('click', async () => {
         if (del.dataset.armed !== '1') {
           del.dataset.armed = '1';
-          del.textContent = 'Xoá?';
+          del.textContent = t('settings.mon.confirm');
           setTimeout(() => { del.dataset.armed = ''; del.textContent = '🗑'; }, 3000);
           return;
         }
@@ -485,11 +532,11 @@
     }
   }
   $('monTest').addEventListener('click', async () => {
-    monMsg('Đang kiểm…');
+    monMsg(t('settings.mon.checking'));
     try {
       const o = await invoke('monitor_test', { url: $('monUrl').value });
-      if (o.state === 'up') monMsg(`Chạy tốt ✓ (mã ${o.status}, ${MC.fmtMs(o.ms)})`, true);
-      else monMsg('Không vào được: ' + MC.resultText(o, 'vi'), false);
+      if (o.state === 'up') monMsg(t('settings.mon.up', { code: o.status, ms: MC.fmtMs(o.ms) }), true);
+      else monMsg(t('settings.mon.down', { reason: MC.resultText(o, window.I18n.lang()) }), false);
     } catch (e) {
       monMsg(String(e), false);
     }
@@ -499,7 +546,7 @@
       await invoke('monitor_add', { name: $('monName').value, url: $('monUrl').value });
       $('monUrl').value = '';
       $('monName').value = '';
-      monMsg('Đã thêm ✓ Em kiểm ngay bây giờ.', true);
+      monMsg(t('settings.mon.added'), true);
       loadMonitors();
     } catch (e) {
       monMsg(String(e), false);
@@ -535,7 +582,7 @@
       box.checked = !box.checked;
       const st = $('status');
       st.className = 'status err';
-      st.textContent = 'Không đổi được: ' + e;
+      st.textContent = t('settings.changeFail', { err: String(e) });
     }
   });
 
@@ -615,10 +662,10 @@
       if ($('quietGap').value === '') $('quietGap').value = '10';
       $('dueToast').checked = s.due_toast !== false;
       // Tập trung
-      selectValue('focusMin', s.focus_min ?? 25, (v) => `${v} phút`);
-      selectValue('breakMin', s.break_min ?? 5, (v) => (v ? `${v} phút` : 'Không nghỉ'));
+      selectValue('focusMin', s.focus_min ?? 25, MINUTE_LABELS.focusMin);
+      selectValue('breakMin', s.break_min ?? 5, MINUTE_LABELS.breakMin);
       // Nhận biết máy tính
-      selectValue('sleepyIdle', s.sleepy_idle_min ?? 10, (v) => (v ? `Sau ${v} phút` : 'Tắt'));
+      selectValue('sleepyIdle', s.sleepy_idle_min ?? 10, MINUTE_LABELS.sleepyIdle);
       $('welcomeBack').checked = s.welcome_back !== false;
       $('quietFullscreen').checked = s.quiet_fullscreen !== false;
       $('sysmonEnabled').checked = s.sysmon_enabled === true;
@@ -660,7 +707,7 @@
     };
     const text = samples[lang] || 'Hi there, I am right here in the corner of your screen.';
     btn.disabled = true;
-    st.className = 'status'; st.textContent = 'Đang tạo giọng...';
+    st.className = 'status'; st.textContent = t('settings.tts.generating');
     try {
       const res = await invoke('tts_preview', { engine, voice, text });
       const bin = atob(res.data);
@@ -671,7 +718,7 @@
       previewAudio = new Audio(url);
       previewAudio.addEventListener('ended', () => URL.revokeObjectURL(url));
       await previewAudio.play();
-      st.className = 'status ok'; st.textContent = 'Đang phát ✓';
+      st.className = 'status ok'; st.textContent = t('settings.tts.playing');
     } catch (e) {
       st.className = 'status err'; st.textContent = String(e);
     } finally {
@@ -686,11 +733,11 @@
     const key = $('geminiKey').value.trim();
     const st = $('geminiModelStatus');
     // Ô trống mà đã lưu key: Rust dùng key đã lưu.
-    if (!key && !keyFields.gemini_key.saved) { st.className = 'status err'; st.textContent = 'Nhập Gemini API key trước.'; return; }
-    st.className = 'status'; st.textContent = 'Đang tải danh sách model...';
+    if (!key && !keyFields.gemini_key.saved) { st.className = 'status err'; st.textContent = t('settings.ai.needGemini'); return; }
+    st.className = 'status'; st.textContent = t('settings.ai.loadingModels');
     try {
       const models = await invoke('gemini_models', { apiKey: key });
-      if (!models || !models.length) { st.className = 'status err'; st.textContent = 'Không tìm thấy model nào.'; return; }
+      if (!models || !models.length) { st.className = 'status err'; st.textContent = t('settings.ai.noModels'); return; }
       const cur = $('geminiModel').value;
       const sel = $('geminiModel');
       sel.innerHTML = '';
@@ -703,7 +750,7 @@
       // keep previous choice if still present
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
       st.className = 'status ok';
-      st.textContent = 'Đã tải ' + models.length + ' model. ✓';
+      st.textContent = t('settings.ai.modelsLoaded', { n: models.length });
     } catch (e) {
       st.className = 'status err';
       st.textContent = String(e);
@@ -714,11 +761,11 @@
   $('loadClaudeModels').addEventListener('click', async () => {
     const key = $('apiKey').value.trim();
     const st = $('claudeModelStatus');
-    if (!key && !keyFields.api_key.saved) { st.className = 'status err'; st.textContent = 'Nhập Anthropic API key trước.'; return; }
-    st.className = 'status'; st.textContent = 'Đang tải danh sách model...';
+    if (!key && !keyFields.api_key.saved) { st.className = 'status err'; st.textContent = t('settings.ai.needAnthropic'); return; }
+    st.className = 'status'; st.textContent = t('settings.ai.loadingModels');
     try {
       const models = await invoke('anthropic_models', { apiKey: key });
-      if (!models || !models.length) { st.className = 'status err'; st.textContent = 'Không tìm thấy model nào.'; return; }
+      if (!models || !models.length) { st.className = 'status err'; st.textContent = t('settings.ai.noModels'); return; }
       const cur = $('model').value;
       const sel = $('model');
       sel.innerHTML = '';
@@ -730,7 +777,7 @@
       }
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
       st.className = 'status ok';
-      st.textContent = 'Đã tải ' + models.length + ' model. ✓';
+      st.textContent = t('settings.ai.modelsLoaded', { n: models.length });
     } catch (e) {
       st.className = 'status err';
       st.textContent = String(e);
@@ -742,7 +789,7 @@
     if (birthday === null) {
       const st = $('status');
       st.className = 'status err';
-      st.textContent = 'Sinh nhật: chọn cả ngày và tháng, hoặc để trống cả hai.';
+      st.textContent = t('settings.pal.bdayInvalid');
       return;
     }
     const settings = {
@@ -818,11 +865,11 @@
         await invoke('set_hotkey', { hotkey: hotkeyValue });
       } catch (e) {
         status.className = 'status err';
-        status.textContent = 'Đã lưu, nhưng phím tắt lỗi: ' + e;
+        status.textContent = t('settings.savedHotkeyFail', { err: String(e) });
         return;
       }
       status.className = 'status ok';
-      status.textContent = 'Đã lưu! ✓';
+      status.textContent = t('settings.saved');
       showWeatherStatus();
     } catch (e) {
       status.className = 'status err';
@@ -834,17 +881,17 @@
   // ── Updates ─────────────────────────────────────────────────────────────
   $('checkUpdate').addEventListener('click', async () => {
     const st = $('updateStatus');
-    st.className = 'status'; st.textContent = 'Đang kiểm tra...';
+    st.className = 'status'; st.textContent = t('settings.sys.checking');
     $('installUpdate').style.display = 'none';
     try {
       const info = await invoke('check_update');
       if (info.available) {
         st.className = 'status ok';
-        st.textContent = 'Có bản mới: v' + info.version + ' (đang dùng v' + info.current + ')';
+        st.textContent = t('settings.sys.updateAvail', { version: info.version, current: info.current });
         $('installUpdate').style.display = '';
       } else {
         st.className = 'status';
-        st.textContent = 'Bạn đang dùng bản mới nhất (v' + info.current + ').';
+        st.textContent = t('settings.sys.upToDate', { current: info.current });
       }
     } catch (e) {
       st.className = 'status err';
@@ -869,6 +916,30 @@
   // Giao diện theo bộ nhân vật: js/theme-apply.js. Bật / tắt Bunny Lounge ngay
   // trên trang này cũng đổi giao diện (Rust phát collection-changed; gọi lại cho chắc).
   $('sideGirls').addEventListener('change', () => window.ThemeApply && window.ThemeApply.refresh());
+
+  // Đổi ngôn ngữ: I18n.apply() đã dịch phần HTML có data-i18n; ở đây vẽ lại chữ
+  // dựng bằng JS (giữ nguyên lựa chọn đang có, không xoá ô key đang gõ).
+  function relabel() {
+    applySubs();
+    relabelMinutes();
+    for (const k of Object.keys(keyFields)) keyPlaceholder(k);
+    for (const id of ['remindEyes', 'remindWater', 'remindStand']) if ($(id).options.length) fillRemind(id, Number($(id).value) || 0);
+    for (const id of ['cpuWarn', 'ramWarn']) if ($(id).options.length) fillWarn(id, Number($(id).value) || 90);
+    labelBirthday();
+    labelZones();
+    renderContexts();
+    renderCustomModels();
+    if (lastMonitors) renderMonitors(lastMonitors);
+    ttsNote();
+    const def = $('ttsVoice').querySelector('option[value=""]');
+    if (def && $('ttsEngine').value === 'windows') def.textContent = t('settings.tts.windowsDefault');
+    syncWeatherFields();
+    showWeatherStatus();
+    showLauncherStatus();
+  }
+  applySubs();
+  relabelMinutes();
+  window.I18n.onChange(relabel);
 
   load();
 })();

@@ -38,3 +38,13 @@ test('footer and day title', () => {
   assert.equal(W.footer(week), 'So với tuần trước: việc +2 · tập trung bằng · 📋 xong nhiệm vụ 3/7 ngày');
   assert.equal(W.dayTitle(day(50, { tasks: 2, sessions: 2, quests: true }), 6), 'CN: 2 việc · 2 phiên 🍅 (50 phút) · xong cả 3 nhiệm vụ');
 });
+
+test('theo ngôn ngữ', () => {
+  const week = { total: { tasks: 1, focusMin: 135, questDays: 2 }, last: { tasks: 1, focusMin: 100 }, streak: 3 };
+  assert.equal(W.summary(week, 'ja'), '✅ 1件 · 🍅 2時間15分 · 🔥 3日連続');
+  assert.equal(W.summary(week, 'en'), '✅ 1 task · 🍅 2 h 15 min · 🔥 3-day streak');
+  assert.equal(W.footer(week, 'en'), 'Vs last week: tasks same · focus +35 min · 📋 quests done 2/7 days');
+  assert.equal(W.dayTitle(day(25, { tasks: 2, sessions: 1 }), 0, 'en'), 'Mon: 2 tasks · 1 🍅 session (25 min)');
+  assert.deepEqual(W.dayLabels('ja').length, 7);
+  assert.equal(W.minutesText(45, 'xx'), '45 phút');
+});

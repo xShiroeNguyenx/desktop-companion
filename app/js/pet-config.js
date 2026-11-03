@@ -83,7 +83,7 @@
   };
   window.__VISIBLE_MODELS__ = [
     ...builtin.map((m) => ({ id: m.id, name: m.name, description: m.description })),
-    ...custom.map((m) => ({ id: m.id, name: m.name, description: 'Model tự thêm' })),
+    ...custom.map((m) => ({ id: m.id, name: m.name, description: 'Model tự thêm', custom: true })),
   ];
   // Bundled models still locked in the Collection (bridge.js fills this from Rust).
   window.__LOCKED_MODELS__ = [];

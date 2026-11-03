@@ -3,8 +3,12 @@
 (function () {
   const { invoke, listen, log } = window.DC;
   const $ = (id) => document.getElementById(id);
+  const T = (key, vars) => window.I18n.t(key, vars);
   let lastResult = '';
   let lastSource = '';
+  // Chữ chờ đang hiện ở khung bản dịch / nội dung gốc (khoá i18n), '' = đang hiện văn bản thật.
+  let resultKey = '';
+  let sourceKey = '';
 
   // --- Cửa sổ tự co/giãn chiều cao theo nội dung -------------------------
   const TAURI = window.__TAURI__ || {};
@@ -61,7 +65,9 @@
     lastResult = '';
     lastSource = '';
     $('source').textContent = '...';
-    $('result').textContent = 'Đang dịch...';
+    resultKey = 'quick.translating';
+    sourceKey = '';
+    $('result').textContent = T(resultKey);
     $('result').classList.add('empty');
     setSourceVisible(false); // mỗi lần dịch mới lại thu gọn về chỉ bản dịch
     setStatus('');
@@ -73,8 +79,10 @@
       return;
     }
     if (!sel || !sel.text) {
-      $('source').textContent = '(chưa có văn bản)';
-      $('result').textContent = '(chưa có văn bản được chọn)';
+      sourceKey = 'quick.noText';
+      resultKey = 'quick.noSelection';
+      $('source').textContent = T(sourceKey);
+      $('result').textContent = T(resultKey);
       return;
     }
     $('source').textContent = sel.text;
@@ -83,9 +91,11 @@
       // Empty context → Rust falls back to the default context from Settings.
       const out = await invoke('llm_translate', { text: sel.text, context: '', target: '' });
       lastResult = out;
+      resultKey = '';
       $('result').textContent = out;
       $('result').classList.remove('empty');
     } catch (e) {
+      resultKey = '';
       $('result').textContent = '';
       setStatus(String(e), 'err');
     }
@@ -99,7 +109,7 @@
       btn.textContent = '✓';
       setTimeout(() => { btn.textContent = '📋'; }, 1000);
     } catch (e) {
-      setStatus('Không sao chép được.', 'err');
+      setStatus(T('quick.copyFail'), 'err');
     }
   }
 
@@ -113,10 +123,17 @@
     document.body.classList.toggle('dual', on);
     const btn = $('toggleSrcBtn');
     btn.classList.toggle('on', on);
-    btn.title = on ? 'Ẩn nội dung gốc' : 'Hiện nội dung gốc';
+    btn.title = on ? T('quick.hideSource') : T('quick.showSource');
   }
   $('toggleSrcBtn').addEventListener('click', () => {
     setSourceVisible(!$('srcBox').classList.contains('show'));
+  });
+
+  // Đổi ngôn ngữ: vẽ lại chữ chờ và tooltip 👁 (bản dịch đã có thì giữ nguyên).
+  window.I18n.onChange(() => {
+    if (resultKey) $('result').textContent = T(resultKey);
+    if (sourceKey) $('source').textContent = T(sourceKey);
+    $('toggleSrcBtn').title = $('srcBox').classList.contains('show') ? T('quick.hideSource') : T('quick.showSource');
   });
 
   listen('quick-refresh', run);

@@ -7,6 +7,13 @@
   const DAY = 24 * HOUR;
   const p2 = (x) => String(x).padStart(2, '0');
 
+  // Chữ theo ngôn ngữ giao diện (I18n.lang()); mặc định tiếng Việt.
+  const S = {
+    vi: { overDays: (n) => `⚠️ Quá hạn ${n} ngày`, overAt: (t) => `⚠️ Quá hạn (${t})`, left: (n) => `⏰ Còn ${n} phút`, today: (t) => `⏰ Hôm nay ${t}`, tomorrow: (t) => `📅 Mai ${t}` },
+    ja: { overDays: (n) => `⚠️ ${n}日超過`, overAt: (t) => `⚠️ 期限切れ (${t})`, left: (n) => `⏰ あと${n}分`, today: (t) => `⏰ 今日 ${t}`, tomorrow: (t) => `📅 明日 ${t}` },
+    en: { overDays: (n) => `⚠️ ${n} day${n === 1 ? '' : 's'} overdue`, overAt: (t) => `⚠️ Overdue (${t})`, left: (n) => `⏰ ${n} min left`, today: (t) => `⏰ Today ${t}`, tomorrow: (t) => `📅 Tomorrow ${t}` },
+  };
+
   function sameDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
@@ -14,9 +21,11 @@
   /**
    * @param {number|string} due  millis UTC (chuỗi rỗng / sai = không có hạn)
    * @param {number} now         millis UTC
+   * @param {string} [lang]      "vi" (mặc định) / "ja" / "en"
    * @returns {{text: string, level: 'over'|'soon'|'today'|'later'} | null}
    */
-  function describeDue(due, now) {
+  function describeDue(due, now, lang) {
+    const L = S[lang] || S.vi;
     const ms = Number(due);
     if (!due || !Number.isFinite(ms) || ms <= 0) return null;
     const d = new Date(ms);
@@ -25,14 +34,14 @@
     const diff = ms - now;
     if (diff < 0) {
       const days = Math.floor(-diff / DAY);
-      return { text: days >= 1 ? `⚠️ Quá hạn ${days} ngày` : `⚠️ Quá hạn (${hhmm})`, level: 'over' };
+      return { text: days >= 1 ? L.overDays(days) : L.overAt(hhmm), level: 'over' };
     }
     if (diff < HOUR) {
-      return { text: `⏰ Còn ${Math.max(1, Math.ceil(diff / MIN))} phút`, level: 'soon' };
+      return { text: L.left(Math.max(1, Math.ceil(diff / MIN))), level: 'soon' };
     }
-    if (sameDay(d, n)) return { text: `⏰ Hôm nay ${hhmm}`, level: 'today' };
+    if (sameDay(d, n)) return { text: L.today(hhmm), level: 'today' };
     const tomorrow = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
-    if (sameDay(d, tomorrow)) return { text: `📅 Mai ${hhmm}`, level: 'later' };
+    if (sameDay(d, tomorrow)) return { text: L.tomorrow(hhmm), level: 'later' };
     return { text: `📅 ${p2(d.getDate())}/${p2(d.getMonth() + 1)} ${hhmm}`, level: 'later' };
   }
 

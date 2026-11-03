@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="ui.css" />
-  <title>Cài đặt</title>
+  <title data-i18n="settings.title">Cài đặt</title>
   <style>
     /* ─── Bố cục 2 cột ôm lấy nhân vật ở giữa ───────────────────────────────
        Mượn cách của anime-companion (side columns): một lưới 3 track —
@@ -209,16 +209,16 @@
   </script>
 
   <div class="set-head">
-    <h2>⚙️ Cài đặt</h2>
+    <h2 data-i18n="settings.heading">⚙️ Cài đặt</h2>
   </div>
 
   <div class="set-grid">
     <!-- ─── Cột trái: AI + hệ thống ─────────────────────────────────── -->
     <div class="set-col set-col--left">
       <div class="set-group">
-        <h3 data-sub="Nhà cung cấp AI và mô hình trò chuyện">🤖 Trí tuệ nhân tạo</h3>
+        <h3 data-sub="Nhà cung cấp AI và mô hình trò chuyện" data-i18n-sub="settings.ai.sub" data-i18n="settings.ai.title">🤖 Trí tuệ nhân tạo</h3>
         <div class="set-field">
-          <label for="provider">Nhà cung cấp AI</label>
+          <label for="provider" data-i18n="settings.ai.provider">Nhà cung cấp AI</label>
           <select id="provider">
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="gemini">Google Gemini</option>
@@ -227,19 +227,19 @@
 
         <div id="anthropicBlock" class="set-group">
           <div class="set-field">
-            <label for="apiKey">Anthropic API key</label>
+            <label for="apiKey" data-i18n="settings.ai.anthropicKey">Anthropic API key</label>
             <div class="row tight">
               <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" style="flex:1;" />
-              <button class="ghost" id="clearApiKey" style="flex:0 0 auto;" type="button" hidden>Xoá key</button>
+              <button class="ghost" id="clearApiKey" style="flex:0 0 auto;" type="button" hidden data-i18n="settings.ai.clearKey">Xoá key</button>
             </div>
           </div>
           <div class="set-field">
-            <label for="model">Claude model</label>
+            <label for="model" data-i18n="settings.ai.claudeModel">Claude model</label>
             <div class="row tight">
               <select id="model" style="flex:1;">
-                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (nhanh, rẻ)</option>
-                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (cân bằng)</option>
-                <option value="claude-opus-4-8">Claude Opus 4.8 (mạnh nhất)</option>
+                <option value="claude-haiku-4-5-20251001" data-i18n="settings.ai.haiku">Claude Haiku 4.5 (nhanh, rẻ)</option>
+                <option value="claude-sonnet-4-6" data-i18n="settings.ai.sonnet">Claude Sonnet 4.6 (cân bằng)</option>
+                <option value="claude-opus-4-8" data-i18n="settings.ai.opus">Claude Opus 4.8 (mạnh nhất)</option>
               </select>
               <button class="ghost" id="loadClaudeModels" style="flex:0 0 auto;" type="button">↻</button>
             </div>
@@ -249,19 +249,19 @@
 
         <div id="geminiBlock" class="set-group">
           <div class="set-field">
-            <label for="geminiKey">Gemini API key</label>
+            <label for="geminiKey" data-i18n="settings.ai.geminiKey">Gemini API key</label>
             <div class="row tight">
               <input type="password" id="geminiKey" placeholder="AIza..." autocomplete="off" style="flex:1;" />
-              <button class="ghost" id="clearGeminiKey" style="flex:0 0 auto;" type="button" hidden>Xoá key</button>
+              <button class="ghost" id="clearGeminiKey" style="flex:0 0 auto;" type="button" hidden data-i18n="settings.ai.clearKey">Xoá key</button>
             </div>
           </div>
           <div class="set-field">
-            <label for="geminiModel">Gemini model</label>
+            <label for="geminiModel" data-i18n="settings.ai.geminiModel">Gemini model</label>
             <div class="row tight">
               <select id="geminiModel" style="flex:1;">
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro (mạnh nhất)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (cân bằng)</option>
-                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (nhanh/rẻ)</option>
+                <option value="gemini-2.5-pro" data-i18n="settings.ai.gPro">Gemini 2.5 Pro (mạnh nhất)</option>
+                <option value="gemini-2.5-flash" data-i18n="settings.ai.gFlash">Gemini 2.5 Flash (cân bằng)</option>
+                <option value="gemini-2.5-flash-lite" data-i18n="settings.ai.gFlashLite">Gemini 2.5 Flash-Lite (nhanh/rẻ)</option>
                 <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                 <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
               </select>
@@ -274,43 +274,43 @@
 
       <!-- Tạm ẩn: giọng hiện có chưa khớp nhân vật (xem TTS_ENABLED trong tts.rs). -->
       <div class="set-group" style="display:none">
-        <h3 data-sub="Giọng đọc của em">🔊 Giọng nói</h3>
+        <h3 data-sub="Giọng đọc của em" data-i18n-sub="settings.tts.sub" data-i18n="settings.tts.title">🔊 Giọng nói</h3>
         <div class="set-field">
-          <label for="ttsEngine">Em đọc thành tiếng</label>
+          <label for="ttsEngine" data-i18n="settings.tts.engine">Em đọc thành tiếng</label>
           <select id="ttsEngine">
-            <option value="off">Tắt</option>
-            <option value="windows">Giọng có sẵn của Windows (offline)</option>
-            <option value="edge">Giọng Edge Neural (trực tuyến)</option>
+            <option value="off" data-i18n="settings.off">Tắt</option>
+            <option value="windows" data-i18n="settings.tts.windows">Giọng có sẵn của Windows (offline)</option>
+            <option value="edge" data-i18n="settings.tts.edge">Giọng Edge Neural (trực tuyến)</option>
           </select>
           <div class="status" id="ttsEngineNote"></div>
         </div>
         <div class="set-field" id="ttsVoiceBlock">
-          <label for="ttsVoice">Giọng</label>
+          <label for="ttsVoice" data-i18n="settings.tts.voice">Giọng</label>
           <div class="row tight">
             <select id="ttsVoice" style="flex:1;"></select>
-            <button class="ghost" id="ttsPreview" type="button" style="flex:0 0 auto;">▶ Nghe thử</button>
+            <button class="ghost" id="ttsPreview" data-i18n="settings.tts.preview" type="button" style="flex:0 0 auto;">▶ Nghe thử</button>
           </div>
           <div class="status" id="ttsStatus"></div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Nghỉ mắt, uống nước, vận động">⏰ Nhắc nhở</h3>
+        <h3 data-sub="Nghỉ mắt, uống nước, vận động" data-i18n-sub="settings.remind.sub" data-i18n="settings.remind.title">⏰ Nhắc nhở</h3>
         <div class="set-field">
-          <label for="remindEyes">Nhắc nghỉ mắt</label>
+          <label for="remindEyes" data-i18n="settings.remind.eyes">Nhắc nghỉ mắt</label>
           <select id="remindEyes" class="remind-select"></select>
         </div>
         <div class="set-field">
-          <label for="remindWater">Nhắc uống nước</label>
+          <label for="remindWater" data-i18n="settings.remind.water">Nhắc uống nước</label>
           <select id="remindWater" class="remind-select"></select>
         </div>
         <div class="set-field">
-          <label for="remindStand">Nhắc đứng dậy vận động</label>
+          <label for="remindStand" data-i18n="settings.remind.stand">Nhắc đứng dậy vận động</label>
           <select id="remindStand" class="remind-select"></select>
-          <div class="status">Đếm thời gian ngồi máy liên tục; rời máy từ 5 phút là tính đã nghỉ. Không cần API key.</div>
+          <div class="status" data-i18n="settings.remind.standHint">Đếm thời gian ngồi máy liên tục; rời máy từ 5 phút là tính đã nghỉ. Không cần API key.</div>
         </div>
         <div class="set-field">
-          <label for="quietGap">Hai câu em tự nói cách nhau ít nhất</label>
+          <label for="quietGap" data-i18n="settings.remind.quietGap">Hai câu em tự nói cách nhau ít nhất</label>
           <select id="quietGap">
             <option value="5">5 phút</option>
             <option value="10">10 phút</option>
@@ -319,92 +319,92 @@
           </select>
         </div>
         <div class="set-toggle">
-          <label for="dueToast">Thông báo Windows khi tới hạn mà em đang ẩn</label>
+          <label for="dueToast" data-i18n="settings.remind.dueToast">Thông báo Windows khi tới hạn mà em đang ẩn</label>
           <input type="checkbox" id="dueToast" />
         </div>
         <div class="set-field">
           <div class="row tight">
-            <button class="ghost" id="toastTest" type="button" style="flex:1;">🔔 Gửi thử thông báo</button>
+            <button class="ghost" id="toastTest" data-i18n="settings.remind.toastTest" type="button" style="flex:1;">🔔 Gửi thử thông báo</button>
           </div>
-          <div class="status" id="toastStatus">Không thấy thông báo? Kiểm tra Cài đặt Windows → Hệ thống → Thông báo (và chế độ Không làm phiền / Focus).</div>
+          <div class="status" id="toastStatus" data-i18n="settings.remind.toastHint">Không thấy thông báo? Kiểm tra Cài đặt Windows → Hệ thống → Thông báo (và chế độ Không làm phiền / Focus).</div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Lịch, đồng hồ, thời tiết, thông số máy, website ghim trên màn hình">🧩 Widget</h3>
+        <h3 data-sub="Lịch, đồng hồ, thời tiết, thông số máy, website ghim trên màn hình" data-i18n-sub="settings.widget.sub" data-i18n="settings.widget.title">🧩 Widget</h3>
         <div class="set-toggle">
-          <label for="wCalendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
+          <label for="wCalendar" data-i18n="settings.widget.calendar">📅 Lịch tháng (âm lịch, ngày lễ, hạn chót task)</label>
           <input type="checkbox" id="wCalendar" />
         </div>
         <div class="set-toggle">
-          <label for="wClock">🕐 Đồng hồ (kèm 🍅 Tập trung)</label>
+          <label for="wClock" data-i18n="settings.widget.clock">🕐 Đồng hồ (kèm 🍅 Tập trung)</label>
           <input type="checkbox" id="wClock" />
         </div>
         <div class="set-toggle">
-          <label for="wWeather">☁️ Thời tiết</label>
+          <label for="wWeather" data-i18n="settings.widget.weather">☁️ Thời tiết</label>
           <input type="checkbox" id="wWeather" />
         </div>
         <div class="set-toggle">
-          <label for="wSysmon">📊 Thông số máy (CPU, RAM, ổ đĩa, mạng, pin)</label>
+          <label for="wSysmon" data-i18n="settings.widget.sysmon">📊 Thông số máy (CPU, RAM, ổ đĩa, mạng, pin)</label>
           <input type="checkbox" id="wSysmon" />
         </div>
         <div class="set-toggle">
-          <label for="wMonitor">🛰 Theo dõi website</label>
+          <label for="wMonitor" data-i18n="settings.widget.monitor">🛰 Theo dõi website</label>
           <input type="checkbox" id="wMonitor" />
         </div>
         <div class="set-field">
-          <label for="clockZone1">Đồng hồ thêm (giờ nước khác)</label>
+          <label for="clockZone1" data-i18n="settings.widget.clockZones">Đồng hồ thêm (giờ nước khác)</label>
           <div class="row tight">
             <select id="clockZone1" style="flex:1;"></select>
             <select id="clockZone2" style="flex:1;"></select>
           </div>
         </div>
         <div class="set-toggle">
-          <label for="calendarTalk">Em nhắc ngày lễ, Rằm, mùng 1 (hôm nay và tối hôm trước)</label>
+          <label for="calendarTalk" data-i18n="settings.widget.calendarTalk">Em nhắc ngày lễ, Rằm, mùng 1 (hôm nay và tối hôm trước)</label>
           <input type="checkbox" id="calendarTalk" />
         </div>
         <div class="set-field">
           <div class="row tight">
-            <button class="ghost" id="widgetsTidy" type="button" style="flex:1;">🧹 Xếp gọn các widget về góc phải</button>
+            <button class="ghost" id="widgetsTidy" data-i18n="settings.widget.tidy" type="button" style="flex:1;">🧹 Xếp gọn các widget về góc phải</button>
           </div>
-          <div class="status" id="widgetStatus">Bật / tắt là ghim / gỡ ngay. Kéo widget đi đâu cũng được, 📍 trên widget để bật / tắt luôn nổi.</div>
+          <div class="status" id="widgetStatus" data-i18n="settings.widget.hint">Bật / tắt là ghim / gỡ ngay. Kéo widget đi đâu cũng được, 📍 trên widget để bật / tắt luôn nổi.</div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Em báo khi website sập và khi chạy lại">🛰 Theo dõi website</h3>
+        <h3 data-sub="Em báo khi website sập và khi chạy lại" data-i18n-sub="settings.mon.sub" data-i18n="settings.mon.title">🛰 Theo dõi website</h3>
         <div class="mon-list" id="monList"></div>
         <div class="set-field">
-          <label for="monUrl">Thêm site (tối đa 8)</label>
+          <label for="monUrl" data-i18n="settings.mon.add">Thêm site (tối đa 8)</label>
           <input type="text" id="monUrl" placeholder="https://example.com/health" spellcheck="false" />
           <div class="row tight" style="margin-top:6px;">
-            <input type="text" id="monName" placeholder="Tên (trống thì lấy tên miền)" style="flex:1;" />
-            <button class="ghost" id="monTest" type="button" style="flex:0 0 auto;">Thử ngay</button>
-            <button class="action" id="monAdd" type="button" style="flex:0 0 auto;">Thêm</button>
+            <input type="text" id="monName" data-i18n-placeholder="settings.mon.namePh" placeholder="Tên (trống thì lấy tên miền)" style="flex:1;" />
+            <button class="ghost" id="monTest" data-i18n="settings.mon.test" type="button" style="flex:0 0 auto;">Thử ngay</button>
+            <button class="action" id="monAdd" data-i18n="settings.mon.addBtn" type="button" style="flex:0 0 auto;">Thêm</button>
           </div>
-          <div class="status" id="monStatus">Chỉ gửi yêu cầu GET tới đúng địa chỉ này, không đọc nội dung trang. Lưu ngay, không cần bấm Lưu.</div>
+          <div class="status" id="monStatus" data-i18n="settings.mon.hint">Chỉ gửi yêu cầu GET tới đúng địa chỉ này, không đọc nội dung trang. Lưu ngay, không cần bấm Lưu.</div>
         </div>
         <div class="set-field">
-          <label for="monInterval">Kiểm mỗi</label>
+          <label for="monInterval" data-i18n="settings.mon.interval">Kiểm mỗi</label>
           <select id="monInterval">
             <option value="1">1 phút</option>
             <option value="2">2 phút</option>
             <option value="5">5 phút</option>
             <option value="10">10 phút</option>
           </select>
-          <div class="status">Sập = lỗi 2 lần liên tiếp. Mọi site cùng lỗi mạng thì em coi là máy mất mạng và chỉ báo một câu. Áp dụng khi Lưu.</div>
+          <div class="status" data-i18n="settings.mon.intervalHint">Sập = lỗi 2 lần liên tiếp. Mọi site cùng lỗi mạng thì em coi là máy mất mạng và chỉ báo một câu. Áp dụng khi Lưu.</div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Phím tắt mở ô tìm bookmark, !yt, !gh…">🔎 Ô mở nhanh</h3>
+        <h3 data-sub="Phím tắt mở ô tìm bookmark, !yt, !gh…" data-i18n-sub="settings.launcher.sub" data-i18n="settings.launcher.title">🔎 Ô mở nhanh</h3>
         <div class="set-field">
-          <label for="launcherHotkey">Phím tắt (trống = tắt)</label>
+          <label for="launcherHotkey" data-i18n="settings.launcher.hotkey">Phím tắt (trống = tắt)</label>
           <input type="text" id="launcherHotkey" placeholder="Ctrl+Alt+Space" spellcheck="false" />
-          <div class="status" id="launcherStatus">Gõ tên bookmark (tab 🔖 trong bảng Ghi chú), địa chỉ web, hoặc !yt / !gh / !g / !w / !map / !tr / !so / !npm + từ khoá.</div>
+          <div class="status" id="launcherStatus" data-i18n="settings.launcher.hint">Gõ tên bookmark (tab 🔖 trong bảng Ghi chú), địa chỉ web, hoặc !yt / !gh / !g / !w / !map / !tr / !so / !npm + từ khoá.</div>
         </div>
         <div class="set-field">
-          <label for="searchEngine">Tìm mặc định bằng</label>
+          <label for="searchEngine" data-i18n="settings.launcher.engine">Tìm mặc định bằng</label>
           <select id="searchEngine">
             <option value="google">Google</option>
             <option value="duckduckgo">DuckDuckGo</option>
@@ -412,15 +412,15 @@
           </select>
         </div>
         <div class="set-field">
-          <label for="customBangs">Bang tự thêm (mỗi dòng: !tên URL có {q})</label>
+          <label for="customBangs" data-i18n="settings.launcher.bangs">Bang tự thêm (mỗi dòng: !tên URL có {q})</label>
           <textarea id="customBangs" rows="3" spellcheck="false" placeholder="!docs https://example.com/search?q={q}"></textarea>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Phiên tập trung và giờ nghỉ">🍅 Tập trung</h3>
+        <h3 data-sub="Phiên tập trung và giờ nghỉ" data-i18n-sub="settings.focus.sub" data-i18n="settings.focus.title">🍅 Tập trung</h3>
         <div class="set-field">
-          <label for="focusMin">Mỗi phiên tập trung</label>
+          <label for="focusMin" data-i18n="settings.focus.length">Mỗi phiên tập trung</label>
           <select id="focusMin">
             <option value="15">15 phút</option>
             <option value="25">25 phút</option>
@@ -431,7 +431,7 @@
           </select>
         </div>
         <div class="set-field">
-          <label for="breakMin">Nghỉ sau mỗi phiên</label>
+          <label for="breakMin" data-i18n="settings.focus.break">Nghỉ sau mỗi phiên</label>
           <select id="breakMin">
             <option value="0">Không nghỉ</option>
             <option value="3">3 phút</option>
@@ -439,14 +439,14 @@
             <option value="10">10 phút</option>
             <option value="15">15 phút</option>
           </select>
-          <div class="status">Bắt đầu / dừng bằng 🍅 trên menu chuột phải của em hoặc trên tray. Trong lúc tập trung em chỉ lên tiếng khi tới hạn chót.</div>
+          <div class="status" data-i18n="settings.focus.hint">Bắt đầu / dừng bằng 🍅 trên menu chuột phải của em hoặc trên tray. Trong lúc tập trung em chỉ lên tiếng khi tới hạn chót.</div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Chào khi quay lại, cảnh báo máy nóng">🖥️ Nhận biết máy tính</h3>
+        <h3 data-sub="Chào khi quay lại, cảnh báo máy nóng" data-i18n-sub="settings.pc.sub" data-i18n="settings.pc.title">🖥️ Nhận biết máy tính</h3>
         <div class="set-field">
-          <label for="sleepyIdle">Em ngủ gật khi bạn rời máy</label>
+          <label for="sleepyIdle" data-i18n="settings.pc.sleepy">Em ngủ gật khi bạn rời máy</label>
           <select id="sleepyIdle">
             <option value="0">Tắt</option>
             <option value="5">Sau 5 phút</option>
@@ -456,67 +456,67 @@
           </select>
         </div>
         <div class="set-toggle">
-          <label for="welcomeBack">Chào khi bạn quay lại (vắng từ 10 phút)</label>
+          <label for="welcomeBack" data-i18n="settings.pc.welcome">Chào khi bạn quay lại (vắng từ 10 phút)</label>
           <input type="checkbox" id="welcomeBack" />
         </div>
         <div class="set-toggle">
-          <label for="quietFullscreen">Im lặng khi đang trình chiếu / toàn màn hình</label>
+          <label for="quietFullscreen" data-i18n="settings.pc.quietFullscreen">Im lặng khi đang trình chiếu / toàn màn hình</label>
           <input type="checkbox" id="quietFullscreen" />
         </div>
         <div class="set-toggle">
-          <label for="lowWarn">Nhắc pin yếu (dưới 15%, chưa cắm sạc) và ổ hệ thống sắp đầy (trống dưới 10%)</label>
+          <label for="lowWarn" data-i18n="settings.pc.lowWarn">Nhắc pin yếu (dưới 15%, chưa cắm sạc) và ổ hệ thống sắp đầy (trống dưới 10%)</label>
           <input type="checkbox" id="lowWarn" />
         </div>
         <div class="set-toggle">
-          <label for="sysmonEnabled">Cảnh báo khi CPU / RAM cao kéo dài</label>
+          <label for="sysmonEnabled" data-i18n="settings.pc.sysmon">Cảnh báo khi CPU / RAM cao kéo dài</label>
           <input type="checkbox" id="sysmonEnabled" />
         </div>
         <div class="row tight" id="sysmonBlock">
           <div class="set-field">
-            <label for="cpuWarn">Ngưỡng CPU</label>
+            <label for="cpuWarn" data-i18n="settings.pc.cpu">Ngưỡng CPU</label>
             <select id="cpuWarn" class="warn-select"></select>
           </div>
           <div class="set-field">
-            <label for="ramWarn">Ngưỡng RAM</label>
+            <label for="ramWarn" data-i18n="settings.pc.ram">Ngưỡng RAM</label>
             <select id="ramWarn" class="warn-select"></select>
           </div>
         </div>
-        <div class="status">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM, % pin, dung lượng ổ đĩa. Em không đọc tên cửa sổ hay nội dung màn hình. Tên ứng dụng chỉ được đọc khi bạn tự mở bảng "ngốn máy nhất" trên widget 📊 Thông số máy, chỉ để hiện ở đó: không lưu, không gửi đi. Tắt cảnh báo CPU / RAM thì em không đo CPU / RAM.</div>
+        <div class="status" data-i18n="settings.pc.privacy">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM, % pin, dung lượng ổ đĩa. Em không đọc tên cửa sổ hay nội dung màn hình. Tên ứng dụng chỉ được đọc khi bạn tự mở bảng "ngốn máy nhất" trên widget 📊 Thông số máy, chỉ để hiện ở đó: không lưu, không gửi đi. Tắt cảnh báo CPU / RAM thì em không đo CPU / RAM.</div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Khởi động, phím tắt, cập nhật">⚙️ Hệ thống</h3>
+        <h3 data-sub="Khởi động, phím tắt, cập nhật" data-i18n-sub="settings.sys.sub" data-i18n="settings.sys.title">⚙️ Hệ thống</h3>
         <div class="set-toggle">
-          <label for="autoFlower">Tự hiện bông hoa khi bôi đen</label>
+          <label for="autoFlower" data-i18n="settings.sys.autoFlower">Tự hiện bông hoa khi bôi đen</label>
           <input type="checkbox" id="autoFlower" />
         </div>
         <div class="set-field">
-          <label for="proactive">Em tự bắt chuyện</label>
+          <label for="proactive" data-i18n="settings.sys.proactive">Em tự bắt chuyện</label>
           <select id="proactive">
-            <option value="0">Tắt</option>
-            <option value="30">Sau 30 phút im lặng</option>
-            <option value="60">Sau 1 giờ im lặng</option>
-            <option value="120">Sau 2 giờ im lặng</option>
+            <option value="0" data-i18n="settings.off">Tắt</option>
+            <option value="30" data-i18n="settings.sys.proactive30">Sau 30 phút im lặng</option>
+            <option value="60" data-i18n="settings.sys.proactive60">Sau 1 giờ im lặng</option>
+            <option value="120" data-i18n="settings.sys.proactive120">Sau 2 giờ im lặng</option>
           </select>
-          <div class="status">Nhắc việc chưa xong, nhắc nghỉ mắt… Mỗi lần là một lượt gọi AI.</div>
+          <div class="status" data-i18n="settings.sys.proactiveHint">Nhắc việc chưa xong, nhắc nghỉ mắt… Mỗi lần là một lượt gọi AI.</div>
         </div>
         <div class="set-toggle">
-          <label for="autostart">Khởi động cùng Windows</label>
+          <label for="autostart" data-i18n="settings.sys.autostart">Khởi động cùng Windows</label>
           <input type="checkbox" id="autostart" />
         </div>
         <div class="set-field">
-          <label for="hotkey">Phím tắt bắt văn bản</label>
+          <label for="hotkey" data-i18n="settings.sys.hotkey">Phím tắt bắt văn bản</label>
           <div class="row tight">
-            <input type="text" id="hotkey" readonly placeholder="Bấm rồi nhấn tổ hợp phím..." style="flex:1; cursor:pointer;" />
-            <button class="ghost" id="hotkeyReset" style="flex:0 0 auto;" type="button">Mặc định</button>
+            <input type="text" id="hotkey" readonly data-i18n-placeholder="settings.sys.hotkeyPh" placeholder="Bấm rồi nhấn tổ hợp phím..." style="flex:1; cursor:pointer;" />
+            <button class="ghost" id="hotkeyReset" data-i18n="settings.sys.default" style="flex:0 0 auto;" type="button">Mặc định</button>
           </div>
-          <div class="status" id="hotkeyStatus">Bấm vào ô rồi nhấn tổ hợp (vd: Ctrl+Shift+D). Áp dụng khi Lưu.</div>
+          <div class="status" id="hotkeyStatus" data-i18n="settings.sys.hotkeyHint">Bấm vào ô rồi nhấn tổ hợp (vd: Ctrl+Shift+D). Áp dụng khi Lưu.</div>
         </div>
         <div class="set-field">
-          <label for="checkUpdate">Cập nhật</label>
+          <label for="checkUpdate" data-i18n="settings.sys.update">Cập nhật</label>
           <div class="row tight">
-            <button class="ghost" id="checkUpdate" type="button" style="flex:1;">↻ Kiểm tra cập nhật</button>
-            <button class="action" id="installUpdate" type="button" style="flex:0 0 auto; display:none;">Xem &amp; cài bản mới</button>
+            <button class="ghost" id="checkUpdate" data-i18n="settings.sys.checkUpdate" type="button" style="flex:1;">↻ Kiểm tra cập nhật</button>
+            <button class="action" id="installUpdate" data-i18n="settings.sys.install" type="button" style="flex:0 0 auto; display:none;">Xem &amp; cài bản mới</button>
           </div>
           <div class="status" id="updateStatus"></div>
         </div>
@@ -529,163 +529,163 @@
     <!-- ─── Cột phải: dịch + diện mạo ───────────────────────────────── -->
     <div class="set-col set-col--right">
       <div class="set-group">
-        <h3 data-sub="Tên và cách xưng hô">🌸 Bạn đồng hành</h3>
+        <h3 data-sub="Tên và cách xưng hô" data-i18n-sub="settings.pal.sub" data-i18n="settings.pal.title">🌸 Bạn đồng hành</h3>
         <div class="set-field">
-          <label for="petName">Tên của em</label>
-          <input type="text" id="petName" maxlength="20" placeholder="Chưa đặt tên" />
+          <label for="petName" data-i18n="settings.pal.petName">Tên của em</label>
+          <input type="text" id="petName" data-i18n-placeholder="settings.pal.petNamePh" maxlength="20" placeholder="Chưa đặt tên" />
         </div>
         <div class="set-field">
-          <label for="messageLanguage">Em nói bằng</label>
+          <label for="messageLanguage" data-i18n="settings.pal.lang">Em nói bằng</label>
           <select id="messageLanguage">
-            <option value="vi">Tiếng Việt</option>
-            <option value="ja">日本語 (tiếng Nhật)</option>
-            <option value="en">English (tiếng Anh)</option>
+            <option value="vi" data-i18n="settings.pal.langVi">Tiếng Việt</option>
+            <option value="ja" data-i18n="settings.pal.langJa">日本語 (tiếng Nhật)</option>
+            <option value="en" data-i18n="settings.pal.langEn">English (tiếng Anh)</option>
           </select>
-          <div class="status">Câu nhắc, câu khen và câu trả lời chat theo ngôn ngữ này.</div>
+          <div class="status" data-i18n="settings.pal.langHint">Câu nhắc, câu khen và câu trả lời chat theo ngôn ngữ này.</div>
         </div>
         <div class="set-field" id="viPairBlock">
-          <label for="viPair">Xưng hô</label>
+          <label for="viPair" data-i18n="settings.pal.viPair">Xưng hô</label>
           <select id="viPair">
             <option value="em|anh">em – anh</option>
             <option value="em|chị">em – chị</option>
             <option value="mình|bạn">mình – bạn</option>
             <option value="tớ|cậu">tớ – cậu</option>
             <option value="em|sếp">em – sếp</option>
-            <option value="custom">Tự nhập…</option>
+            <option value="custom" data-i18n="settings.pal.custom">Tự nhập…</option>
           </select>
           <div class="row tight" id="viCustom" style="display:none;">
-            <input type="text" id="viSelf" maxlength="12" placeholder="Em tự xưng" aria-label="Em tự xưng" />
-            <input type="text" id="viUser" maxlength="12" placeholder="Em gọi bạn là" aria-label="Em gọi bạn là" />
+            <input type="text" id="viSelf" data-i18n-placeholder="settings.pal.viSelf" data-i18n-aria-label="settings.pal.viSelf" maxlength="12" placeholder="Em tự xưng" aria-label="Em tự xưng" />
+            <input type="text" id="viUser" data-i18n-placeholder="settings.pal.viUser" data-i18n-aria-label="settings.pal.viUser" maxlength="12" placeholder="Em gọi bạn là" aria-label="Em gọi bạn là" />
           </div>
         </div>
         <div class="set-field">
-          <label for="userName">Tên của bạn</label>
-          <input type="text" id="userName" maxlength="20" placeholder="Không bắt buộc" />
+          <label for="userName" data-i18n="settings.pal.userName">Tên của bạn</label>
+          <input type="text" id="userName" data-i18n-placeholder="settings.pal.optional" maxlength="20" placeholder="Không bắt buộc" />
         </div>
         <div class="set-field">
-          <label for="bdayMonth">Sinh nhật của bạn</label>
+          <label for="bdayMonth" data-i18n="settings.pal.birthday">Sinh nhật của bạn</label>
           <div class="row tight">
-            <select id="bdayDay" aria-label="Ngày sinh"></select>
-            <select id="bdayMonth" aria-label="Tháng sinh"></select>
+            <select id="bdayDay" data-i18n-aria-label="settings.pal.bdayDay" aria-label="Ngày sinh"></select>
+            <select id="bdayMonth" data-i18n-aria-label="settings.pal.bdayMonth" aria-label="Tháng sinh"></select>
           </div>
-          <div class="status">Không bắt buộc, chỉ ngày và tháng. Hôm đó em sẽ chúc mừng bạn 🎂</div>
+          <div class="status" data-i18n="settings.pal.bdayHint">Không bắt buộc, chỉ ngày và tháng. Hôm đó em sẽ chúc mừng bạn 🎂</div>
         </div>
         <div class="set-field" id="jaHonorificBlock">
-          <label for="jaHonorific">Gọi tên bằng tiếng Nhật</label>
+          <label for="jaHonorific" data-i18n="settings.pal.jaHonorific">Gọi tên bằng tiếng Nhật</label>
           <select id="jaHonorific">
             <option value="さん">〜さん</option>
             <option value="くん">〜くん</option>
             <option value="ちゃん">〜ちゃん</option>
             <option value="様">〜様</option>
-            <option value="">Chỉ gọi tên</option>
+            <option value="" data-i18n="settings.pal.nameOnly">Chỉ gọi tên</option>
           </select>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Ngôn ngữ và ngữ cảnh dịch">🌐 Dịch thuật</h3>
+        <h3 data-sub="Ngôn ngữ và ngữ cảnh dịch" data-i18n-sub="settings.tr.sub" data-i18n="settings.tr.title">🌐 Dịch thuật</h3>
         <div class="set-field">
-          <label for="target">Ngôn ngữ dịch mặc định</label>
+          <label for="target" data-i18n="settings.tr.target">Ngôn ngữ dịch mặc định</label>
           <select id="target">
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">Tiếng Anh</option>
-            <option value="ja">Tiếng Nhật</option>
+            <option value="vi" data-i18n="settings.tr.vi">Tiếng Việt</option>
+            <option value="en" data-i18n="settings.tr.en">Tiếng Anh</option>
+            <option value="ja" data-i18n="settings.tr.ja">Tiếng Nhật</option>
           </select>
         </div>
         <div class="set-field">
-          <label for="defaultContext">Ngữ cảnh dịch mặc định</label>
+          <label for="defaultContext" data-i18n="settings.tr.context">Ngữ cảnh dịch mặc định</label>
           <select id="defaultContext">
-            <option value="">(Không dùng ngữ cảnh)</option>
+            <option value="" data-i18n="settings.tr.noContext">(Không dùng ngữ cảnh)</option>
           </select>
-          <div class="status">Dùng khi click nhanh bông hoa (dịch ngay).</div>
+          <div class="status" data-i18n="settings.tr.contextHint">Dùng khi click nhanh bông hoa (dịch ngay).</div>
         </div>
         <div class="set-field">
-          <label for="newContext">Danh sách ngữ cảnh có sẵn</label>
+          <label for="newContext" data-i18n="settings.tr.contexts">Danh sách ngữ cảnh có sẵn</label>
           <div id="contextList" style="display:flex; flex-direction:column; gap:4px;"></div>
           <div class="row tight" style="margin-top:4px;">
-            <input type="text" id="newContext" placeholder="Thêm ngữ cảnh mới..." />
-            <button class="ghost" id="addContext" style="flex:0 0 auto;" type="button">+ Thêm</button>
+            <input type="text" id="newContext" data-i18n-placeholder="settings.tr.newPh" placeholder="Thêm ngữ cảnh mới..." />
+            <button class="ghost" id="addContext" data-i18n="settings.tr.add" style="flex:0 0 auto;" type="button">+ Thêm</button>
           </div>
         </div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Hiệu ứng và dự báo">🌦 Thời tiết</h3>
+        <h3 data-sub="Hiệu ứng và dự báo" data-i18n-sub="settings.wx.sub" data-i18n="settings.wx.title">🌦 Thời tiết</h3>
         <div class="set-field">
-          <label for="weatherMode">Hiệu ứng thời tiết trên toàn màn hình</label>
+          <label for="weatherMode" data-i18n="settings.wx.mode">Hiệu ứng thời tiết trên toàn màn hình</label>
           <select id="weatherMode">
-            <option value="off">Tắt</option>
-            <option value="manual">Chọn hiệu ứng</option>
-            <option value="season">Theo mùa &amp; giờ</option>
-            <option value="live">Theo thời tiết thật</option>
+            <option value="off" data-i18n="settings.off">Tắt</option>
+            <option value="manual" data-i18n="settings.wx.manual">Chọn hiệu ứng</option>
+            <option value="season" data-i18n="settings.wx.season">Theo mùa &amp; giờ</option>
+            <option value="live" data-i18n="settings.wx.live">Theo thời tiết thật</option>
           </select>
           <div class="status" id="weatherModeHint"></div>
         </div>
         <div class="row tight">
           <div class="set-field">
-            <label for="weatherKind">Hiệu ứng</label>
+            <label for="weatherKind" data-i18n="settings.wx.kind">Hiệu ứng</label>
             <select id="weatherKind">
-              <option value="rain">🌧 Mưa</option>
-              <option value="snow">❄️ Tuyết</option>
-              <option value="sakura">🌸 Hoa anh đào</option>
-              <option value="leaves">🍂 Lá bay</option>
-              <option value="fog">🌫 Sương mù</option>
-              <option value="sun">☀️ Nắng</option>
-              <option value="stars">✨ Sao đêm</option>
+              <option value="rain" data-i18n="settings.wx.rain">🌧 Mưa</option>
+              <option value="snow" data-i18n="settings.wx.snow">❄️ Tuyết</option>
+              <option value="sakura" data-i18n="settings.wx.sakura">🌸 Hoa anh đào</option>
+              <option value="leaves" data-i18n="settings.wx.leaves">🍂 Lá bay</option>
+              <option value="fog" data-i18n="settings.wx.fog">🌫 Sương mù</option>
+              <option value="sun" data-i18n="settings.wx.sun">☀️ Nắng</option>
+              <option value="stars" data-i18n="settings.wx.stars">✨ Sao đêm</option>
             </select>
           </div>
           <div class="set-field">
-            <label for="weatherIntensity">Cường độ</label>
+            <label for="weatherIntensity" data-i18n="settings.wx.intensity">Cường độ</label>
             <select id="weatherIntensity">
-              <option value="light">Nhẹ</option>
-              <option value="medium">Vừa</option>
-              <option value="heavy">Dày</option>
+              <option value="light" data-i18n="settings.wx.light">Nhẹ</option>
+              <option value="medium" data-i18n="settings.wx.medium">Vừa</option>
+              <option value="heavy" data-i18n="settings.wx.heavy">Dày</option>
             </select>
           </div>
         </div>
         <div class="row tight">
-          <button class="ghost" id="weatherOpen" type="button" style="flex:1;">☁️ Thẻ dự báo &amp; chọn thành phố</button>
+          <button class="ghost" id="weatherOpen" data-i18n="settings.wx.open" type="button" style="flex:1;">☁️ Thẻ dự báo &amp; chọn thành phố</button>
         </div>
         <div class="set-toggle">
-          <label for="weatherLightning">Chớp khi có dông (thời tiết thật)</label>
+          <label for="weatherLightning" data-i18n="settings.wx.lightning">Chớp khi có dông (thời tiết thật)</label>
           <input type="checkbox" id="weatherLightning" />
         </div>
         <div class="set-toggle">
-          <label for="weatherTalk">Em nói một câu khi thời tiết đổi</label>
+          <label for="weatherTalk" data-i18n="settings.wx.talk">Em nói một câu khi thời tiết đổi</label>
           <input type="checkbox" id="weatherTalk" />
         </div>
         <div class="set-toggle">
-          <label for="weatherBattery">Dừng hiệu ứng khi máy chạy pin</label>
+          <label for="weatherBattery" data-i18n="settings.wx.battery">Dừng hiệu ứng khi máy chạy pin</label>
           <input type="checkbox" id="weatherBattery" />
         </div>
         <div class="set-field">
-          <label for="weatherShortcut">Phím tắt bật / tắt nhanh</label>
+          <label for="weatherShortcut" data-i18n="settings.wx.shortcut">Phím tắt bật / tắt nhanh</label>
           <input type="text" id="weatherShortcut" placeholder="Ctrl+Alt+W" spellcheck="false" />
         </div>
-        <div class="status" id="weatherStatus">Hiệu ứng không chặn chuột hay bàn phím, không vẽ đè lên bảng của em, và tự dừng khi bạn xem toàn màn hình, khoá máy hoặc rời máy. Bật / tắt nhanh bằng phím tắt, tray hoặc 💞 → 🌦 trên menu tròn.</div>
+        <div class="status" id="weatherStatus" data-i18n="settings.wx.hint">Hiệu ứng không chặn chuột hay bàn phím, không vẽ đè lên bảng của em, và tự dừng khi bạn xem toàn màn hình, khoá máy hoặc rời máy. Bật / tắt nhanh bằng phím tắt, tray hoặc 💞 → 🌦 trên menu tròn.</div>
       </div>
 
       <div class="set-group">
-        <h3 data-sub="Nhân vật, bộ sưu tập, model">🎨 Diện mạo</h3>
+        <h3 data-sub="Nhân vật, bộ sưu tập, model" data-i18n-sub="settings.look.sub" data-i18n="settings.look.title">🎨 Diện mạo</h3>
         <div class="set-toggle set-toggle--premium">
           <label for="sideGirls">
             <span class="premium-title">🌸 Bunny Lounge</span>
-            <span class="premium-sub">Các cô nàng tựa bên khung Cài đặt, Công việc, Trợ lý văn bản, Thời tiết &amp; Mini Games</span>
+            <span class="premium-sub" data-i18n="settings.look.bunnySub">Các cô nàng tựa bên khung Cài đặt, Công việc, Trợ lý văn bản, Thời tiết &amp; Mini Games</span>
           </label>
           <input type="checkbox" id="sideGirls" />
         </div>
         <div class="set-field">
           <div class="row tight">
-            <button class="ghost" id="openCollection" type="button" style="flex:1;">🍬 Bộ sưu tập: skin widget, hiệu ứng, bộ nhân vật</button>
+            <button class="ghost" id="openCollection" data-i18n="settings.look.collection" type="button" style="flex:1;">🍬 Bộ sưu tập: skin widget, hiệu ứng, bộ nhân vật</button>
           </div>
-          <div class="status">Kẹo kiếm được từ việc đã xong, phiên Tập trung, chat, vuốt đầu, thắng game. Đổi kẹo lấy đồ trang trí; không mua bằng tiền thật.</div>
+          <div class="status" data-i18n="settings.look.candyHint">Kẹo kiếm được từ việc đã xong, phiên Tập trung, chat, vuốt đầu, thắng game. Đổi kẹo lấy đồ trang trí; không mua bằng tiền thật.</div>
         </div>
         <div class="set-field">
-          <label for="addModelFolder">Model Live2D tự thêm</label>
+          <label for="addModelFolder" data-i18n="settings.look.models">Model Live2D tự thêm</label>
           <div id="customModelList" style="display:flex; flex-direction:column; gap:4px;"></div>
-          <button class="ghost" id="addModelFolder" type="button" style="margin-top:4px;">📁 Chọn thư mục model...</button>
+          <button class="ghost" id="addModelFolder" data-i18n="settings.look.pickFolder" type="button" style="margin-top:4px;">📁 Chọn thư mục model...</button>
           <div class="status" id="modelFolderStatus"></div>
-          <div class="status">Chọn thư mục chứa file <b>*.model3.json</b>. Sau khi thêm, chọn model trong menu chuột phải → Diện mạo.</div>
+          <div class="status"><span data-i18n="settings.look.folderHintA">Chọn thư mục chứa file </span><b>*.model3.json</b><span data-i18n="settings.look.folderHintB">. Sau khi thêm, chọn model trong menu chuột phải → Diện mạo.</span></div>
         </div>
       </div>
     </div>
@@ -693,10 +693,12 @@
 
   <div class="set-foot">
     <div class="status" id="status"></div>
-    <button class="action" id="saveBtn">Lưu cài đặt</button>
+    <button class="action" id="saveBtn" data-i18n="settings.save">Lưu cài đặt</button>
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/settings.js"></script>
   <script src="js/theme-apply.js"></script>
   <script src="js/clock-core.js"></script>
   <script src="js/monitor-core.js"></script>

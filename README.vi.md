@@ -85,7 +85,11 @@ duyệt, Word…).
 - **Đặt tên cho bạn đồng hành** — pet xin bạn đặt tên (một thẻ nhỏ ngay trên pet),
   cảm ơn bằng chính cái tên đó, rồi hỏi nên xưng hô thế nào: em – anh, em – chị,
   mình – bạn, tớ – cậu, em – sếp, hoặc tự nhập. Pet nói và chat được bằng **tiếng
-  Việt, tiếng Nhật hoặc tiếng Anh**; đổi tất cả trong Cài đặt → *Bạn đồng hành*.
+  Việt, tiếng Nhật hoặc tiếng Anh**; đổi tất cả trong Cài đặt → *🌸 Bạn đồng hành*.
+- **Cả giao diện theo ngôn ngữ của bạn** — Cài đặt, Công việc, Ghi chú, các khung
+  dịch, menu tròn, tờ ghi chú ghim, cửa sổ cập nhật và menu khay đi theo ngôn ngữ
+  nói của pet (tiếng Việt, tiếng Nhật hoặc tiếng Anh). Đổi trong Cài đặt hoặc bằng
+  💬 trên menu tròn là mọi cửa sổ đang mở đổi chữ ngay.
 - **Pet tự bắt chuyện** — sau một lúc im lặng (Cài đặt: tắt / 30 phút / 1 giờ / 2 giờ)
   pet nói một câu: nhắc việc tồn lâu nhất, hoặc nhắc nghỉ mắt. Pet không nói khi
   không ai nghe: chờ lúc bạn rời máy, khoá màn hình hay đang mở thứ gì toàn màn hình,
@@ -94,17 +98,19 @@ duyệt, Word…).
 - **Hạn chót** — bấm 📅 ở mỗi việc. Bảng Công việc xếp việc gấp lên đầu và tô màu
   theo mức gấp. Pet nhắc vào buổi sáng ngày tới hạn, trước 1 giờ, lúc tới hạn, và
   mỗi ngày một lần trong tối đa 3 ngày quá hạn; khi pet đang ẩn hoặc bạn đang trình
-  chiếu thì nhắc bằng **thông báo Windows**.
+  chiếu thì nhắc bằng **thông báo Windows**. Bấm vào thông báo là mở bảng Công việc
+  ngay tại việc đó (khi app đang chạy).
 - **Nhắc nghỉ** (bật sẵn, không cần API key) — nghỉ mắt sau 45 phút ngồi máy, uống
   nước và đứng dậy sau 60 phút. Rời máy 5 phút là tính đã nghỉ; các lời nhắc rơi
   gần nhau được gộp thành một câu.
 - **Khen khi xong việc** — pet chúc mừng mỗi việc xong, có câu riêng khi xong việc
-  cuối cùng, xong trước hạn, và việc thứ 3 / 5 / 10 trong ngày.
+  cuối cùng, xong trước hạn, và việc thứ 3 / 5 / 10 trong ngày. Xong hết danh sách
+  hoặc việc thứ 3 / 5 / 10 còn hiện thẻ thành tựu phía trên pet.
 - **Ghim task lên desktop** — bấm 📌 để biến việc thành tờ note hồng, cây ghim mang
   mặt nhân vật. Kéo đi đâu cũng được; ✓ đóng dấu xong, ✕ gỡ ghim, 📍 giữ luôn nổi
   trên các cửa sổ khác. Link trong nội dung và ghi chú bấm được.
-- **🗒️ Ghi chú thông tin hằng ngày** — bảng riêng (khay, chuột phải → Ghi chú, hoặc
-  💞 trên menu tròn) cho những thứ tra hằng ngày: Wi-Fi, số điện thoại, link, lệnh
+- **🗒️ Ghi chú thông tin hằng ngày** — bảng riêng (khay → 🗒️ Ghi chú, hoặc
+  🧩 Tiện ích trên menu tròn) cho những thứ tra hằng ngày: Wi-Fi, số điện thoại, link, lệnh
   hay gõ. Không có hạn, không có "xong". Tìm ngay khi gõ, có dấu hay không dấu đều
   được ("mat khau" ra "Mật khẩu"); ⭐ đưa ghi chú lên đầu, 📋 copy một chạm, ✏️ hoặc
   bấm đúp để sửa tại chỗ. 📌 ghim ghi chú lên desktop thành tờ giấy vàng có sẵn nút
@@ -129,7 +135,8 @@ duyệt, Word…).
   chơi game làm mức thân thiết tăng dần qua 5 cấp (có trần mỗi ngày, không bao giờ
   bị trừ). Mỗi sáng pet chào kèm số việc tới hạn hôm nay, chúc mừng các cột mốc
   (7 / 30 / 100 / 365 ngày, kỷ niệm, chuỗi ngày, lên cấp) và sinh nhật bạn, càng thân
-  thì nói chuyện càng tự nhiên.
+  thì nói chuyện càng tự nhiên. Tới cấp 💗 Thân thiết và Tri kỷ, pet có thêm những câu
+  khen việc xong / phiên tập trung và chào buổi sáng ngọt ngào hơn.
 - **🎮 Mini Games** — trang riêng (💞 → 🎮) với 3 trò, mỗi trò một cửa sổ và Miu phản
   ứng theo từng nước: oẳn tù tì (thắng 3, 5 hoặc 7 trận), đoán số (1–10 tới 1–100, có
   gợi ý) và Gỡ bom (dò mìn 3 cỡ bàn). Cùng trang có "★ Hôm nay" (game của ngày), thành
@@ -142,7 +149,7 @@ duyệt, Word…).
   trời đổi và có bản tin buổi sáng. Bật / tắt hiệu ứng bằng **Ctrl+Alt+W**. App
   không dò vị trí của bạn — chỉ gửi toạ độ thành phố bạn chọn tới
   [Open-Meteo](https://open-meteo.com) (không cần API key).
-- **📅 Lịch tháng trên màn hình** — ghim một lịch tháng nhỏ từ khay, 💞 → 📅 trên
+- **📅 Lịch tháng trên màn hình** — ghim một lịch tháng nhỏ từ khay, 🧩 → 📅 trên
   menu tròn hoặc Cài đặt. Mỗi ngày có ngày âm lịch, ngày lễ Việt Nam (Tết, Trung
   thu, Giỗ Tổ…) được đánh dấu, ngày nghỉ lễ tô đỏ, ngày có task tới hạn có chấm
   (đỏ khi quá hạn). Bấm một ngày để xem âm lịch đầy đủ, việc tới hạn và sự kiện,
@@ -174,7 +181,8 @@ duyệt, Word…).
   hiệu ứng thưởng (pháo hoa, pháo giấy, mưa hoa anh đào, mưa tim, bong bóng xà phòng,
   sao băng), kiểu bong bóng thoại (Mây, Trái tim, Ren Gothic, Cuộn giấy), bông hoa khi
   bôi chữ (⭐ 🍀 🐾 ❄️), bộ nhân vật (🐰 Bunny, 🐱 Neko, 🦊 Hồ ly, ❄️ Xứ Tuyết), bộ mặt
-  Miu (❄️ tuyết, 🦇 Gothic) và model Live2D. Xứ Tuyết, Neko Lounge và Hồ ly còn đổi
+  Miu (❄️ tuyết, 🦇 Gothic), gói câu 📜 Lời khen ngọt ngào (thêm câu khen khi xong
+  việc, tập trung và chào buổi sáng) và model Live2D. Xứ Tuyết, Neko Lounge và Hồ ly còn đổi
   giao diện mọi khung (băng tuyết / Gothic Lolita / đền hồ ly). Chỉ là đồ trang trí;
   không bán bằng tiền thật.
 - **🎭 Model Live2D trong Bộ sưu tập** — mười lăm nhân vật thêm, ai cũng có biểu cảm
@@ -286,10 +294,15 @@ Menu bung thành vòng tròn quanh con trỏ. Rê chuột lên icon nào thì t�
 viên giữa; bấm vào một nhóm thì vòng đổi sang các mục của nhóm đó và viên giữa
 thành nút quay lại.
 
-Diện mạo (đổi model, nhìn theo con trỏ, động tác, chọc) · Âm thanh (giọng nói,
-nhạc nền, tắt tiếng) · Chat nhanh · Công việc · Cài đặt (ô dưới cùng) ·
-💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini Games, 🍬 Bộ sưu tập, 🗒️ Ghi chú, 📅 lịch tháng, 📊 thông số máy, 🛰 theo dõi website, 🔕 Đừng làm phiền) ·
-☁️ Thời tiết (dự báo, bật / tắt hiệu ứng, ghim lên desktop) · 🗂️ Mở đầy đủ (trợ lý văn bản)
+💬 Chat nhanh · 📝 Công việc · 💞 Đồng hành (🍅 tập trung, 💗 thân thiết, 🎮 Mini
+Games, 🍬 Bộ sưu tập, 🔕 Đừng làm phiền) · 🧩 Tiện ích (🗒️ Ghi chú, 📅 lịch tháng,
+📊 thông số máy, 🛰 theo dõi web, ☁️ dự báo thời tiết, 🌦 bật / tắt hiệu ứng thời
+tiết, 📌 ghim thời tiết) · ⚙️ Cài đặt · Diện mạo (đổi model, nhìn theo con trỏ,
+động tác, chọc) · Âm thanh (giọng nói, nhạc nền, tắt tiếng) · 🗂️ Mở đầy đủ (trợ lý
+văn bản)
+
+**Ghim mục hay dùng:** chuột phải vào một mục trong nhóm để ghim nó ra vòng ngoài
+(tối đa 2); chuột phải vào mục đã ghim để bỏ ghim.
 
 **Model** và **Motion** mở thành hai cột hai bên nhân vật nên vẫn nhìn thấy nhân
 vật trong lúc chọn. Bảng mở xuyên suốt nhiều lựa chọn — đóng bằng × hoặc `Esc`.

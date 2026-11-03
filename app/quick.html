@@ -82,20 +82,20 @@
   <div id="wrap">
     <!-- Nội dung gốc: ẩn mặc định, bật bằng nút 👁 ở khung bản dịch -->
     <div class="box" id="srcBox">
-      <div class="box-label">Nội dung gốc</div>
+      <div class="box-label" data-i18n="quick.source">Nội dung gốc</div>
       <div class="box-body" id="source">(chưa có văn bản)</div>
       <div class="box-tools">
-        <button class="icon-btn" id="copySrcBtn" type="button" title="Sao chép nội dung gốc">📋</button>
+        <button class="icon-btn" id="copySrcBtn" type="button" title="Sao chép nội dung gốc" data-i18n-title="quick.copySource">📋</button>
       </div>
     </div>
 
     <!-- Bản dịch -->
     <div class="box">
-      <div class="box-label">Bản dịch</div>
+      <div class="box-label" data-i18n="quick.result">Bản dịch</div>
       <div class="box-body empty" id="result">Đang dịch...</div>
       <div class="box-tools">
         <button class="icon-btn" id="toggleSrcBtn" type="button" title="Hiện nội dung gốc">👁</button>
-        <button class="icon-btn" id="copyBtn" type="button" title="Sao chép bản dịch">📋</button>
+        <button class="icon-btn" id="copyBtn" type="button" title="Sao chép bản dịch" data-i18n-title="quick.copyResult">📋</button>
       </div>
     </div>
 
@@ -103,6 +103,8 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/translate.js"></script>
   <script src="js/quick.js"></script>
 </body>
 </html>

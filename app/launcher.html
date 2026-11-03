@@ -51,7 +51,7 @@
     <div class="card">
       <div class="bar">
         <span class="ic">🔎</span>
-        <input id="q" type="text" autocomplete="off" spellcheck="false" aria-label="Tìm hoặc mở nhanh" />
+        <input id="q" type="text" autocomplete="off" spellcheck="false" aria-label="Tìm hoặc mở nhanh" data-i18n-aria-label="launcher.label" />
       </div>
       <div class="list" id="list" role="listbox"></div>
       <div class="msg" id="msg"></div>
@@ -59,6 +59,8 @@
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/misc.js"></script>
   <script src="js/notes-core.js"></script>
   <script src="js/launcher-core.js"></script>
   <script src="js/launcher.js"></script>

@@ -85,7 +85,11 @@
   pet), thanks you by it, and asks how to address you: em – anh, em – chị,
   mình – bạn, tớ – cậu, em – sếp, or your own words. She can speak and chat in
   **Vietnamese, Japanese or English**; change everything in Settings →
-  *Bạn đồng hành*.
+  *🌸 Companion*.
+- **The whole interface in your language** — Settings, Tasks, Notes, the translate
+  panels, the ring menu, pinned notes, the updater and the tray menu follow the
+  pet's message language (Vietnamese, Japanese or English). Change it in Settings
+  or with 💬 on the ring and every open window relabels at once.
 - **The pet speaks up** — after a quiet stretch (Settings: off / 30 min / 1 h / 2 h)
   it says one line: nudges your oldest unfinished task or reminds you to rest.
   It never talks to an empty room: it waits while you are away, the screen is
@@ -96,19 +100,21 @@
   and colours it by urgency. The pet reminds you on the morning it is due, an
   hour before, when it is due, and once a day for up to three days after; when
   the pet is hidden or you are presenting, a **Windows notification** comes
-  instead.
+  instead. Click it to open the Tasks panel at that task (while the app is
+  running).
 - **Rest reminders** (on by default, no API key needed) — rest your eyes after
   45 minutes at the computer, drink water and stand up after 60. Stepping away
   for 5 minutes counts as a rest; reminders that fall close together become one.
 - **Cheers when you finish** — the pet celebrates every finished task, with
   something special for the last one on the list, finishing early, and your
-  3rd / 5th / 10th task of the day.
+  3rd / 5th / 10th task of the day. Finishing the whole list, or your 3rd / 5th /
+  10th task, also shows an achievement card above the pet.
 - **Pin tasks to the desktop** — 📌 turns a task into a pink sticky note held
   by a pushpin with your companion's face. Drag it anywhere; ✓ stamps it done,
   ✕ unpins it, 📍 keeps it above other windows. Links in tasks and notes are
   clickable.
-- **🗒️ Notes for everyday info** — a board of its own (tray, right-click → Ghi
-  chú, or 💞 on the ring) for the things you look up every day: Wi-Fi details,
+- **🗒️ Notes for everyday info** — a board of its own (tray → 🗒️ Notes, or
+  🧩 Tools on the ring) for the things you look up every day: Wi-Fi details,
   phone numbers, links, commands you type often. No deadlines, nothing to tick
   off. Search as you type, with or without Vietnamese accents ("mat khau" finds
   "Mật khẩu"); ⭐ keeps a note at the top, 📋 copies it in one click, ✏️ or a
@@ -139,7 +145,8 @@
   (capped per day, never taken away). She says hello each morning with what is
   due today, celebrates milestones (7 / 30 / 100 / 365 days, anniversaries,
   streaks, new levels) and your birthday, and talks more casually as you get
-  closer.
+  closer. At 💗 Close friends and again at Best friends she gains warmer ways to
+  praise a finished task or focus session and to say good morning.
 - **🎮 Mini Games** — a page of its own (💞 → 🎮) with three games, each in
   its own window where Miu reacts to every move: rock paper scissors (first to
   3, 5 or 7), guess the number (1–10 up to 1–100, with hints) and Bomb Squad,
@@ -156,7 +163,7 @@
   never looked up — only the coordinates of the city you pick are sent to
   [Open-Meteo](https://open-meteo.com) (no API key needed).
 - **📅 Month calendar on your screen** — pin a small month calendar from the
-  tray, 💞 → 📅 on the ring or Settings. Each day shows its Vietnamese lunar
+  tray, 🧩 → 📅 on the ring or Settings. Each day shows its Vietnamese lunar
   date, Vietnamese holidays (Tết, Mid-Autumn, Hùng Kings Day…) are marked and
   days off are in red, and days with tasks due get a dot (red when overdue).
   Click a day for its full lunar date, what is due and its events, or **＋ Add**
@@ -194,7 +201,8 @@
   shower, confetti, heart shower, soap bubbles, shooting star), speech-bubble
   styles (Cloud, Heart, Gothic lace, Scroll), the flower shown when you select
   text (⭐ 🍀 🐾 ❄️), character sets (🐰 Bunny, 🐱 Neko, 🦊 Fox, ❄️ Snow
-  Lounge), Miu face sets (❄️ Snow, 🦇 Gothic) and Live2D models. Snow, Neko
+  Lounge), Miu face sets (❄️ Snow, 🦇 Gothic), the 📜 Sweet praise line pack
+  (extra praise for tasks, focus and the morning greeting) and Live2D models. Snow, Neko
   and Fox Lounge also restyle every panel (icy blue / gothic lolita / fox
   shrine). Decorations only; never sold for real money.
 - **🎭 Live2D models in the Collection** — fifteen extra characters, each with
@@ -224,7 +232,7 @@
 - **🎁 Welcome gift: 20 free spins** — everyone gets 20 free Candy Capsule spins
   once (the pet tells you when they arrive). While you have them, both spin buttons
   are free, and one of those 20 spins is sure to be a model you don't own yet.
-- **🧩 Widgets in one place** — Settings → *🧩 Widget* pins or unpins the
+- **🧩 Widgets in one place** — Settings → *🧩 Widgets* pins or unpins the
   calendar, the clock, the weather widget, the system monitor and the site
   monitor, picks the
   extra clocks, and 🧹 tidies every pinned widget into a column on the right.
@@ -232,7 +240,7 @@
   width and padding, so they line up on both edges.
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
-- **Text assistant without selecting** — right-click → 🗂️ **Mở đầy đủ** opens
+- **Text assistant without selecting** — right-click → 🗂️ **Open full view** opens
   the assistant next to the pet with an empty box: type or paste text, then
   translate, reply or save it as a task.
 - **Save tasks** — turn any selected text into a TODO. The Tasks window keeps
@@ -243,7 +251,7 @@
 - **The pet joins your panels** — open Settings or Tasks and the pet steps into
   the gap between their two columns (click-through, so it stays out of the way),
   then returns to where it was when you close or minimize them.
-- **🌸 Bunny Lounge** (optional, Settings → *Diện mạo*) — companion girls lean
+- **🌸 Bunny Lounge** (optional, Settings → *🎨 Appearance*) — companion girls lean
   on the edge of Settings, Tasks, the text assistant, the weather card and the
   Mini Games page; the part over the panel fades so everything stays readable.
 - **Look-at cursor** — the model's head/eyes follow the mouse when it's near the pet.
@@ -313,10 +321,15 @@ A radial menu fans out around the cursor. Hovering an icon shows its name in the
 centre pill; clicking a category swaps the ring for its entries and turns the
 pill into a back button.
 
-Appearance (change model, look-at toggle, motion, poke) · Sound (voice language,
-ambient, mute) · Quick Chat · Tasks · Settings (the bottom slot) · 💞 Đồng hành
-(🍅 focus, 💗 bond, 🎮 Mini Games, 🍬 Collection, 🗒️ Notes, 📅 month calendar, 📊 system monitor, 🛰 site monitor, 🔕 Do not disturb) · ☁️ Weather (forecast,
-effects on / off, pin to desktop) · 🗂️ Mở đầy đủ (text assistant)
+💬 Quick chat · 📝 Tasks · 💞 Together (🍅 focus, 💗 bond, 🎮 Mini Games,
+🍬 Collection, 🔕 Do not disturb) · 🧩 Tools (🗒️ Notes, 📅 month calendar,
+📊 system monitor, 🛰 site monitor, ☁️ weather forecast, 🌦 weather effects on /
+off, 📌 pin the weather) · ⚙️ Settings · Appearance (change model, look-at toggle,
+motion, poke) · Sound (voice language, ambient, mute) · 🗂️ Open full view (text
+assistant)
+
+**Pin your favourites:** right-click an entry inside a group to pin it to the
+outer ring (up to 2); right-click a pinned entry to unpin it.
 
 **Model** and **Motion** open as two columns either side of the character, so it
 stays visible while you pick. They stay open across choices — close with × or

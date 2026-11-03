@@ -6,6 +6,7 @@
   const { invoke, listen } = window.DC;
   const { visibleNotes, matches } = window.NotesCore;
   const Cal = window.CalendarCore;
+  const T = (key, vars) => window.I18n.t(key, vars);
   const $ = (id) => document.getElementById(id);
 
   let notes = [];
@@ -62,9 +63,9 @@
     const text = n.body || n.title;
     try {
       await navigator.clipboard.writeText(text);
-      showStatus('Đã copy ✓', true);
+      showStatus(T('notes.copied'), true);
     } catch (e) {
-      showStatus('Không copy được vào clipboard: ' + (e && e.message ? e.message : e));
+      showStatus(T('notes.copyFail', { err: e && e.message ? e.message : e }));
     }
   }
 
@@ -87,8 +88,8 @@
     return btn('del', '🗑', title, async (b) => {
       if (!b.classList.contains('confirm')) {
         b.classList.add('confirm');
-        b.textContent = 'Xoá?';
-        b.title = 'Bấm lần nữa để xoá hẳn';
+        b.textContent = T('notes.delConfirm');
+        b.title = T('notes.delConfirmTitle');
         timer = setTimeout(() => {
           b.classList.remove('confirm');
           b.textContent = '🗑';
@@ -111,19 +112,19 @@
     top.className = 'nt-top';
     const title = document.createElement('div');
     title.className = 'nt-title' + (n.title ? '' : ' untitled');
-    title.textContent = n.title || 'Không tiêu đề';
+    title.textContent = n.title || T('notes.untitled');
 
-    const star = btn('pin' + (n.pinned ? ' on' : ''), '⭐', n.pinned ? 'Bỏ khỏi đầu danh sách' : 'Đưa lên đầu danh sách', async () => {
+    const star = btn('pin' + (n.pinned ? ' on' : ''), '⭐', n.pinned ? T('notes.unstar') : T('notes.star'), async () => {
       await call('notes_set_pinned', { id: n.id, pinned: !n.pinned });
       render();
     });
-    const desk = btn('pin' + (n.desk ? ' on' : ''), '📌', n.desk ? 'Đang ghim trên desktop. Bấm để gỡ' : 'Ghim lên màn hình desktop', async () => {
+    const desk = btn('pin' + (n.desk ? ' on' : ''), '📌', n.desk ? T('notes.undesk') : T('notes.desk'), async () => {
       await call('notes_set_desk', { id: n.id, on: !n.desk });
       render();
     });
-    const copy = btn('copy', '📋', 'Copy nội dung', () => copyNote(n));
-    const edit = btn('edit', '✏️', 'Sửa', () => openEditor(n, row));
-    const del = deleteBtn('Xoá', async () => {
+    const copy = btn('copy', '📋', T('notes.copyBody'), () => copyNote(n));
+    const edit = btn('edit', '✏️', T('notes.edit'), () => openEditor(n, row));
+    const del = deleteBtn(T('notes.del'), async () => {
       expanded.delete(n.id);
       await call('notes_delete', { id: n.id });
       render();
@@ -134,7 +135,7 @@
     const body = document.createElement('div');
     body.className = 'nt-body' + (expanded.has(n.id) ? ' open' : '');
     if (n.body) window.Linkify.renderLinks(body, n.body, openLink);
-    body.title = 'Bấm để mở hết / thu gọn';
+    body.title = T('notes.bodyToggle');
     body.addEventListener('click', () => {
       body.classList.toggle('open');
       if (body.classList.contains('open')) expanded.add(n.id);
@@ -146,7 +147,7 @@
     if (when) {
       const meta = document.createElement('div');
       meta.className = 'nt-meta';
-      meta.textContent = '🕒 ' + when + (n.desk ? ' · 📌 trên desktop' : '');
+      meta.textContent = '🕒 ' + when + (n.desk ? ' · ' + T('notes.onDesk') : '');
       row.appendChild(meta);
     }
 
@@ -172,28 +173,28 @@
     box.className = 'nt-editor';
     const title = document.createElement('input');
     title.type = 'text';
-    title.placeholder = 'Tiêu đề (vd: Wifi văn phòng, Lệnh deploy...)';
+    title.placeholder = T('notes.titlePh');
     title.maxLength = 120;
     title.value = n ? n.title : '';
-    title.setAttribute('aria-label', 'Tiêu đề');
+    title.setAttribute('aria-label', T('notes.titleLabel'));
     const body = document.createElement('textarea');
-    body.setAttribute('aria-label', 'Nội dung');
-    body.placeholder = 'Nội dung cần nhớ...';
+    body.setAttribute('aria-label', T('notes.bodyLabel'));
+    body.placeholder = T('notes.bodyPh');
     body.value = n ? n.body : prefill || '';
 
     const bar = document.createElement('div');
     bar.className = 'nt-editor-bar';
     const hint = document.createElement('span');
     hint.className = 'hint';
-    hint.textContent = 'Ctrl+Enter để lưu · Esc để huỷ';
+    hint.textContent = T('notes.hint');
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'ghost';
-    cancel.textContent = 'Huỷ';
+    cancel.textContent = T('notes.cancel');
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'action';
-    save.textContent = 'Lưu';
+    save.textContent = T('notes.save');
     bar.append(hint, cancel, save);
     box.append(title, body, bar);
 
@@ -203,7 +204,7 @@
     };
     save.addEventListener('click', async () => {
       if (!title.value.trim() && !body.value.trim()) {
-        showStatus('Nhập tiêu đề hoặc nội dung trước đã nha.');
+        showStatus(T('notes.needText'));
         title.focus();
         return;
       }
@@ -238,7 +239,7 @@
   function makeBookmark(b) {
     const row = document.createElement('div');
     row.className = 'nt-item tk-item ev';
-    row.title = 'Bấm để mở trong trình duyệt';
+    row.title = T('notes.bm.open');
     const top = document.createElement('div');
     top.className = 'nt-top';
     const title = document.createElement('div');
@@ -251,16 +252,16 @@
       g.textContent = b.group;
       top.appendChild(g);
     }
-    const copy = btn('copy', '📋', 'Copy link', async () => {
+    const copy = btn('copy', '📋', T('notes.bm.copy'), async () => {
       try {
         await navigator.clipboard.writeText(b.url);
-        showStatus('Đã copy link ✓', true);
+        showStatus(T('notes.bm.copied'), true);
       } catch (e) {
-        showStatus('Không copy được vào clipboard: ' + (e && e.message ? e.message : e));
+        showStatus(T('notes.copyFail', { err: e && e.message ? e.message : e }));
       }
     });
-    const edit = btn('edit', '✏️', 'Sửa', () => openBmEditor(b, row));
-    const del = deleteBtn('Xoá bookmark', async () => {
+    const edit = btn('edit', '✏️', T('notes.edit'), () => openBmEditor(b, row));
+    const del = deleteBtn(T('notes.bm.del'), async () => {
       await call('bookmarks_delete', { id: b.id });
       render();
     });
@@ -293,22 +294,22 @@
       i.setAttribute('aria-label', label);
       return i;
     };
-    const url = input('https://… (bắt buộc)', b && b.url, 'Địa chỉ', 2000);
-    const title = input('Tên (trống thì lấy tên trang web)', b && b.title, 'Tên', 80);
-    const group = input('Nhóm (tuỳ chọn, vd: Công việc)', b && b.group, 'Nhóm', 30);
+    const url = input(T('notes.bm.urlPh'), b && b.url, T('notes.bm.urlLabel'), 2000);
+    const title = input(T('notes.bm.namePh'), b && b.title, T('notes.bm.nameLabel'), 80);
+    const group = input(T('notes.bm.groupPh'), b && b.group, T('notes.bm.groupLabel'), 30);
     const bar = document.createElement('div');
     bar.className = 'nt-editor-bar';
     const hint = document.createElement('span');
     hint.className = 'hint';
-    hint.textContent = 'Enter để lưu · Esc để huỷ · tìm lại bằng ô mở nhanh (Ctrl+Alt+Space)';
+    hint.textContent = T('notes.bm.hint');
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'ghost';
-    cancel.textContent = 'Huỷ';
+    cancel.textContent = T('notes.cancel');
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'action';
-    save.textContent = 'Lưu';
+    save.textContent = T('notes.save');
     bar.append(hint, cancel, save);
     box.append(url, title, group, bar);
 
@@ -340,27 +341,27 @@
 
   // ─── Tab Sự kiện ────────────────────────────────────────────────────────────
 
-  const WEEKDAYS = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
+  // Tên thứ lấy từ bảng của lịch (calendar-core.js, bắt đầu từ Thứ Hai).
   function fmtDay(key) {
     const [y, m, d] = key.split('-').map(Number);
-    return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]}, ${p2(d)}/${p2(m)}/${y}`;
+    const wd = Cal.strings(window.I18n.lang()).weekdaysLong[(new Date(y, m - 1, d).getDay() + 6) % 7];
+    return T('notes.ev.day', { wd, d: p2(d), m: p2(m), y });
   }
 
   /** Nhãn đếm ngược và mức tô màu. */
   function countdown(days) {
-    if (days == null) return { text: 'Đã qua', cls: '' };
-    if (days === 0) return { text: 'Hôm nay', cls: 'today' };
-    if (days === 1) return { text: 'Ngày mai', cls: 'soon' };
-    return { text: `Còn ${days} ngày`, cls: days <= 7 ? 'soon' : '' };
+    if (days == null) return { text: T('notes.ev.past'), cls: '' };
+    if (days === 0) return { text: T('notes.ev.today'), cls: 'today' };
+    if (days === 1) return { text: T('notes.ev.tomorrow'), cls: 'soon' };
+    return { text: T('notes.ev.left', { n: days }), cls: days <= 7 ? 'soon' : '' };
   }
 
   function repeatText(ev) {
-    if (ev.repeat === 'yearly') return '↻ hằng năm';
+    if (ev.repeat === 'yearly') return T('notes.ev.yearly');
     if (ev.repeat === 'lunar') {
       const [y, m, d] = ev.date.split('-').map(Number);
       const l = Cal.toLunar(d, m, y);
-      return `↻ hằng năm, ${l.day}/${l.month} âm lịch`;
+      return T('notes.ev.lunar', { d: l.day, m: l.month });
     }
     return '';
   }
@@ -369,7 +370,7 @@
     const ev = r.ev;
     const row = document.createElement('div');
     row.className = 'nt-item tk-item ev' + (r.next ? '' : ' past');
-    row.title = 'Bấm để mở lịch ở ngày này (sửa trên lịch)';
+    row.title = T('notes.ev.open');
 
     const top = document.createElement('div');
     top.className = 'nt-top';
@@ -380,7 +381,7 @@
     const badge = document.createElement('span');
     badge.className = 'nt-badge ' + cd.cls;
     badge.textContent = cd.text;
-    const del = deleteBtn('Xoá sự kiện (mọi lần lặp)', async () => {
+    const del = deleteBtn(T('notes.ev.del'), async () => {
       await call('events_delete', { id: ev.id });
       render();
     });
@@ -389,7 +390,7 @@
     const when = document.createElement('div');
     when.className = 'nt-when';
     const parts = [fmtDay(r.next || ev.date), ev.time, repeatText(ev)].filter(Boolean);
-    if (ev.remind_days && ev.remind_days.length) parts.push('🔔 ' + Cal.remindTitle(ev.remind_days, 'vi'));
+    if (ev.remind_days && ev.remind_days.length) parts.push('🔔 ' + Cal.remindTitle(ev.remind_days, window.I18n.lang()));
     when.textContent = parts.join(' · ');
     row.append(top, when);
 
@@ -401,7 +402,7 @@
   }
 
   async function openOnCalendar(date) {
-    if (await call('calendar_open_day', { date })) showStatus('Đã mở lịch ở ngày ' + fmtDay(date), true, 2500);
+    if (await call('calendar_open_day', { date })) showStatus(T('notes.ev.opened', { day: fmtDay(date) }), true, 2500);
   }
 
   // ─── Vẽ ─────────────────────────────────────────────────────────────────────
@@ -431,9 +432,7 @@
 
     if (tab === 'bookmarks') {
       if (!shownBm.length) {
-        list.appendChild(emptyRow(bookmarks.length
-          ? 'Không có bookmark nào khớp.'
-          : 'Chưa có bookmark nào.<br/>Thêm trang hay dùng, rồi bấm Ctrl+Alt+Space ở bất kỳ đâu<br/>và gõ vài chữ để mở nhanh.'));
+        list.appendChild(emptyRow(bookmarks.length ? T('notes.bm.none') : T('notes.bm.empty')));
         return;
       }
       for (const b of shownBm) list.appendChild(makeBookmark(b));
@@ -441,18 +440,14 @@
     }
     if (tab === 'events') {
       if (!rows.length) {
-        list.appendChild(emptyRow(events.length
-          ? 'Không có sự kiện nào khớp.'
-          : 'Chưa có sự kiện nào.<br/>Thêm trên lịch ghim: bấm một ngày → ＋ Thêm → 🎗 Sự kiện<br/>(giỗ, sinh nhật âm lịch… lặp được hằng năm).'));
+        list.appendChild(emptyRow(events.length ? T('notes.ev.none') : T('notes.ev.empty')));
         return;
       }
       for (const r of rows) list.appendChild(makeEvent(r));
       return;
     }
     if (!shownNotes.length) {
-      list.appendChild(emptyRow(notes.length
-        ? 'Không có ghi chú nào khớp.'
-        : 'Chưa có ghi chú nào.<br/>Ghi lại những thứ hay dùng: số điện thoại, link,<br/>lệnh hay gõ, thông tin tài khoản...'));
+      list.appendChild(emptyRow(notes.length ? T('notes.none') : T('notes.empty')));
       return;
     }
     for (const n of shownNotes) list.appendChild(makeNote(n));
@@ -471,18 +466,18 @@
     fillList();
   }
 
+  // Chữ ô tìm + nút "mới" theo tab đang mở (vẽ lại cả khi đổi ngôn ngữ).
+  function paintHead() {
+    $('ntSearch').placeholder = T('notes.search.' + tab);
+    $('ntNew').textContent = T('notes.new.' + tab);
+    $('ntNew').title = tab === 'events' ? T('notes.new.eventsTitle') : 'Ctrl+N';
+  }
+
   function setTab(next) {
     tab = next;
     for (const b of document.querySelectorAll('.nt-tabs .tab')) b.classList.toggle('active', b.dataset.tab === tab);
     const isEvents = tab === 'events';
-    const text = {
-      notes: ['Tìm trong ghi chú (gõ không dấu cũng được)...', '+ Ghi chú mới', 'Ctrl+N'],
-      events: ['Tìm sự kiện...', '📅 Mở lịch', 'Mở lịch ghim để thêm / sửa sự kiện'],
-      bookmarks: ['Tìm bookmark (tên, nhóm, địa chỉ)...', '+ Bookmark mới', 'Ctrl+N'],
-    }[tab];
-    $('ntSearch').placeholder = text[0];
-    $('ntNew').textContent = text[1];
-    $('ntNew').title = text[2];
+    paintHead();
     $('ntComposer').hidden = isEvents;
     fillList();
   }
@@ -532,7 +527,13 @@
     const text = String((e && e.payload) || '').trim();
     if (tab !== 'notes') setTab('notes');
     openEditor(null, null, text);
-    if (!text) showStatus('Không lấy được đoạn vừa bôi đen, gõ nội dung vào nha.');
+    if (!text) showStatus(T('notes.composeFail'));
   });
+  // Đổi ngôn ngữ: vẽ lại đầu bảng và danh sách (trừ khi đang soạn, kẻo mất chữ).
+  window.I18n.onChange(() => {
+    paintHead();
+    if (!document.querySelector('.nt-editor')) fillList();
+  });
+  paintHead();
   render();
 })();

@@ -80,6 +80,18 @@ pub fn open_tasks(app: AppHandle) {
     windows::open_tasks(&app);
 }
 
+/// Ngôn ngữ giao diện, cũng là ngôn ngữ chữ của pet: "vi" / "ja" / "en" (app/js/i18n.js).
+#[tauri::command]
+pub fn ui_lang(app: AppHandle) -> &'static str {
+    persona::Lang::from_code(&store::load_settings(&app).message_language).code()
+}
+
+/// Task mà thông báo vừa bấm muốn cuộn tới (windows::open_tasks_at), lấy một lần.
+#[tauri::command]
+pub fn tasks_take_focus() -> Option<String> {
+    windows::take_focus_task()
+}
+
 #[tauri::command]
 pub fn open_settings(app: AppHandle) {
     windows::open_settings(&app);
@@ -768,6 +780,7 @@ pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), S
             "pet-message",
             serde_json::json!({ "command": "messageLanguage", "value": settings.message_language }),
         );
+        crate::ui_lang_changed(&app, &settings.message_language);
     }
     // Đổi tên từ Cài đặt: pet cảm ơn / nhận tên mới như khi đặt từ thẻ hỏi tên.
     if !settings.pet_name.is_empty() {

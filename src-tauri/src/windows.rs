@@ -733,6 +733,21 @@ pub fn open_tasks(app: &AppHandle) {
     });
 }
 
+/// Task cần cuộn tới khi bảng Công việc mở (bấm vào thông báo hạn chót).
+/// tasks.js lấy ra bằng lệnh `tasks_take_focus`, lúc vừa mở xong hoặc khi
+/// nhận "tasks-focus" (bảng đang mở sẵn).
+static FOCUS_TASK: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+pub fn open_tasks_at(app: &AppHandle, id: &str) {
+    *FOCUS_TASK.lock().unwrap_or_else(|e| e.into_inner()) = Some(id.to_string());
+    open_tasks(app);
+    let _ = app.emit_to("tasks", "tasks-focus", ());
+}
+
+pub fn take_focus_task() -> Option<String> {
+    FOCUS_TASK.lock().unwrap_or_else(|e| e.into_inner()).take()
+}
+
 /// Bảng 🗒️ Ghi chú (notes.html). Không ghép pet vào giữa như Công việc: chỉ
 /// một cột, mở để tra nhanh rồi đóng.
 pub fn open_notes(app: &AppHandle) {

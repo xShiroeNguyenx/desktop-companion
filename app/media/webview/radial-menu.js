@@ -41,8 +41,11 @@ function clamp(value, min, max) {
  * @param {{title:string, back:string, close:string}} options.labels
  * @param {number} [options.radius] Bán kính mong muốn, mặc định RADIUS. Vẫn bị
  *   kẹp theo khung cửa sổ như thường, chỉ là trần thấp hơn.
+ * @param {(action: string, inGroup: boolean) => (string|null)} [options.onPin]
+ *   Chuột phải vào một mục (người gọi chuyển qua `pinAt`): trả câu hiện ở giữa
+ *   vòng nếu đã xử lý (ghim / gỡ ghim), null nếu mục đó không ghim được.
  */
-export function createRadialMenu({ getItems, onAction, labels, radius: maxRadius = RADIUS }) {
+export function createRadialMenu({ getItems, onAction, labels, radius: maxRadius = RADIUS, onPin = null }) {
   const root = document.createElement('div');
   root.className = 'companion-radial';
   root.innerHTML =
@@ -104,9 +107,10 @@ export function createRadialMenu({ getItems, onAction, labels, radius: maxRadius
         const target = item.items
           ? `data-category="${escapeHtml(item.id)}"`
           : `data-action="${escapeHtml(item.action)}"`;
+        const hint = item.hint ? ` title="${escapeHtml(item.hint)}"` : '';
         return (
           `<button type="button" class="companion-radial-item" style="--angle:${angle}deg;--i:${index}" ` +
-          `${target} data-label="${escapeHtml(item.label)}" aria-label="${escapeHtml(item.label)}">` +
+          `${target} data-label="${escapeHtml(item.label)}" aria-label="${escapeHtml(item.label)}"${hint}>` +
           `<span class="companion-radial-icon">${item.icon}</span></button>`
         );
       })
@@ -138,6 +142,23 @@ export function createRadialMenu({ getItems, onAction, labels, radius: maxRadius
   function toggle(x, y) {
     if (open) close();
     else openAt(x, y);
+  }
+
+  /** Chuột phải vào `node` khi vòng đang mở: ghim / gỡ ghim qua `onPin`. Trả true nếu đã xử lý. */
+  function pinAt(node) {
+    if (!onPin || !open || !(node instanceof Element)) return false;
+    const item = node.closest('.companion-radial-item');
+    const action = item && root.contains(item) ? item.getAttribute('data-action') : null;
+    if (!action) return false;
+    const message = onPin(action, levels.length > 1);
+    if (message == null) return false;
+    // Vòng ngoài vẽ lại để thấy ngay mục vừa ghim / gỡ.
+    if (levels.length === 1) {
+      levels[0].items = getItems();
+      render(levels[0]);
+    }
+    showCenter(message);
+    return true;
   }
 
   ring.addEventListener('click', (e) => {
@@ -182,5 +203,5 @@ export function createRadialMenu({ getItems, onAction, labels, radius: maxRadius
     if (e.key === 'Escape' && open) close();
   });
 
-  return { openAt, close, toggle, isOpen, contains };
+  return { openAt, close, toggle, isOpen, contains, pinAt };
 }

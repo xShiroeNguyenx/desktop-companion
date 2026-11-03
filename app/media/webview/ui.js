@@ -69,7 +69,10 @@ let streamAccumulated = '';
 let streamHasContent = false;
 let streamWatchdog = null;
 const STREAM_WATCHDOG_MS = 30000;
-export const STREAM_TIMEOUT_TEXT = 'Không nhận được phản hồi. Thử lại nha~ ⏳';
+/** Câu báo hết giờ chờ trả lời, theo ngôn ngữ hiện tại. */
+export function streamTimeoutText() {
+  return I18n.t('pet.qc.timeout');
+}
 // Bộ đếm hết giờ đã tự huỷ request: lỗi "aborted" Rust gửi lại sau đó là do
 // hết giờ, không phải do người dùng bấm ⏹.
 let watchdogCancelled = false;
@@ -121,7 +124,7 @@ export function startBubbleStream(initialText) {
   watchdogCancelled = false;
   streamWatchdog = setTimeout(() => {
     streamWatchdog = null;
-    errorBubbleStream(STREAM_TIMEOUT_TEXT);
+    errorBubbleStream(streamTimeoutText());
     // Huỷ luôn request phía Rust, kẻo câu trả lời tới muộn vẫn ghi vào lịch sử.
     watchdogCancelled = true;
     vscode.postMessage({ command: 'pet:chat:cancel' });
@@ -214,7 +217,6 @@ let quickChatPanel = null;
 let quickChatHandlers = null;
 let quickChatConversationHistory = [];
 let quickChatSessionHistory = [];
-const QUICK_CHAT_PENDING_TEXT = 'Em đang suy nghĩ chút nha~';
 
 function syncQuickChatOverlayState(visible) {
   state.quickChatOverlayVisible = Boolean(visible);
@@ -252,7 +254,9 @@ function renderQuickChatHistory() {
 
     const badge = document.createElement('span');
     badge.className = 'companion-quickchat-message-role';
-    badge.textContent = item.role === 'user' ? 'You' : item.error ? 'Status' : 'Companion';
+    badge.textContent = item.role === 'user'
+      ? I18n.t('pet.qc.you')
+      : item.error ? I18n.t('pet.qc.status') : I18n.t('pet.qc.pet');
 
     const body = document.createElement('div');
     body.className = 'companion-quickchat-message-body';
@@ -283,20 +287,24 @@ function ensureQuickChatPanel() {
   quickChatPanel = document.createElement('div');
   quickChatPanel.className = 'companion-quickchat-panel';
   quickChatPanel.innerHTML = `
-    <div class="companion-quickchat-title">💬 Quick Chat</div>
+    <div class="companion-quickchat-title" data-i18n="pet.qc.title"></div>
     <div class="companion-quickchat-context" hidden></div>
     <div class="companion-quickchat-history-wrap">
       <div class="companion-quickchat-history"></div>
-      <div class="companion-quickchat-empty">Chưa có history nào cả. Hỏi em một câu trước nha~</div>
+      <div class="companion-quickchat-empty" data-i18n="pet.qc.empty"></div>
     </div>
     <textarea class="companion-quickchat-field" rows="2" maxlength="400"
-      placeholder="Hỏi gì đó nhanh nha~ (Enter để gửi, Shift+Enter xuống dòng)"></textarea>
+      data-i18n-placeholder="pet.qc.placeholder"></textarea>
     <div class="companion-quickchat-actions">
-      <button class="companion-confirm-btn secondary companion-quickchat-clear" data-choice="clear" title="Xoá lịch sử trò chuyện">🗑</button>
-      <button class="companion-confirm-btn secondary" data-choice="cancel">Cancel</button>
-      <button class="companion-confirm-btn primary" data-choice="send">Send</button>
+      <button class="companion-confirm-btn secondary companion-quickchat-clear" data-choice="clear" data-i18n-title="pet.qc.clear">🗑</button>
+      <button class="companion-confirm-btn secondary" data-choice="cancel" data-i18n="pet.qc.cancel"></button>
+      <button class="companion-confirm-btn primary" data-choice="send" data-i18n="pet.qc.send"></button>
     </div>
   `;
+  // Điền chữ theo ngôn ngữ hiện tại; đổi ngôn ngữ thì I18n tự dịch lại các
+  // data-i18n*, còn nhãn vai (Bạn / Em…) vẽ bằng JS nên vẽ lại lịch sử.
+  I18n.apply(quickChatPanel);
+  I18n.onChange(renderQuickChatHistory);
   wrapper.appendChild(quickChatPanel);
 
   const field = quickChatPanel.querySelector('.companion-quickchat-field');
@@ -417,8 +425,10 @@ export function startQuickChatHistoryTurn(requestId, prompt) {
       id: `${requestId}-assistant`,
       requestId,
       role: 'assistant',
-      content: QUICK_CHAT_PENDING_TEXT,
+      content: I18n.t('pet.qc.pending'),
       pending: true,
+      // Còn là câu chờ: chunk đầu tiên thay hẳn câu này.
+      thinking: true,
       error: false,
     }
   );
@@ -429,10 +439,8 @@ export function appendQuickChatHistoryDelta(requestId, delta) {
   if (!requestId || typeof delta !== 'string' || !delta) return;
   updateQuickChatSessionMessage(requestId, (current) => ({
     ...current,
-    content:
-      current.pending && current.content === QUICK_CHAT_PENDING_TEXT
-        ? delta
-        : `${current.content}${delta}`,
+    content: current.thinking ? delta : `${current.content}${delta}`,
+    thinking: false,
   }));
 }
 

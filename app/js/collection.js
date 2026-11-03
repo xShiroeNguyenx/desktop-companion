@@ -94,7 +94,7 @@
       if (C.thumb(item)) pv.append(img(C.thumb(item), 'full', true));
       else pv.append(el('span', 'ic', '🎭'));
     } else {
-      pv.append(el('span', 'ic', '💬'));
+      pv.append(el('span', 'ic', item.cat === 'line_pack' ? '📜' : '💬'));
     }
     if (item.selected || item.on) pv.append(el('span', 'badge', '✔ ' + (item.on ? S().on : S().using)));
     if (!item.owned) pv.append(el('span', 'lock', '🔒'));

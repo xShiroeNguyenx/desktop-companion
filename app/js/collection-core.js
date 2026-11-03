@@ -21,7 +21,7 @@
       tabs: { skin: 'Skin widget', widget_deco: 'Trang trí', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model' },
       rarity: { common: 'Thường', rare: 'Hiếm', epic: 'Sử thi', legendary: 'Huyền thoại' },
       using: 'Đang dùng', use: 'Dùng', buy: 'Đổi {price} 🍬', short: '🍬 Thiếu {n}', on: 'Đang bật', off: 'Bật',
-      preview: 'Xem thử', free: 'Có sẵn', empty: 'Chưa có món nào ở nhóm này.', close: 'Đóng',
+      preview: 'Xem thử', free: 'Có sẵn', unlocked: 'Đã mở', empty: 'Chưa có món nào ở nhóm này.', close: 'Đóng',
       download: '⬇ Tải về{size}', downloadingPct: 'Đang tải {n}%', update: '⬆ Cập nhật v{v}', installed: 'Đã tải xong {item}! Bấm Dùng để đổi nhé.',
       bought: '{item} là của {you} rồi! 🍬', sideOff: 'Bunny Lounge đang tắt: bật trong Cài đặt → 🎨 Diện mạo để thấy nhân vật.',
       modes: { gacha: 'Candy Capsule', shop: 'Cửa hàng kẹo', quests: 'Nhiệm vụ', history: 'Lịch sử' },
@@ -83,7 +83,7 @@
       tabs: { skin: 'ウィジェットスキン', widget_deco: 'デコ', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル' },
       rarity: { common: 'ノーマル', rare: 'レア', epic: 'エピック', legendary: 'レジェンド' },
       using: '使用中', use: '使う', buy: '{price} 🍬 で交換', short: 'あと {n} 🍬', on: 'オン', off: 'オンにする',
-      preview: 'プレビュー', free: '最初から', empty: 'このグループにはまだアイテムがありません。', close: '閉じる',
+      preview: 'プレビュー', free: '最初から', unlocked: '解放済み', empty: 'このグループにはまだアイテムがありません。', close: '閉じる',
       download: '⬇ ダウンロード{size}', downloadingPct: 'ダウンロード中 {n}%', update: '⬆ v{v} に更新', installed: '{item} のダウンロード完了！「使う」で切り替えてね。',
       bought: '{item} は{you}のもの！🍬', sideOff: 'バニーラウンジはオフです：設定 → 🎨 Diện mạo でオンにするとキャラクターが見えます。',
       modes: { gacha: 'キャンディカプセル', shop: 'キャンディショップ', quests: 'ミッション', history: '履歴' },
@@ -144,7 +144,7 @@
       tabs: { skin: 'Widget skins', widget_deco: 'Decor', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models' },
       rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
       using: 'In use', use: 'Use', buy: 'Trade {price} 🍬', short: '{n} 🍬 short', on: 'On', off: 'Turn on',
-      preview: 'Preview', free: 'Included', empty: 'Nothing in this group yet.', close: 'Close',
+      preview: 'Preview', free: 'Included', unlocked: 'Unlocked', empty: 'Nothing in this group yet.', close: 'Close',
       download: '⬇ Download{size}', downloadingPct: 'Downloading {n}%', update: '⬆ Update to v{v}', installed: '{item} is downloaded! Press Use to switch.',
       bought: '{item} is yours now! 🍬', sideOff: 'Bunny Lounge is off: turn it on in Settings → 🎨 Diện mạo to see the characters.',
       modes: { gacha: 'Candy Capsule', shop: 'Candy shop', quests: 'Quests', history: 'History' },
@@ -244,7 +244,8 @@
     if (SELECTABLE.includes(item.cat)) {
       return item.selected ? { kind: 'using', label: S.using, disabled: true } : { kind: 'use', label: S.use, disabled: false };
     }
-    return { kind: 'using', label: S.free, disabled: true };
+    // Gói câu: mua rồi là dùng luôn, không có nút chọn.
+    return { kind: 'using', label: item.price > 0 ? S.unlocked : S.free, disabled: true };
   }
 
   /** Dung lượng tải: "2,8 MB" (vi) / "2.8 MB". Không biết thì rỗng. */

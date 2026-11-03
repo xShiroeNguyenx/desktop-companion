@@ -41,3 +41,11 @@ test('sắp theo hạn, việc không hạn xuống cuối', () => {
   ];
   assert.deepEqual(list.slice().sort(byDue).map((t) => t.id), ['c', 'b', 'a', 'd']);
 });
+
+test('describeDue theo ngôn ngữ', () => {
+  const now = at(15, 9);
+  assert.equal(describeDue(at(15, 9, 20), now, 'ja').text, '⏰ あと20分');
+  assert.equal(describeDue(at(16, 8, 5), now, 'en').text, '📅 Tomorrow 08:05');
+  assert.equal(describeDue(at(14, 8), now, 'en').text, '⚠️ 1 day overdue');
+  assert.equal(describeDue(at(15, 17), now, 'xx').text, '⏰ Hôm nay 17:00');
+});

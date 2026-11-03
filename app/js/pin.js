@@ -42,7 +42,7 @@
     const d = new Date(n);
     const p2 = (x) => String(x).padStart(2, '0');
     const now = new Date();
-    if (d.toDateString() === now.toDateString()) return `hôm nay ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    if (d.toDateString() === now.toDateString()) return I18n.t('pin.today', { time: `${p2(d.getHours())}:${p2(d.getMinutes())}` });
     return `${p2(d.getDate())}/${p2(d.getMonth() + 1)}`;
   }
 
@@ -63,7 +63,7 @@
     window.Linkify.renderLinks($('text'), task.text, openLink);
     $('note').title = task.text;
     window.Linkify.renderLinks($('memo'), task.note || '', openLink);
-    const due = window.DueFmt.describeDue(task.due_at, Date.now());
+    const due = window.DueFmt.describeDue(task.due_at, Date.now(), I18n.lang());
     $('due').textContent = due ? due.text : '';
     $('due').className = 'due' + (due ? ' ' + due.level : '');
     $('when').textContent = fmtWhen(task.created_at);
@@ -87,9 +87,7 @@
     else renderTask(item);
     const top = api.top(item);
     $('topBtn').classList.toggle('on', top);
-    $('topBtn').title = top
-      ? 'Đang luôn nổi. Bấm để tờ note nằm lại trên desktop'
-      : 'Luôn nổi trên các cửa sổ khác';
+    $('topBtn').title = top ? I18n.t('pin.topOn') : I18n.t('pin.top');
     fitWindow();
   }
 
@@ -127,25 +125,35 @@
     if (!e.target.closest('button, a')) invoke(api.open).catch(() => {});
   });
 
+  // Chữ riêng của tờ ghi chú, đè lên chữ của tờ task trong HTML. I18n.apply()
+  // đặt lại chữ HTML mỗi lần đổi ngôn ngữ, nên chạy lại sau đó (onChange).
+  function applyNoteLabels() {
+    $('headLabel').textContent = I18n.t('pin.noteLabel');
+    document.title = I18n.t('pin.noteTitle');
+    $('unpinBtn').title = I18n.t('pin.noteUnpin');
+    $('doneBtn').textContent = '📋 Copy';
+    $('doneBtn').title = I18n.t('pin.copyHint');
+  }
+  I18n.onChange(() => {
+    if (isNote) applyNoteLabels();
+    render();
+  });
+
   if (isNote) {
     $('wrap').classList.add('kind-note');
-    $('headLabel').textContent = '🗒️ Ghi chú';
-    document.title = 'Ghi chú ghim';
-    $('unpinBtn').title = 'Gỡ khỏi desktop (ghi chú vẫn còn trong bảng Ghi chú)';
+    applyNoteLabels();
     // Nút chính của tờ ghi chú là Copy nội dung, không có "xong".
     const copy = $('doneBtn');
-    copy.textContent = '📋 Copy';
-    copy.title = 'Copy nội dung ghi chú';
     copy.addEventListener('click', async () => {
       if (!item) return;
       try {
         await navigator.clipboard.writeText(item.body || item.title || '');
-        copy.textContent = '✓ Đã copy';
+        copy.textContent = I18n.t('pin.copied');
         setTimeout(() => { copy.textContent = '📋 Copy'; }, 1500);
         showError('');
       } catch (e) {
         // Clipboard từ chối (vd tờ giấy chưa có focus): báo rõ, đừng giả vờ đã copy.
-        showError('Không copy được: ' + (e && e.message ? e.message : e));
+        showError(I18n.t('pin.copyFailed', { err: e && e.message ? e.message : e }));
       }
     });
   } else {
@@ -160,7 +168,7 @@
         await invoke('pin_done', { id });
       } catch (e) {
         $('wrap').classList.remove('finished');
-        showError('Không lưu được: ' + e);
+        showError(I18n.t('pin.saveFailed', { err: e }));
         busy = false;
       }
     });
@@ -170,7 +178,7 @@
     try {
       await api.unpin();
     } catch (e) {
-      showError('Không gỡ được: ' + e);
+      showError(I18n.t('pin.unpinFailed', { err: e }));
     }
   });
 
@@ -180,7 +188,7 @@
       await invoke(api.setTop, { id, top: next });
       render();
     } catch (e) {
-      showError('Không đổi được: ' + e);
+      showError(I18n.t('pin.changeFailed', { err: e }));
     }
   });
 

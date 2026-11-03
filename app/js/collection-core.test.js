@@ -39,6 +39,7 @@ test('trạng thái nút', () => {
   assert.equal(C.buttonState(item({ cat: 'effect', owned: true }), 0, 'vi').kind, 'off');
   assert.equal(C.buttonState(item({ cat: 'effect', owned: true, on: true }), 0, 'ja').label, 'オン');
   assert.equal(C.buttonState(item({ cat: 'line_pack', owned: true, price: 0 }), 0, 'vi').label, 'Có sẵn');
+  assert.equal(C.buttonState(item({ cat: 'line_pack', owned: true, price: 1500 }), 0, 'en').label, 'Unlocked');
 });
 
 test('mã lỗi Rust → câu đọc được', () => {

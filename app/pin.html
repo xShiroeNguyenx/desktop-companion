@@ -8,7 +8,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Task ghim</title>
+  <title data-i18n="pin.title">Task ghim</title>
   <style>
     :root {
       --paper-1: #fff0f6;
@@ -287,24 +287,26 @@
 <body>
   <div class="wrap" id="wrap">
     <div class="note" id="note">
-      <div class="head"><span id="headLabel">📌 Việc cần làm</span><span class="when" id="when"></span></div>
+      <div class="head"><span id="headLabel" data-i18n="pin.taskLabel">📌 Việc cần làm</span><span class="when" id="when"></span></div>
       <div class="text" id="text"></div>
       <div class="memo" id="memo"></div>
       <div class="due" id="due"></div>
       <div class="err" id="err"></div>
       <div class="tools">
-        <button class="top" id="topBtn" type="button" title="Luôn nổi trên các cửa sổ khác">📍</button>
-        <button id="unpinBtn" type="button" title="Gỡ ghim (task vẫn còn trong danh sách)">✕</button>
-        <button class="ok" id="doneBtn" type="button" title="Đánh dấu đã làm xong">✓ Xong</button>
+        <button class="top" id="topBtn" type="button" title="Luôn nổi trên các cửa sổ khác" data-i18n-title="pin.top">📍</button>
+        <button id="unpinBtn" type="button" title="Gỡ ghim (task vẫn còn trong danh sách)" data-i18n-title="pin.unpin">✕</button>
+        <button class="ok" id="doneBtn" type="button" title="Đánh dấu đã làm xong" data-i18n-title="pin.doneHint" data-i18n="pin.doneBtn">✓ Xong</button>
       </div>
-      <div class="stamp"><span>XONG!</span></div>
+      <div class="stamp"><span data-i18n="pin.stamp">XONG!</span></div>
     </div>
-    <div class="pin" id="pin" title="Kéo để dời tờ note">
+    <div class="pin" id="pin" title="Kéo để dời tờ note" data-i18n-title="pin.drag">
       <div class="face"><img id="avatar" src="/media/character.png" alt="" /></div>
     </div>
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/tasks.js"></script>
   <script src="js/due.js"></script>
   <script src="js/linkify.js"></script>
   <script src="js/pin.js"></script>

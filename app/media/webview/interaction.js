@@ -66,7 +66,12 @@ function getWebviewValue(path, fallback) {
   return current ?? fallback;
 }
 
+// Bảng chữ chung (js/i18n.js + js/strings/pet.js) thắng: t('menu.mute', …) đọc
+// khoá pet.menu.mute theo ngôn ngữ hiện tại. Khoá chưa có trong bảng (phần còn
+// lại của extension VS Code) thì vẫn như cũ: __WEBVIEW_STRINGS__ rồi fallback.
 function t(path, fallback) {
+  const I = window.I18n;
+  if (I && I.dict.vi['pet.' + path] != null) return I.t('pet.' + path);
   const value = getWebviewValue(path, fallback);
   return typeof value === 'string' ? value : fallback;
 }
@@ -808,7 +813,8 @@ function setupCompactContextMenu() {
 
   // Functional categories per roadmap v0.4.0 §4.1. Each category produces one
   // submenu; the main menu just lists categories + a couple of quick actions.
-  const categories = [
+  // Dựng lại mỗi lần mở ring để chữ theo ngôn ngữ hiện tại.
+  const buildCategories = () => [
     {
       id: 'git',
       icon: '🔧',
@@ -910,21 +916,21 @@ function setupCompactContextMenu() {
 
   // --- Standalone trim: chỉ giữ 2 nhóm Diện mạo / Âm thanh. Nhóm Chat AI chỉ
   // còn mỗi Chat nhanh nên đưa thẳng ra menu đầu (xem mainMenu / radialMenu).
-  {
+  const trimCategories = (all) => {
     const KEEP_ORDER = ['appearance', 'voice'];
-    const KEEP_LABEL = { appearance: 'Diện mạo', voice: 'Âm thanh' };
+    const keepLabel = (id) => (id === 'appearance' ? I18n.t('pet.ring.appearance') : I18n.t('pet.ring.sound'));
     const kept = KEEP_ORDER
-      .map((id) => categories.find((c) => c.id === id))
+      .map((id) => all.find((c) => c.id === id))
       .filter(Boolean)
-      .map((c) => ({ ...c, label: KEEP_LABEL[c.id] }));
+      .map((c) => ({ ...c, label: keepLabel(c.id) }));
     const appearance = kept.find((c) => c.id === 'appearance');
     if (appearance) {
       const allow = new Set(['change-model', 'toggle-focus-follow', 'play-motion', 'poke']);
       appearance.items = appearance.items.filter((it) => allow.has(it.action));
     }
-    categories.length = 0;
-    categories.push(...kept);
-  }
+    return kept;
+  };
+  const categories = trimCategories(buildCategories());
 
   const mainMenu = document.createElement('div');
   mainMenu.className = 'companion-context-menu';
@@ -939,17 +945,17 @@ function setupCompactContextMenu() {
   mainMenu.innerHTML = `
     ${categoryRowsHtml}
     <div class="companion-menu-item" data-action="chat-quick">
-      <span style="font-size: 11px;">💬</span> Chat nhanh
+      <span style="font-size: 11px;">💬</span> <span data-i18n="pet.menu.chatQuick">${I18n.t('pet.menu.chatQuick')}</span>
     </div>
     <div class="companion-menu-separator"></div>
     <div class="companion-menu-item" data-action="open-tasks">
-      <span style="font-size: 11px;">📝</span> Công việc (Tasks)
+      <span style="font-size: 11px;">📝</span> <span data-i18n="pet.ring.tasksList">${I18n.t('pet.ring.tasksList')}</span>
     </div>
     <div class="companion-menu-item" data-action="open-notes">
-      <span style="font-size: 11px;">🗒️</span> Ghi chú
+      <span style="font-size: 11px;">🗒️</span> <span data-i18n="pet.ring.notes">${I18n.t('pet.ring.notes')}</span>
     </div>
     <div class="companion-menu-item" data-action="open-settings">
-      <span style="font-size: 11px;">⚙️</span> Cài đặt
+      <span style="font-size: 11px;">⚙️</span> <span data-i18n="pet.ring.settings">${I18n.t('pet.ring.settings')}</span>
     </div>
   `;
 
@@ -1189,6 +1195,8 @@ function setupCompactContextMenu() {
 
   window.addEventListener('mousedown', (e) => {
     if (e.button !== 2) return;
+    // Chuột phải trên vòng đang mở là để ghim mục, không phải gọi pet.
+    if (radialMenu?.isOpen() && radialMenu.contains(e.target)) return;
     showBubble(t('bubbles.contextHint', 'Onii-chan cần em giúp gì hả~ em luôn sẵn sàng nè! 💕'));
     try { playAudio('help.mp3'); } catch (err) { console.error('[AnimeCompanion] playAudio err', err); }
     setExpression('shy', 2500);
@@ -1204,72 +1212,100 @@ function setupCompactContextMenu() {
   // ring chỉ là lớp vỏ khác của đúng bộ entry đó. Danh sách cũ vẫn còn dùng
   // được qua `window.__MENU_STYLE__ = 'list'`.
   if (window.__MENU_STYLE__ !== 'list') {
-    radialMenu = createRadialMenu({
-      getItems: () => [
-        ...categories.map((cat) => ({
-          id: cat.id,
-          icon: cat.icon,
-          label: cat.label,
-          // Mute / look-at đọc trạng thái ngay lúc mở, giống cách menu danh
-          // sách làm qua syncMuteMenuLabel / syncFocusMenuLabel.
-          items: cat.items.map((item) => ({
-            icon: item.mute
-              ? (window.__AUDIO_MUTED__ ? '🔊' : '🔇')
-              : item.focus
-                ? (window.__FOCUS_FOLLOW__ ? '✅' : '👀')
-                : item.icon,
-            label: item.mute
-              ? (window.__AUDIO_MUTED__ ? t('menu.unmute', 'Unmute') : t('menu.mute', 'Mute'))
-              : item.label,
-            action: item.action,
-          })),
+    // Mục trong nhóm có gợi ý ghim; vòng ngoài giữ 8 ô cố định + tối đa
+    // RadialPins.MAX_PINS mục người dùng ghim (chuột phải trong nhóm).
+    // Chữ đọc lại mỗi lần mở (getItems) nên theo ngôn ngữ hiện tại.
+    const PIN_HINT = () => I18n.t('pet.ring.pinHint');
+    const UNPIN_HINT = () => I18n.t('pet.ring.unpinHint');
+    const Pins = window.RadialPins;
+    let pins = Pins ? Pins.load(window.localStorage) : [];
+    const hinted = (items, hint) => items.map((it) => ({ ...it, hint }));
+    // Nhóm đọc trạng thái ngay lúc mở (đang tập trung, đang tắt tiếng…).
+    const ringGroups = () => [
+      {
+        id: 'together',
+        icon: '💞',
+        label: I18n.t('pet.ring.together'),
+        items: [
+          window.__FOCUS_ACTIVE__
+            ? { icon: '⏹', label: I18n.t('pet.ring.focusStop'), action: 'toggle-focus' }
+            : { icon: '🍅', label: I18n.t('pet.ring.focus'), action: 'toggle-focus' },
+          { icon: '💗', label: I18n.t('pet.ring.bond'), action: 'show-bond' },
+          { icon: '🎮', label: I18n.t('pet.ring.games'), action: 'show-games' },
+          { icon: '🍬', label: I18n.t('pet.ring.collection'), action: 'show-shop' },
+          window.__DND__
+            ? { icon: '🔔', label: I18n.t('pet.ring.dndOff'), action: 'toggle-dnd' }
+            : { icon: '🔕', label: I18n.t('pet.ring.dnd'), action: 'toggle-dnd' },
+        ],
+      },
+      // Ghi chú, các widget ghim và thời tiết (trước là 2 nhóm, nhóm Đồng hành 9 mục).
+      {
+        id: 'tools',
+        icon: '🧩',
+        label: I18n.t('pet.ring.tools'),
+        items: [
+          { icon: '🗒️', label: I18n.t('pet.ring.notes'), action: 'open-notes' },
+          { icon: '📅', label: I18n.t('pet.ring.calendar'), action: 'toggle-calendar-pin' },
+          { icon: '📊', label: I18n.t('pet.ring.sysmon'), action: 'toggle-sysmon-pin' },
+          { icon: '🛰', label: I18n.t('pet.ring.monitor'), action: 'toggle-monitor-pin' },
+          { icon: '☁️', label: I18n.t('pet.ring.weather'), action: 'open-weather' },
+          { icon: '🌦', label: I18n.t('pet.ring.weatherFx'), action: 'toggle-weather' },
+          { icon: '📌', label: I18n.t('pet.ring.weatherPin'), action: 'toggle-weather-pin' },
+        ],
+      },
+      ...trimCategories(buildCategories()).map((cat) => ({
+        id: cat.id,
+        icon: cat.icon,
+        label: cat.label,
+        // Mute / look-at đọc trạng thái ngay lúc mở, giống cách menu danh
+        // sách làm qua syncMuteMenuLabel / syncFocusMenuLabel.
+        items: cat.items.map((item) => ({
+          icon: item.mute
+            ? (window.__AUDIO_MUTED__ ? '🔊' : '🔇')
+            : item.focus
+              ? (window.__FOCUS_FOLLOW__ ? '✅' : '👀')
+              : item.icon,
+          label: item.mute
+            ? (window.__AUDIO_MUTED__ ? t('menu.unmute', 'Unmute') : t('menu.mute', 'Mute'))
+            : item.label,
+          action: item.action,
         })),
-        { icon: '💬', label: 'Chat nhanh', action: 'chat-quick' },
-        { icon: '📝', label: 'Công việc', action: 'open-tasks' },
-        // Cài đặt nằm ô dưới cùng của vòng (ô thứ 5 trên 8, đếm từ đỉnh theo
-        // chiều kim đồng hồ); "Mở đầy đủ" lên ô trên-trái thay chỗ.
-        { icon: '⚙️', label: 'Cài đặt', action: 'open-settings' },
-        // Gom Tập trung / Thân thiết / Chơi vào một nhóm cho vòng đầu đỡ chật.
-        {
-          id: 'together',
-          icon: '💞',
-          label: 'Đồng hành',
-          items: [
-            window.__FOCUS_ACTIVE__
-              ? { icon: '⏹', label: 'Dừng tập trung', action: 'toggle-focus' }
-              : { icon: '🍅', label: 'Tập trung', action: 'toggle-focus' },
-            { icon: '💗', label: 'Thân thiết', action: 'show-bond' },
-            { icon: '🎮', label: 'Chơi', action: 'show-games' },
-            { icon: '🍬', label: 'Bộ sưu tập', action: 'show-shop' },
-            // Vòng ngoài đã đủ 8 ô: Ghi chú nằm trong nhóm này.
-            { icon: '🗒️', label: 'Ghi chú', action: 'open-notes' },
-            { icon: '📅', label: 'Lịch tháng', action: 'toggle-calendar-pin' },
-            { icon: '📊', label: 'Thông số máy', action: 'toggle-sysmon-pin' },
-            { icon: '🛰', label: 'Theo dõi web', action: 'toggle-monitor-pin' },
-            window.__DND__
-              ? { icon: '🔔', label: 'Bật lại lời nhắc', action: 'toggle-dnd' }
-              : { icon: '🔕', label: 'Đừng làm phiền', action: 'toggle-dnd' },
-          ],
-        },
-        // Thời tiết: thẻ dự báo, bật / tắt hiệu ứng toàn màn hình, ghim lên desktop.
-        // Đứng ở ô cũ của 🔕 để vòng vẫn 8 ô và ⚙ Cài đặt vẫn nằm ô dưới cùng.
-        {
-          id: 'weather',
-          icon: '☁️',
-          label: 'Thời tiết',
-          items: [
-            { icon: '☁️', label: 'Dự báo', action: 'open-weather' },
-            { icon: '🌦', label: 'Hiệu ứng', action: 'toggle-weather' },
-            { icon: '📌', label: 'Ghim / gỡ ghim', action: 'toggle-weather-pin' },
-          ],
-        },
-        { icon: '🗂️', label: 'Mở đầy đủ', action: 'open-assistant' },
-      ],
+      })),
+    ];
+    const onPin = (action, inGroup) => {
+      if (!Pins) return null;
+      // Ở vòng ngoài chỉ gỡ được mục đã ghim; các ô cố định không đổi.
+      if (!inGroup && !pins.includes(action)) return null;
+      const r = Pins.toggle(pins, action);
+      pins = r.pins;
+      Pins.save(window.localStorage, pins);
+      if (r.result === 'full') return I18n.t('pet.ring.pinFull', { n: Pins.MAX_PINS });
+      return r.result === 'pinned' ? I18n.t('pet.ring.pinned') : I18n.t('pet.ring.unpinned');
+    };
+    radialMenu = createRadialMenu({
+      getItems: () => {
+        const groups = ringGroups();
+        const pinned = Pins ? hinted(Pins.resolve(pins, groups), UNPIN_HINT()) : [];
+        const pinHint = PIN_HINT();
+        const [together, tools, ...rest] = groups.map((g) => ({ ...g, items: hinted(g.items, pinHint) }));
+        return [
+          { icon: '💬', label: I18n.t('pet.menu.chatQuick'), action: 'chat-quick' },
+          { icon: '📝', label: I18n.t('pet.ring.tasks'), action: 'open-tasks' },
+          together,
+          tools,
+          { icon: '⚙️', label: I18n.t('pet.ring.settings'), action: 'open-settings' },
+          ...rest,
+          { icon: '🗂️', label: I18n.t('pet.ring.openAll'), action: 'open-assistant' },
+          ...pinned,
+        ];
+      },
       onAction: handleMenuAction,
+      onPin,
+      // Getter: radial-menu.js đọc labels.* mỗi lần vẽ, nên chữ theo ngôn ngữ hiện tại.
       labels: {
-        title: t('menu.radialTitle', 'Menu'),
-        back: t('menu.radialBack', 'Quay lại'),
-        close: t('panels.sideClose', 'Đóng'),
+        get title() { return t('menu.radialTitle', 'Menu'); },
+        get back() { return t('menu.radialBack', 'Quay lại'); },
+        get close() { return t('panels.sideClose', 'Đóng'); },
       },
     });
   }
@@ -1277,6 +1313,8 @@ function setupCompactContextMenu() {
   window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (radialMenu) {
+      // Chuột phải vào một mục: ghim / gỡ ghim, vòng vẫn mở.
+      if (radialMenu.pinAt(e.target)) return;
       // Chuột phải lần hai thì đóng ring; menu danh sách không dùng tới.
       const wasOpen = radialMenu.isOpen();
       closeContextMenus();
@@ -1375,17 +1413,17 @@ function setupVoicePanel() {
   const panel = document.createElement('div');
   panel.className = 'companion-voice-panel';
   panel.innerHTML = `
-    <div class="companion-voice-title">${t('panels.voiceTitle', 'Voice')}</div>
+    <div class="companion-voice-title" data-i18n="pet.panels.voiceTitle">${I18n.t('pet.panels.voiceTitle')}</div>
     <button class="companion-voice-option" data-voice="ja">
-      <span class="companion-voice-label">${t('panels.voiceJaLabel', 'Japanese')}</span>
+      <span class="companion-voice-label" data-i18n="pet.panels.voiceJaLabel">${I18n.t('pet.panels.voiceJaLabel')}</span>
       <span class="companion-voice-desc">${t('panels.voiceJaDesc', 'VoiceVox anime')}</span>
     </button>
     <button class="companion-voice-option" data-voice="vi">
-      <span class="companion-voice-label">${t('panels.voiceViLabel', 'Tiếng Việt')}</span>
+      <span class="companion-voice-label" data-i18n="pet.panels.voiceViLabel">${I18n.t('pet.panels.voiceViLabel')}</span>
       <span class="companion-voice-desc">${t('panels.voiceViDesc', 'Google TTS')}</span>
     </button>
     <button class="companion-voice-option" data-voice="en">
-      <span class="companion-voice-label">${t('panels.voiceEnLabel', 'English')}</span>
+      <span class="companion-voice-label" data-i18n="pet.panels.voiceEnLabel">${I18n.t('pet.panels.voiceEnLabel')}</span>
       <span class="companion-voice-desc">${t('panels.voiceEnDesc', 'Google TTS')}</span>
     </button>
   `;
@@ -1427,18 +1465,18 @@ function setupMessagePanel() {
   const panel = document.createElement('div');
   panel.className = 'companion-message-panel';
   panel.innerHTML = `
-    <div class="companion-message-title">${t('panels.messageTitle', 'Messages')}</div>
+    <div class="companion-message-title" data-i18n="pet.panels.messageTitle">${I18n.t('pet.panels.messageTitle')}</div>
     <button class="companion-message-option" data-message-language="vi">
       <span class="companion-message-label">${t('panels.messageViLabel', 'Tiếng Việt')}</span>
-      <span class="companion-message-desc">${t('panels.messageViDesc', 'Vietnamese bubble text')}</span>
+      <span class="companion-message-desc" data-i18n="pet.panels.messageViDesc">${I18n.t('pet.panels.messageViDesc')}</span>
     </button>
     <button class="companion-message-option" data-message-language="en">
       <span class="companion-message-label">${t('panels.messageEnLabel', 'English')}</span>
-      <span class="companion-message-desc">${t('panels.messageEnDesc', 'English bubble text')}</span>
+      <span class="companion-message-desc" data-i18n="pet.panels.messageEnDesc">${I18n.t('pet.panels.messageEnDesc')}</span>
     </button>
     <button class="companion-message-option" data-message-language="ja">
       <span class="companion-message-label">${t('panels.messageJaLabel', '日本語')}</span>
-      <span class="companion-message-desc">${t('panels.messageJaDesc', 'Japanese bubble text')}</span>
+      <span class="companion-message-desc" data-i18n="pet.panels.messageJaDesc">${I18n.t('pet.panels.messageJaDesc')}</span>
     </button>
   `;
   wrapper.appendChild(panel);
@@ -1484,7 +1522,7 @@ function setupAmbientPanel() {
   panel.className = 'companion-ambient-panel';
   const tracks = Array.isArray(window.__AMBIENT_TRACKS__) ? window.__AMBIENT_TRACKS__ : [];
   panel.innerHTML = `
-    <div class="companion-ambient-title">${t('panels.ambientTitle', 'Ambient')}</div>
+    <div class="companion-ambient-title" data-i18n="pet.panels.ambientTitle">${I18n.t('pet.panels.ambientTitle')}</div>
     ${tracks.map((track) => `
       <button class="companion-ambient-option" data-ambient-preset="${escapeHtml(track.id)}">
         <span class="companion-ambient-label">${escapeHtml(track.label)}</span>
@@ -1653,12 +1691,16 @@ function modelRows() {
   const current = window.__MODEL_ID__ || 'hiyori';
   // Model còn khoá trong Bộ sưu tập: vẫn bấm được, Rust mở Bộ sưu tập thay vì đổi.
   const locked = Array.isArray(window.__LOCKED_MODELS__) ? window.__LOCKED_MODELS__ : [];
-  return models.map((m) =>
-    `<button class="companion-model-option${m.id === current ? ' active' : ''}" data-model="${escapeHtml(m.id)}" title="${escapeHtml(m.description || '')}">` +
-    `<span class="companion-model-label">${locked.includes(m.id) ? '🔒 ' : ''}${escapeHtml(m.name)}</span>` +
-    (m.description ? `<span class="companion-model-desc">${escapeHtml(m.description)}</span>` : '') +
-    `</button>`
-  );
+  return models.map((m) => {
+    // Model người dùng tự thêm (pet-config.js đánh dấu custom): mô tả theo ngôn ngữ hiện tại.
+    const desc = m.custom ? I18n.t('pet.model.custom') : m.description;
+    return (
+      `<button class="companion-model-option${m.id === current ? ' active' : ''}" data-model="${escapeHtml(m.id)}" title="${escapeHtml(desc || '')}">` +
+      `<span class="companion-model-label">${locked.includes(m.id) ? '🔒 ' : ''}${escapeHtml(m.name)}</span>` +
+      (desc ? `<span class="companion-model-desc">${escapeHtml(desc)}</span>` : '') +
+      `</button>`
+    );
+  });
 }
 
 function showModelPanel() {
@@ -2078,9 +2120,10 @@ export function showAchievementUnlockEffect(payload) {
 
   const rarity = String(payload?.achievement?.rarity || payload?.quest?.rarity || 'rare').toLowerCase();
   const title = payload?.achievement?.title || payload?.quest?.title || 'Unlocked';
-  const kicker = payload?.achievement
+  // Rust (rewards.rs) gửi sẵn kicker đã dịch; payload kiểu extension thì tự dựng.
+  const kicker = payload?.kicker || (payload?.achievement
     ? `${payload.achievement.secret ? 'Secret' : 'Achievement'} • ${payload.achievement.rarity || ''}`
-    : `${payload?.quest?.period === 'weekly' ? 'Weekly' : 'Daily'} Quest`;
+    : `${payload?.quest?.period === 'weekly' ? 'Weekly' : 'Daily'} Quest`);
 
   achievementToast.className = `companion-achievement-toast show rarity-${rarity}`;
   achievementToast.innerHTML = `

@@ -6,6 +6,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.8] - 2026-11-03
+
+### Added
+- **The whole interface follows your language.** Settings, Tasks, Notes, the translate
+  panels, the ring menu, pinned notes, the updater and the tray menu now come in
+  Vietnamese, Japanese and English, following the pet's message language. Changing it
+  (Settings or 💬 on the ring menu) relabels every open window at once.
+- **Friendship levels unlock new lines.** At 💗 Close friends the pet gets warmer ways to
+  praise a finished task or 🍅 focus session and to say good morning; at Best friends she
+  gets more tender ones still. They join the usual lines, so you hear them now and then.
+- **📜 Sweet praise** in the Collection (Rare, 1500 🍬, also from the Candy Capsule): extra
+  praise for finished tasks, focus sessions and the morning greeting, in Vietnamese,
+  Japanese and English. A line pack works as soon as you own it and shows **Unlocked**.
+- **Click a deadline notification to see the task.** The Windows notification for a
+  deadline opens the Tasks panel, scrolls to that task and makes it blink. This works
+  while the app is running; a notification clicked after the app was closed does nothing.
+- **An achievement card above the pet** when you finish every task of the day, or your
+  3rd, 5th or 10th task of the day.
+- **Pin your favourite entries to the ring menu.** Right-click an entry inside a group
+  to pin it to the outer ring (up to 2); right-click a pinned entry to unpin it.
+
+### Changed
+- **The ring menu is tidier.** 💞 Together now holds only Focus, Friendship, Games,
+  Collection and Do not disturb. Notes, the pinned widgets and the weather entries moved
+  into a new 🧩 Tools group, so no group has more than 7 entries.
+
+### Security
+- **The app's windows now run under a Content Security Policy.** They can only load
+  scripts and styles shipped with the app (plus Google Fonts), and cannot send data to
+  any website. The AI, weather and website-check requests still go out from the app
+  itself, as before. If the policy ever blocks something, the log says what and where
+  (`[csp] …`).
+
 ## [0.11.7] - 2026-11-02
 
 ### Added

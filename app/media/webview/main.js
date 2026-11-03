@@ -25,7 +25,7 @@ import {
   finishQuickChatHistoryTurn,
   failQuickChatHistoryTurn,
   takeWatchdogCancel,
-  STREAM_TIMEOUT_TEXT,
+  streamTimeoutText,
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
@@ -298,7 +298,7 @@ window.addEventListener('message', (event) => {
       break;
     case 'pet:tts:error': {
       // Lỗi giọng nói phải nói ra được nguyên nhân, đừng im lặng.
-      const msg = '🔇 Em không đọc thành tiếng được: ' + (event.data.message || 'lỗi không rõ');
+      const msg = I18n.t('pet.tts.error', { msg: event.data.message || I18n.t('pet.err.unknown') });
       if (isBubbleStreaming()) appendBubbleStream('\n' + msg);
       else showBubble(msg);
       break;
@@ -317,20 +317,16 @@ window.addEventListener('message', (event) => {
     case 'pet:chat:error':
       // Bộ đếm hết giờ tự huỷ: bong bóng đã báo hết giờ rồi, giữ nguyên câu đó.
       if (event.data.aborted && takeWatchdogCancel()) {
-        failQuickChatHistoryTurn(event.data.requestId, STREAM_TIMEOUT_TEXT);
+        failQuickChatHistoryTurn(event.data.requestId, streamTimeoutText());
         break;
       }
-      failQuickChatHistoryTurn(
-        event.data.requestId,
-        event.data.aborted
-          ? 'Đã hủy.'
-          : `Lỗi quick chat: ${event.data.message || 'unknown'}`
-      );
-      errorBubbleStream(
-        event.data.aborted
-          ? 'Đã hủy.'
-          : `Lỗi quick chat: ${event.data.message || 'unknown'}`
-      );
+      {
+        const failText = event.data.aborted
+          ? I18n.t('pet.qc.cancelled')
+          : I18n.t('pet.qc.error', { msg: event.data.message || I18n.t('pet.err.unknown') });
+        failQuickChatHistoryTurn(event.data.requestId, failText);
+        errorBubbleStream(failText);
+      }
       break;
   }
 });

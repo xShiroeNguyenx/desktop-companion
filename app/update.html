@@ -90,13 +90,15 @@
   <div class="status" id="errStatus"></div>
 
   <div class="actions">
-    <button class="link" id="skipBtn" type="button">Bỏ qua bản này</button>
+    <button class="link" id="skipBtn" type="button" data-i18n="update.skip">Bỏ qua bản này</button>
     <div class="spacer"></div>
-    <button class="ghost" id="laterBtn" type="button">Để sau</button>
-    <button class="action" id="installBtn" type="button">⬇ Tải &amp; cài ngay</button>
+    <button class="ghost" id="laterBtn" type="button" data-i18n="update.later">Để sau</button>
+    <button class="action" id="installBtn" type="button" data-i18n="update.install">⬇ Tải &amp; cài ngay</button>
   </div>
 
   <script src="js/tauri-api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/misc.js"></script>
   <script src="js/update.js"></script>
 </body>
 </html>

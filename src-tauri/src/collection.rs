@@ -441,6 +441,19 @@ pub const CATALOG: &[Item] = &[
         asset: "petals",
     },
     Item {
+        id: "lines.praise",
+        cat: Category::LinePack,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Lời khen ngọt ngào", "とびきりのほめ言葉", "Sweet praise"],
+        desc: [
+            "Thêm câu khen mới khi xong việc, xong phiên Tập trung và khi chào buổi sáng.",
+            "タスクや集中セッションを終えたとき、朝のあいさつに新しいほめ言葉が加わります。",
+            "New lines of praise when you finish a task or a focus session, and in the morning greeting.",
+        ],
+        asset: "praise",
+    },
+    Item {
         id: "side.bunny",
         cat: Category::SideSet,
         rarity: Rarity::Epic,
@@ -1120,6 +1133,11 @@ pub fn set_effect(c: &mut Collection, id: &str, on: bool) -> Result<&'static Ite
         c.effects_on.sort();
     }
     Ok(it)
+}
+
+/// Đã sở hữu gói câu loại `asset` (vd. "praise") chưa. Gói câu không bật / tắt.
+pub fn line_pack_owned(c: &Collection, asset: &str) -> bool {
+    items().any(|it| it.cat == Category::LinePack && it.asset == asset && owns(c, it))
 }
 
 /// Hiệu ứng loại `kind` (asset, vd. "fireworks") có đang bật không.

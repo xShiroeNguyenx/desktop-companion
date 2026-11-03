@@ -19,6 +19,7 @@ use crate::lines::{self, Key};
 use crate::awareness::{CpuTimes, Presence, PresenceEvent, Sustain};
 use crate::focus::{FocusEvent, Phase, Session};
 use crate::reminders::{self, Health, HealthClock, Stage};
+use crate::tray_text::{self, Tray};
 use crate::{awareness, chat, naming, notify, persona, store, tts};
 
 /// "Đừng làm phiền" từ tray / menu kéo dài bao lâu.
@@ -189,6 +190,14 @@ pub fn parse_early_tag(tag: &str) -> Option<(&str, u32)> {
     Some((id, days.strip_prefix('d')?.parse().ok()?))
 }
 
+/// Task mà thông báo của câu `tag` nói tới (để bấm vào thì mở đúng task).
+/// Chỉ hạn chót của task; sự kiện lịch, pin, website thì không có.
+pub fn toast_task_id(tag: &str) -> Option<&str> {
+    let rest = tag.strip_prefix("deadline:")?;
+    let (id, _) = rest.rsplit_once(':')?;
+    (!id.is_empty()).then_some(id)
+}
+
 /// Ngược lại của Stage::rank.
 pub fn stage_from_rank(rank: u8) -> Option<Stage> {
     match rank {
@@ -293,7 +302,8 @@ pub fn set_dnd(app: &AppHandle, on: bool, announce: bool) {
     state.dnd_until.store(until, Ordering::SeqCst);
     if let Ok(t) = state.tray_item.lock() {
         if let Some(item) = t.as_ref() {
-            let _ = item.set_text(if on { "🔔 Bật lại lời nhắc" } else { "🔕 Đừng làm phiền (1 giờ)" });
+            let t = if on { Tray::DndOn } else { Tray::DndOff };
+            let _ = item.set_text(tray_text::text(t, tray_text::lang(app)));
         }
     }
     sync_dnd(app);
@@ -336,7 +346,7 @@ fn say_now(app: &AppHandle, key: Key, vars: &[(&str, &str)]) {
 pub fn set_focus_tray_item(app: &AppHandle, item: tauri::menu::MenuItem<tauri::Wry>) {
     // Phiên khôi phục từ focus.json có trước khi tray dựng xong: chữ phải khớp ngay.
     if focus_active(app) {
-        let _ = item.set_text("⏹ Dừng tập trung");
+        let _ = item.set_text(tray_text::text(Tray::FocusStop, tray_text::lang(app)));
     }
     if let Ok(mut t) = app.state::<CompanionState>().focus_item.lock() {
         *t = Some(item);
@@ -355,12 +365,29 @@ pub fn focus_active(app: &AppHandle) -> bool {
     app.state::<CompanionState>().focus.lock().map(|f| f.active()).unwrap_or(false)
 }
 
+/// Đổi ngôn ngữ: viết lại chữ hai mục tray có trạng thái (Đừng làm phiền, Tập trung).
+pub fn sync_tray_labels(app: &AppHandle) {
+    let state = app.state::<CompanionState>();
+    let lang = tray_text::lang(app);
+    if let Ok(t) = state.tray_item.lock() {
+        if let Some(item) = t.as_ref() {
+            let _ = item.set_text(tray_text::text(if dnd_active(app) { Tray::DndOn } else { Tray::DndOff }, lang));
+        }
+    }
+    if let Ok(t) = state.focus_item.lock() {
+        if let Some(item) = t.as_ref() {
+            let _ = item.set_text(tray_text::text(if focus_active(app) { Tray::FocusStop } else { Tray::FocusStart }, lang));
+        }
+    };
+}
+
 /// Báo pet (menu tròn đọc cờ này) + đổi chữ trên tray theo trạng thái phiên.
 pub fn sync_focus(app: &AppHandle) {
     let on = focus_active(app);
     if let Ok(t) = app.state::<CompanionState>().focus_item.lock() {
         if let Some(item) = t.as_ref() {
-            let _ = item.set_text(if on { "⏹ Dừng tập trung" } else { "🍅 Bắt đầu tập trung" });
+            let t = if on { Tray::FocusStop } else { Tray::FocusStart };
+            let _ = item.set_text(tray_text::text(t, tray_text::lang(app)));
         }
     }
     pet(app, json!({ "command": "focusState", "on": on }));
@@ -495,6 +522,14 @@ pub(crate) fn today_and_hour(now: u64) -> (crate::bond::Day, u32) {
     let now_ms = now as i64 * 1000;
     let local = now_ms + offset as i64 * reminders::MIN_MS;
     (reminders::local_day(now_ms, offset), (local.rem_euclid(reminders::DAY_MS) / reminders::HOUR_MS) as u32)
+}
+
+/// Bộ câu đã mở khoá (cấp thân thiết + gói câu trong Bộ sưu tập), cho `lines::line_unlocked`.
+pub fn unlocks(app: &AppHandle) -> lines::Unlocks {
+    lines::Unlocks {
+        level: crate::bond::level(store::load_bond(app).points),
+        praise: crate::collection::line_pack_owned(&store::load_collection(app), "praise"),
+    }
 }
 
 /// Cộng điểm thân thiết cho một sự kiện (xong việc, chat, vuốt đầu…). Lỗi ghi
@@ -683,10 +718,10 @@ fn daily_greeting_line(app: &AppHandle, a: &persona::Address, now: u64) -> Strin
         .count();
     let _ = store::update_bond(app, |b| b.last_greeting_day = today);
     let greeting = if due == 0 {
-        lines::line(Key::DailyGreetingFree, a, &[])
+        lines::line_unlocked(Key::DailyGreetingFree, unlocks(app), a, &[])
     } else {
         let n = due.to_string();
-        lines::line(Key::DailyGreeting, a, &[("due", n.as_str())])
+        lines::line_unlocked(Key::DailyGreeting, unlocks(app), a, &[("due", n.as_str())])
     };
     // Sự kiện lịch hôm nay (giỗ, sinh nhật…): thêm một câu kể tên.
     let events = events_today(app, today);
@@ -1186,7 +1221,7 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
             let key = if c.tag == "focus:done" { Key::FocusDone } else { Key::BreakDone };
             // Không gửi biểu cảm ở đây: focus_loop đã đặt nét mặt giữ nguyên
             // cho pha mới (biểu cảm có hạn sẽ tự về neutral, làm mất nét đó).
-            return Some((lines::line(key, &a, &[("brk", brk.as_str())]), None));
+            return Some((lines::line_unlocked(key, unlocks(app), &a, &[("brk", brk.as_str())]), None));
         }
         _ => {}
     }
@@ -1254,7 +1289,7 @@ fn deliver_toast(app: &AppHandle, c: &Candidate) {
         _ => deadline_line(app, &c.tag),
     };
     let Some(text) = text else { return };
-    match notify::toast(app, &text) {
+    match notify::toast_for_task(app, &text, toast_task_id(&c.tag)) {
         Ok(()) => mark_reminded(app, &c.tag),
         Err(e) => {
             eprintln!("[companion] gửi thông báo lỗi: {e}");
@@ -1455,6 +1490,15 @@ mod tests {
         }
         // Đang trả lời chat: chỉ chờ vài giây, không cần toast.
         assert_eq!(deadline_channel(&Ctx { replying: true, ..ctx() }, true, false), Channel::Hold);
+    }
+
+    #[test]
+    fn toast_opens_the_task_it_talks_about() {
+        assert_eq!(toast_task_id("deadline:1760000004821:3"), Some("1760000004821"));
+        assert_eq!(toast_task_id("deadline:1760000004821:d7"), Some("1760000004821"));
+        assert_eq!(toast_task_id("event:17:2026-11-03:2"), None);
+        assert_eq!(toast_task_id("power:battery"), None);
+        assert_eq!(toast_task_id("deadline::3"), None);
     }
 
     #[test]

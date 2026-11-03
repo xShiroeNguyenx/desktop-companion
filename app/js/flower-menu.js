@@ -4,6 +4,7 @@
 import { createRadialMenu } from '/media/webview/radial-menu.js';
 
 const { invoke, listen, log } = window.DC;
+const T = (key) => window.I18n.t(key);
 
 // Cửa sổ ring không có focus (WS_EX_NOACTIVATE) nên phím Escape của
 // radial-menu.js không tới nơi — đóng bằng click ra ngoài, rời chuột, và một
@@ -23,13 +24,13 @@ function close() {
 
 const menu = createRadialMenu({
   getItems: () => [
-    { icon: '🌐', label: 'Dịch nhanh', action: 'translate' },
-    { icon: '📋', label: 'Sao chép', action: 'copy' },
-    { icon: '💬', label: 'Trả lời', action: 'reply' },
-    { icon: '💭', label: 'Hỏi em', action: 'ask' },
-    { icon: '📝', label: 'Lưu vào task', action: 'task' },
-    { icon: '🗒️', label: 'Lưu ghi chú', action: 'note' },
-    { icon: '🗂️', label: 'Mở đầy đủ', action: 'full' },
+    { icon: '🌐', label: T('flower.translate'), action: 'translate' },
+    { icon: '📋', label: T('flower.copy'), action: 'copy' },
+    { icon: '💬', label: T('flower.reply'), action: 'reply' },
+    { icon: '💭', label: T('flower.ask'), action: 'ask' },
+    { icon: '📝', label: T('flower.task'), action: 'task' },
+    { icon: '🗒️', label: T('flower.note'), action: 'note' },
+    { icon: '🗂️', label: T('flower.full'), action: 'full' },
   ],
   onAction: (action) => {
     clearTimeout(idleTimer);
@@ -43,7 +44,12 @@ const menu = createRadialMenu({
     // translate / reply / ask / task / note / full đều do Rust mở cửa sổ tương ứng rồi ẩn ring.
     invoke('flower_menu_action', { action }).catch((e) => log('flower_menu_action: ' + e));
   },
-  labels: { title: 'Văn bản', back: 'Quay lại', close: 'Đóng' },
+  // Getter: radial-menu.js đọc nhãn mỗi lần mở / vẽ, nên luôn theo ngôn ngữ hiện tại.
+  labels: {
+    get title() { return T('flower.title'); },
+    get back() { return T('flower.back'); },
+    get close() { return T('flower.close'); },
+  },
   // Ring này chỉ có 7 mục và luôn bung ngay cạnh con trỏ nên để gọn hơn ring
   // của menu chuột phải (92px); 62px vẫn đủ chỗ cho pill "Văn bản" ở giữa.
   radius: 62,

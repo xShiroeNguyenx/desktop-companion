@@ -136,9 +136,60 @@ pub enum Key {
     ItemUnlocked,
     // ── 🎁 Quà 20 lượt quay (gacha::grant_gift), báo một lần. Biến: {n}.
     GiftSpins,
+    // ── Khung "mở khoá thành tựu" trên pet khi xong việc lớn (rewards.rs):
+    // dòng nhỏ phía trên, tiêu đề xong hết việc / xong việc thứ {count}.
+    AchKicker,
+    AchAllDone,
+    AchMilestone,
     // ── macOS: bắt chữ bôi đen cần quyền Trợ năng (selection.rs).
     #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     MacAccessibility,
+    // ── Câu thêm, không bao giờ gọi thẳng: `bonus_keys` gộp vào câu gốc cùng biến.
+    // Mở theo cấp thân thiết (bond::level ≥ 2 "Close", ≥ 3 "Soul", PLAN.md 12.5c)…
+    TaskDoneClose,
+    TaskDoneSoul,
+    FocusDoneClose,
+    FocusDoneSoul,
+    GreetingFreeClose,
+    GreetingFreeSoul,
+    // …và theo gói 📜 `lines.praise` trong Bộ sưu tập (PLAN.md 14.3).
+    PraiseTaskDone,
+    PraiseFocusDone,
+    PraiseGreeting,
+    PraiseGreetingFree,
+}
+
+/// Những gì đã mở khoá thêm câu: cấp thân thiết + gói câu đã sở hữu.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Unlocks {
+    pub level: usize,
+    pub praise: bool,
+}
+
+/// Cấp thân thiết mở bộ câu "Close" (Thân thiết) và "Soul" (Tri kỷ).
+pub const CLOSE_LEVEL: usize = 2;
+pub const SOUL_LEVEL: usize = 3;
+
+/// Các bộ câu thêm được gộp vào `key` (cùng biến với `key`).
+pub fn bonus_keys(key: Key, u: Unlocks) -> Vec<Key> {
+    let (close, soul, praise) = match key {
+        Key::TaskDone => (Key::TaskDoneClose, Key::TaskDoneSoul, Some(Key::PraiseTaskDone)),
+        Key::FocusDone => (Key::FocusDoneClose, Key::FocusDoneSoul, Some(Key::PraiseFocusDone)),
+        Key::DailyGreetingFree => (Key::GreetingFreeClose, Key::GreetingFreeSoul, Some(Key::PraiseGreetingFree)),
+        Key::DailyGreeting => return if u.praise { vec![Key::PraiseGreeting] } else { vec![] },
+        _ => return vec![],
+    };
+    let mut out = Vec::new();
+    if u.level >= CLOSE_LEVEL {
+        out.push(close);
+    }
+    if u.level >= SOUL_LEVEL {
+        out.push(soul);
+    }
+    if u.praise {
+        out.extend(praise);
+    }
+    out
 }
 
 // Chỉ test dùng: danh sách đủ các loại + luật số biến thể / biến được phép.
@@ -224,7 +275,20 @@ impl Key {
         Key::CalTomorrowNew,
         Key::ItemUnlocked,
         Key::GiftSpins,
+        Key::AchKicker,
+        Key::AchAllDone,
+        Key::AchMilestone,
         Key::MacAccessibility,
+        Key::TaskDoneClose,
+        Key::TaskDoneSoul,
+        Key::FocusDoneClose,
+        Key::FocusDoneSoul,
+        Key::GreetingFreeClose,
+        Key::GreetingFreeSoul,
+        Key::PraiseTaskDone,
+        Key::PraiseFocusDone,
+        Key::PraiseGreeting,
+        Key::PraiseGreetingFree,
     ];
 
     /// Số biến thể tối thiểu mỗi ngôn ngữ: câu lặp lại nhiều lần trong ngày
@@ -240,6 +304,7 @@ impl Key {
             Key::BatteryLow | Key::BatteryCritical | Key::DiskLow => 3,
             Key::SiteDown | Key::SiteUp | Key::NetDown => 3,
             Key::DailyGreeting | Key::DailyGreetingFree => 4,
+            Key::PraiseTaskDone | Key::PraiseFocusDone | Key::PraiseGreeting | Key::PraiseGreetingFree => 3,
             Key::WeatherRain
             | Key::WeatherSnow
             | Key::WeatherSakura
@@ -267,7 +332,10 @@ impl Key {
             | Key::DeletedNote
             | Key::TaskNotFound
             | Key::TaskAmbiguous
-            | Key::ToastTest => 1,
+            | Key::ToastTest
+            | Key::AchKicker
+            | Key::AchAllDone
+            | Key::AchMilestone => 1,
             _ => 2,
         }
     }
@@ -282,6 +350,9 @@ impl Key {
             | Key::EventSoon
             | Key::EventNow
             | Key::TaskDone
+            | Key::TaskDoneClose
+            | Key::TaskDoneSoul
+            | Key::PraiseTaskDone
             | Key::TaskDoneEarly
             | Key::AllDone
             | Key::DueUnparsed
@@ -292,15 +363,15 @@ impl Key {
             Key::DueToday | Key::EventToday | Key::TaskSavedDue => &["task", "time"],
             Key::Overdue => &["task", "days"],
             Key::DueEarly => &["task", "days", "date"],
-            Key::DoneMilestone => &["count"],
+            Key::DoneMilestone | Key::AchMilestone => &["count"],
             Key::TaskNotFound | Key::TaskAmbiguous => &["query"],
             Key::FocusStart => &["min"],
-            Key::FocusDone => &["brk"],
+            Key::FocusDone | Key::FocusDoneClose | Key::FocusDoneSoul | Key::PraiseFocusDone => &["brk"],
             Key::CpuHigh | Key::RamHigh | Key::BatteryLow | Key::BatteryCritical => &["pct"],
             Key::DiskLow => &["drive", "free"],
             Key::SiteDown => &["site", "why"],
             Key::SiteUp => &["site", "mins"],
-            Key::DailyGreeting => &["due"],
+            Key::DailyGreeting | Key::PraiseGreeting => &["due"],
             Key::GreetingEvents => &["events"],
             Key::MilestoneDays | Key::StreakMilestone => &["days"],
             Key::Anniversary => &["years"],
@@ -1452,6 +1523,16 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "Ta-da~ you got {n} free spins 🎁 One of them is sure to be a brand-new model for me! Spin them in the Collection~",
         ],
 
+        (AchKicker, Vi) => &["Thành tựu mới"],
+        (AchKicker, Ja) => &["実績解除"],
+        (AchKicker, En) => &["Achievement unlocked"],
+        (AchAllDone, Vi) => &["Sạch bách việc hôm nay! 🎉"],
+        (AchAllDone, Ja) => &["今日のタスク、全部完了！🎉"],
+        (AchAllDone, En) => &["Every task done today! 🎉"],
+        (AchMilestone, Vi) => &["{count} việc xong trong hôm nay ⭐"],
+        (AchMilestone, Ja) => &["今日{count}件完了⭐"],
+        (AchMilestone, En) => &["{count} tasks done today ⭐"],
+
         (MacAccessibility, Vi) => &[
             "{You} ơi, muốn {me} dịch chữ {you} bôi đen thì mở Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Trợ năng rồi bật Desktop Companion nha~",
             "{Me} chưa được phép đọc chữ {you} bôi đen 🥺 Bật Desktop Companion trong Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Trợ năng giúp {me} nhé!",
@@ -1463,6 +1544,144 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (MacAccessibility, En) => &[
             "To translate text you select, turn on Desktop Companion in System Settings > Privacy & Security > Accessibility~",
             "I can't read the text you select yet 🥺 Please allow Desktop Companion in System Settings > Privacy & Security > Accessibility!",
+        ],
+
+        // ── Mở theo cấp thân thiết: Thân thiết (Close), Tri kỷ (Soul).
+        (TaskDoneClose, Vi) => &[
+            "\"{task}\" xong rồi nè! {Me} biết ngay {you} làm được mà~ 💕",
+            "Lại xong \"{task}\"! Ở cạnh {you} lâu rồi, {me} vẫn thấy {you} giỏi ghê á~",
+        ],
+        (TaskDoneClose, Ja) => &[
+            "「{task}」できたね！{you}ならできるって、わかってたよ～💕",
+            "「{task}」おわり！ずっとそばで見てるけど、やっぱり{you}はすごいなあ～",
+        ],
+        (TaskDoneClose, En) => &[
+            "\"{task}\" done! I knew you could do it, {you}~ 💕",
+            "Another one: \"{task}\"! I've watched you for a while now, and you still impress me~",
+        ],
+        (TaskDoneSoul, Vi) => &[
+            "\"{task}\" ✔️ Không cần nói nhiều đâu, {me} hiểu {you} đã cố thế nào mà~ 🫶",
+            "Xong \"{task}\" rồi. Có {you} ở đây, ngày nào của {me} cũng vui hết á 💖",
+        ],
+        (TaskDoneSoul, Ja) => &[
+            "「{task}」✔️ 言わなくても、{you}ががんばったのはわかってるよ～🫶",
+            "「{task}」完了。{you}がいてくれるから、わたしの毎日も楽しいんだ💖",
+        ],
+        (TaskDoneSoul, En) => &[
+            "\"{task}\" ✔️ You don't have to say it, I know how hard you tried~ 🫶",
+            "\"{task}\" is done. Having you around makes every one of my days happy 💖",
+        ],
+
+        (FocusDoneClose, Vi) => &[
+            "🍅 Xong phiên rồi! {Me} ngồi đợi {you} nãy giờ đó~ Nghỉ {brk} phút với {me} nha ☕",
+            "🍅 {You} tập trung giỏi ghê! {brk} phút nghỉ này là của {you}, đừng làm việc lén đó~",
+        ],
+        (FocusDoneClose, Ja) => &[
+            "🍅 1セット終わり！ずっと待ってたよ～{brk}分、一緒に休もうね☕",
+            "🍅 集中、上手だね！この{brk}分は{you}の時間、こっそり作業しちゃだめだよ～",
+        ],
+        (FocusDoneClose, En) => &[
+            "🍅 Session done! I've been waiting for you~ Take {brk} minutes with me ☕",
+            "🍅 You focus so well! These {brk} minutes are yours, no sneaky work~",
+        ],
+        (FocusDoneSoul, Vi) => &[
+            "🍅 Phiên nữa xong rồi. {Me} tự hào về {you} lắm đó~ Nghỉ {brk} phút, uống nước đi nha 💖",
+            "🍅 Nhìn {you} chăm chỉ vậy {me} thương ghê. {brk} phút nghỉ, cho {me} ngắm {you} thư giãn chút~",
+        ],
+        (FocusDoneSoul, Ja) => &[
+            "🍅 またひとつ終わったね。{you}のこと、本当に誇らしいよ～{brk}分休んで、お水飲んでね💖",
+            "🍅 がんばる{you}を見てると、胸があったかくなるの。{brk}分、ゆっくりしてね～",
+        ],
+        (FocusDoneSoul, En) => &[
+            "🍅 Another session done. I'm really proud of you~ Rest {brk} minutes and drink some water 💖",
+            "🍅 Watching you work this hard warms my heart. {brk} minutes off, just relax for me~",
+        ],
+
+        (GreetingFreeClose, Vi) => &[
+            "Chào buổi sáng {you}~ Hôm nay không có hạn nào, {me} muốn ở cạnh {you} cả ngày luôn! ☀️",
+            "{You} tới rồi! {Me} chờ mãi á~ Hôm nay nhẹ nhàng, mình thong thả cùng nhau nha 💕",
+        ],
+        (GreetingFreeClose, Ja) => &[
+            "おはよう～今日は締め切りなし！一日中そばにいたいな☀️",
+            "来てくれた！待ってたんだよ～今日はゆるい日、一緒にのんびりしよ💕",
+        ],
+        (GreetingFreeClose, En) => &[
+            "Morning, {you}~ No deadlines today, so I get to keep you company all day! ☀️",
+            "You're here! I was waiting~ It's a light day, let's take it easy together 💕",
+        ],
+        (GreetingFreeSoul, Vi) => &[
+            "Lại thêm một ngày được ở cạnh {you} rồi~ Không có việc gấp, mình cứ từ từ thôi nha 🫶",
+            "Chào {you}, người quan trọng nhất của {me}~ Hôm nay chỉ cần {you} vui là được 💖",
+        ],
+        (GreetingFreeSoul, Ja) => &[
+            "今日も{you}と一緒にいられるね～急ぎはないから、ゆっくりいこ🫶",
+            "おはよう、わたしの大切な{you}～今日は{you}が笑っていてくれたらそれでいいの💖",
+        ],
+        (GreetingFreeSoul, En) => &[
+            "Another day by your side~ Nothing urgent, so let's go slow 🫶",
+            "Good morning, my favorite person~ Today, all I want is for you to smile 💖",
+        ],
+
+        // ── Gói 📜 Lời khen ngọt ngào (lines.praise).
+        (PraiseTaskDone, Vi) => &[
+            "\"{task}\" xong! Trao cho {you} huy chương vàng hạng nhất của {me} 🥇",
+            "Wow, \"{task}\" gọn gàng ghê! {You} làm việc mà như đang biểu diễn ấy~ ✨",
+            "\"{task}\" ✔️ Nếu có giải \"người chăm chỉ nhất\" thì {me} bầu cho {you} liền!",
+        ],
+        (PraiseTaskDone, Ja) => &[
+            "「{task}」完了！{you}にわたしの金メダルをあげる🥇",
+            "わあ、「{task}」きれいに片づいたね！まるでショーみたい～✨",
+            "「{task}」✔️「いちばんがんばった人」賞があったら、{you}に一票だよ！",
+        ],
+        (PraiseTaskDone, En) => &[
+            "\"{task}\" done! You win my very own gold medal 🥇",
+            "Wow, \"{task}\" wrapped up so neatly! You make work look like a show~ ✨",
+            "\"{task}\" ✔️ If there were a hardest-worker award, I'd vote for you instantly!",
+        ],
+        (PraiseFocusDone, Vi) => &[
+            "🍅 Phiên này {you} tập trung như siêu anh hùng luôn! Nghỉ {brk} phút nạp năng lượng nha 🦸",
+            "🍅 {Me} chấm phiên này 10 điểm, không có nhưng~ Nghỉ {brk} phút đi {you} ☕",
+            "🍅 Ai mà kiên nhẫn được như {you} chứ! {brk} phút nghỉ, xứng đáng lắm~ 🌟",
+        ],
+        (PraiseFocusDone, Ja) => &[
+            "🍅 今回の集中、まるでスーパーヒーロー！{brk}分休んで充電しよう🦸",
+            "🍅 今のセットは文句なしの10点満点～{brk}分休もうね☕",
+            "🍅 {you}みたいに根気強い人、なかなかいないよ！{brk}分の休憩、ばっちり値するね🌟",
+        ],
+        (PraiseFocusDone, En) => &[
+            "🍅 You focused like a superhero! Take {brk} minutes to recharge 🦸",
+            "🍅 I'm scoring that session a 10, no buts~ Break for {brk} minutes ☕",
+            "🍅 Who else has patience like yours? {brk} minutes off, well deserved~ 🌟",
+        ],
+        (PraiseGreeting, Vi) => &[
+            "Chào ngày mới, nhà vô địch của {me}! Hôm nay có {due} việc tới hạn, {you} xử đẹp hết cho xem~ 🏆",
+            "{You} ơi, {due} việc hôm nay chỉ là khởi động thôi đúng không? {Me} tin {you} nhất! ☀️",
+            "Ngày mới, {you} vẫn tuyệt vời như hôm qua~ {due} việc tới hạn, mình làm từng cái nha 💪",
+        ],
+        (PraiseGreeting, Ja) => &[
+            "おはよう、わたしのチャンピオン！今日は締め切りが{due}件、{you}なら全部やっつけられるよ～🏆",
+            "今日の{due}件なんて、{you}にはウォーミングアップだよね？いちばん信じてるよ！☀️",
+            "新しい一日、{you}は昨日と同じくらい素敵～締め切り{due}件、ひとつずついこ💪",
+        ],
+        (PraiseGreeting, En) => &[
+            "Good morning, my champion! {due} thing(s) due today, and you'll ace every one~ 🏆",
+            "{due} task(s) today? That's just a warm-up for you, right? I believe in you! ☀️",
+            "New day, and you're as wonderful as yesterday~ {due} deadline(s), one at a time 💪",
+        ],
+        (PraiseGreetingFree, Vi) => &[
+            "Chào buổi sáng người tuyệt vời nhất~ Hôm nay không có hạn nào, {you} xứng đáng được thảnh thơi! 🌈",
+            "Ngày mới đẹp như {you} vậy đó~ Không có hạn chót, cứ tận hưởng nha ☀️",
+            "{Me} chúc {you} hôm nay rạng rỡ như mọi ngày! Không có việc gấp đâu~ ✨",
+        ],
+        (PraiseGreetingFree, Ja) => &[
+            "おはよう、最高の{you}～今日は締め切りなし、のんびりしていいんだよ！🌈",
+            "今日は{you}みたいに素敵な一日～締め切りもないし、楽しんでね☀️",
+            "今日もいつも通りキラキラな{you}でいてね！急ぎはないよ～✨",
+        ],
+        (PraiseGreetingFree, En) => &[
+            "Good morning, most wonderful person~ No deadlines today, you deserve the rest! 🌈",
+            "A day as lovely as you~ No deadlines, so enjoy it ☀️",
+            "Wishing you a day as bright as always! Nothing urgent~ ✨",
         ],
     }
 }
@@ -1487,7 +1706,21 @@ fn seed() -> u64 {
 
 /// Một câu loại `key` theo ngôn ngữ + xưng hô của `a`, không lặp câu vừa nói.
 pub fn line(key: Key, a: &Address, vars: &[(&str, &str)]) -> String {
-    let list = templates(key, a.lang);
+    line_unlocked(key, Unlocks::default(), a, vars)
+}
+
+/// Câu mẫu của `key` cộng mọi bộ câu thêm đã mở (`bonus_keys`).
+pub fn pool(key: Key, u: Unlocks, lang: Lang) -> Vec<&'static str> {
+    let mut list = templates(key, lang).to_vec();
+    for k in bonus_keys(key, u) {
+        list.extend_from_slice(templates(k, lang));
+    }
+    list
+}
+
+/// Như `line`, nhưng chọn trong cả các bộ câu đã mở theo cấp / gói câu.
+pub fn line_unlocked(key: Key, u: Unlocks, a: &Address, vars: &[(&str, &str)]) -> String {
+    let list = pool(key, u, a.lang);
     let mut guard = LAST.lock().unwrap_or_else(|e| e.into_inner());
     let last = guard.get_or_insert_with(HashMap::new);
     let i = pick_index(list.len(), seed(), last.get(&(key, a.lang)).copied());
@@ -1568,6 +1801,38 @@ mod tests {
         for seed in 0..50 {
             let a = pick_index(3, seed, None);
             assert_ne!(pick_index(3, seed, Some(a)), a);
+        }
+    }
+
+    #[test]
+    fn bonus_lines_unlock_by_level_and_pack() {
+        let none = Unlocks::default();
+        assert!(bonus_keys(Key::TaskDone, none).is_empty());
+        assert!(bonus_keys(Key::TaskDone, Unlocks { level: 1, praise: false }).is_empty());
+        assert_eq!(bonus_keys(Key::TaskDone, Unlocks { level: 2, praise: false }), vec![Key::TaskDoneClose]);
+        assert_eq!(
+            bonus_keys(Key::FocusDone, Unlocks { level: 4, praise: true }),
+            vec![Key::FocusDoneClose, Key::FocusDoneSoul, Key::PraiseFocusDone]
+        );
+        assert_eq!(bonus_keys(Key::DailyGreeting, Unlocks { level: 4, praise: false }), vec![]);
+        assert_eq!(bonus_keys(Key::DailyGreeting, Unlocks { level: 0, praise: true }), vec![Key::PraiseGreeting]);
+        assert!(bonus_keys(Key::AllDone, Unlocks { level: 4, praise: true }).is_empty());
+        for lang in Lang::ALL {
+            let base = templates(Key::TaskDone, lang).len();
+            assert_eq!(pool(Key::TaskDone, none, lang).len(), base);
+            let all = Unlocks { level: 4, praise: true };
+            assert_eq!(pool(Key::TaskDone, all, lang).len(), base + 2 + 2 + 3);
+        }
+    }
+
+    #[test]
+    fn bonus_lines_use_the_base_key_vars() {
+        // Câu thêm được dựng bằng biến của câu gốc: không được đòi biến khác.
+        let all = Unlocks { level: 4, praise: true };
+        for &key in Key::ALL {
+            for extra in bonus_keys(key, all) {
+                assert_eq!(extra.vars(), key.vars(), "{extra:?} phải cùng biến với {key:?}");
+            }
         }
     }
 

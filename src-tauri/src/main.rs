@@ -50,6 +50,7 @@ mod store;
 mod sysmon_pin;
 mod top_procs;
 mod taskref;
+mod tray_text;
 mod tts;
 mod windows;
 
@@ -293,6 +294,7 @@ fn pet_command(app: AppHandle, payload: Value) {
             if let Err(e) = store::save_settings(&app, &s) {
                 eprintln!("[persona] lưu ngôn ngữ chữ lỗi: {e}");
             }
+            ui_lang_changed(&app, &s.message_language);
         }
         // Menu Âm thanh → 🔇 Tắt tiếng: lưu lại để mở app lần sau vẫn im.
         "setMuted" => {
@@ -543,6 +545,21 @@ pub(crate) fn set_copy_hotkey(app: &AppHandle, on: bool) {
     }
 }
 
+/// Đổi ngôn ngữ (Cài đặt hoặc menu 💬): mọi cửa sổ dịch lại chữ (i18n.js nghe
+/// "ui-lang"), menu khay dựng lại theo ngôn ngữ mới.
+pub fn ui_lang_changed(app: &tauri::AppHandle, code: &str) {
+    use tauri::Emitter;
+    let _ = app.emit("ui-lang", persona::Lang::from_code(code).code());
+    tray_text::relabel(app);
+}
+
+/// Chạy trong mọi webview: báo vi phạm CSP về Rust qua lệnh `dc_log`.
+const CSP_REPORT_JS: &str = r#"document.addEventListener('securitypolicyviolation', function (e) {
+  var T = window.__TAURI__ || {};
+  var inv = (T.core && T.core.invoke) || T.invoke;
+  if (inv) inv('dc_log', { msg: '[csp] ' + location.pathname + ': ' + e.effectiveDirective + ' chặn ' + (e.blockedURI || 'inline') }).catch(function () {});
+});"#;
+
 fn main() {
     use tauri_plugin_global_shortcut::ShortcutState;
 
@@ -550,6 +567,8 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        // CSP chặn gì thì ghi vào log ("[frontend] [csp] …") thay vì hỏng im lặng.
+        .plugin(tauri::plugin::Builder::<tauri::Wry, ()>::new("csp-report").js_init_script(CSP_REPORT_JS).build())
         // Thông báo Windows cho hạn chót (notify.rs). Chỉ gọi từ Rust.
         .plugin(tauri_plugin_notification::init())
         // Mở link trong task bằng trình duyệt (commands::open_url, chỉ http/https).
@@ -660,6 +679,8 @@ fn main() {
             commands::close_flower_menu,
             commands::copy_selection,
             commands::open_tasks,
+            commands::tasks_take_focus,
+            commands::ui_lang,
             commands::open_settings,
             commands::detect_lang,
             commands::llm_translate,
@@ -910,32 +931,48 @@ fn main() {
                 });
             }
 
-            // Tray.
-            let show_item = MenuItem::with_id(app, "toggle_show", "Hiện / Ẩn pet", true, None::<&str>)?;
-            let tasks_item = MenuItem::with_id(app, "open_tasks", "Công việc (Tasks)", true, None::<&str>)?;
-            let notes_item = MenuItem::with_id(app, "open_notes", "🗒️ Ghi chú", true, None::<&str>)?;
-            let settings_item = MenuItem::with_id(app, "open_settings", "Cài đặt", true, None::<&str>)?;
+            // Tray. Chữ theo ngôn ngữ chữ của pet (tray_text.rs), đổi ngôn ngữ thì viết lại.
+            use tray_text::{text as tr, Tray};
+            let lang = tray_text::lang(&app_handle);
+            let show_item = MenuItem::with_id(app, "toggle_show", tr(Tray::ToggleShow, lang), true, None::<&str>)?;
+            let tasks_item = MenuItem::with_id(app, "open_tasks", tr(Tray::Tasks, lang), true, None::<&str>)?;
+            let notes_item = MenuItem::with_id(app, "open_notes", tr(Tray::Notes, lang), true, None::<&str>)?;
+            let settings_item = MenuItem::with_id(app, "open_settings", tr(Tray::Settings, lang), true, None::<&str>)?;
             let click_through_item =
-                MenuItem::with_id(app, "click_through", "Bật / Tắt click-through", true, None::<&str>)?;
+                MenuItem::with_id(app, "click_through", tr(Tray::ClickThrough, lang), true, None::<&str>)?;
             let dnd_item =
-                MenuItem::with_id(app, "dnd", "🔕 Đừng làm phiền (1 giờ)", true, None::<&str>)?;
+                MenuItem::with_id(app, "dnd", tr(Tray::DndOff, lang), true, None::<&str>)?;
             companion::set_tray_item(&app_handle, dnd_item.clone());
             let focus_item =
-                MenuItem::with_id(app, "focus", "🍅 Bắt đầu tập trung", true, None::<&str>)?;
+                MenuItem::with_id(app, "focus", tr(Tray::FocusStart, lang), true, None::<&str>)?;
             companion::set_focus_tray_item(&app_handle, focus_item.clone());
             let weather_item =
-                MenuItem::with_id(app, "weather", "🌦 Bật hiệu ứng thời tiết", true, None::<&str>)?;
+                MenuItem::with_id(app, "weather", tr(Tray::WeatherOn, lang), true, None::<&str>)?;
             fx::set_tray_item(&app_handle, weather_item.clone());
             let forecast_item =
-                MenuItem::with_id(app, "forecast", "☁️ Dự báo thời tiết", true, None::<&str>)?;
+                MenuItem::with_id(app, "forecast", tr(Tray::Forecast, lang), true, None::<&str>)?;
             let calendar_item =
-                MenuItem::with_id(app, "calendar", "📅 Ghim / gỡ lịch tháng", true, None::<&str>)?;
+                MenuItem::with_id(app, "calendar", tr(Tray::Calendar, lang), true, None::<&str>)?;
             let sysmon_item =
-                MenuItem::with_id(app, "sysmon", "📊 Ghim / gỡ thông số máy", true, None::<&str>)?;
+                MenuItem::with_id(app, "sysmon", tr(Tray::Sysmon, lang), true, None::<&str>)?;
             let monitor_item =
-                MenuItem::with_id(app, "monitor", "🛰 Ghim / gỡ theo dõi website", true, None::<&str>)?;
+                MenuItem::with_id(app, "monitor", tr(Tray::Monitor, lang), true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Thoát", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", tr(Tray::Quit, lang), true, None::<&str>)?;
+            for (t, item) in [
+                (Tray::ToggleShow, &show_item),
+                (Tray::Tasks, &tasks_item),
+                (Tray::Notes, &notes_item),
+                (Tray::Settings, &settings_item),
+                (Tray::ClickThrough, &click_through_item),
+                (Tray::Forecast, &forecast_item),
+                (Tray::Calendar, &calendar_item),
+                (Tray::Sysmon, &sysmon_item),
+                (Tray::Monitor, &monitor_item),
+                (Tray::Quit, &quit_item),
+            ] {
+                tray_text::remember(t, item);
+            }
             let menu = Menu::with_items(
                 app,
                 &[
@@ -1126,4 +1163,40 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+// CSP (PLAN.md 15.1 A3): giữ cho webview không nạp script / gửi dữ liệu ra ngoài.
+// Mạng thật (AI, thời tiết, theo dõi site) đều đi từ Rust, nên webview không cần
+// origin ngoài nào ngoài Google Fonts.
+#[cfg(test)]
+mod csp_tests {
+    fn csp() -> serde_json::Map<String, serde_json::Value> {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        conf["app"]["security"]["csp"].as_object().expect("CSP phải bật (không để null)").clone()
+    }
+
+    fn sources(name: &str) -> Vec<String> {
+        csp()[name].as_str().unwrap_or_default().split_whitespace().map(str::to_string).collect()
+    }
+
+    #[test]
+    fn scripts_only_come_from_the_app() {
+        let s = sources("script-src");
+        assert!(s.contains(&"'self'".to_string()));
+        // 'unsafe-eval': PIXI v6 sinh shader bằng new Function. Inline script thì Tauri tự băm.
+        for bad in ["'unsafe-inline'", "*", "http:", "https:", "data:", "blob:"] {
+            assert!(!s.iter().any(|x| x == bad), "script-src không được có {bad}");
+        }
+        assert_eq!(sources("object-src"), ["'none'"]);
+    }
+
+    #[test]
+    fn webview_cannot_send_data_out() {
+        for src in sources("connect-src") {
+            assert!(
+                ["'self'", "ipc:", "petmodel:"].contains(&src.as_str()) || src.ends_with(".localhost"),
+                "connect-src lạ: {src}"
+            );
+        }
+    }
 }

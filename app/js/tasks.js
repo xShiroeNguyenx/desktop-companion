@@ -25,11 +25,12 @@
   function makeItem(t) {
     const row = document.createElement('div');
     row.className = 'tk-item' + (t.done ? ' done' : '');
+    row.dataset.id = t.id;
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = !!t.done;
-    cb.title = t.done ? 'Bỏ đánh dấu hoàn thành' : 'Đánh dấu đã làm';
+    cb.title = t.done ? I18n.t('tasks.markUndone') : I18n.t('tasks.markDone');
     cb.addEventListener('change', async () => {
       try {
         await invoke('tasks_set_done', { id: t.id, done: cb.checked });
@@ -51,8 +52,8 @@
     const note = document.createElement('div');
     note.className = 'tk-note' + (t.note ? '' : ' empty');
     if (t.note) window.Linkify.renderLinks(note, t.note, openLink);
-    else note.textContent = '+ Thêm ghi chú';
-    note.title = 'Bấm để sửa ghi chú';
+    else note.textContent = I18n.t('tasks.addNote');
+    note.title = I18n.t('tasks.editNote');
     note.addEventListener('click', () => editNote(t, note));
 
     const meta = document.createElement('div');
@@ -60,23 +61,23 @@
     const created = fmtTime(t.created_at);
     if (created) {
       const span = document.createElement('span');
-      span.textContent = '🕒 Tạo: ' + created;
+      span.textContent = I18n.t('tasks.created', { time: created });
       meta.appendChild(span);
     }
     const doneAt = fmtTime(t.done_at);
     if (t.done && doneAt) {
       const span = document.createElement('span');
       span.className = 'ok';
-      span.textContent = '✓ Xong: ' + doneAt;
+      span.textContent = I18n.t('tasks.finished', { time: doneAt });
       meta.appendChild(span);
     }
     // Hạn chót: việc chưa xong thì hiện mức gấp; bấm vào để sửa.
-    const due = !t.done && window.DueFmt.describeDue(t.due_at, Date.now());
+    const due = !t.done && window.DueFmt.describeDue(t.due_at, Date.now(), I18n.lang());
     if (due) {
       const span = document.createElement('span');
       span.className = 'tk-due ' + due.level;
       span.textContent = due.text;
-      span.title = 'Bấm để đổi hạn chót';
+      span.title = I18n.t('tasks.changeDueHint');
       span.addEventListener('click', () => editDue(t, body));
       meta.appendChild(span);
     }
@@ -87,7 +88,7 @@
     const del = document.createElement('button');
     del.className = 'tk-del';
     del.textContent = '🗑';
-    del.title = 'Xoá';
+    del.title = I18n.t('tasks.delete');
     del.type = 'button';
     del.addEventListener('click', async () => {
       await invoke('tasks_delete', { id: t.id });
@@ -100,14 +101,14 @@
       cal.className = 'tk-cal' + (t.due_at ? ' on' : '');
       cal.textContent = '📅';
       cal.type = 'button';
-      cal.title = t.due_at ? 'Đổi hạn chót' : 'Đặt hạn chót';
+      cal.title = t.due_at ? I18n.t('tasks.changeDue') : I18n.t('tasks.setDue');
       cal.addEventListener('click', () => editDue(t, body));
 
       const pin = document.createElement('button');
       pin.className = 'tk-pin' + (t.pinned ? ' on' : '');
       pin.textContent = '📌';
       pin.type = 'button';
-      pin.title = t.pinned ? 'Đang ghim trên desktop. Bấm để gỡ' : 'Ghim lên màn hình desktop';
+      pin.title = t.pinned ? I18n.t('tasks.pinned') : I18n.t('tasks.pin');
       pin.addEventListener('click', async () => {
         try {
           await invoke('tasks_set_pinned', { id: t.id, pinned: !t.pinned });
@@ -141,15 +142,15 @@
     const input = document.createElement('input');
     input.type = 'datetime-local';
     input.value = window.DueFmt.toLocalInput(task.due_at);
-    input.setAttribute('aria-label', 'Hạn chót');
+    input.setAttribute('aria-label', I18n.t('tasks.due'));
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 'action';
-    save.textContent = 'Lưu';
+    save.textContent = I18n.t('tasks.save');
     const clear = document.createElement('button');
     clear.type = 'button';
     clear.className = 'ghost';
-    clear.textContent = 'Bỏ hạn';
+    clear.textContent = I18n.t('tasks.clearDue');
 
     const apply = async (dueAt) => {
       try {
@@ -163,7 +164,7 @@
     save.addEventListener('click', () => {
       const ms = window.DueFmt.fromLocalInput(input.value);
       if (ms == null) {
-        showStatus('Chọn ngày giờ trước đã nha.');
+        showStatus(I18n.t('tasks.pickDate'));
         input.focus();
         return;
       }
@@ -197,7 +198,7 @@
     const input = document.createElement('textarea');
     input.className = 'tk-note-input';
     input.value = task.note || '';
-    input.placeholder = 'Ghi chú cho công việc...';
+    input.placeholder = I18n.t('tasks.notePlaceholder');
     noteEl.replaceWith(input);
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
@@ -226,10 +227,13 @@
     input.addEventListener('blur', () => finish(true));
   }
 
-  function fillList(el, tasks, emptyHtml) {
+  function fillList(el, tasks, emptyText) {
     el.innerHTML = '';
     if (!tasks.length) {
-      el.innerHTML = `<div class="tk-empty">${emptyHtml}</div>`;
+      const empty = document.createElement('div');
+      empty.className = 'tk-empty';
+      empty.textContent = emptyText;
+      el.appendChild(empty);
       return;
     }
     for (const t of tasks) el.appendChild(makeItem(t));
@@ -256,9 +260,9 @@
     fillList(
       $('todoList'),
       todo,
-      'Chưa có việc nào.<br/>Bôi đen văn bản → bông hoa → Lưu task,<br/>hoặc thêm ở ô trên.'
+      I18n.t('tasks.emptyTodo')
     );
-    fillList($('doneList'), done, 'Chưa hoàn thành việc nào.');
+    fillList($('doneList'), done, I18n.t('tasks.emptyDone'));
     renderWeek();
   }
 
@@ -272,14 +276,15 @@
       console.error(e);
       return;
     }
-    $('wkSum').textContent = W.summary(week);
+    const lang = I18n.lang();
+    $('wkSum').textContent = W.summary(week, lang);
     const box = $('wkDays');
     box.textContent = '';
     const heights = W.bars(week.days);
     (week.days || []).forEach((d, i) => {
       const col = document.createElement('div');
       col.className = 'wk-day' + (d.today ? ' today' : '') + (d.future ? ' future' : '');
-      col.title = W.dayTitle(d, i);
+      col.title = W.dayTitle(d, i, lang);
       const n = document.createElement('div');
       n.className = 'wk-n';
       n.textContent = d.tasks ? '✅' + d.tasks : '';
@@ -290,11 +295,11 @@
       bar.append(fill);
       const label = document.createElement('div');
       label.className = 'wk-l';
-      label.textContent = W.DAY_LABELS[i] + (d.quests ? ' ⭐' : '');
+      label.textContent = W.dayLabels(lang)[i] + (d.quests ? ' ⭐' : '');
       col.append(n, bar, label);
       box.append(col);
     });
-    $('wkFoot').textContent = W.footer(week);
+    $('wkFoot').textContent = W.footer(week, lang);
   }
 
   // Nhớ thẻ đang mở hay gập (chỉ là tiện ích, không có cũng không sao).
@@ -332,5 +337,28 @@
     if (!document.hidden && !document.querySelector('.tk-due-edit, .tk-note-input')) render();
   }, 60_000);
 
+  // Bấm vào thông báo hạn chót (windows::open_tasks_at): cuộn tới task đó và
+  // nháy sáng. Bảng vừa mở thì lấy lúc khởi động, đang mở thì qua "tasks-focus".
+  async function focusPending() {
+    let id = null;
+    try {
+      id = await invoke('tasks_take_focus');
+    } catch (_) {
+      return;
+    }
+    if (!id) return;
+    await render();
+    const row = [...document.querySelectorAll('.tk-item')].find((r) => r.dataset.id === id);
+    if (!row) return;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.remove('flash');
+    void row.offsetWidth; // chạy lại hiệu ứng nếu bấm 2 thông báo liền nhau
+    row.classList.add('flash');
+  }
+  listen('tasks-focus', focusPending);
+  // Đổi ngôn ngữ: vẽ lại danh sách và thẻ tuần (chữ dựng bằng JS).
+  I18n.onChange(() => render());
+
   render();
+  focusPending();
 })();

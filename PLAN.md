@@ -1481,7 +1481,7 @@ giữ chân người dùng, rồi mới mở rộng tầm với (i18n, onboardin
 |---|---|---|
 | A1 | ✅ (2026-11-02) `settings_set` đổi sang **merge patch** | `commands.rs` đang chép tay ~20 trường không có trên form; quên trường mới thì Lưu Cài đặt xoá nó. Form chỉ gửi trường nó sở hữu, Rust ghi đè đúng các key đó. Hàm merge thuần trong `store.rs`, có test. |
 | A2 | ✅ (2026-11-02) API key vào **Windows Credential Manager** (crate `keyring`) | `settings.json` chỉ còn cờ `has_api_key` / `has_gemini_key`, UI không nhận lại key. Migrate một lần: key plaintext → keychain → xoá khỏi JSON. |
-| A3 | Bật **CSP** | `tauri.conf.json` đang `"csp": null`; whitelist Open-Meteo + endpoint LLM. Kiểm từng cửa sổ còn chạy (Live2D, PIXI, ảnh `asset:`). |
+| A3 | ✅ (2026-11-03, cần thử GUI) Bật **CSP** | `tauri.conf.json` đang `"csp": null`; whitelist Open-Meteo + endpoint LLM. Kiểm từng cửa sổ còn chạy (Live2D, PIXI, ảnh `asset:`). |
 | A4 | ✅ (2026-11-02, focus.json) Phiên Tập trung **sống qua lần tắt app** | Mục 12.6: hiện chỉ giữ trong RAM. Ghi `focus.json` lúc đổi pha, khôi phục lúc mở. Sửa luôn biểu cảm chat 8 giây đè mất "focus" / "sleepy". |
 | A5 | **Widget registry** | Gom `pin_widget::specs()`, ghim thời tiết, tờ note task về một bảng khai báo (id, html, cỡ, mục tray, mục menu tròn, nhóm Cài đặt). Tạo cửa sổ, tray, xử lý window event và Cài đặt đọc từ bảng (thay danh sách "Nơi phải đăng ký thứ mới" ở 14.7). |
 | A6 | Gom **CSS chung cho game**, Gỡ bom có bộ ảnh riêng | Mục 12.8. |
@@ -1493,19 +1493,19 @@ key; tắt/mở app giữa phiên 🍅 vẫn đếm tiếp; thêm một widget c
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| B1 | Bấm toast mở bảng Công việc đúng task | Mục 12.5. Kèm hiệu ứng "mở khoá thành tựu" lớn, tái dùng `gacha-fx.js`. |
-| B2 | Câu thoại mở khoá theo cấp thân thiết + gói câu hiếm `lines.praise` | Mục 12.7 và 14.3. Cờ mới cho `lines::line`, đi qua trọng tài `companion.rs`, đủ vi/ja/en. |
+| B1 | ✅ (2026-11-03, notify.rs qua tauri-winrt-notification) Bấm toast mở bảng Công việc đúng task | Mục 12.5. Kèm hiệu ứng "mở khoá thành tựu" lớn, tái dùng `gacha-fx.js`. |
+| B2 | ✅ (2026-11-03, lines::bonus_keys) Câu thoại mở khoá theo cấp thân thiết + gói câu hiếm `lines.praise` | Mục 12.7 và 14.3. Cờ mới cho `lines::line`, đi qua trọng tài `companion.rs`, đủ vi/ja/en. |
 | B3 | ✅ (2026-11-02) Miu phản ứng kết quả gacha | Mục 14.6: `think → surprised → cheer`, trùng → `pout`; hiện cửa sổ Bộ sưu tập chỉ có ảnh tĩnh. |
 | B4 | ✅ (2026-11-02, quests.rs) Nhiệm vụ ngày / tuần thưởng kẹo | Ví dụ xong 3 việc, 2 phiên 🍅, chơi 1 ván. Lưu trong `collection.json`, logic thuần có test, theo trần kẹo 14.2. |
 | B5 | ✅ (2026-11-02, stats.rs, thẻ trong bảng Công việc) Thống kê tuần | Việc xong, phút tập trung, chuỗi ngày; thẻ trong bảng Công việc hoặc widget mới (qua registry A5). |
-| B6 | Sắp lại menu tròn | Mục 12.7: vòng đầu đang chật. Nhóm thành menu con, cho ghim mục hay dùng. |
+| B6 | ✅ (2026-11-03, nhóm 🧩 Tiện ích, ghim tối đa 2 mục bằng chuột phải) Sắp lại menu tròn | Mục 12.7: vòng đầu đang chật. Nhóm thành menu con, cho ghim mục hay dùng. |
 | B7 | Trò "bắt chuột" (+ trò chơi chữ bằng AI nếu có key) | Mục 12.8. |
 
 ### 15.3 Đợt C: Mở rộng tầm với (Phase 23–24, v0.9.9 – v0.10.x)
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| C1 | **i18n toàn giao diện** | Mục 12.4b: menu, Cài đặt, Công việc, tờ note mới chỉ tiếng Việt. Thêm khoá vi/ja/en cùng lúc, có test "mọi khoá đủ ngôn ngữ" như `every_key_has_all_languages`. |
+| C1 | ✅ (2026-11-03, js/i18n.js + js/strings/*, tray_text.rs) **i18n toàn giao diện** | Mục 12.4b: menu, Cài đặt, Công việc, tờ note mới chỉ tiếng Việt. Thêm khoá vi/ja/en cùng lúc, có test "mọi khoá đủ ngôn ngữ" như `every_key_has_all_languages`. |
 | C2 | Onboarding lần đầu | Tour ngắn sau thẻ đặt tên: tính năng mặc định tắt (thời tiết, side girl, cảnh báo CPU), cách nhập key AI. |
 | C3 | Accessibility | ARIA / `role` cho Công việc, Arcade, widget, Cài đặt; menu tròn đi được bằng bàn phím; nhãn cho nút chỉ có emoji. |
 | C4 | Widget và tờ note không bị Win+D che | Mục 12.4c, 13.9: gắn vào lớp `WorkerW`. |

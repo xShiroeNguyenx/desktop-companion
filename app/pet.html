@@ -21,7 +21,7 @@
     <div class="chat-bubble" id="chatBubble" data-tauri-drag-region>
       <span class="bubble-text" id="bubbleText" data-tauri-drag-region>Xin chào~</span>
       <!-- Chỉ hiện khi pet đang trả lời (class .streaming): bấm để dừng. -->
-      <button class="bubble-stop" id="bubbleStop" type="button" title="Dừng trả lời">⏹</button>
+      <button class="bubble-stop" id="bubbleStop" type="button" title="Dừng trả lời" data-i18n-title="pet.html.stop" data-i18n-aria-label="pet.html.stop" aria-label="Dừng trả lời">⏹</button>
       <div class="bubble-tail" data-tauri-drag-region></div>
     </div>
 
@@ -41,7 +41,7 @@
       />
       <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <span class="loading-text">Đang tải Live2D...</span>
+        <span class="loading-text" data-i18n="pet.html.loading">Đang tải Live2D...</span>
       </div>
       <div class="particles" id="particles"></div>
     </div>
@@ -54,7 +54,10 @@
 
   <!-- Transport + runtime globals (classic scripts, run before the module). -->
   <script src="js/deco-apply.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/strings/pet.js"></script>
   <script src="js/pet-config.js"></script>
+  <script src="js/radial-pins.js"></script>
   <script src="js/bridge.js"></script>
   <script src="js/pet-lookat.js"></script>
   <script src="js/pet-zoom.js"></script>

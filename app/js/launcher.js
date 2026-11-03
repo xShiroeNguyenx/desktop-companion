@@ -6,12 +6,15 @@
   const { invoke, listen, log } = window.DC;
   const L = window.LauncherCore;
   const $ = (id) => document.getElementById(id);
+  const T = (key, vars) => window.I18n.t(key, vars);
   const ICON = { bang: '❗', hint: '❗', url: '🌐', bookmark: '🔖', search: '🔎' };
 
   let data = { bookmarks: [], engine: 'google', bangs: [] };
   let rows = [];
   let sel = 0;
   let lastQuery = '';
+  // Lỗi đọc bookmark đang hiện (để dịch lại khi đổi ngôn ngữ).
+  let bmError = '';
 
   function fit() {
     requestAnimationFrame(() => {
@@ -36,9 +39,9 @@
       const t = document.createElement('span');
       t.className = 't';
       const b = document.createElement('b');
-      b.textContent = r.type === 'search' ? `Tìm “${r.title}”` : r.title;
+      b.textContent = r.type === 'search' ? T('launcher.search', { q: r.title }) : r.title;
       const small = document.createElement('small');
-      small.textContent = r.type === 'search' ? `trên ${r.sub}` : r.sub;
+      small.textContent = r.type === 'search' ? T('launcher.on', { engine: r.sub }) : r.sub;
       t.append(b, small);
       row.append(ic, t);
       list.append(row);
@@ -47,6 +50,7 @@
   }
 
   function msg(text) {
+    bmError = '';
     $('msg').textContent = text || '';
     fit();
   }
@@ -117,14 +121,23 @@
     msg('');
     try {
       data = await invoke('launcher_data');
-      if (data.error) msg('Không đọc được bookmark: ' + data.error);
+      if (data.error) {
+        msg(T('launcher.bmFail', { err: data.error }));
+        bmError = data.error;
+      }
     } catch (e) {
       log('[launcher] launcher_data: ' + e);
     }
-    $('q').placeholder = 'Gõ để tìm bookmark, !yt …, !gh …, hoặc địa chỉ web';
+    $('q').placeholder = T('launcher.placeholder');
     render();
     $('q').focus();
   }
+
+  window.I18n.onChange(() => {
+    $('q').placeholder = T('launcher.placeholder');
+    if (bmError) $('msg').textContent = T('launcher.bmFail', { err: bmError });
+    render();
+  });
 
   listen('launcher-show', onShow);
   onShow();
