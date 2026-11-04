@@ -24,7 +24,7 @@ pub const WEEK_SPINS: u32 = 2;
 
 /// Các trò trong Arcade. ĐỒNG BỘ với GAMES trong app/js/arcade.js (cùng thứ tự,
 /// để "game của ngày" khớp GamesCore.dailyPick).
-pub const GAMES: [&str; 3] = ["rps", "guess", "mines"];
+pub const GAMES: [&str; 4] = ["rps", "guess", "mines", "merge"];
 
 /// Bộ đếm một nhiệm vụ dùng.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

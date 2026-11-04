@@ -1,13 +1,13 @@
 // Trang Mini Games (arcade.html). Rust: game_info (ngôn ngữ, tên pet, xưng hô,
 // điểm thân thiết) và open_mini_game (ẩn trang này, mở cửa sổ game). Thành
 // tích đọc từ localStorage mà các cửa sổ game ghi (rpsStats, guessStats,
-// minesStats); cùng origin nên đọc chung được.
+// minesStats, mergeStats4); cùng origin nên đọc chung được.
 (function () {
   const { invoke, listen, log } = window.DC;
   const G = window.GamesCore;
   const $ = (id) => document.getElementById(id);
   // ĐỒNG BỘ với quests::GAMES (Rust): cùng thứ tự để "game của ngày" khớp nhiệm vụ.
-  const GAMES = ['rps', 'guess', 'mines'];
+  const GAMES = ['rps', 'guess', 'mines', 'merge'];
 
   // {you}/{You} = gọi người chơi, {me}/{Me} = pet tự xưng, {pet} = tên pet.
   const T = {
@@ -18,14 +18,15 @@
       chibi: 'Chơi game cùng {me} nhé? {Me} luôn chờ {you} đấy!',
       today: 'Hôm nay', todayPoints: 'Điểm từ game', todayGame: 'Game của ngày',
       bond: 'Điểm thân thiết', bondNums: '{have} / {need} · {level}', bondMax: '{points} điểm · {level}',
-      names: { rps: 'Oẳn tù tì', guess: 'Đoán số', mines: 'Gỡ bom' },
-      tagRps: 'Phổ biến', tagGuess: 'Thử thách', tagMines: 'Logic', todayTag: '★ Hôm nay',
+      names: { rps: 'Oẳn tù tì', guess: 'Đoán số', mines: 'Gỡ bom', merge: 'Ghép Miu' },
+      tagRps: 'Phổ biến', tagGuess: 'Thử thách', tagMines: 'Logic', tagMerge: 'Mới', todayTag: '★ Hôm nay',
       descRps: 'Oẳn tù tì cùng {pet}! Ai sẽ thắng hôm nay nhỉ?',
       descGuess: 'Đoán số bí mật mà {pet} đã chọn! {You} có tìm ra không?',
       descMines: 'Giúp {pet} gỡ hết bom nhé! Hãy suy nghĩ thật kỹ!',
+      descMerge: 'Ghép hai Miu giống nhau, tiến hoá tới Angel!',
       quick: 'Chơi nhanh', quickRps: '10–20 giây', round: 'Mỗi ván', quickGuess: '30–60 giây',
-      time: 'Thời gian', quickMines: 'Tùy ý',
-      wins: 'Đã thắng', streak: 'Chuỗi thắng', fastest: 'Nhanh nhất', winsN: '{n} ván',
+      time: 'Thời gian', quickMines: 'Tùy ý', quickMerge: '5–20 phút',
+      wins: 'Đã thắng', streak: 'Chuỗi thắng', fastest: 'Nhanh nhất', winsN: '{n} ván', bestTier: 'Xa nhất', tierN: 'Bậc {n}/13', angels: { gothic: 'Angel tím', snow: 'Angel tuyết', pink: 'Angel hồng' },
       play: 'Chơi ngay',
       achTitle: 'Thành tích', achSub: 'Xem thống kê và kỷ lục của {you}',
       rewardTitle: 'Phần thưởng', rewardSub: 'Hôm nay: {got}/{cap} điểm · 🍬 {candy} kẹo',
@@ -48,14 +49,15 @@
       chibi: 'いっしょに遊ぼう？ずっと待ってるよ！',
       today: '今日', todayPoints: 'ゲームのポイント', todayGame: '今日のゲーム',
       bond: 'なかよし度', bondNums: '{have} / {need} · {level}', bondMax: '{points}ポイント · {level}',
-      names: { rps: 'じゃんけん', guess: '数当て', mines: 'ボム処理班' },
-      tagRps: '人気', tagGuess: 'チャレンジ', tagMines: 'ロジック', todayTag: '★ 今日',
+      names: { rps: 'じゃんけん', guess: '数当て', mines: 'ボム処理班', merge: 'ミウ合体' },
+      tagRps: '人気', tagGuess: 'チャレンジ', tagMines: 'ロジック', tagMerge: 'NEW', todayTag: '★ 今日',
       descRps: 'わたしとじゃんけん！今日はどっちが勝つかな？',
       descGuess: 'わたしが選んだ秘密の数を当ててね！',
       descMines: '爆弾をぜんぶ見つけてね！よく考えて！',
+      descMerge: '同じミウを合わせてエンジェルまで進化！',
       quick: 'サクッと', quickRps: '10〜20秒', round: '1回', quickGuess: '30〜60秒',
-      time: '時間', quickMines: '自由',
-      wins: '勝った数', streak: '連勝', fastest: '最速', winsN: '{n}回',
+      time: '時間', quickMines: '自由', quickMerge: '5〜20分',
+      wins: '勝った数', streak: '連勝', fastest: '最速', winsN: '{n}回', bestTier: '最高', tierN: '{n}/13段', angels: { gothic: 'ゴシックのエンジェル', snow: '雪のエンジェル', pink: 'ピンクのエンジェル' },
       play: '遊ぶ',
       achTitle: '成績', achSub: '記録と統計を見る',
       rewardTitle: 'ごほうび', rewardSub: '今日：なかよし {got}/{cap} · 🍬 {candy}',
@@ -78,14 +80,15 @@
       chibi: "Play with me? I'm always waiting for you!",
       today: 'Today', todayPoints: 'Points from games', todayGame: 'Game of the day',
       bond: 'Friendship', bondNums: '{have} / {need} · {level}', bondMax: '{points} points · {level}',
-      names: { rps: 'Rock paper scissors', guess: 'Guess my number', mines: 'Bomb Squad' },
-      tagRps: 'Popular', tagGuess: 'Challenge', tagMines: 'Logic', todayTag: '★ Today',
+      names: { rps: 'Rock paper scissors', guess: 'Guess my number', mines: 'Bomb Squad', merge: 'Miu Merge' },
+      tagRps: 'Popular', tagGuess: 'Challenge', tagMines: 'Logic', tagMerge: 'New', todayTag: '★ Today',
       descRps: 'Rock paper scissors with me! Who wins today?',
       descGuess: 'Guess the secret number I picked! Can you find it?',
       descMines: 'Help me clear every bomb! Think carefully!',
+      descMerge: 'Merge matching Miu and evolve all the way to Angel!',
       quick: 'Quick play', quickRps: '10–20 sec', round: 'Each round', quickGuess: '30–60 sec',
-      time: 'Time', quickMines: 'Any',
-      wins: 'Wins', streak: 'Best streak', fastest: 'Fastest', winsN: '{n}',
+      time: 'Time', quickMines: 'Any', quickMerge: '5–20 min',
+      wins: 'Wins', streak: 'Best streak', fastest: 'Fastest', winsN: '{n}', bestTier: 'Furthest', tierN: 'Tier {n}/13', angels: { gothic: 'Gothic Angel', snow: 'Snow Angel', pink: 'Pink Angel' },
       play: 'Play now',
       achTitle: 'Achievements', achSub: 'See your stats and records',
       rewardTitle: 'Rewards', rewardSub: 'Today: {got}/{cap} points · 🍬 {candy} candy',
@@ -133,13 +136,26 @@
     const guess = readJson('guessStats');
     const mines = readJson('minesStats');
     const times = Object.values(mines.best || {}).filter((v) => Number.isFinite(v));
+    const merge = readJson('mergeStats4');
     return {
       rps: { plays: rps.plays || 0, wins: rps.wins || 0, best: rps.wins ? fill(L.winsN, { n: rps.wins }) : '—' },
       guess: { plays: guess.plays || 0, wins: guess.wins || 0, best: guess.best ? `${L.streak} ${guess.best}` : '—' },
       mines: { plays: mines.plays || 0, wins: mines.wins || 0, best: times.length ? fmtTime(Math.min(...times)) : '—' },
+      merge: { plays: merge.plays || 0, wins: merge.wins || 0, best: merge.bestScore ? String(merge.bestScore) : '—' },
+      mergeTier: tierLabel(merge.bestLevel),
       bestStreak: guess.best || 0,
       fastest: times.length ? fmtTime(Math.min(...times)) : '—',
     };
+  }
+
+  /** Bậc xa nhất của Ghép Miu: từ Lolita trở lên thì gọi tên model, thấp hơn thì "Bậc n/13". */
+  function tierLabel(level) {
+    const M = window.MergeCore;
+    const t = M && M.tier(level);
+    if (!t) return '—';
+    if (t.kind === 'angel') return L.angels[t.color];
+    if (t.kind === 'model') return t.name.charAt(0).toUpperCase() + t.name.slice(1);
+    return fill(L.tierN, { n: level });
   }
 
   function daily() {
@@ -180,6 +196,7 @@
     $('statRps').textContent = fill(L.winsN, { n: st.rps.wins });
     $('statGuess').textContent = String(st.bestStreak);
     $('statMines').textContent = st.fastest;
+    $('statMerge').textContent = st.mergeTier;
 
     // Nhãn "Hôm nay" trên thẻ game của ngày.
     document.querySelectorAll('.card').forEach((card) => {

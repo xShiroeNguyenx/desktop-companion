@@ -167,7 +167,7 @@
       position: relative;
       z-index: 2;
       margin-top: -64px;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
     }
     .card {
       position: relative;
@@ -180,6 +180,7 @@
     }
     .card.guess { background: linear-gradient(180deg, #faf4ff, #ece0ff); }
     .card.mines { background: linear-gradient(180deg, #f2f8ff, #dceaff); }
+    .card.merge { background: linear-gradient(180deg, #fffaf0, #ffeccc); }
     .card .artBox { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 374 / 300; }
     .card .artBox img { width: 100%; height: 100%; object-fit: cover; display: block; }
     /* Nhãn đè đúng chỗ nhãn vẽ sẵn trong ảnh (để dịch được). */
@@ -189,11 +190,26 @@
       border-radius: 14px 0 16px 0;
       font-size: 14px; font-weight: 800; color: #fff;
       display: flex; align-items: center; gap: 6px;
-      min-width: 112px; min-height: 40px;
+      min-width: 96px; min-height: 36px;
     }
     .rps .badge { background: linear-gradient(90deg, #ff6fa8, #ff8dbd); }
     .guess .badge { background: linear-gradient(90deg, #8a6cf0, #a98bff); }
     .mines .badge { background: linear-gradient(90deg, #5d7df5, #7d9bff); }
+    .merge .badge { background: linear-gradient(90deg, #f0a020, #ffc04d); }
+    /* Thẻ Ghép Miu chưa có ảnh vẽ sẵn: ghép ảnh Angel + mặt Miu bậc 1. */
+    .merge .artBox { background: linear-gradient(160deg, #fff1c9, #ffd6ec); }
+    .merge .artBox img.angel { object-position: center top; }
+    .merge .artBox img.miu {
+      position: absolute; left: 4px; bottom: 0;
+      width: 46%; height: 62%;
+      object-fit: contain; object-position: left bottom;
+      filter: drop-shadow(0 3px 6px rgba(120, 60, 0, 0.35));
+    }
+    .merge .artBox .arrow {
+      position: absolute; left: 44%; bottom: 14%;
+      font-size: 22px; font-weight: 900; color: #fff;
+      text-shadow: 0 2px 6px rgba(120, 60, 0, 0.6);
+    }
     .ribbon {
       position: absolute; right: 8px; top: 8px;
       padding: 4px 10px; border-radius: 10px;
@@ -216,8 +232,8 @@
     .play {
       border: none;
       border-radius: 16px;
-      height: 50px;
-      font: 800 20px "Segoe UI", sans-serif;
+      height: 46px;
+      font: 800 18px "Segoe UI", sans-serif;
       color: #fff;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -229,6 +245,7 @@
     .rps .play { background: linear-gradient(180deg, #ff8fc0, #ff5a9c); }
     .guess .play { background: linear-gradient(180deg, #b39bff, #8a6cf0); }
     .mines .play { background: linear-gradient(180deg, #7fb2ff, #4f7ff0); }
+    .merge .play { background: linear-gradient(180deg, #ffc65c, #f39a1e); }
 
     .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .tile {
@@ -352,6 +369,20 @@
           </div>
           <button class="play" type="button" data-t="play"></button>
         </article>
+        <article class="card merge" data-game="merge">
+          <div class="artBox">
+            <img class="angel" src="media/model-previews/gothic-angel.png" alt="Miu Merge" draggable="false" />
+            <img class="miu" src="media/game/rps-sleepy.png" alt="" draggable="false" />
+            <span class="arrow">➜</span>
+            <div class="badge">✨ <span data-t="tagMerge"></span></div>
+          </div>
+          <div class="desc" data-t="descMerge"></div>
+          <div class="chips">
+            <div class="chip"><span class="ic">⏱️</span><span><span data-t="time"></span><b data-t="quickMerge"></b></span></div>
+            <div class="chip"><span class="ic">📊</span><span><span data-t="bestTier"></span><b id="statMerge">—</b></span></div>
+          </div>
+          <button class="play" type="button" data-t="play"></button>
+        </article>
       </div>
 
       <div class="tiles">
@@ -381,6 +412,7 @@
   <script src="js/theme-apply.js"></script>
   <script src="js/miu-skin.js"></script>
   <script src="js/games-core.js"></script>
+  <script src="js/merge-core.js"></script>
   <script src="js/arcade.js"></script>
 </body>
 </html>

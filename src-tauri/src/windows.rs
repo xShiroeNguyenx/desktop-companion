@@ -426,8 +426,8 @@ const WEATHER_H: f64 = 396.0;
 // vừa dựng chỉ hiện SAU khi trang nạp xong (build_and_wait), rồi vẫn nhích 1px
 // (force_repaint) như mọi bảng khác. Chờ trang nạp cũng giúp sự kiện gửi ngay
 // sau khi mở (notes-compose, update-refresh…) không bị lỡ.
-pub const LAZY: [&str; 10] = [
-    "game", "guess", "weather", "arcade", "collection", "mines", "settings", "tasks", "notes", "update",
+pub const LAZY: [&str; 11] = [
+    "game", "guess", "weather", "arcade", "collection", "mines", "merge", "settings", "tasks", "notes", "update",
 ];
 
 pub fn is_lazy(label: &str) -> bool {
@@ -511,6 +511,8 @@ fn ensure(app: &AppHandle, label: &str) -> Option<(tauri::WebviewWindow, bool)> 
         "collection" => overlay(app, label, "collection.html", "Bộ sưu tập", COLLECTION_W, COLLECTION_H),
         // To hơn trò khác một chút cho bàn 16×16.
         "mines" => overlay(app, label, "mines.html", "Gỡ mìn", MINES_W, MINES_H),
+        // Cùng khổ với Oẳn tù tì: merge.html vẽ 900×560, zoom 0.72.
+        "merge" => overlay(app, label, "merge.html", "Ghép Miu", GAME_W, GAME_H),
         // Rộng để chứa 2 cột ôm lấy pet ở giữa; hẹp hơn 560px thì CSS tự bỏ
         // pet và cho 2 cột chia đôi.
         "settings" => framed(app, label, "settings.html", "Cài đặt", 880.0, 600.0)
@@ -697,6 +699,16 @@ pub fn open_mines(app: &AppHandle) {
     off_thread(app, |app| {
         if let Some((_, false)) = show_lazy(app, "mines", true) {
             let _ = app.emit_to("mines", "mines-refresh", ());
+        }
+    });
+}
+
+/// Trang Mini Games → Ghép Miu: hiện cửa sổ giữa màn hình. Ván đang chơi dở
+/// được game-merge.js lưu lại (localStorage) nên đóng rồi mở vẫn còn.
+pub fn open_merge(app: &AppHandle) {
+    off_thread(app, |app| {
+        if let Some((_, false)) = show_lazy(app, "merge", true) {
+            let _ = app.emit_to("merge", "merge-refresh", ());
         }
     });
 }

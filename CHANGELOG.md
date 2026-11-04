@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.9] - 2026-11-04
+
+### Added
+- **🎮 Miu Merge**, a new mini game in Mini Games. Slide the tiles on a 4×4 board (arrow
+  keys, W A S D, or drag with the mouse); two matching tiles merge into the next one:
+  Gothic Miu (purple) → Snow Miu → Pink Miu, each colour in two steps (sleepy, then
+  cheering), then Lolita → Kawaii → Pastel → Aristocrat, then Gothic, Snow and Pink Angel:
+  13 steps, like 2 → 8192. Making Gothic Angel (the 2048 tile) wins, and you can keep
+  going for Snow and Pink Angel and more points.
+  Choose the Gothic or Snow line for the four models in between. An unfinished game is
+  kept when you close the window. Like the other games, a finished game gives a friendship
+  point and counts toward the daily game quests, and Miu Merge joins the "game of the day".
+
 ## [0.11.8] - 2026-11-03
 
 ### Added

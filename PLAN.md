@@ -823,6 +823,15 @@ cột mốc chưa nói, đọc `bond.json` hỏng → mặc định.
 - **Chưa làm:** Gỡ bom dùng lại 5 ảnh của oẳn tù tì (nhân vật trong ảnh thiết kế không tách nền
   sạch được); CSS chung giữa các cửa sổ game chưa gom thành một file.
 
+**Thêm ở v0.11.9 (2026-11-04): Ghép Miu** `merge.html` + `js/game-merge.js` (cửa sổ `merge`,
+cùng khổ 648×404 với Oẳn tù tì), luật thuần ở `js/merge-core.js` (có test). Kiểu 2048, bàn 4×4,
+13 bậc: Miu tím → tuyết → hồng (mỗi màu 2 bậc: ngái ngủ → cổ vũ), 4 model (Lolita → Kawaii →
+Pastel → Aristocrat, dòng Gothic / Snow do người chơi chọn), rồi Angel tím → tuyết → hồng.
+**Thắng ở Angel tím (bậc 11 = mốc 2048)**, sau đó chơi tiếp lấy điểm. Ván dở / thành tích ở
+localStorage (`mergeGame4`, `mergeStats4`). `quests::GAMES` thêm `merge` (vòng "game của ngày" đổi
+từ 3 thành 4 trò). Trang Mini Games 4 thẻ (thẻ Ghép Miu chưa có ảnh vẽ sẵn, đang ghép ảnh Angel +
+mặt Miu). **Chưa làm:** dòng model pink (thiếu `pink-lolita`), đưa sang Anna App, thưởng kẹo riêng.
+
 ### 12.9 Settings mới (tổng hợp)
 
 | Nhóm | Trường (`Settings`) | Mặc định |

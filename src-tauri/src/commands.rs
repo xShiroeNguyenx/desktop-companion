@@ -286,6 +286,7 @@ pub fn open_mini_game(app: AppHandle, kind: String) -> Result<(), String> {
         "rps" => crate::windows::open_game,
         "guess" => crate::windows::open_guess,
         "mines" => crate::windows::open_mines,
+        "merge" => crate::windows::open_merge,
         _ => return Err(format!("không có game '{kind}'")),
     };
     crate::windows::close_panel(&app, "arcade");

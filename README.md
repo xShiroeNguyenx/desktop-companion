@@ -147,10 +147,11 @@
   streaks, new levels) and your birthday, and talks more casually as you get
   closer. At 💗 Close friends and again at Best friends she gains warmer ways to
   praise a finished task or focus session and to say good morning.
-- **🎮 Mini Games** — a page of its own (💞 → 🎮) with three games, each in
+- **🎮 Mini Games** — a page of its own (💞 → 🎮) with four games, each in
   its own window where Miu reacts to every move: rock paper scissors (first to
-  3, 5 or 7), guess the number (1–10 up to 1–100, with hints) and Bomb Squad,
-  a minesweeper in three sizes. A "★ Today" game of the day, achievements and
+  3, 5 or 7), guess the number (1–10 up to 1–100, with hints), Bomb Squad,
+  a minesweeper in three sizes, and Miu Merge, a 2048-style game where matching
+  Miu tiles evolve through the models up to Angel. A "★ Today" game of the day, achievements and
   the friendship points games gave you today sit on the same page.
 - **🌦 Weather** — rain, snow, cherry blossoms, falling leaves, fog, sunshine
   or a starry night across your whole screen, never blocking the mouse and

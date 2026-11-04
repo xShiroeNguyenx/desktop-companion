@@ -137,9 +137,10 @@ duyệt, Word…).
   (7 / 30 / 100 / 365 ngày, kỷ niệm, chuỗi ngày, lên cấp) và sinh nhật bạn, càng thân
   thì nói chuyện càng tự nhiên. Tới cấp 💗 Thân thiết và Tri kỷ, pet có thêm những câu
   khen việc xong / phiên tập trung và chào buổi sáng ngọt ngào hơn.
-- **🎮 Mini Games** — trang riêng (💞 → 🎮) với 3 trò, mỗi trò một cửa sổ và Miu phản
+- **🎮 Mini Games** — trang riêng (💞 → 🎮) với 4 trò, mỗi trò một cửa sổ và Miu phản
   ứng theo từng nước: oẳn tù tì (thắng 3, 5 hoặc 7 trận), đoán số (1–10 tới 1–100, có
-  gợi ý) và Gỡ bom (dò mìn 3 cỡ bàn). Cùng trang có "★ Hôm nay" (game của ngày), thành
+  gợi ý), Gỡ bom (dò mìn 3 cỡ bàn) và Ghép Miu (kiểu 2048: ghép hai Miu giống nhau để
+  tiến hoá qua các model tới Angel). Cùng trang có "★ Hôm nay" (game của ngày), thành
   tích và số điểm thân thiết đã nhận từ game hôm nay.
 - **🌦 Thời tiết** — mưa, tuyết, hoa anh đào, lá bay, sương mù, nắng hay sao đêm
   trên toàn màn hình; không bao giờ chặn chuột, tự dừng khi bạn xem toàn màn hình,

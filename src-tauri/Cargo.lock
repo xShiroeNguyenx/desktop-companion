@@ -847,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "desktop-companion"
-version = "0.11.8"
+version = "0.11.9"
 dependencies = [
  "arboard",
  "base64 0.22.1",
