@@ -47,6 +47,10 @@ jobs:
         run: npm ci
 
       - name: Build app + create release
+        id: build
+        # macOS: bundle_dmg.sh sometimes fails on GitHub runners (hdiutil "Resource busy");
+        # let the job go on so the retry step below can build the .dmg once more.
+        continue-on-error: ${{ matrix.platform == 'macos-latest' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,3 +65,20 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           args: ${{ matrix.args }}
+
+      - name: Retry macOS build (flaky .dmg bundling)
+        if: matrix.platform == 'macos-latest' && steps.build.outcome == 'failure'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Desktop Companion ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install. The app auto-checks for updates on launch."
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          # --verbose prints bundle_dmg.sh's own output, so a second failure shows the real cause.
+          args: ${{ matrix.args }} --verbose
