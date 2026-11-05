@@ -16,6 +16,13 @@
       "size": 4926893
     },
     {
+      "id": "gothic-dream",
+      "version": 1,
+      "file": "gothic-dream-1.zip",
+      "sha256": "176ec8782b7a3f16b66f5df968d1943ebadcd7f0657cd855cda5f660a65dd3fd",
+      "size": 2242767
+    },
+    {
       "id": "gothic-kawaii",
       "version": 1,
       "file": "gothic-kawaii-1.zip",
@@ -51,6 +58,13 @@
       "size": 3420363
     },
     {
+      "id": "pink-dream",
+      "version": 1,
+      "file": "pink-dream-1.zip",
+      "sha256": "238d166ae9026238350d9f4750daecaf1f5962fe2090d7afe75ac8af484ae5d8",
+      "size": 2540622
+    },
+    {
       "id": "pink-kawaii",
       "version": 1,
       "file": "pink-kawaii-1.zip",
@@ -84,6 +98,13 @@
       "file": "snow-dancer-1.zip",
       "sha256": "69f17c6364ac61779110285204888983684c455d35991258ff5866a872565e5f",
       "size": 1477067
+    },
+    {
+      "id": "snow-dream",
+      "version": 1,
+      "file": "snow-dream-1.zip",
+      "sha256": "d06f219e226e2a60ec1a8fe7d91ba59b15cd7536f58be685284da3714d84f052",
+      "size": 2610180
     },
     {
       "id": "snow-kawaii",

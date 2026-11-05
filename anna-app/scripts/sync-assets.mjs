@@ -17,7 +17,7 @@ const SHARED_CORES = ['games-core.js', 'mines-core.js', 'calendar-core.js', 'not
 const titleCase = (id) => id.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
 // Same order as the desktop Collection: by line, then purple (gothic) → pink → snow.
 // Ids are "<colour>-<line>"; unknown lines / colours go last, by id.
-const LINES = ['kawaii', 'pastel', 'aristocrat', 'angel', 'lolita', 'dancer'];
+const LINES = ['kawaii', 'pastel', 'dream', 'aristocrat', 'angel', 'lolita', 'dancer'];
 const COLOURS = ['gothic', 'pink', 'snow'];
 const rank = (list, v) => (list.includes(v) ? list.indexOf(v) : list.length);
 export function seriesOrder(a, b) {

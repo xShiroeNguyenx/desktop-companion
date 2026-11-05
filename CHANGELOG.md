@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-05
+
+### Added
+- **🌙 The Dream line joins the Collection:** Gothic Dream, Pink Dream and Snow Dream,
+  long-curled girls in glasses wearing frilled nightwear, a lace robe and bunny slippers.
+  7500 🍬 each, or 0.2% each from the 🎰 Candy Capsule. Like the other Collection models
+  they download once unlocked and come with full expressions and motions.
+
+### Changed
+- **Candy Capsule rates:** with three more Live2D models, Legendary is now 4.2% in total
+  (was 3.6%) and Common 60.8% (was 61.4%). Rare and Epic stay at 25% and 10%.
+
 ## [0.12.0] - 2026-11-05
 
 ### Added
@@ -1071,6 +1083,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.1
 [0.12.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.0
 [0.11.9]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.9
 [0.11.8]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.8

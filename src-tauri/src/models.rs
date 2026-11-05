@@ -106,6 +106,33 @@ pub const BUILTIN: &[Builtin] = &[
         preview: Some("media/model-previews/snow-pastel.png"),
     },
     Builtin {
+        id: "gothic-dream",
+        dir: "Gothic_Dream",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Gothic Dream",
+        desc: "Cô gái tóc tím đồ ngủ bèo nhún, dép thỏ 🦇",
+        item: Some("model.gothic-dream"),
+        preview: Some("media/model-previews/gothic-dream.png"),
+    },
+    Builtin {
+        id: "pink-dream",
+        dir: "Pink_Dream",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Pink Dream",
+        desc: "Cô gái tóc hồng đồ ngủ bèo nhún, dép thỏ 🌸",
+        item: Some("model.pink-dream"),
+        preview: Some("media/model-previews/pink-dream.png"),
+    },
+    Builtin {
+        id: "snow-dream",
+        dir: "Snow_Dream",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Snow Dream",
+        desc: "Cô gái tóc bạch kim đồ ngủ bông tuyết, dép thỏ ❄️",
+        item: Some("model.snow-dream"),
+        preview: Some("media/model-previews/snow-dream.png"),
+    },
+    Builtin {
         id: "gothic-aristocrat",
         dir: "Gothic_Aristocrat",
         entry: crate::model_pack::PACK_ENTRY,
@@ -317,12 +344,12 @@ mod tests {
         assert_eq!(effective("custom-9", &c, &mine, &none), DEFAULT_ID);
         assert_eq!(effective("nope", &c, &[], &none), DEFAULT_ID);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), DEFAULT_ID, "đã tải (máy khác chép sang) nhưng chưa mua");
-        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
         c.owned.push("model.gothic-aristocrat".into());
         assert_eq!(effective("gothic-aristocrat", &c, &[], &none), DEFAULT_ID, "đã mua nhưng chưa tải xong");
-        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), "gothic-aristocrat");
-        assert_eq!(locked(&c, &got), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &got), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
     }
 
     #[test]
