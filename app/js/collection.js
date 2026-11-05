@@ -10,10 +10,13 @@
 
   let data = { candy: 0, today: 0, todayCap: 35, items: [], lang: 'vi', pet: '', you: '' };
   let tab = 'skin';
+  // Nhóm đang mở ở chế độ 🐠 Bể cá (nhớ riêng với Cửa hàng kẹo).
+  let aqTab = 'fish';
   // Chế độ: 'gacha' (🎰 Candy Capsule) · 'shop' (đổi thẳng) · 'quests' (📋) · 'history'.
   let mode = 'gacha';
   try {
     tab = localStorage.getItem('collectionTab') || tab;
+    aqTab = localStorage.getItem('collectionAqTab') || aqTab;
     mode = localStorage.getItem('collectionMode') || mode;
   } catch (_) { /* không có storage cũng không sao */ }
   if (!C.MODES.includes(mode)) mode = 'gacha';
@@ -88,6 +91,12 @@
     } else if (item.cat === 'side_set' || item.cat === 'miu_set') {
       if (item.cat === 'side_set') pv.classList.add('side');
       pv.append(img(C.thumb(item), 'full', true));
+    } else if ((item.cat === 'fish' || item.cat === 'tank_bg' || item.cat === 'tank_deco') && window.AquariumDraw) {
+      // 🐠 Đồ bể cá: vẽ bằng code (aquarium-draw.js), không có ảnh.
+      const cv = el('canvas', 'aq');
+      const kind = item.cat === 'fish' ? 'fish' : item.cat === 'tank_bg' ? 'bg' : 'decor';
+      requestAnimationFrame(() => window.AquariumDraw.drawIcon(cv, kind, item.asset, { bg: 'fresh' }));
+      pv.append(cv);
     } else if (item.cat === 'model') {
       // Model Live2D: ảnh preview khi có, chưa có thì biểu tượng trên nền cầu vồng.
       pv.classList.add('model');
@@ -131,6 +140,9 @@
     return c;
   }
 
+  /** Bỏ qua bấm "Thả thêm" ngay sau khi mua cá (xem act). */
+  let guardUntil = 0;
+
   async function act(item, kind) {
     if (kind === 'download') {
       // Tải có thể lâu: không chờ ở đây, tiến độ tới qua sự kiện model-install.
@@ -147,13 +159,28 @@
     }
     try {
       if (kind === 'buy') {
-        await invoke('collection_buy', { id: item.id });
-        toast(C.fill(S().bought, { item: item.name, you: data.you || '' }));
+        const v = await invoke('collection_buy', { id: item.id });
+        if (item.cat === 'fish') {
+          // Rust đã thả 1 con (nếu còn chỗ). Nút ở đúng chỗ đó đổi thành "Thả thêm":
+          // chặn cú bấm thứ hai của một lần bấm đúp, khỏi thả nhầm con thứ hai.
+          guardUntil = Date.now() + 1200;
+          toast(C.fill(v && v.fishAdded ? S().boughtFish : S().boughtFishFull, { item: item.name }));
+        } else {
+          toast(C.fill(S().bought, { item: item.name, you: data.you || '' }));
+        }
       } else if (kind === 'use' && item.cat === 'model') {
         // Đổi model của pet: Rust lưu pet_model và báo cửa sổ pet nạp lại.
         await invoke('pet_set_model', { id: item.asset });
       } else if (kind === 'use') {
         await invoke('collection_select', { category: item.cat, id: item.id });
+      } else if (kind === 'aquarium' && item.cat === 'fish') {
+        if (Date.now() < guardUntil) return;
+        // 🐠 Thả một con vào bể (giới hạn bể / loài do Rust kiểm, lỗi aq_*).
+        await invoke('aquarium_add', { species: item.asset });
+        toast(C.fill(S().addedFish, { item: item.name }));
+      } else if (kind === 'aquarium') {
+        // Vật trang trí: đặt vào ô trong cửa sổ 🐠 Bể cá.
+        await invoke('open_aquarium');
       } else if (kind === 'on' || kind === 'off') {
         await invoke('collection_toggle_effect', { id: item.id, on: kind === 'off' });
       }
@@ -205,7 +232,7 @@
     const s = S();
     const nav = $('modes');
     nav.textContent = '';
-    const icons = { gacha: '🎰', shop: '🛍️', quests: '📋', history: '📜' };
+    const icons = { gacha: '🎰', shop: '🛍️', aquarium: '🐠', quests: '📋', history: '📜' };
     for (const m of C.MODES) {
       const b = el('button', 'mode' + (m === mode ? ' on' : ''));
       b.type = 'button';
@@ -213,7 +240,8 @@
       b.addEventListener('click', () => setMode(m));
       nav.append(b);
     }
-    $('shopView').hidden = mode !== 'shop';
+    // Cửa hàng kẹo và 🐠 Bể cá dùng chung khung tab + lưới thẻ.
+    $('shopView').hidden = mode !== 'shop' && mode !== 'aquarium';
     $('gachaView').hidden = mode !== 'gacha';
     $('questView').hidden = mode !== 'quests';
     $('histView').hidden = mode !== 'history';
@@ -288,9 +316,7 @@
       b.append(preview(it), el('span', 'rar solid ' + C.rarityClass(it.rarity), s.rarity[it.rarity] || it.rarity), el('span', 'fn', it.name));
       // Bấm món → mở đúng nhóm trong cửa hàng.
       b.addEventListener('click', () => {
-        tab = it.cat;
-        try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
-        setMode('shop');
+        openTab(it.cat);
       });
       row.append(b);
     }
@@ -475,28 +501,51 @@
     $('gres').hidden = true;
   }
 
+  /** Mở nhóm cat ở đúng chế độ (đồ bể cá → 🐠 Bể cá, còn lại → Cửa hàng kẹo). */
+  function openTab(cat) {
+    const m = C.modeOfCat(cat);
+    if (m === 'aquarium') aqTab = cat;
+    else tab = cat;
+    try { localStorage.setItem(m === 'aquarium' ? 'collectionAqTab' : 'collectionTab', cat); } catch (_) { /* bỏ qua */ }
+    setMode(m);
+  }
+
   function renderShop() {
     const s = S();
-    const groups = C.groupByCategory(data.items);
-    if (!groups.some(([c]) => c === tab)) tab = groups.length ? groups[0][0] : 'skin';
+    const aq = mode === 'aquarium';
+    const groups = C.groupsFor(data.items, mode);
+    let cur = aq ? aqTab : tab;
+    if (!groups.some(([c]) => c === cur)) cur = groups.length ? groups[0][0] : aq ? 'fish' : 'skin';
+    if (aq) aqTab = cur;
+    else tab = cur;
     const tabs = $('tabs');
     tabs.textContent = '';
     for (const [cat, list] of groups) {
-      const b = el('button', 'tab' + (cat === tab ? ' on' : ''));
+      const b = el('button', 'tab' + (cat === cur ? ' on' : ''));
       b.type = 'button';
       b.append(el('span', 'ti', C.TAB_ICONS[cat] || '•'), el('span', null, s.tabs[cat] || cat));
       b.append(el('span', 'n', `${list.filter((i) => i.owned).length}/${list.length}`));
       b.addEventListener('click', () => {
-        tab = cat;
-        try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
+        if (aq) aqTab = cat;
+        else tab = cat;
+        try { localStorage.setItem(aq ? 'collectionAqTab' : 'collectionTab', cat); } catch (_) { /* bỏ qua */ }
         renderShop();
       });
       tabs.append(b);
     }
+    if (aq) {
+      // Mở cửa sổ quản lý bể ngay từ đây (thả cá, đặt đồ trang trí).
+      const open = el('button', 'tab aqopen', s.openTank);
+      open.type = 'button';
+      open.title = s.aqIntro;
+      open.addEventListener('click', () => invoke('open_aquarium').catch((e) => log('[collection] open_aquarium: ' + e)));
+      tabs.append(open);
+    }
     const grid = $('grid');
     grid.textContent = '';
-    if (tab === 'side_set' && data.sideGirls === false) grid.append(el('div', 'note', s.sideOff));
-    const list = (groups.find(([c]) => c === tab) || [tab, []])[1];
+    if (cur === 'side_set' && data.sideGirls === false) grid.append(el('div', 'note', s.sideOff));
+    if (aq) grid.append(el('div', 'note', s.aqIntro));
+    const list = (groups.find(([c]) => c === cur) || [cur, []])[1];
     if (!list.length) grid.append(el('div', 'empty', s.empty));
     for (const it of C.sortItems(list)) grid.append(card(it));
   }
@@ -548,7 +597,7 @@
     const it = (data.items || []).find((i) => i.cat === 'model' && i.asset === p.id);
     if (!it || p.state !== 'progress') return;
     it.progress = p.pct;
-    if (mode === 'shop') renderShop();
+    if (mode === 'shop' || mode === 'aquarium') renderShop();
   });
   // Bấm model còn khoá ở menu Diện mạo của pet → mở thẳng tab của nó trong cửa hàng.
   // Thẻ của một món (nút "Xem" trên thẻ quà cạnh pet): cuộn tới và nhấp nháy viền.
@@ -571,10 +620,8 @@
     }
     const t = p && p.tab;
     if (!t || !C.CATS.includes(t)) return;
-    tab = t;
-    try { localStorage.setItem('collectionTab', tab); } catch (_) { /* bỏ qua */ }
     closeResults();
-    setMode('shop');
+    openTab(t);
     if (p.item) requestAnimationFrame(() => spotlight(p.item));
   }
   listen('collection-focus', (e) => focusOn(e && e.payload));

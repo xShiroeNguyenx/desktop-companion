@@ -134,9 +134,9 @@ fn pick_weighted<T: Copy>(list: &[(T, u32)], x: f64) -> Option<T> {
     list.last().map(|&(t, _)| t)
 }
 
-/// Mọi món quay được: món giá > 0.
+/// Mọi món quay được: món giá > 0, trừ đồ bể cá (đổi thẳng; đưa vào máy để sau, PLAN.md 18.7).
 pub fn pool() -> impl Iterator<Item = &'static Item> {
-    items().filter(|i| i.price > 0)
+    items().filter(|i| i.price > 0 && !i.cat.aquarium())
 }
 
 pub fn enabled() -> bool {
@@ -370,6 +370,13 @@ pub fn view_json(c: &Collection, lang_idx: usize) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn aquarium_items_are_not_in_the_capsule() {
+        assert!(pool().all(|i| !i.cat.aquarium()));
+        assert!(items().any(|i| i.cat.aquarium() && i.price > 0), "catalog có đồ bể cá trả phí");
+        assert!(enabled(), "bỏ đồ bể cá ra vẫn đủ món cho máy quay");
+    }
 
     /// Trả lần lượt các số trong `seq`, lặp lại.
     fn seq(v: &'static [f64]) -> impl FnMut() -> f64 {

@@ -775,6 +775,7 @@ pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), S
     crate::clock_pin::broadcast(&app);
     crate::sysmon_pin::broadcast(&app);
     crate::monitor_pin::broadcast(&app);
+    crate::aquarium_pin::broadcast(&app);
     if settings.message_language != old.message_language {
         let _ = app.emit_to(
             "main",
@@ -1050,12 +1051,101 @@ pub fn clock_get(app: AppHandle) -> Value {
     crate::clock_pin::view(&app)
 }
 
+/// 🐠 Bể cá ghim: cá, đã cho ăn chưa, cỡ, skin (aquarium_pin::view).
+#[tauri::command]
+pub fn aquarium_get(app: AppHandle) -> Value {
+    crate::aquarium_pin::view(&app)
+}
+
+/// Cho ăn (mỗi ngày tính một lần). Không ra kẹo.
+#[tauri::command]
+pub fn aquarium_feed(app: AppHandle) -> Result<Value, String> {
+    crate::aquarium_pin::feed(&app)
+}
+
+/// Đổi cỡ nhỏ / lớn: async vì đổi cỡ cửa sổ (như weather_pin_size).
+#[tauri::command]
+pub async fn aquarium_size(app: AppHandle, big: bool) -> Result<(), String> {
+    crate::aquarium_pin::set_big(&app, big)
+}
+
+/// Thả thêm một con loài `species` (đã mua ở Bộ sưu tập). Lỗi: mã aq_* (aquarium::AqError).
+#[tauri::command]
+pub fn aquarium_add(app: AppHandle, species: String) -> Result<Value, String> {
+    crate::aquarium_pin::edit(&app, |aq, c, day| {
+        let owned = crate::collection::owned_aquarium_item(c, crate::collection::Category::Fish, &species).is_some();
+        crate::aquarium::add(aq, &species, owned, day).map(|_| ())
+    })
+}
+
+/// Vớt một con ra bể chờ.
+#[tauri::command]
+pub fn aquarium_store(app: AppHandle, uid: u32) -> Result<Value, String> {
+    crate::aquarium_pin::edit(&app, |aq, _, _| crate::aquarium::to_storage(aq, uid))
+}
+
+/// Thả lại một con từ bể chờ.
+#[tauri::command]
+pub fn aquarium_return(app: AppHandle, uid: u32) -> Result<Value, String> {
+    crate::aquarium_pin::edit(&app, |aq, _, _| crate::aquarium::to_tank(aq, uid))
+}
+
+/// Đặt tên cá (rỗng = gọi theo tên loài).
+#[tauri::command]
+pub fn aquarium_rename(app: AppHandle, uid: u32, name: String) -> Result<Value, String> {
+    crate::aquarium_pin::edit(&app, |aq, _, _| crate::aquarium::rename(aq, uid, &name))
+}
+
+/// Đặt vật trang trí `id` vào ô `slot` (id rỗng = dọn ô).
+#[tauri::command]
+pub fn aquarium_set_decor(app: AppHandle, slot: usize, id: String) -> Result<Value, String> {
+    crate::aquarium_pin::edit(&app, |aq, c, _| {
+        if id.is_empty() {
+            return crate::aquarium::set_decor(aq, slot, None, false);
+        }
+        let item = crate::collection::item(&id)
+            .filter(|it| it.cat == crate::collection::Category::TankDeco)
+            .ok_or(crate::aquarium::AqError::NotFound)?;
+        let owned = crate::collection::owns(c, item);
+        crate::aquarium::set_decor(aq, slot, Some(item.id), owned)
+    })
+}
+
+/// 🐠 Bể cá full (cá bơi trên hình nền): bật / tắt. Lỗi = câu đọc được, không lưu gì.
+/// async: dựng / huỷ cửa sổ (như widget_pin_set).
+#[tauri::command]
+pub async fn aquarium_full_set(app: AppHandle, on: bool) -> Result<(), String> {
+    crate::aquarium_full::set(&app, on)
+}
+
+/// Mở Bộ sưu tập ở một nhóm (cửa sổ Bể cá → "Đổi nền", "🍬 Bộ sưu tập"). Chỉ nhận
+/// mã nhóm có thật (Category::from_code).
+#[tauri::command]
+pub async fn open_collection_tab(app: AppHandle, tab: String) -> Result<(), String> {
+    let cat = crate::collection::Category::from_code(&tab).ok_or("wrong_category")?;
+    windows::open_collection_at(&app, serde_json::json!({ "tab": cat.code() }));
+    Ok(())
+}
+
+/// Mở cửa sổ quản lý 🐠 Bể cá (bấm đúp widget, nút trong Bộ sưu tập).
+#[tauri::command]
+pub async fn open_aquarium(app: AppHandle) {
+    crate::windows::open_aquarium(&app);
+}
+
+#[tauri::command]
+pub async fn aquarium_close(app: AppHandle) -> Result<(), String> {
+    crate::windows::close_panel(&app, crate::aquarium_pin::MANAGE_LABEL);
+    Ok(())
+}
+
 fn widget_spec(id: &str) -> Result<&'static crate::pin_widget::Spec, String> {
     match id {
         "calendar" => Ok(&crate::calendar_pin::SPEC),
         "clock" => Ok(&crate::clock_pin::SPEC),
         "sysmon" => Ok(&crate::sysmon_pin::SPEC),
         "monitor" => Ok(&crate::monitor_pin::SPEC),
+        "aquarium" => Ok(&crate::aquarium_pin::SPEC),
         _ => Err(format!("Không có widget \"{id}\".")),
     }
 }
@@ -1080,6 +1170,8 @@ pub fn widgets_status(app: AppHandle) -> Value {
         "clock": s.clock_pin.pinned,
         "sysmon": s.sysmon_pin.pinned,
         "monitor": s.monitor_pin.pinned,
+        "aquarium": s.aquarium_pin.pinned,
+        "aquariumFull": s.aquarium_full,
         "weather": s.weather_pin,
     })
 }
@@ -1124,9 +1216,18 @@ pub async fn collection_buy(app: AppHandle, id: String) -> Result<Value, String>
     let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", item.name[idx])]);
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+    // 🐠 Mua cá: thả luôn một con vào bể nếu còn chỗ (đầy thì nằm ở "Loài đã có" trong
+    // cửa sổ Bể cá, thả sau). Lỗi ở đây không làm hỏng lần mua.
+    let fish_added = item.cat == crate::collection::Category::Fish
+        && crate::aquarium_pin::edit(&app, |aq, _, day| crate::aquarium::add(aq, item.asset, true, day).map(|_| ())).is_ok();
     crate::collection::changed(&app);
     install_if_model(&app, item);
-    Ok(crate::collection::view(&app))
+    let mut v = crate::collection::view(&app);
+    // Trang báo đúng: "đã thả 1 con" hay "bể đầy, thả sau".
+    if item.cat == crate::collection::Category::Fish {
+        v["fishAdded"] = serde_json::json!(fish_added);
+    }
+    Ok(v)
 }
 
 #[tauri::command]

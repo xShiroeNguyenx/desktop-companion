@@ -141,7 +141,9 @@ fn lookat_emit_thread() {
     let mut last_seq = 0u64;
     loop {
         std::thread::sleep(Duration::from_millis(33));
-        if !LOOKAT_ENABLED.load(Ordering::Relaxed) {
+        let lookat = LOOKAT_ENABLED.load(Ordering::Relaxed);
+        // 🐠 Bể cá full cũng cần vị trí con trỏ (vẽ tên cá), kể cả khi tắt nhìn theo chuột.
+        if !lookat && !crate::aquarium_full::wants_cursor() {
             continue;
         }
         let seq = MOVE_SEQ.load(Ordering::Relaxed);
@@ -151,6 +153,10 @@ fn lookat_emit_thread() {
         last_seq = seq;
         let x = MOVE_X.load(Ordering::Relaxed);
         let y = MOVE_Y.load(Ordering::Relaxed);
+        crate::aquarium_full::on_move(x, y);
+        if !lookat {
+            continue;
+        }
         if let Some(app) = APP.get() {
             let _ = app.emit("cursor-pos", CursorPos { x, y });
         }
@@ -346,6 +352,11 @@ unsafe extern "system" fn low_level_mouse_proc(
                 log_sel(&format!(
                     "[selection] LBUTTONUP was_down={was_down} auto={auto} dist={dist:.0}"
                 ));
+                // 🐠 Bấm (không kéo) → bể cá full xem có phải bấm vào chỗ trống trên desktop.
+                // Chỉ đẩy vào hàng đợi: hook chuột phải trả về ngay.
+                if was_down && dist < DRAG_THRESHOLD_PX {
+                    crate::aquarium_full::on_click(x, y);
+                }
                 if was_down && auto && is_blocked_foreground() {
                     log_sel("[selection] skip: foreground is a screenshot/blocked app");
                 } else if was_down && auto {

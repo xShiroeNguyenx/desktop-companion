@@ -847,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "desktop-companion"
-version = "0.11.9"
+version = "0.12.0"
 dependencies = [
  "arboard",
  "base64 0.22.1",
@@ -870,6 +870,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-winrt-notification",
  "tungstenite",
+ "webview2-com",
  "windows 0.61.3",
  "windows-sys 0.61.2",
  "zip",

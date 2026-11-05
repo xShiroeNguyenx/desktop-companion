@@ -411,6 +411,10 @@ const ARCADE_H: f64 = 475.0;
 // `html { zoom: 0.66 }` trong collection.html.
 const COLLECTION_W: f64 = 726.0;
 const COLLECTION_H: f64 = 475.0;
+// 🐠 Bể cá (quản lý): aquarium.html vẽ theo khổ 1100×720, zoom 0.66 — ĐỒNG BỘ với
+// `html { zoom: 0.66 }` trong aquarium.html.
+const AQUARIUM_W: f64 = 726.0;
+const AQUARIUM_H: f64 = 475.0;
 
 // Thẻ dự báo: weather.html vẽ theo khổ 720×600, zoom 0.66 — ĐỒNG BỘ với
 // `html { zoom: 0.66 }` trong weather.html.
@@ -426,8 +430,9 @@ const WEATHER_H: f64 = 396.0;
 // vừa dựng chỉ hiện SAU khi trang nạp xong (build_and_wait), rồi vẫn nhích 1px
 // (force_repaint) như mọi bảng khác. Chờ trang nạp cũng giúp sự kiện gửi ngay
 // sau khi mở (notes-compose, update-refresh…) không bị lỡ.
-pub const LAZY: [&str; 11] = [
+pub const LAZY: [&str; 12] = [
     "game", "guess", "weather", "arcade", "collection", "mines", "merge", "settings", "tasks", "notes", "update",
+    "aquarium",
 ];
 
 pub fn is_lazy(label: &str) -> bool {
@@ -509,6 +514,7 @@ fn ensure(app: &AppHandle, label: &str) -> Option<(tauri::WebviewWindow, bool)> 
         "weather" => overlay(app, label, "weather.html", "Thời tiết", WEATHER_W, WEATHER_H),
         "arcade" => overlay(app, label, "arcade.html", "Mini Games", ARCADE_W, ARCADE_H),
         "collection" => overlay(app, label, "collection.html", "Bộ sưu tập", COLLECTION_W, COLLECTION_H),
+        "aquarium" => overlay(app, label, "aquarium.html", "Bể cá", AQUARIUM_W, AQUARIUM_H),
         // To hơn trò khác một chút cho bàn 16×16.
         "mines" => overlay(app, label, "mines.html", "Gỡ mìn", MINES_W, MINES_H),
         // Cùng khổ với Oẳn tù tì: merge.html vẽ 900×560, zoom 0.72.
@@ -667,6 +673,16 @@ fn open_collection_now(app: &AppHandle) -> bool {
     crate::sidegirl::sync(app, "collection", true);
     let _ = app.emit_to("collection", "collection-refresh", ());
     fresh
+}
+
+/// 🐠 Bể cá (quản lý cá, bể chờ, trang trí): hiện giữa màn hình, gửi dữ liệu.
+/// Dựng khi mở, đóng là huỷ (LAZY) nên không giữ tiến trình WebView2.
+pub fn open_aquarium(app: &AppHandle) {
+    off_thread(app, |app| {
+        if show_lazy(app, crate::aquarium_pin::MANAGE_LABEL, true).is_some() {
+            crate::aquarium_pin::broadcast(app);
+        }
+    });
 }
 
 /// Bảng mini game trên pet → Oẳn tù tì: hiện cửa sổ game giữa màn hình, bắt
@@ -866,6 +882,7 @@ fn dock_pet_to(app: &AppHandle, host: &str) {
     }
     *PET_HOST.lock().unwrap() = host.to_string();
     let _ = pet.show();
+    crate::pet_render::kick(app);
     // Khoá tương tác: click xuyên qua pet xuống bảng phía dưới.
     crate::set_pet_click_through(app, true);
     // Pet nổi TRÊN bảng nhưng được thu vừa khe giữa 2 cột: nền pet trong suốt

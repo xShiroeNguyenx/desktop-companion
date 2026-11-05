@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<!--
+  🐠 Bể cá — cửa sổ quản lý (PLAN.md mục 18, Phase 28): cá trong bể (đặt tên,
+  vớt ra), bể chờ (thả lại, thả thêm loài đã mua), trang trí (nền bể, 4 ô vật
+  trang trí). Mở bằng bấm đúp / nút 🗂 trên widget bể cá. Dữ liệu: Rust
+  aquarium_get / "aquarium-data" (aquarium_pin.rs). Luồng ở js/aquarium.js,
+  vẽ ở js/aquarium-draw.js. Cửa sổ dựng khi mở, đóng là huỷ (windows::LAZY).
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bể cá</title>
+  <style>
+    :root {
+      --ink: #2f3a5e;
+      --ink-soft: #6a7a9a;
+      --accent: #3fa9d6;
+      --accent-2: #74c9ec;
+      --pink: #ff5fa2;
+      --line: rgba(120, 190, 230, 0.5);
+      --card: #fbfdff;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    /* Vẽ theo khổ 1100×720 rồi thu về 66% (726×475). ĐỒNG BỘ với AQUARIUM_W /
+       AQUARIUM_H trong windows.rs. */
+    html { zoom: 0.66; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+
+    .window {
+      position: absolute; inset: 6px;
+      display: flex; flex-direction: column; gap: 12px;
+      padding: 16px 18px;
+      border-radius: 26px; overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background:
+        radial-gradient(50% 45% at 10% 10%, rgba(200, 240, 255, 0.95), transparent 70%),
+        radial-gradient(45% 40% at 90% 0%, rgba(230, 215, 255, 0.85), transparent 70%),
+        linear-gradient(160deg, #dff3fb, #e3e6fb 55%, #def0f7);
+      box-shadow: 0 10px 30px rgba(40, 90, 140, 0.35);
+    }
+
+    .head { display: flex; align-items: center; gap: 14px; }
+    .head .logo { font-size: 40px; line-height: 1; }
+    .head h1 { margin: 0; font-size: 28px; font-weight: 800; }
+    .head p { margin: 2px 0 0; font-size: 15px; color: var(--ink-soft); font-weight: 600; }
+    .head .spacer { flex: 1; align-self: stretch; }
+    .pill {
+      border: none; border-radius: 14px; padding: 10px 16px;
+      background: #fff; font-weight: 700; font-size: 16px;
+      box-shadow: 0 2px 6px rgba(40, 90, 140, 0.15);
+    }
+    .pill:hover { background: #eef8fd; }
+    .close {
+      width: 44px; height: 44px; border: none; border-radius: 14px;
+      background: rgba(255, 255, 255, 0.8); font-size: 20px; font-weight: 800;
+    }
+    .close:hover { background: #ffe0ec; color: var(--pink); }
+
+    .body { flex: 1; min-height: 0; display: flex; gap: 16px; }
+
+    /* ─── Cột trái: bể đang chạy ───────────────────────────────────────────── */
+    .tankcol { flex: 0 0 470px; display: flex; flex-direction: column; gap: 10px; }
+    .tank {
+      position: relative; flex: 1; min-height: 0;
+      border-radius: 20px; overflow: hidden; cursor: pointer;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6), 0 6px 16px rgba(40, 90, 140, 0.25);
+    }
+    .tank canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .tankbar { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; }
+    .tankbar .fed { color: var(--ink-soft); }
+    .tankbar .fed.hungry { color: #d98a1a; }
+    .tankbar .pill { margin-left: auto; }
+
+    /* ─── Cột phải: tab + danh sách ────────────────────────────────────────── */
+    .panel {
+      flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;
+      background: rgba(255, 255, 255, 0.55); border-radius: 20px; padding: 12px;
+    }
+    .tabs { display: flex; gap: 8px; }
+    .tabs button {
+      border: none; border-radius: 12px; padding: 9px 16px;
+      background: rgba(255, 255, 255, 0.7); font-weight: 700; font-size: 16px;
+    }
+    .tabs button.on { background: var(--accent); color: #fff; }
+    .tabs .count { margin-left: auto; align-self: center; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+    .list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+    .list::-webkit-scrollbar { width: 8px; }
+    .list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+    .row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--card); border-radius: 14px; padding: 8px 10px;
+      box-shadow: 0 1px 3px rgba(40, 90, 140, 0.12);
+    }
+    .row canvas { width: 84px; height: 52px; border-radius: 10px; flex: 0 0 auto; }
+    .row .info { flex: 1; min-width: 0; }
+    .row .nm { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .sub { font-size: 13.5px; color: var(--ink-soft); font-weight: 600; }
+    .row input {
+      width: 100%; border: 2px solid var(--line); border-radius: 10px; padding: 5px 8px;
+      font-size: 16px; font-weight: 700; background: #fff; outline: none;
+    }
+    .row input:focus { border-color: var(--accent); }
+    .act {
+      border: none; border-radius: 10px; padding: 8px 12px; white-space: nowrap;
+      background: #eaf6fc; font-weight: 700; font-size: 14.5px;
+    }
+    .act:hover:not(:disabled) { background: #d4eef9; }
+    .act.main { background: var(--accent); color: #fff; }
+    .act.main:hover:not(:disabled) { background: #2f98c5; }
+    .act:disabled { opacity: 0.45; cursor: default; }
+    .note { font-size: 14px; color: var(--ink-soft); font-weight: 600; padding: 4px 6px; }
+    .sec { font-size: 15px; font-weight: 800; color: var(--ink-soft); margin: 6px 4px 0; }
+    .empty { text-align: center; padding: 18px; font-size: 15px; color: var(--ink-soft); font-weight: 600; }
+
+    /* Trang trí: nền + 4 ô. */
+    .slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .slot { flex-direction: column; align-items: stretch; gap: 6px; }
+    .slot .top { display: flex; align-items: center; gap: 10px; }
+    .slot select {
+      flex: 1; border: 2px solid var(--line); border-radius: 10px; padding: 5px 6px;
+      font-size: 15px; font-weight: 700; background: #fff;
+    }
+
+    .toast {
+      position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+      padding: 10px 18px; border-radius: 14px; font-size: 16px; font-weight: 700;
+      background: rgba(40, 50, 80, 0.88); color: #fff; pointer-events: none;
+      opacity: 0; transition: opacity 0.25s; max-width: 80%; text-align: center;
+    }
+    .toast.on { opacity: 1; }
+    .toast.err { background: rgba(170, 40, 70, 0.92); }
+    @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <header class="head" data-tauri-drag-region>
+      <div class="logo" data-tauri-drag-region>🐠</div>
+      <div data-tauri-drag-region><h1 id="title"></h1><p id="subtitle"></p></div>
+      <div class="spacer" data-tauri-drag-region></div>
+      <button class="pill" id="fullBtn" type="button"></button>
+      <button class="pill" id="shopBtn" type="button"></button>
+      <button class="close" id="closeBtn" type="button">✕</button>
+    </header>
+    <div class="body">
+      <div class="tankcol">
+        <div class="tank" id="tank"><canvas id="water"></canvas></div>
+        <div class="tankbar">
+          <span class="fed" id="fedState"></span>
+          <button class="pill" id="feedBtn" type="button"></button>
+        </div>
+      </div>
+      <div class="panel">
+        <nav class="tabs" id="tabs">
+          <button type="button" data-tab="tank" id="tabTank"></button>
+          <button type="button" data-tab="stored" id="tabStored"></button>
+          <button type="button" data-tab="decor" id="tabDecor"></button>
+          <span class="count" id="count"></span>
+        </nav>
+        <div class="list" id="list"></div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="js/tauri-api.js"></script>
+  <script src="js/aquarium-core.js"></script>
+  <script src="js/aquarium-draw.js"></script>
+  <script src="js/aquarium.js"></script>
+</body>
+</html>

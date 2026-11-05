@@ -233,9 +233,16 @@
 - **🎁 Welcome gift: 20 free spins** — everyone gets 20 free Candy Capsule spins
   once (the pet tells you when they arrive). While you have them, both spin buttons
   are free, and one of those 20 spins is sure to be a model you don't own yet.
+- **🐠 Aquarium** — a small tank pinned to the desktop (🧩 → 🐠 on the ring).
+  Click the water to feed the fish once a day and they grow from small to big;
+  they never die or leave. Buy more fish, backgrounds and decorations in the
+  🍬 Collection (🐠 Aquarium mode), name them and arrange the tank in its own
+  window. ⛶ lets the whole tank swim on your wallpaper, behind every window and
+  under the desktop icons: click an empty spot to drop food, click a fish to
+  startle it. It pauses while a window covers the screen.
 - **🧩 Widgets in one place** — Settings → *🧩 Widgets* pins or unpins the
-  calendar, the clock, the weather widget, the system monitor and the site
-  monitor, picks the
+  calendar, the clock, the weather widget, the system monitor, the site
+  monitor and the aquarium (or its full-screen mode), picks the
   extra clocks, and 🧹 tidies every pinned widget into a column on the right.
   They all share one
   width and padding, so they line up on both edges.

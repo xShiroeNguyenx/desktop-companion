@@ -26,12 +26,13 @@ pub enum Tray {
     Calendar,
     Sysmon,
     Monitor,
+    Aquarium,
     Quit,
 }
 
 impl Tray {
     #[cfg(test)]
-    const ALL: [Tray; 16] = [
+    const ALL: [Tray; 17] = [
         Tray::ToggleShow,
         Tray::Tasks,
         Tray::Notes,
@@ -47,6 +48,7 @@ impl Tray {
         Tray::Calendar,
         Tray::Sysmon,
         Tray::Monitor,
+        Tray::Aquarium,
         Tray::Quit,
     ];
 }
@@ -100,6 +102,9 @@ pub fn text(t: Tray, lang: Lang) -> &'static str {
         (Monitor, Vi) => "🛰 Ghim / gỡ theo dõi website",
         (Monitor, Ja) => "🛰 サイト監視を固定 / 解除",
         (Monitor, En) => "🛰 Pin / unpin website monitor",
+        (Aquarium, Vi) => "🐠 Ghim / gỡ bể cá",
+        (Aquarium, Ja) => "🐠 水槽を固定 / 解除",
+        (Aquarium, En) => "🐠 Pin / unpin the aquarium",
         (Quit, Vi) => "Thoát",
         (Quit, Ja) => "終了",
         (Quit, En) => "Quit",

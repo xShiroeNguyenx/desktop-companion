@@ -161,3 +161,30 @@ test('miuReaction: the rarest NEW item decides Miu face; all duplicates pout', (
     for (const k of ['think', 'wow', 'legendary', 'epic', 'fresh', 'dup']) assert.ok(react[k], lang + ' ' + k);
   }
 });
+
+test('đồ bể cá đã có: nút thả / đặt vào bể, nền bể thì "Dùng" như skin', () => {
+  const fish = { cat: 'fish', owned: true, price: 600 };
+  assert.equal(C.buttonState(fish, 0, 'vi').kind, 'aquarium');
+  assert.equal(C.buttonState(fish, 0, 'vi').label, C.T.vi.toTank);
+  assert.equal(C.buttonState({ cat: 'tank_deco', owned: true, price: 600 }, 0, 'en').label, C.T.en.placeDeco);
+  assert.equal(C.buttonState({ cat: 'tank_bg', owned: true, selected: false }, 0, 'vi').kind, 'use');
+  assert.equal(C.buttonState({ cat: 'fish', owned: false, price: 600 }, 600, 'vi').kind, 'buy');
+  assert.equal(C.errorText('aq_tank_full', 'vi'), C.T.vi.err.aq_tank_full);
+});
+
+test('🐠 Bể cá là chế độ riêng: đồ bể cá không còn ở Cửa hàng kẹo', () => {
+  assert.ok(C.MODES.includes('aquarium'));
+  for (const l of ['vi', 'ja', 'en']) assert.ok(C.T[l].modes.aquarium && C.T[l].aqIntro && C.T[l].openTank, l);
+  const items = [
+    { id: 'skin.a', cat: 'skin' }, { id: 'fish.koi', cat: 'fish' },
+    { id: 'tank.reef', cat: 'tank_bg' }, { id: 'tdeco.castle', cat: 'tank_deco' }, { id: 'fx.a', cat: 'effect' },
+  ];
+  assert.deepEqual(C.groupsFor(items, 'shop').map(([c]) => c), ['skin', 'effect']);
+  assert.deepEqual(C.groupsFor(items, 'aquarium').map(([c]) => c), ['fish', 'tank_bg', 'tank_deco']);
+  assert.equal(C.modeOfCat('fish'), 'aquarium');
+  assert.equal(C.modeOfCat('tank_bg'), 'aquarium');
+  assert.equal(C.modeOfCat('skin'), 'shop');
+  // Mọi nhóm thuộc đúng một chế độ.
+  const all = [...C.groupsFor(C.CATS.map((cat) => ({ cat })), 'shop'), ...C.groupsFor(C.CATS.map((cat) => ({ cat })), 'aquarium')];
+  assert.equal(all.length, C.CATS.length);
+});

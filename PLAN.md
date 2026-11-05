@@ -1525,6 +1525,18 @@ key; tắt/mở app giữa phiên 🍅 vẫn đếm tiếp; thêm một widget c
 - Đo CPU / GPU / RAM trên máy thật: lớp phủ `fx` (canvas ~30 fps mỗi màn hình, vòng `fx.rs` 500 ms
   đưa pet lên topmost), ~25 cửa sổ WebView2 dựng sẵn. Mục 13.9 Phase 14 ghi là chưa kiểm. Cân nhắc
   dựng lười cửa sổ ít dùng.
+- **Đã đo (2026-11-05, bản debug, laptop màn Intel UHD 120 Hz, VS Code cùng chạy Live2D):**
+  đầu buổi app ~37% engine 3D (gán cho tiến trình GPU WebView2) + ~10% CPU; sau khi sửa
+  ~25% + ~5,6% với cùng bộ cửa sổ (pet + 5 widget + trang trí 🌸). Ba nguyên nhân đã sửa:
+  (1) PIXI không có `maxFPS` → pet vẽ 120 khung/giây, cả `app.ticker` lẫn `PIXI.Ticker.shared`
+  (Live2D cập nhật ở đây) → `js/pet-fps.js` 30 / 60 khi tương tác, nét mặt trộn theo thời gian;
+  (2) Tauri ẩn cửa sổ mà WebView2 không biết (`document.hidden` vẫn false) → pet ẩn vẫn vẽ →
+  `pet_render.rs` gọi `ICoreWebView2Controller::SetIsVisible`; (3) trang trí widget đổi `top`
+  mỗi khung → `transform` + `steps()` ~12 khung/giây (`widget-deco.test.js` giữ quy tắc).
+  Tách số: pet hiện 30 fps ≈ +6 điểm 3D; bể cá ≈ 0 lúc không rê chuột; thoát app thì tổng
+  GPU Intel giảm ~10–14 điểm (% gán từng tiến trình bị đội khi GPU tích hợp gần kín việc).
+  Còn lại nếu cần: `antialias: false`, nhịp đứng yên 20–24; extension VS Code có cùng lỗi
+  120 fps (`anime-companion-vscode/media/webview/main.js`).
 - Tách file lớn khi đằng nào cũng phải sửa: `interaction.js` (~2.500 dòng), `companion.css`,
   `chat.js`, `lines.rs`.
 - Test cho `store.rs` (file hỏng → mặc định, migrate) và phần merge settings của A1.
@@ -1888,3 +1900,233 @@ thêm / sửa / xoá, tên + URL + nhóm (tuỳ chọn), tìm không dấu, bấ
 3. Kiểm site mặc định **mỗi 5 phút**; site sập **được báo cả lúc Tập trung**.
 4. Công cụ tìm mặc định: **Google**.
 5. Hai tính năng **ship chung ở v0.11.0**.
+
+---
+
+## 18. 🐠 Bể cá (Phase 27–28, v0.12.0)
+
+Lập 2026-11-05. Widget bể cá ghim trên desktop: cá bơi, người dùng cho ăn, cá lớn dần; cá và đồ
+trang trí mua bằng 🍬 trong Bộ sưu tập. Thêm một chỗ **tiêu kẹo để ngắm**, đúng nguyên tắc 14.1
+(chỉ đồ trang trí, không khoá chức năng).
+
+### 18.1 Nguyên tắc (chốt trước khi làm)
+
+1. **Widget trước.** Cá bơi tự do trên desktop (lớp phủ kiểu `fx-<n>`) để sau.
+2. **Gỡ ghim = giải phóng GPU.** Cửa sổ `pin-aquarium` **không dựng sẵn** (không vào
+   `windows::precreate`), gỡ ghim / Alt+F4 thì `destroy()` (như `pin_widget::set_pinned` đang làm),
+   trước đó trang tự dừng `requestAnimationFrame` và thả canvas (`width = height = 0`). Cửa sổ quản
+   lý `aquarium` cũng dựng lười, đóng là huỷ. Lưu ý: tiến trình GPU của WebView2 dùng chung cho cả
+   app nên vẫn còn, nhưng phần GPU / bộ nhớ của bể phải về 0 (kiểm bằng tay, 18.8).
+3. **Cá không chết, không bỏ đi, không trừ kẹo.** Cơ chế đói / tâm trạng **để sau** (18.7).
+4. **Cho ăn không ra kẹo** (không thêm nguồn kẹo, 14.2).
+5. **Cá vẽ bằng code** (canvas, tham số theo loài), không ảnh: không tăng dung lượng gói (trần
+   14.3), không vướng bản quyền, đổi ngày/đêm chỉ là đổi tham số. Thiết kế loài là của app.
+6. **Tốn ít máy:** ~30 fps khi chuột ở trên bể, ~10 fps lúc khác; dừng hẳn khi widget ẩn, có app
+   toàn màn hình (`quiet_fullscreen`) hoặc người dùng rời máy (Rust phát `aquarium-pause`).
+   `prefers-reduced-motion` → bơi chậm, không tản ra khi gõ kính.
+7. **Hàm thuần có test** (`aquarium.rs`, `aquarium-core.js`); không đẩy chuỗi JSON thẳng ra webview
+   (loài / nền lấy `&'static str` từ catalog); tên cá người dùng đặt: 1–20 ký tự, bỏ ký tự điều
+   khiển, JS hiện bằng `textContent`.
+
+### 18.2 Người dùng thấy gì
+
+**Widget `pin-aquarium`** (rộng `pin_widget::WIDTH` = 300 để "Xếp gọn" thẳng cột):
+- Hai cỡ, nhấp góc để đổi: nhỏ 300×170, lớn 300×280.
+- Cát đáy, rong lắc lư, bọt khí; ánh sáng theo giờ (ngày sáng, chiều tối xanh tím, đêm cá ngủ:
+  đứng yên, khẽ vẫy vây).
+- **🍤 Cho ăn** (nút góc hoặc bấm mặt nước): viên thức ăn chìm từ chỗ bấm, cá bơi tới đớp. Mỗi ngày
+  tính một lần "đã cho ăn"; bấm thêm vẫn rơi thức ăn để chơi nhưng không cộng.
+- Gõ kính → cá giật mình tản ra. Rê chuột lên cá → tên + số ngày tuổi.
+- Bấm đúp → cửa sổ quản lý. Chuột phải: gỡ ghim, 📍 luôn nổi, đổi cỡ. Skin widget (`data-skin`)
+  áp lên khung / viền bể; nước và cá giữ màu riêng.
+
+**Cửa sổ "🐠 Bể cá"** (`aquarium`, 726×475, `zoom .66` như arcade / collection), 3 tab:
+- *Trong bể:* cá đang thả (**tối đa 8 con**), đổi tên, vớt ra bể chờ.
+- *Bể chờ:* loài đã sở hữu, thả vào bể (**mỗi loài tối đa 3 con**).
+- *Trang trí:* chọn nền bể + tối đa 4 vật trang trí vào 4 ô cố định ở đáy (chưa kéo thả tự do).
+
+**Lối vào:** menu tròn 💞 → 🐠 Bể cá; tray "📌 Ghim bể cá"; Cài đặt → 🧩 Widget; tab mới trong
+Bộ sưu tập.
+
+### 18.3 Catalog (`collection.rs`)
+
+`Cat` thêm **Fish** và **Tank** (nền + vật trang trí). Giá bảng v2: Thường 600 · Hiếm 1500 · Sử thi 3000.
+
+| id | Hạng | Ghi chú |
+|---|---|---|
+| `fish.goldfish` | mặc định (0) | bể mới có sẵn 2 con |
+| `fish.neon` · `fish.guppy` · `fish.molly` | Thường | nhỏ, bơi đàn |
+| `fish.betta` · `fish.angel` · `fish.clown` | Hiếm | vây dài, hoa văn |
+| `fish.koi` · `fish.miu` (tiên cá Miu tai mèo, thiết kế riêng) | Sử thi | lớn, bơi chậm |
+| `tank.fresh` | mặc định | nền nước ngọt |
+| `tank.reef` · `tank.glow` | Hiếm | nền rạn san hô · đêm phát sáng |
+| `tank.castle` · `tank.chest` · `tank.coral` · `tank.bubbler` | Thường | vật trang trí |
+
+**Gacha:** ở v0.12.0 món `fish.*` / `tank.*` **chưa vào pool** Candy Capsule (lọc theo `Cat` trong
+`gacha.rs`, có test), chỉ đổi thẳng. Đưa vào pool để sau (18.7).
+
+Test: mỗi nhóm Fish / Tank đúng một món giá 0 (mở rộng test sẵn có); mọi `fish.*` có shape trong
+`aquarium-core.js`, mọi `tank.*` có cách vẽ (đọc chéo như test skin ↔ `skins.css`); pool gacha
+không chứa Fish / Tank.
+
+### 18.4 Kiến trúc
+
+```
+src-tauri/src/
+  aquarium.rs       (mới, thuần + test) model, cho ăn, lớn, thả / vớt, đổi tên, view_json
+  aquarium_pin.rs   (mới) Spec thứ 5 cho pin_widget, broadcast "aquarium-data", pause / resume
+  collection.rs     Cat::Fish / Cat::Tank + catalog; changed() → aquarium_pin::broadcast
+  gacha.rs          lọc Fish / Tank khỏi pool
+  store.rs          aquarium.json (khuôn update_bond: lock, hỏng → mặc định, PartialEq không ghi thừa)
+  lines.rs          FishNew {fish}, FishGrown {fish}, FishFed: vi/ja/en, ≥ 2 biến thể
+  windows.rs        open_aquarium (dựng lười, đóng là huỷ)
+app/
+  aquarium-pin.html + js/aquarium-pin.js   canvas + vòng vẽ
+  aquarium.html + js/aquarium.js           cửa sổ quản lý
+  js/aquarium-core.js (+ .test.js)          thuần: bơi, thức ăn, shape loài, ánh sáng theo giờ
+  js/strings/{vi,ja,en}                     khoá i18n đủ 3 tiếng cùng lúc
+```
+
+**`aquarium.json`** (file riêng, không trong Settings):
+```rust
+pub struct Aquarium {            // mọi trường #[serde(default)]
+    pub fish: Vec<Fish>,         // trong bể, ≤ 8
+    pub stored: Vec<Fish>,       // bể chờ
+    pub tank: String,            // mặc định "tank.fresh"
+    pub decor: [Option<String>; 4],
+    pub last_fed: Option<Day>,
+    pub next_uid: u32,
+    pub starter: bool,           // đã tặng 2 cá vàng
+}
+pub struct Fish { pub uid: u32, pub species: String, pub name: String, pub born: Day, pub fed_days: u32 }
+```
+
+**Hàm thuần (`aquarium.rs`):**
+- `ensure_starter(&mut a, today)`: 2 cá vàng, đúng một lần.
+- `feed(&mut a, today) -> Feed::{Fed { grew: Vec<u32> }, Already}`: mỗi ngày cộng `fed_days` của
+  cá trong bể đúng một lần.
+- `stage(fed_days)`: bé (0) → nhỡ (5) → lớn (15); vẽ ×0.6 / ×0.8 / ×1.0.
+- `add(species) / store(uid) / release(uid)` →
+  `Result<_, AqError{NotOwned|TankFull|SpeciesLimit|NotFound}>`.
+- `rename(uid, s)`, `set_tank(id)`, `set_decor(slot, id)` (kiểm sở hữu + đúng nhóm).
+- `view_json`: loài lạ / chưa sở hữu thì **ẩn, không xoá khỏi file** (catalog đổi id không mất cá).
+
+**Mô phỏng (`aquarium-core.js`, `rand` truyền vào):** `step(fish, dt, bounds, food, rng)` (lang
+thang, tránh thành, loài bơi đàn đi theo nhau, đuổi thức ăn, giới hạn tốc độ theo loài, quay đầu
+mượt), `dropFood(x)`, `sinkFood(dt)`, `scatter(point)`, `speciesShape(id, stage, light)`,
+`lightAt(hour)`. Test: cá không ra ngoài `bounds` sau 10.000 bước; thức ăn chìm tới đáy rồi mất;
+rng cố định → kết quả cố định; mọi loài trong catalog có shape.
+
+**Luồng:** Rust giữ trạng thái, `emit_to("pin-aquarium", "aquarium-data", view)` khi đổi (cho ăn,
+thả cá, đổi skin / nền); widget chỉ vẽ + gọi lệnh. Lệnh: `aquarium_get`, `aquarium_feed`,
+`aquarium_add{species}`, `aquarium_store{uid}`, `aquarium_rename{uid,name}`,
+`aquarium_set_tank{id}`, `aquarium_set_decor{slot,id}`, `open_aquarium`. Không gọi mạng → **CSP
+không đổi**.
+
+**Nơi phải đăng ký** (registry A5 chưa có): `pin_widget::specs()` (4 → 5), `commands::widget_spec`
+/ `widgets_status`, `Settings.aquarium_pin: PinState`, Cài đặt (`settings.html` + `WIDGETS`), menu
+tròn (`interaction.js` + `main.rs`), tray (`tray_text.rs`), `capabilities/default.json` thêm
+`"aquarium"` (`pin-aquarium` đã khớp `pin-*`), test `pins::id_from_label("pin-aquarium")` = None,
+test lại `tidy_positions` với 5 widget.
+
+### 18.5 Pet phản ứng (v0.12.0)
+
+- Mở khoá cá mới → Miu nói ngay (`FishNew {fish}`, cùng đường `ItemUnlocked`).
+- Cá lên cỡ "lớn" → một câu khen (`FishGrown`), qua trọng tài (`quiet_gap_min`, DND, Tập trung,
+  toàn màn hình).
+- Cho ăn lúc pet đang hiện → `happy` ngắn + `FishFed` (tối đa 1 câu/ngày).
+- Biến xưng hô như mọi câu; `every_key_has_all_languages` phủ key mới.
+
+### 18.6 Các phase
+
+| Phase | Nội dung |
+|---|---|
+| **27** Nền | `aquarium.rs` + `aquarium.json` + test; `aquarium-core.js` + test; widget (vẽ, bơi, cho ăn, ngày/đêm, 2 cỡ, pause, huỷ khi gỡ ghim); 2 cá vàng; đăng ký widget |
+| **28** Sưu tập | `Cat::Fish/Tank` + catalog; lọc khỏi gacha; tab Bộ sưu tập; cửa sổ quản lý; skin lên khung bể; lớn theo ngày cho ăn; câu thoại 18.5 |
+
+**Phase 27 đã code (2026-11-05, chưa thử GUI):** `aquarium.rs`, `aquarium_pin.rs` (Spec thứ 5,
+slot 6, vòng nền 2 giây chỉ chạy khi widget hiện → `aquarium-pause`), `store::load_aquarium` /
+`update_aquarium`, `Settings.aquarium_pin` + `aquarium_big`, lệnh `aquarium_get` / `aquarium_feed`
+/ `aquarium_size`; `aquarium-pin.html` + `js/aquarium-pin.js` (canvas, rAF ~30 fps khi rê chuột,
+hẹn giờ 10 fps lúc khác, pagehide thả canvas), `js/aquarium-core.js` + test (shape đủ 9 loài, test
+đọc chéo `aquarium::SPECIES`); tray, menu tròn 🧩 → 🐠, Cài đặt → 🧩 Widget. Khác plan: bấm lòng bể
+thả thức ăn, bấm trúng cá / cát là gõ kính (chưa có bấm đúp, cửa sổ quản lý thuộc Phase 28).
+
+**Phase 28 đã code (2026-11-05, chưa thử GUI):** `Category::Fish / TankBg / TankDeco` (mã
+`fish` / `tank_bg` / `tank_deco`, `Category::aquarium()`), 16 món (id cá = asset = id loài;
+`tank.*`; `tdeco.*`), `Collection.tank_bg` chọn như skin, `gacha::pool()` lọc đồ bể cá (có
+test). `aquarium.rs`: bể chờ (`stored`), `add` (giới hạn loài tính cả bể chờ), `to_storage` /
+`to_tank`, `rename`, `set_decor` (`decor: Vec<String>` để file sai độ dài không làm mất cá), mã
+lỗi `aq_*`. Cửa sổ `aquarium` (LAZY, đóng là huỷ): bể chạy ~20 fps + 3 tab Trong bể / Bể chờ /
+Trang trí; mở bằng bấm đúp / nút 🗂 trên widget. `js/aquarium-draw.js` (vẽ chung cho widget,
+cửa sổ, thẻ Bộ sưu tập; test vẽ bằng canvas giả), lệnh `open_collection_tab`. Câu `FishFed` /
+`FishGrown` nói ngay khi cho ăn (người dùng bấm, không qua trọng tài). Khác plan: mua cá thì tự
+thả một con nếu còn chỗ; câu "cá mới" dùng lại `ItemUnlocked`; vật trang trí đặt bằng ô chọn
+(4 ô cố định), chưa kéo thả.
+
+Cả hai **ship chung ở v0.12.0** (bản minor, người dùng chốt). **Chuẩn bị phát hành 2026-11-05**,
+kèm bể cá full (18.10), ảnh cá cho 7 loài (người dùng tạo bằng ChatGPT, ghi ở ASSETS-LICENSE.md),
+và ba sửa hiệu năng ở 15.4 (pet 30/60 fps, pet ẩn dừng vẽ, trang trí widget). Bump `package.json`,
+`package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`; CHANGELOG mục [0.12.0].
+
+### 18.7 Để sau
+
+- Đói / tâm trạng (2–4 ngày không ăn → bơi chậm, Miu nhắc tối đa 1 lần/ngày, có công tắc); vẫn
+  không chết, không bỏ đi.
+- Fish / Tank vào pool Candy Capsule, kèm ưu tiên loài chưa có để bộ nhân vật không bị loãng.
+- Nhiệm vụ "cho cá ăn" (`quests.rs`).
+- Cá bơi tự do dọc mép taskbar (lớp phủ); đưa sang Anna App; tiếng bọt nước; kéo thả trang trí.
+
+### 18.8 Rủi ro & kiểm thử bằng tay
+
+**Rủi ro:** thêm một canvas chạy liên tục (ngưỡng **< 1% CPU lúc nhàn**, đo như 15.4); WebView2 bị
+che vẫn vẽ (chỉ hạ nhịp khi thu nhỏ) → dựa vào tín hiệu Rust; Win+D che widget (C4); `specs()` đổi
+cỡ mảng kéo theo mọi chỗ lặp.
+
+**Thử bằng tay:**
+- Ghim → Task Manager (cột GPU / bộ nhớ GPU) thấy app tăng; **gỡ ghim → về như trước khi ghim**,
+  không còn tiến trình renderer của bể. Ghim / gỡ 10 lần không tăng dần.
+- Kéo, tắt app, mở lại: đúng chỗ, cá còn; rút màn phụ → về màn chính.
+- Cho ăn: thức ăn chìm, cá đuổi; bấm lần 2 trong ngày không cộng; sang ngày sau thì cộng.
+- Video toàn màn hình / rời máy: vòng vẽ dừng (CPU về mức nền).
+- Bật reduced motion của Windows: bơi chậm, không tản.
+- Xoá / làm hỏng `aquarium.json`: app vẫn chạy, có bể mặc định.
+- Mua cá → hiện ở bể chờ; thả con thứ 9 → "bể đầy"; con thứ 4 cùng loài → báo giới hạn loài.
+- Quay Candy Capsule 50 lượt: không ra cá / đồ bể.
+
+### 18.10 🐠 Bể cá full (thêm vào v0.12.0, code 2026-11-05, đang thử GUI)
+
+Người dùng chốt: cá bơi **trên hình nền, sau mọi cửa sổ**, đúng đàn cá trong bể, **chỉ màn
+hình chính**, bật full thì widget ẩn (tắt full thì hiện lại nếu trước đó đang ghim).
+
+- `aquarium_full.rs`: gửi `0x052C` tới `Progman` → Explorer tạo `WorkerW` giữa hình nền và icon
+  (Windows 11 24H2+: `WorkerW` là con của `Progman`; bản cũ: `WorkerW` cấp cao sau `WorkerW`
+  chứa `SHELLDLL_DefView`), `SetParent` cửa sổ `aqfull` vào đó, kiểm lại `GetParent`. Không gắn
+  được → báo lỗi, không lưu. Vòng 2 giây: Explorer khởi động lại → gắn lại; dừng vẽ khi cửa sổ
+  foreground che kín màn hình chính (`covers`, có test), toàn màn hình, rời máy, khoá máy.
+- `aquarium-full.html` / `js/aquarium-full.js`: nền trong suốt, chỉ cá + bọt + thức ăn
+  (`AquariumDraw.drawSwimmers`), ~15 khung/giây, cá ×(cao màn hình / 400). Không nhận chuột (nằm
+  dưới icon desktop): cho ăn từ cửa sổ quản lý → Rust phát `aquarium-food`.
+- Bật / tắt: nút ⛶ trên widget, nút trong cửa sổ Bể cá, Cài đặt → 🧩 Widget; đang full thì
+  menu tròn 🧩 → 🐠 và tray "Ghim / gỡ bể cá" = thu cá về bể (widget hiện lại).
+- **Tương tác** (bể nằm dưới icon nên không nhận chuột): hook chuột có sẵn (`selection.rs`)
+  báo cú bấm (không phải kéo) → `aquarium_full::on_click` đẩy vào hàng đợi; luồng riêng kiểm
+  `WindowFromPoint` là lớp desktop + MSAA `AccessibleObjectFromPoint` child id = 0 (chỗ trống,
+  không phải icon) → `aquarium-click`. Trúng cá → cá giật mình; không → thức ăn rơi đúng chỗ bấm,
+  lần đầu trong ngày tính là cho ăn (Miu nói). Rê chuột: luồng `cursor-pos` gửi thêm
+  `aquarium-cursor` (chạy cả khi tắt nhìn theo chuột), trang vẽ nhãn tên cá cạnh con trỏ. Chỉ
+  nghe chuột khi bể đang được vẽ (`RENDERING`). Chỉ dùng toạ độ.
+- **Đã thử thật (2026-11-05, Windows 11 build 26300):** gắn được, nền trong suốt lộ hình nền,
+  icon nằm trên cá. Hai bẫy đã gặp: (1) kiểm gắn bằng `GetParent` sai với cửa sổ `WS_POPUP`
+  (trả owner) → dùng `GetAncestor(GA_PARENT)`; (2) cửa sổ còn `WS_EX_LAYERED` (Tauri bật cho xuyên
+  chuột) thì Windows không đưa lên màn hình dù trang vẫn vẽ (`PrintWindow` thấy cá) → bỏ cờ sau
+  khi gắn, vòng nền bỏ lại nếu bị bật lại. **Còn phải thử:** đổi hình nền, Explorer khởi động
+  lại, DPI ≠ 100%, máy chỉ một màn hình.
+
+### 18.9 Đã chốt với người dùng (2026-11-05)
+
+1. **Widget trước**; gỡ widget phải giải phóng GPU.
+2. Cá **không chết, không bỏ đi**; cơ chế đói làm sau.
+3. Cá **có vào gacha**, nhưng làm sau.
+4. Bể tối đa **8 con**, mỗi loài tối đa **3**.
+5. Phát hành ở **v0.12.0**.

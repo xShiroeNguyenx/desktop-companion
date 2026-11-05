@@ -6,6 +6,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-05
+
+### Added
+- **🐠 Aquarium widget.** Pin a small aquarium to the desktop (tray, 🧩 → 🐠 on the ring,
+  or Settings → 🧩 Widgets) and two goldfish move in. Click the water to drop food and the
+  fish swim over to eat it; feed them once a day and they grow from small to medium (5 days)
+  to big (15 days). Fish never die, never leave and never cost candy if you forget. Tap a
+  fish or the sand and it darts away; hover a fish to see its name and age. Light follows
+  the time of day and the fish sleep at night. Two sizes (⤢), always-on-top (📍).
+- **🐠 Aquarium in the Collection**, a mode of its own next to the Candy shop: 8 fish to buy
+  (neon tetra, guppy, molly, betta, angelfish, clownfish, koi, and the 4000 🍬 Miu mermaid),
+  three backgrounds (freshwater, coral reef, glow night) and four decorations (castle,
+  treasure chest, coral, bubbler). Buying a fish puts one straight into the tank. Aquarium
+  items are bought directly and are not in the Candy Capsule.
+- **🐠 Aquarium window** (double-click the tank or 🗂): name your fish, take some out to a
+  waiting tank and put them back (8 fish in the tank, up to 3 of each kind), add more of a
+  kind you own, place decorations in four spots and change the background.
+- **🐠 Full aquarium on your wallpaper.** ⛶ on the widget (or the Aquarium window, or
+  Settings) lets the whole tank swim on the main screen's wallpaper, behind every window
+  and under the desktop icons; the widget hides meanwhile. Click an empty spot on the
+  desktop to drop food there, click a fish to startle it, hover one to see its name.
+  🧩 → 🐠 on the ring or the tray brings the fish back to the widget.
+- **Drawn fish.** Goldfish, guppy, betta, molly, angelfish, koi and the Miu mermaid have
+  their own artwork; the body bends as they swim, they tilt up and down with the way they
+  are heading, turn around with a curved, shaded twist, and farther fish look smaller,
+  paler and slower, with a soft shadow below.
+- **Miu talks about the fish**: a line the first time you feed them each day, and praise
+  when a fish grows.
+
+### Changed
+- **The pet uses much less of the graphics card.** Live2D used to redraw at the screen's
+  refresh rate (120 times a second on many laptops) even while she just stood there. She
+  now draws 30 times a second when idle and 60 while you move, click or drag around her.
+  Expressions still change at the same speed.
+- **Hiding the pet now really stops it.** A hidden pet kept drawing in the background; it
+  now pauses completely while hidden, and stops animating while the screen is locked or
+  you have been away for a while. Showing it again is instant.
+- **Widget decorations are lighter.** Falling sakura petals, snowflakes, twinkling stars and
+  the holo frame used to repaint every widget at full speed; they now animate smoothly at a
+  fraction of the cost.
+
 ## [0.11.9] - 2026-11-04
 
 ### Added
@@ -1030,6 +1071,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.0
+[0.11.9]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.9
+[0.11.8]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.8
+[0.11.7]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.7
+[0.11.6]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.6
+[0.11.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.5
 [0.11.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.4
 [0.11.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.3
 [0.11.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.2

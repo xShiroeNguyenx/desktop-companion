@@ -59,6 +59,59 @@ function disposeCurrentModel() {
   }
 }
 
+// ─── Nhịp vẽ (js/pet-fps.js) ─────────────────────────────────────────────
+// Hai vòng cùng phải giới hạn: app.ticker vẽ canvas, PIXI.Ticker.shared là
+// nơi plugin Live2D cập nhật model (autoUpdate). Không giới hạn thì cả hai chạy
+// theo tần số quét màn hình (120 Hz trên laptop) dù pet chỉ đứng thở.
+let petLastActive = NaN;
+let petFpsTimer = 0;
+
+function petTickers() {
+  const list = [];
+  if (state.app && state.app.ticker) list.push(state.app.ticker);
+  if (typeof PIXI !== 'undefined' && PIXI.Ticker && PIXI.Ticker.shared) list.push(PIXI.Ticker.shared);
+  return list;
+}
+
+function applyPetFps() {
+  if (!window.PetFps) return;
+  const fps = window.PetFps.fpsAt(performance.now(), petLastActive);
+  for (const t of petTickers()) t.maxFPS = fps;
+}
+
+function markPetActive() {
+  if (!window.PetFps) return;
+  const wasIdle = window.PetFps.fpsAt(performance.now(), petLastActive) === window.PetFps.IDLE_FPS;
+  petLastActive = performance.now();
+  if (wasIdle) applyPetFps();
+  clearTimeout(petFpsTimer);
+  petFpsTimer = setTimeout(applyPetFps, window.PetFps.ACTIVE_HOLD_MS + 50);
+}
+
+for (const ev of ['pointermove', 'pointerdown', 'wheel', 'keydown']) {
+  window.addEventListener(ev, markPetActive, { passive: true, capture: true });
+}
+// Dừng hẳn cả hai vòng khi pet không ai thấy. Rust báo "render" (pet_render.rs):
+// Tauri ẩn cửa sổ thì WebView2 không biết, document.hidden vẫn false, nên không
+// thể chỉ dựa vào visibilitychange.
+let petRenderOn = true;
+
+function syncPetTickers() {
+  const run = petRenderOn && !document.hidden;
+  for (const t of petTickers()) {
+    if (run && !t.started) t.start();
+    else if (!run && t.started) t.stop();
+  }
+  if (run) applyPetFps();
+}
+
+function setPetRendering(on) {
+  petRenderOn = on !== false;
+  syncPetTickers();
+}
+
+document.addEventListener('visibilitychange', syncPetTickers);
+
 async function initLive2D() {
   try {
     disposeCurrentModel();
@@ -94,6 +147,7 @@ async function initLive2D() {
       autoStart: true,
     });
     debugLog('PIXI Application created');
+    syncPetTickers();
 
     const modelUrl = window.__MODEL_URL__;
     debugLog('Model URL: ' + modelUrl);
@@ -172,6 +226,10 @@ window.addEventListener('message', (event) => {
       break;
     case 'setExpression':
       setExpression(event.data.expression, event.data.duration);
+      break;
+    case 'render':
+      // pet_render.rs: pet ẩn / không ai ngồi trước máy → dừng vẽ Live2D.
+      setPetRendering(event.data.on);
       break;
     case 'fx':
       // Hiệu ứng thưởng đã mở trong Bộ sưu tập (collection.rs): pháo giấy / pháo hoa.

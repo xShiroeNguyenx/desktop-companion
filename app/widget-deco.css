@@ -12,6 +12,13 @@
   --deco-inset : khoảng từ phần tử chủ tới mép thẻ (widget 6px, xem trước 0)
   --deco-r     : bo góc của thẻ
   --ds         : tỉ lệ cỡ đồ trang trí (thẻ xem trước nhỏ hơn)
+
+  Hiệu năng (đo 2026-11-05): mỗi widget là một cửa sổ WebView2 trong suốt, và
+  hoạt cảnh chạy mãi ở đây nhân lên 5 widget × tần số quét màn hình (120 Hz).
+  Nên: chỉ hoạt cảnh transform / opacity (GPU tự trượt, không tính lại bố
+  cục / vẽ lại), và hạ nhịp bằng steps() về ~10–12 khung/giây. steps() áp cho
+  TỪNG đoạn keyframe, nên rơi và mờ là hai hoạt cảnh riêng, mỗi đoạn tự chọn
+  số bước theo độ dài của nó.
 */
 
 .deco {
@@ -21,6 +28,8 @@
   z-index: 3;
   pointer-events: none;
   border-radius: var(--deco-r, 18px);
+  /* cqh trong deco-fall = chiều cao lớp này (cánh hoa rơi hết thẻ). */
+  container-type: size;
 }
 [data-deco]:not([data-deco="none"]) > .deco { display: block; }
 .deco i { position: absolute; display: block; font-style: normal; line-height: 1; }
@@ -67,12 +76,13 @@
 [data-deco="sakura"] .d4,
 [data-deco="sakura"] .d5,
 [data-deco="sakura"] .d6 {
-  top: -4%;
+  top: 0;
   width: 8px; height: 6px;
   border-radius: 100% 0 100% 0;
   background: linear-gradient(135deg, #ffd6e8, #ff9ec7);
   opacity: 0.75;
-  animation: deco-fall 11s linear infinite;
+  /* 11 s × 12 khung/giây = 132 bước. */
+  animation: deco-fall 11s steps(132) infinite, deco-fade 11s infinite;
 }
 [data-deco="sakura"] .d4 { left: 22%; }
 [data-deco="sakura"] .d5 { left: 58%; animation-delay: -4s; animation-duration: 13s; }
@@ -115,7 +125,7 @@
   font-size: calc(11px * var(--ds, 1));
   color: #ffe27a;
   text-shadow: 0 0 4px rgba(255, 220, 120, 0.9);
-  animation: deco-twinkle 2.4s ease-in-out infinite;
+  animation: deco-twinkle 2.4s infinite;
 }
 [data-deco="stars"] .d2::before,
 [data-deco="stars"] .d3::before,
@@ -142,10 +152,11 @@
 [data-deco="snow"] .d4,
 [data-deco="snow"] .d5,
 [data-deco="snow"] .d6 {
-  top: -4%;
+  top: 0;
   font-size: 9px; color: #fff; opacity: 0.8;
   text-shadow: 0 0 3px rgba(150, 200, 255, 0.9);
-  animation: deco-fall 9s linear infinite;
+  /* 9 s × 12 khung/giây = 108 bước. */
+  animation: deco-fall 9s steps(108) infinite, deco-fade 9s infinite;
 }
 [data-deco="snow"] .d3::before,
 [data-deco="snow"] .d4::before,
@@ -166,7 +177,8 @@
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   filter: drop-shadow(0 0 3px rgba(255, 190, 255, 0.7));
-  animation: deco-holo 6s linear infinite;
+  /* background-position phải vẽ lại mỗi bước: 8 khung/giây là đủ. */
+  animation: deco-holo 6s steps(48) infinite;
 }
 [data-deco="holo"] .d2,
 [data-deco="holo"] .d3,
@@ -174,7 +186,7 @@
   font-size: calc(14px * var(--ds, 1));
   color: #fff;
   text-shadow: 0 0 5px #ff9de2, 0 0 9px #8fd3ff;
-  animation: deco-twinkle 2.2s ease-in-out infinite;
+  animation: deco-twinkle 2.2s infinite;
 }
 [data-deco="holo"] .d2::before,
 [data-deco="holo"] .d3::before,
@@ -183,16 +195,22 @@
 [data-deco="holo"] .d3 { right: -5px; top: -6px; animation-delay: -0.7s; }
 [data-deco="holo"] .d4 { left: -5px; bottom: -5px; animation-delay: -1.4s; font-size: calc(11px * var(--ds, 1)); }
 
+/* Một đoạn duy nhất, để steps(n) trên phần tử = đúng n khung cho cả quãng rơi. */
 @keyframes deco-fall {
-  0% { top: -4%; transform: translateX(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.8; }
-  50% { transform: translateX(8px) rotate(180deg); }
-  90% { opacity: 0.8; }
-  100% { top: 100%; transform: translateX(-4px) rotate(360deg); opacity: 0; }
+  from { transform: translate(0, -4cqh) rotate(0deg); }
+  to { transform: translate(-4px, 100cqh) rotate(360deg); }
 }
+/* Hiện dần / mờ dần ở hai đầu quãng rơi; đoạn giữa đứng yên (1 bước). */
+@keyframes deco-fade {
+  0% { opacity: 0; animation-timing-function: steps(12); }
+  10% { opacity: 0.8; animation-timing-function: steps(1); }
+  90% { opacity: 0.8; animation-timing-function: steps(12); }
+  100% { opacity: 0; }
+}
+/* Mỗi nửa nhịp ~1.1–1.2 s: 12 bước ≈ 10 khung/giây. */
 @keyframes deco-twinkle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(0.75); }
+  0%, 100% { opacity: 1; transform: scale(1); animation-timing-function: steps(12); }
+  50% { opacity: 0.45; transform: scale(0.75); animation-timing-function: steps(12); }
 }
 @keyframes deco-holo {
   to { background-position: 300% 0; }

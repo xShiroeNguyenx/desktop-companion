@@ -134,6 +134,9 @@ pub enum Key {
     CalTomorrowNew,
     // ── Bộ sưu tập (collection.rs): vừa đổi kẹo lấy một món. Biến: {item}.
     ItemUnlocked,
+    // ── 🐠 Bể cá (aquarium_pin.rs): lần cho ăn đầu tiên trong ngày; cá vừa lên cỡ. Biến: {fish}.
+    FishFed,
+    FishGrown,
     // ── 🎁 Quà 20 lượt quay (gacha::grant_gift), báo một lần. Biến: {n}.
     GiftSpins,
     // ── Khung "mở khoá thành tựu" trên pet khi xong việc lớn (rewards.rs):
@@ -274,6 +277,8 @@ impl Key {
         Key::CalTomorrowFull,
         Key::CalTomorrowNew,
         Key::ItemUnlocked,
+        Key::FishFed,
+        Key::FishGrown,
         Key::GiftSpins,
         Key::AchKicker,
         Key::AchAllDone,
@@ -379,6 +384,7 @@ impl Key {
             Key::WeatherBrief | Key::WeatherBriefRain => &["min", "max", "rain"],
             Key::CalHoliday | Key::CalTomorrowHoliday => &["holiday"],
             Key::ItemUnlocked => &["item"],
+            Key::FishGrown => &["fish"],
             Key::GiftSpins => &["n"],
             _ => &[],
         }
@@ -1508,6 +1514,32 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
             "You unlocked {item}, {you}! 🍬 I love it~",
             "Ta-da~ {item} is yours now! You earned it 💕",
             "{item} is all yours! Candy well spent 🍬✨",
+        ],
+
+        (FishFed, Vi) => &[
+            "Cá ăn ngon lành chưa kìa {you}~ 🐠 Mai nhớ cho ăn tiếp nha!",
+            "Bể cá no nê rồi 🍤 {Me} nhìn tụi nó bơi mà vui ghê~",
+        ],
+        (FishFed, Ja) => &[
+            "お魚さん、おいしそうに食べてるね{you}～🐠 明日もごはんあげようね！",
+            "水槽のみんな、おなかいっぱい🍤 泳いでるのを見てるとうれしくなるね～",
+        ],
+        (FishFed, En) => &[
+            "Look at them gobble it up, {you}~ 🐠 Let's feed them again tomorrow!",
+            "The tank is all full now 🍤 Watching them swim makes me so happy~",
+        ],
+
+        (FishGrown, Vi) => &[
+            "{You} ơi, {fish} lớn thêm rồi nè! 🐠✨ Nhờ {you} ngày nào cũng cho ăn đó~",
+            "Oa, {fish} to ra thấy rõ luôn! {Me} tự hào về {you} ghê 🐠💕",
+        ],
+        (FishGrown, Ja) => &[
+            "{you}、{fish}が大きくなったよ！🐠✨ 毎日ごはんをあげてくれたおかげだね～",
+            "わあ、{fish}がぐんと大きくなった！{you}、えらいね🐠💕",
+        ],
+        (FishGrown, En) => &[
+            "{You}, {fish} just grew bigger! 🐠✨ That's thanks to you feeding them every day~",
+            "Wow, {fish} is clearly bigger now! I'm so proud of you 🐠💕",
         ],
 
         (GiftSpins, Vi) => &[

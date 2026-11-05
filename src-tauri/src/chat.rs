@@ -589,6 +589,7 @@ pub fn ask_about(app: &AppHandle, text: &str) {
     }
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
+        crate::pet_render::kick(app);
         // Ô nhập cần focus bàn phím — lúc này focus còn đang ở app vừa bôi đen.
         let _ = w.set_focus();
     }

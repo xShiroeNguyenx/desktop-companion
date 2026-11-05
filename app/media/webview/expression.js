@@ -64,7 +64,7 @@ const EXPRESSIONS = {
   },
 };
 
-const BLEND_SPEED = 0.08; // per-frame interpolation toward target
+const BLEND_SPEED = 0.08; // interpolation per 60 Hz frame (scaled by real frame time, js/pet-fps.js)
 let currentExpression = {};
 let targetExpression = {};
 let expressionResetTimer = null;
@@ -91,14 +91,17 @@ export function setExpression(name, durationMs) {
 }
 
 // Called from PIXI ticker every frame to smoothly blend toward target.
-export function updateExpressionTick() {
+// deltaMS = thời gian khung vừa qua: trộn theo thời gian thật, nên pet ở 30
+// hay 120 khung/giây đổi nét mặt cùng tốc độ.
+export function updateExpressionTick(deltaMS = 1000 / 60) {
   if (!state.model || !state.model.internalModel) return;
   const core = state.model.internalModel.coreModel;
   if (!core) return;
+  const k = window.PetFps ? window.PetFps.blendAlpha(BLEND_SPEED, deltaMS) : BLEND_SPEED;
 
   for (const [param, target] of Object.entries(targetExpression)) {
     const current = currentExpression[param] || 0;
-    const blended = current + (target - current) * BLEND_SPEED;
+    const blended = current + (target - current) * k;
     currentExpression[param] = blended;
     try {
       core.setParameterValueById(param, blended);

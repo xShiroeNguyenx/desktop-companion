@@ -211,8 +211,14 @@ duyệt, Word…).
 - **🎁 Quà tặng 20 lượt quay** — mỗi người được tặng một lần 20 lượt quay Candy
   Capsule miễn phí (pet sẽ báo khi quà tới). Còn lượt quà thì hai nút quay đều miễn
   phí, và trong 20 lượt đó chắc chắn có một model bạn chưa có.
+- **🐠 Bể cá** — một bể cá nhỏ ghim trên desktop (🧩 → 🐠 trên menu tròn). Bấm vào
+  nước để cho cá ăn, mỗi ngày một lần, cá lớn dần từ bé tới lớn; cá không bao giờ chết
+  hay bỏ đi. Mua thêm cá, nền bể và đồ trang trí ở 🍬 Bộ sưu tập (chế độ 🐠 Bể cá), đặt
+  tên và sắp xếp bể trong cửa sổ riêng. ⛶ thả cả đàn cá ra bơi trên hình nền, sau mọi
+  cửa sổ và dưới icon desktop: bấm chỗ trống để thả thức ăn, bấm trúng cá để cá giật
+  mình. Bể tự dừng khi có cửa sổ che kín màn hình.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
-  thời tiết, thông số máy, theo dõi website, chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
+  thời tiết, thông số máy, theo dõi website, bể cá (hoặc bể cá full), chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
   thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).

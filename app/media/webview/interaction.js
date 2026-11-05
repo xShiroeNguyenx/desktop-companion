@@ -475,7 +475,7 @@ export function setupModel() {
     bodyObserver.observe(document.body);
   }
 
-  state.app.ticker.add(() => updateExpressionTick());
+  state.app.ticker.add(() => updateExpressionTick(state.app.ticker.deltaMS));
   debugLog('Expression system started');
 
   setupCompactContextMenu();
@@ -1110,6 +1110,9 @@ function setupCompactContextMenu() {
     } else if (action === 'toggle-monitor-pin') {
       // Ghim / gỡ widget Theo dõi website (monitor_pin.rs).
       vscode.postMessage({ command: 'monitor:pin' });
+    } else if (action === 'toggle-aquarium-pin') {
+      // Ghim / gỡ widget Bể cá (aquarium_pin.rs).
+      vscode.postMessage({ command: 'aquarium:pin' });
     } else if (action === 'toggle-sysmon-pin') {
       // Ghim / gỡ widget Thông số máy (sysmon_pin.rs).
       vscode.postMessage({ command: 'sysmon:pin' });
@@ -1248,6 +1251,7 @@ function setupCompactContextMenu() {
           { icon: '📅', label: I18n.t('pet.ring.calendar'), action: 'toggle-calendar-pin' },
           { icon: '📊', label: I18n.t('pet.ring.sysmon'), action: 'toggle-sysmon-pin' },
           { icon: '🛰', label: I18n.t('pet.ring.monitor'), action: 'toggle-monitor-pin' },
+          { icon: '🐠', label: I18n.t('pet.ring.aquarium'), action: 'toggle-aquarium-pin' },
           { icon: '☁️', label: I18n.t('pet.ring.weather'), action: 'open-weather' },
           { icon: '🌦', label: I18n.t('pet.ring.weatherFx'), action: 'toggle-weather' },
           { icon: '📌', label: I18n.t('pet.ring.weatherPin'), action: 'toggle-weather-pin' },

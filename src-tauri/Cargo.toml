@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.11.9"
+version = "0.12.0"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -78,7 +78,14 @@ windows-sys = { version = "0.61", features = [
 # Toast bấm được (notify.rs): plugin thông báo không báo sự kiện bấm. Cùng bản
 # plugin đang kéo theo, nên không thêm gì vào bộ cài.
 tauri-winrt-notification = "0.8"
+# Báo thẳng WebView2 khi pet ẩn (pet_render.rs: ICoreWebView2Controller::SetIsVisible).
+# Cùng bản Tauri / wry đang kéo theo, nên không thêm gì vào bộ cài.
+webview2-com = "0.38"
 windows = { version = "0.61", features = [
+    # 🐠 Bể cá full (aquarium_full.rs): MSAA hỏi "bấm trúng icon hay chỗ trống" trên desktop.
+    "Win32_UI_Accessibility",
+    "Win32_System_Com",
+    "Win32_System_Variant",
     "Foundation",
     "Foundation_Collections",
     "Media_Core",

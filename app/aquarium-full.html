@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!--
+  🐠 Bể cá full (aquarium_full.rs → cửa sổ "aqfull"): đàn cá trong bể bơi thẳng
+  trên hình nền màn hình chính, nằm sau mọi cửa sổ và dưới icon desktop. Nền
+  trong suốt (hình nền Windows lộ ra), không nhận chuột. Vẽ: js/aquarium-draw.js
+  (drawSwimmers), bơi: js/aquarium-core.js, luồng: js/aquarium-full.js.
+-->
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bể cá</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <canvas id="sea"></canvas>
+  <script src="js/tauri-api.js"></script>
+  <script src="js/aquarium-core.js"></script>
+  <script src="js/aquarium-draw.js"></script>
+  <script src="js/aquarium-full.js"></script>
+</body>
+</html>

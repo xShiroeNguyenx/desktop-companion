@@ -37,6 +37,12 @@ pub enum Category {
     Model,
     /// Trang trí trên mép 3 widget ghim (app/widget-deco.css [data-deco]).
     WidgetDeco,
+    /// 🐠 Loài cá thả được vào bể (aquarium.rs). Đã có thì thả thêm, không "chọn".
+    Fish,
+    /// 🐠 Nền bể cá (chọn một, như skin).
+    TankBg,
+    /// 🐠 Vật trang trí đặt vào ô ở đáy bể (aquarium.rs DECOR_SLOTS).
+    TankDeco,
 }
 
 impl Category {
@@ -51,6 +57,9 @@ impl Category {
             Category::Flower => "flower",
             Category::Model => "model",
             Category::WidgetDeco => "widget_deco",
+            Category::Fish => "fish",
+            Category::TankBg => "tank_bg",
+            Category::TankDeco => "tank_deco",
         }
     }
 
@@ -65,6 +74,9 @@ impl Category {
             Category::Flower,
             Category::Model,
             Category::WidgetDeco,
+            Category::Fish,
+            Category::TankBg,
+            Category::TankDeco,
         ]
             .into_iter()
             .find(|c| c.code() == s)
@@ -72,7 +84,12 @@ impl Category {
 
     /// Nhóm có "món đang dùng" (chọn một trong các món đã có).
     fn selectable(self) -> bool {
-        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet | Category::Bubble | Category::Flower | Category::WidgetDeco)
+        matches!(self, Category::Skin | Category::SideSet | Category::MiuSet | Category::Bubble | Category::Flower | Category::WidgetDeco | Category::TankBg)
+    }
+
+    /// Đồ của bể cá: đổi thẳng, không nằm trong máy Candy Capsule (PLAN.md 18.3).
+    pub fn aquarium(self) -> bool {
+        matches!(self, Category::Fish | Category::TankBg | Category::TankDeco)
     }
 }
 
@@ -95,7 +112,8 @@ impl Rarity {
         match self {
             Rarity::Common => 600..=600,
             Rarity::Rare => 1500..=1500,
-            Rarity::Epic => 3000..=3000,
+            // 3000 là giá thường; tới 4000 cho món Sử thi đặc biệt (🐠 Tiên cá Miu).
+            Rarity::Epic => 3000..=4000,
             Rarity::Legendary => 5000..=10000,
         }
     }
@@ -804,6 +822,218 @@ pub const CATALOG: &[Item] = &[
         ],
         asset: "holo",
     },
+    // ── 🐠 Bể cá (aquarium.rs, PLAN.md mục 18). Cá: asset = id loài trong
+    // aquarium::SPECIES. Nền bể chọn một như skin; vật trang trí đặt vào 4 ô ở đáy bể
+    // (cửa sổ 🐠 Bể cá). Cả ba nhóm KHÔNG vào máy Candy Capsule (gacha::pool).
+    Item {
+        id: "fish.goldfish",
+        cat: Category::Fish,
+        rarity: Rarity::Common,
+        price: 0,
+        name: ["Cá vàng", "金魚", "Goldfish"],
+        desc: [
+            "Hai bé cá vàng có sẵn trong bể, đuôi xoè như váy.",
+            "最初から水槽にいる2匹の金魚。ドレスみたいな尾びれ。",
+            "Two goldfish that come with the tank, tails like little skirts.",
+        ],
+        asset: "fish.goldfish",
+    },
+    Item {
+        id: "fish.neon",
+        cat: Category::Fish,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cá neon", "ネオンテトラ", "Neon tetra"],
+        desc: [
+            "Nhỏ xíu, sọc xanh đỏ phát sáng, thích bơi theo đàn.",
+            "小さくて青と赤のラインが光る。群れで泳ぐのが好き。",
+            "Tiny, with glowing blue and red stripes. Loves swimming in a school.",
+        ],
+        asset: "fish.neon",
+    },
+    Item {
+        id: "fish.guppy",
+        cat: Category::Fish,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cá bảy màu", "グッピー", "Guppy"],
+        desc: [
+            "Đuôi hồng lấm tấm chấm, bơi tung tăng cả ngày.",
+            "ピンクの水玉しっぽで一日中ちょこまか。",
+            "A pink, polka-dot tail that never stops wiggling.",
+        ],
+        asset: "fish.guppy",
+    },
+    Item {
+        id: "fish.molly",
+        cat: Category::Fish,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cá molly", "モーリー", "Molly"],
+        desc: [
+            "Trắng đốm đen, đầu vàng cam, hiền lành, hay bơi thành nhóm nhỏ.",
+            "白に黒いぶち、頭はオレンジ。おっとりして小さな群れで泳ぎます。",
+            "White with black spots and an orange head; gentle, often swims in a small group.",
+        ],
+        asset: "fish.molly",
+    },
+    Item {
+        id: "fish.betta",
+        cat: Category::Fish,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Cá betta", "ベタ", "Betta"],
+        desc: [
+            "Vây dài bồng bềnh tím hồng, bơi chậm rãi như múa.",
+            "紫とピンクの長いひれをなびかせ、踊るようにゆっくり泳ぐ。",
+            "Long, flowing violet-pink fins; swims slowly like a dancer.",
+        ],
+        asset: "fish.betta",
+    },
+    Item {
+        id: "fish.angel",
+        cat: Category::Fish,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Cá thần tiên", "エンゼルフィッシュ", "Angelfish"],
+        desc: [
+            "Thân dẹt cao, vây dài như đôi cánh, sọc nhạt sang trọng.",
+            "背の高い体に翼のようなひれ、上品なしま模様。",
+            "A tall, flat body with wing-like fins and soft stripes.",
+        ],
+        asset: "fish.angel",
+    },
+    Item {
+        id: "fish.clown",
+        cat: Category::Fish,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Cá hề", "クマノミ", "Clownfish"],
+        desc: [
+            "Cam rực với ba sọc trắng, lúc nào cũng tươi tỉnh.",
+            "鮮やかなオレンジに白い3本線、いつも元気。",
+            "Bright orange with three white stripes, always cheerful.",
+        ],
+        asset: "fish.clown",
+    },
+    Item {
+        id: "fish.koi",
+        cat: Category::Fish,
+        rarity: Rarity::Epic,
+        price: 3000,
+        name: ["Cá koi", "錦鯉", "Koi"],
+        desc: [
+            "Trắng đốm đỏ, to nhất bể, bơi thong thả mang may mắn.",
+            "白に赤い模様。水槽でいちばん大きく、ゆったり幸運を運ぶ。",
+            "White with red patches, the biggest in the tank; glides by bringing luck.",
+        ],
+        asset: "fish.koi",
+    },
+    Item {
+        id: "fish.miu",
+        cat: Category::Fish,
+        rarity: Rarity::Epic,
+        // Đắt hơn koi một chút: loài riêng của Miu (người dùng chốt 2026-11-05).
+        price: 4000,
+        name: ["Tiên cá Miu", "人魚ミウ", "Miu mermaid"],
+        desc: [
+            "Nàng tiên cá tai mèo tóc tím, đuôi vảy lấp lánh, chỉ có trong bể của Miu.",
+            "猫耳と紫の髪の人魚。きらきらのうろこの尾、ミウの水槽だけの子。",
+            "A cat-eared mermaid with lilac hair and a shimmering tail, found only in Miu's tank.",
+        ],
+        asset: "fish.miu",
+    },
+    Item {
+        id: "tank.fresh",
+        cat: Category::TankBg,
+        rarity: Rarity::Common,
+        price: 0,
+        name: ["Nước ngọt", "淡水", "Freshwater"],
+        desc: [
+            "Nước trong, cát vàng, rong xanh lắc lư.",
+            "澄んだ水と黄色い砂、ゆれる水草。",
+            "Clear water, golden sand, swaying green weeds.",
+        ],
+        asset: "fresh",
+    },
+    Item {
+        id: "tank.reef",
+        cat: Category::TankBg,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Rạn san hô", "サンゴ礁", "Coral reef"],
+        desc: [
+            "Nước biển xanh ngọc, cát hồng, san hô nhiều màu sau lưng.",
+            "エメラルドの海、ピンクの砂、背景にカラフルなサンゴ。",
+            "Turquoise sea, pink sand and colourful coral behind.",
+        ],
+        asset: "reef",
+    },
+    Item {
+        id: "tank.glow",
+        cat: Category::TankBg,
+        rarity: Rarity::Rare,
+        price: 1500,
+        name: ["Đêm phát sáng", "夜光の水槽", "Glow night"],
+        desc: [
+            "Nước tím thẫm, rong và cá toả sáng nhẹ như đom đóm.",
+            "深い紫の水に、水草と魚がほたるのように光る。",
+            "Deep violet water where weeds and fish glow like fireflies.",
+        ],
+        asset: "glow",
+    },
+    Item {
+        id: "tdeco.castle",
+        cat: Category::TankDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Lâu đài", "お城", "Castle"],
+        desc: [
+            "Lâu đài đá nhỏ có cửa vòm, cá hay bơi lượn quanh.",
+            "アーチ門のある小さな石のお城。魚がまわりを泳ぎます。",
+            "A little stone castle with an arched gate for the fish to circle.",
+        ],
+        asset: "castle",
+    },
+    Item {
+        id: "tdeco.chest",
+        cat: Category::TankDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Rương báu", "宝箱", "Treasure chest"],
+        desc: [
+            "Rương gỗ hé nắp, ánh vàng lấp ló bên trong.",
+            "ふたが少し開いた木の宝箱、中で金色がきらり。",
+            "A wooden chest, lid ajar, with gold peeking out.",
+        ],
+        asset: "chest",
+    },
+    Item {
+        id: "tdeco.coral",
+        cat: Category::TankDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Cụm san hô", "サンゴ", "Coral cluster"],
+        desc: [
+            "Một cụm san hô hồng cam đặt dưới đáy bể.",
+            "水槽の底にピンクとオレンジのサンゴ。",
+            "A pink-and-orange coral cluster on the tank floor.",
+        ],
+        asset: "coral",
+    },
+    Item {
+        id: "tdeco.bubbler",
+        cat: Category::TankDeco,
+        rarity: Rarity::Common,
+        price: 600,
+        name: ["Máy sủi bọt", "エアストーン", "Bubbler"],
+        desc: [
+            "Viên đá sủi bọt, bọt khí nổi lên đều đều.",
+            "ぶくぶく泡が出るエアストーン。",
+            "An air stone that sends up a steady stream of bubbles.",
+        ],
+        asset: "bubbler",
+    },
 ];
 
 /// Mọi món: CATALOG ở trên + các bộ Miu (miu_sets.rs). Dùng hàm này thay vì CATALOG.
@@ -856,6 +1086,9 @@ pub struct Collection {
     pub flower: String,
     #[serde(default = "default_widget_deco")]
     pub widget_deco: String,
+    /// 🐠 Nền bể cá đang dùng.
+    #[serde(default = "default_tank_bg")]
+    pub tank_bg: String,
     /// Hiệu ứng đã mua và đang bật.
     #[serde(default)]
     pub effects_on: Vec<String>,
@@ -909,6 +1142,9 @@ fn default_flower() -> String {
 fn default_widget_deco() -> String {
     "wdeco.none".into()
 }
+fn default_tank_bg() -> String {
+    "tank.fresh".into()
+}
 
 impl Default for Collection {
     fn default() -> Self {
@@ -923,6 +1159,7 @@ impl Default for Collection {
             bubble: default_bubble(),
             flower: default_flower(),
             widget_deco: default_widget_deco(),
+            tank_bg: default_tank_bg(),
             effects_on: Vec::new(),
             pity: 0,
             epic_pity: 0,
@@ -1112,6 +1349,7 @@ pub fn select(c: &mut Collection, cat: Category, id: &str) -> Result<&'static It
         Category::Bubble => &mut c.bubble,
         Category::Flower => &mut c.flower,
         Category::WidgetDeco => &mut c.widget_deco,
+        Category::TankBg => &mut c.tank_bg,
         _ => unreachable!("selectable() đã lọc"),
     };
     *slot = it.id.to_string();
@@ -1159,6 +1397,7 @@ pub fn selected(c: &Collection, cat: Category) -> &'static Item {
         Category::Bubble => &c.bubble,
         Category::Flower => &c.flower,
         Category::WidgetDeco => &c.widget_deco,
+        Category::TankBg => &c.tank_bg,
         _ => return default_of(cat),
     };
     item(id).filter(|it| it.cat == cat && owns(c, it)).unwrap_or_else(|| default_of(cat))
@@ -1192,6 +1431,16 @@ pub fn effective_flower(c: &Collection) -> &'static str {
 /// Trang trí của 3 widget ghim (asset trong widget-deco.css).
 pub fn effective_widget_deco(c: &Collection) -> &'static str {
     selected(c, Category::WidgetDeco).asset
+}
+
+/// 🐠 Nền bể cá (asset: fresh / reef / glow).
+pub fn effective_tank_bg(c: &Collection) -> &'static str {
+    selected(c, Category::TankBg).asset
+}
+
+/// Món đồ bể cá uid=197609(DELL) gid=197609 groups=197609 thuộc nhóm  và đã sở hữu. Trả id tĩnh từ catalog.
+pub fn owned_aquarium_item(c: &Collection, cat: Category, id: &str) -> Option<&'static str> {
+    item(id).filter(|it| it.cat == cat && owns(c, it)).map(|it| it.id)
 }
 
 pub fn effective_side_set(c: &Collection) -> &'static str {
@@ -1305,6 +1554,7 @@ mod glue {
         crate::clock_pin::broadcast(app);
         crate::sysmon_pin::broadcast(app);
         crate::monitor_pin::broadcast(app);
+        crate::aquarium_pin::broadcast(app);
         crate::weather_net::broadcast(app);
         let c = store::load_collection(app);
         crate::sidegirl::set_side_set(app, effective_side_set(&c));
@@ -1421,7 +1671,7 @@ mod tests {
         ids.sort();
         ids.dedup();
         assert_eq!(ids.len(), items().count(), "id trùng");
-        for cat in [Category::Skin, Category::SideSet, Category::MiuSet, Category::Bubble, Category::Flower, Category::WidgetDeco] {
+        for cat in [Category::Skin, Category::SideSet, Category::MiuSet, Category::Bubble, Category::Flower, Category::WidgetDeco, Category::TankBg] {
             let free = items().filter(|i| i.cat == cat && i.price == 0).count();
             assert_eq!(free, 1, "{cat:?} phải có đúng một món mặc định");
         }
@@ -1440,9 +1690,48 @@ mod tests {
                 Category::Flower => "flower.",
                 Category::Model => "model.",
                 Category::WidgetDeco => "wdeco.",
+                Category::Fish => "fish.",
+                Category::TankBg => "tank.",
+                Category::TankDeco => "tdeco.",
             }));
             assert_eq!(Category::from_code(it.cat.code()), Some(it.cat));
         }
+    }
+
+    #[test]
+    fn fish_catalog_matches_aquarium_species() {
+        let mut fish: Vec<&str> = items().filter(|i| i.cat == Category::Fish).map(|i| i.asset).collect();
+        fish.sort();
+        let mut species = crate::aquarium::SPECIES.to_vec();
+        species.sort();
+        assert_eq!(fish, species, "mỗi loài trong aquarium::SPECIES đúng một món Fish");
+        for it in items().filter(|i| i.cat == Category::Fish) {
+            assert_eq!(it.id, it.asset, "{}: asset của cá là id loài", it.id);
+        }
+        // Cá vàng có sẵn (tặng khi bể mới), các loài khác phải mua.
+        let free: Vec<&str> = items().filter(|i| i.cat == Category::Fish && i.price == 0).map(|i| i.id).collect();
+        assert_eq!(free, vec![crate::aquarium::STARTER]);
+        let draw = include_str!("../../app/js/aquarium-draw.js");
+        for it in items().filter(|i| i.cat == Category::TankBg || i.cat == Category::TankDeco) {
+            assert!(draw.contains(&format!("{}:", it.asset)), "{}: aquarium-draw.js chưa vẽ '{}'", it.id, it.asset);
+        }
+    }
+
+    #[test]
+    fn tank_items_select_and_ownership() {
+        let mut c = Collection::default();
+        assert_eq!(effective_tank_bg(&c), "fresh");
+        assert_eq!(select(&mut c, Category::TankBg, "tank.reef").unwrap_err(), SelectError::NotOwned);
+        c.owned.push("tank.reef".into());
+        select(&mut c, Category::TankBg, "tank.reef").unwrap();
+        assert_eq!(effective_tank_bg(&c), "reef");
+        // Vật trang trí / cá không "chọn" ở Bộ sưu tập: đặt trong cửa sổ Bể cá.
+        assert_eq!(select(&mut c, Category::TankDeco, "tdeco.castle").unwrap_err(), SelectError::WrongCategory);
+        assert_eq!(owned_aquarium_item(&c, Category::TankDeco, "tdeco.castle"), None);
+        c.owned.push("tdeco.castle".into());
+        assert_eq!(owned_aquarium_item(&c, Category::TankDeco, "tdeco.castle"), Some("tdeco.castle"));
+        assert_eq!(owned_aquarium_item(&c, Category::Fish, "tdeco.castle"), None, "sai nhóm");
+        assert_eq!(owned_aquarium_item(&c, Category::Fish, "fish.goldfish"), Some("fish.goldfish"), "cá vàng có sẵn");
     }
 
     #[test]

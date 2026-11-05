@@ -23,6 +23,10 @@ mod models;
 mod monitor;
 mod monitor_net;
 mod monitor_pin;
+mod aquarium;
+mod aquarium_pin;
+mod aquarium_full;
+mod pet_render;
 mod lunar;
 mod llm;
 #[cfg(target_os = "macos")]
@@ -369,6 +373,15 @@ fn pet_command(app: AppHandle, payload: Value) {
             std::thread::spawn(move || {
                 if let Err(e) = pin_widget::toggle(&app2, &monitor_pin::SPEC) {
                     eprintln!("[monitor] ghim lỗi: {e}");
+                }
+            });
+        }
+        // Menu tròn 🧩 → 🐠: ghim / gỡ bể cá.
+        "aquarium:pin" => {
+            let app2 = app.clone();
+            std::thread::spawn(move || {
+                if let Err(e) = aquarium_full::toggle_widget(&app2) {
+                    eprintln!("[aquarium] ghim lỗi: {e}");
                 }
             });
         }
@@ -748,6 +761,18 @@ fn main() {
             commands::sysmon_get,
             commands::sysmon_top,
             commands::monitor_get,
+            commands::aquarium_get,
+            commands::aquarium_feed,
+            commands::aquarium_size,
+            commands::aquarium_add,
+            commands::aquarium_store,
+            commands::aquarium_return,
+            commands::aquarium_rename,
+            commands::aquarium_set_decor,
+            commands::open_aquarium,
+            commands::open_collection_tab,
+            commands::aquarium_full_set,
+            commands::aquarium_close,
             commands::monitor_stats,
             commands::monitor_add,
             commands::monitor_update,
@@ -883,6 +908,12 @@ fn main() {
             note_pins::restore_all(&app_handle);
             // Widget Thông số máy: chỉ đo khi đang hiện.
             sysmon_pin::start(app_handle.clone());
+            // 🐠 Bể cá: chỉ hỏi trạng thái máy khi widget đang hiện.
+            aquarium_pin::start(app_handle.clone());
+            // 🐠 Bể cá full: dựng / gắn lại dưới hình nền nếu đang bật.
+            aquarium_full::start(app_handle.clone());
+            // Pet ẩn / không ai ngồi trước máy: dừng vòng vẽ Live2D.
+            pet_render::start(app_handle.clone());
             // 🛰 Theo dõi website: chỉ kiểm khi danh sách có site.
             monitor_net::start(app_handle.clone());
             tts::start(app_handle.clone());
@@ -957,6 +988,8 @@ fn main() {
                 MenuItem::with_id(app, "sysmon", tr(Tray::Sysmon, lang), true, None::<&str>)?;
             let monitor_item =
                 MenuItem::with_id(app, "monitor", tr(Tray::Monitor, lang), true, None::<&str>)?;
+            let aquarium_item =
+                MenuItem::with_id(app, "aquarium", tr(Tray::Aquarium, lang), true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", tr(Tray::Quit, lang), true, None::<&str>)?;
             for (t, item) in [
@@ -969,6 +1002,7 @@ fn main() {
                 (Tray::Calendar, &calendar_item),
                 (Tray::Sysmon, &sysmon_item),
                 (Tray::Monitor, &monitor_item),
+                (Tray::Aquarium, &aquarium_item),
                 (Tray::Quit, &quit_item),
             ] {
                 tray_text::remember(t, item);
@@ -988,6 +1022,7 @@ fn main() {
                     &calendar_item,
                     &sysmon_item,
                     &monitor_item,
+                    &aquarium_item,
                     &sep,
                     &quit_item,
                 ],
@@ -1009,6 +1044,7 @@ fn main() {
                                 let _ = w.show();
                                 let _ = w.set_focus();
                             }
+                            pet_render::kick(app);
                         }
                     }
                     "open_tasks" => windows::open_tasks(app),
@@ -1032,6 +1068,14 @@ fn main() {
                         std::thread::spawn(move || {
                             if let Err(e) = pin_widget::toggle(&app2, &monitor_pin::SPEC) {
                                 eprintln!("[monitor] ghim lỗi: {e}");
+                            }
+                        });
+                    }
+                    "aquarium" => {
+                        let app2 = app.clone();
+                        std::thread::spawn(move || {
+                            if let Err(e) = aquarium_full::toggle_widget(&app2) {
+                                eprintln!("[aquarium] ghim lỗi: {e}");
                             }
                         });
                     }

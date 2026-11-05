@@ -400,7 +400,7 @@
 
   // Nhóm 🧩 Widget: tick = ghim / gỡ ngay (không chờ Lưu). Trạng thái đọc lại
   // mỗi lần bảng được focus, vì widget có thể đã gỡ bằng ✕ trên chính nó.
-  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather', wSysmon: 'sysmon', wMonitor: 'monitor' };
+  const WIDGETS = { wCalendar: 'calendar', wClock: 'clock', wWeather: 'weather', wSysmon: 'sysmon', wMonitor: 'monitor', wAquarium: 'aquarium', wAquariumFull: 'aquariumFull' };
   async function syncWidgets() {
     try {
       const st = await invoke('widgets_status');
@@ -419,6 +419,7 @@
       const want = $(box).checked;
       try {
         if (id === 'weather') await invoke('weather_pin_set', { pinned: want });
+        else if (id === 'aquariumFull') await invoke('aquarium_full_set', { on: want });
         else await invoke('widget_pin_set', { id, pinned: want });
         widgetMsg(want ? t('settings.widget.pinned') : t('settings.widget.unpinned'), true);
       } catch (e) {

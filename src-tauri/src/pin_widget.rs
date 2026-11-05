@@ -57,8 +57,14 @@ pub struct Spec {
     pub broadcast: fn(&AppHandle),
 }
 
-pub fn specs() -> [&'static Spec; 4] {
-    [&crate::calendar_pin::SPEC, &crate::clock_pin::SPEC, &crate::sysmon_pin::SPEC, &crate::monitor_pin::SPEC]
+pub fn specs() -> [&'static Spec; 5] {
+    [
+        &crate::calendar_pin::SPEC,
+        &crate::clock_pin::SPEC,
+        &crate::sysmon_pin::SPEC,
+        &crate::monitor_pin::SPEC,
+        &crate::aquarium_pin::SPEC,
+    ]
 }
 
 pub fn spec(label: &str) -> Option<&'static Spec> {
@@ -69,7 +75,9 @@ pub fn spec(label: &str) -> Option<&'static Spec> {
 pub fn start(app: &AppHandle) {
     let s = store::load_settings(app);
     for spec in specs() {
-        if (spec.state)(&s).pinned {
+        // Bể cá full đang bật: widget bể nằm im (aquarium_full.rs), không mở lại.
+        let full_hides = spec.label == crate::aquarium_pin::LABEL && s.aquarium_full;
+        if (spec.state)(&s).pinned && !full_hides {
             open_on_main(app, spec, false);
         }
     }

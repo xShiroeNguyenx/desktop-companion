@@ -202,6 +202,18 @@ pub struct Settings {
     /// Widget 🛰 Theo dõi website ghim (monitor_pin.rs).
     #[serde(default)]
     pub monitor_pin: crate::pin_widget::PinState,
+    /// Widget 🐠 Bể cá ghim (aquarium_pin.rs).
+    #[serde(default)]
+    pub aquarium_pin: crate::pin_widget::PinState,
+    /// Bể cá cỡ lớn (300 × 280) thay vì nhỏ (300 × 170).
+    #[serde(default)]
+    pub aquarium_big: bool,
+    /// 🐠 Bể cá full: cá bơi trên hình nền màn hình chính (aquarium_full.rs).
+    #[serde(default)]
+    pub aquarium_full: bool,
+    /// Lúc bật full, widget bể có đang ghim không (tắt full thì ghim lại).
+    #[serde(default)]
+    pub aquarium_full_widget: bool,
     /// Kiểm các site mỗi bao nhiêu phút (monitor::INTERVALS).
     #[serde(default = "default_monitor_interval")]
     pub monitor_interval_min: u32,
@@ -407,6 +419,10 @@ impl Default for Settings {
             clock_zones: Vec::new(),
             sysmon_pin: Default::default(),
             monitor_pin: Default::default(),
+            aquarium_pin: Default::default(),
+            aquarium_big: false,
+            aquarium_full: false,
+            aquarium_full_widget: false,
             monitor_interval_min: default_monitor_interval(),
             launcher_hotkey: default_launcher_hotkey(),
             search_engine: default_search_engine(),
@@ -832,6 +848,36 @@ pub fn update_collection<R>(
     }
     let path = collection_path(app).ok_or("no config dir")?;
     let json = serde_json::to_string_pretty(&c).map_err(|e| e.to_string())?;
+    std::fs::write(path, json).map_err(|e| e.to_string())?;
+    Ok(out)
+}
+
+// ─── aquarium.json (🐠 bể cá, aquarium.rs) ───────────────────────────────────
+// File riêng như collection.json. Hỏng / thiếu → bể mới (tặng lại cá vàng).
+
+static AQUARIUM_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+pub fn load_aquarium(app: &AppHandle) -> crate::aquarium::Aquarium {
+    config_file(app, "aquarium.json")
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Đọc aquarium.json, cho `f` sửa, ghi lại, trong một khoá. Không đổi thì không ghi.
+pub fn update_aquarium<R>(
+    app: &AppHandle,
+    f: impl FnOnce(&mut crate::aquarium::Aquarium) -> R,
+) -> Result<R, String> {
+    let _guard = AQUARIUM_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut a = load_aquarium(app);
+    let before = a.clone();
+    let out = f(&mut a);
+    if a == before {
+        return Ok(out);
+    }
+    let path = config_file(app, "aquarium.json").ok_or("no config dir")?;
+    let json = serde_json::to_string_pretty(&a).map_err(|e| e.to_string())?;
     std::fs::write(path, json).map_err(|e| e.to_string())?;
     Ok(out)
 }

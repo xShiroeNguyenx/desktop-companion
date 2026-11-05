@@ -4,11 +4,15 @@
 // đụng DOM; dùng trong cửa sổ (window.CollectionCore) và node --test.
 (function (root) {
   /** Thứ tự tab. Nhóm không có món thì không hiện. */
-  const CATS = ['skin', 'widget_deco', 'effect', 'side_set', 'model', 'miu_set', 'bubble', 'flower', 'line_pack'];
+  const CATS = ['skin', 'widget_deco', 'effect', 'side_set', 'model', 'miu_set', 'bubble', 'flower', 'fish', 'tank_bg', 'tank_deco', 'line_pack'];
   /** Icon trên tab. */
-  const TAB_ICONS = { skin: '🎨', widget_deco: '🎀', effect: '✨', side_set: '🖼️', miu_set: '🐰', bubble: '💬', flower: '🌸', line_pack: '📜', model: '🎭' };
+  const TAB_ICONS = { skin: '🎨', widget_deco: '🎀', effect: '✨', side_set: '🖼️', miu_set: '🐰', bubble: '💬', flower: '🌸', line_pack: '📜', model: '🎭', fish: '🐠', tank_bg: '🌊', tank_deco: '🏰' };
   // 'model': model đang dùng nằm ở Settings.pet_model, Rust đánh dấu sẵn `selected`.
-  const SELECTABLE = ['skin', 'widget_deco', 'side_set', 'miu_set', 'bubble', 'flower', 'model'];
+  const SELECTABLE = ['skin', 'widget_deco', 'side_set', 'miu_set', 'bubble', 'flower', 'model', 'tank_bg'];
+  /** 🐠 Đồ bể cá đã có: không "Dùng" ở đây mà thả / đặt trong bể (aquarium.rs). */
+  const AQUARIUM_USE = ['fish', 'tank_deco'];
+  /** Nhóm hiện ở chế độ 🐠 Bể cá (tách khỏi Cửa hàng kẹo). */
+  const AQUARIUM_CATS = ['fish', 'tank_bg', 'tank_deco'];
 
   const T = {
     vi: {
@@ -18,13 +22,16 @@
       howTitle: 'Cách nhận kẹo', earn: ['✅ Hoàn thành việc', '🍅 Xong phiên Tập trung', '🎮 Thắng mini game', '💗 Chat & vuốt đầu', '🏆 Đạt cột mốc', '📋 Nhiệm vụ hằng ngày'],
       noMoney: 'Không thể mua kẹo bằng tiền thật.',
       howTo: 'Kẹo đến từ việc đã xong, phiên Tập trung, chat, vuốt đầu và thắng game (có trần mỗi ngày). Mỗi cột mốc thân thiết +200 🍬. Không bán, không mua bằng tiền thật.',
-      tabs: { skin: 'Skin widget', widget_deco: 'Trang trí', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model' },
+      tabs: { skin: 'Skin widget', widget_deco: 'Trang trí', effect: 'Hiệu ứng', side_set: 'Nhân vật', miu_set: 'Miu mini', bubble: 'Bong bóng', flower: 'Bông hoa', line_pack: 'Câu thoại', model: 'Model', fish: 'Cá', tank_bg: 'Nền bể', tank_deco: 'Đồ trong bể' },
+      toTank: '🐠 Thả thêm 1 con', placeDeco: '🐠 Đặt vào bể', addedFish: 'Đã thả thêm 1 con {item} vào bể~ 🐠',
+      boughtFish: 'Đã mua {item} và thả 1 con vào bể rồi nè~ 🐠', boughtFishFull: 'Đã mua {item}! Bể đang đầy nên chưa thả được, vớt bớt một con ở 🐠 Bể cá rồi thả sau nha.',
       rarity: { common: 'Thường', rare: 'Hiếm', epic: 'Sử thi', legendary: 'Huyền thoại' },
       using: 'Đang dùng', use: 'Dùng', buy: 'Đổi {price} 🍬', short: '🍬 Thiếu {n}', on: 'Đang bật', off: 'Bật',
       preview: 'Xem thử', free: 'Có sẵn', unlocked: 'Đã mở', empty: 'Chưa có món nào ở nhóm này.', close: 'Đóng',
       download: '⬇ Tải về{size}', downloadingPct: 'Đang tải {n}%', update: '⬆ Cập nhật v{v}', installed: 'Đã tải xong {item}! Bấm Dùng để đổi nhé.',
       bought: '{item} là của {you} rồi! 🍬', sideOff: 'Bunny Lounge đang tắt: bật trong Cài đặt → 🎨 Diện mạo để thấy nhân vật.',
-      modes: { gacha: 'Candy Capsule', shop: 'Cửa hàng kẹo', quests: 'Nhiệm vụ', history: 'Lịch sử' },
+      modes: { gacha: 'Candy Capsule', shop: 'Cửa hàng kẹo', aquarium: 'Bể cá', quests: 'Nhiệm vụ', history: 'Lịch sử' },
+      aqIntro: 'Cá, nền và đồ trang trí cho 🐠 Bể cá trên desktop. Mua cá là có ngay một con trong bể.', openTank: '🐠 Mở Bể cá',
       q: {
         bubble: 'Mỗi ngày 3 nhiệm vụ nhỏ thôi, làm cùng {pet} nhé! 💗',
         title: 'Nhiệm vụ hôm nay', sub: 'Xong cả 3 nhiệm vụ: +{n} lượt quay 🎁. Mỗi ngày được đổi 1 nhiệm vụ.',
@@ -64,6 +71,7 @@
       err: {
         not_found: 'Không thấy món này.', no_gift: 'Hết lượt quay quà rồi.', reroll_used: 'Hôm nay đã đổi 1 nhiệm vụ rồi.', reroll_done: 'Nhiệm vụ đã xong thì không đổi nữa.', already_owned: 'Đã có rồi mà~', not_enough: 'Còn thiếu {n} 🍬 nữa.',
         wrong_category: 'Món này không dùng ở đây được.', not_owned: 'Chưa có món này.', locked: 'Model này chưa mở khoá.',
+        aq_tank_full: 'Bể đầy rồi (tối đa 8 con). Vớt bớt một con ở 🐠 Bể cá nha.', aq_species_limit: 'Loài này đã đủ 3 con rồi.', aq_not_owned: 'Chưa mở khoá loài này.', aq_not_found: 'Không thấy loài này.',
         downloading: 'Đang tải model, xong sẽ tự đổi.', busy: 'Đang tải rồi, đợi chút nhé.',
         offline: 'Không kết nối được máy chủ tải model. Kiểm tra mạng rồi thử lại nhé.',
         no_package: 'Model này chưa được đăng để tải. Thử lại sau nhé.',
@@ -80,13 +88,16 @@
       howTitle: 'キャンディのもらい方', earn: ['✅ タスク完了', '🍅 集中セッション', '🎮 ミニゲーム勝利', '💗 チャット・なでなで', '🏆 節目の達成', '📋 毎日のミッション'],
       noMoney: 'キャンディはお金では買えません。',
       howTo: 'キャンディはタスク完了・集中セッション・チャット・なでなで・ゲーム勝利でもらえます（1日の上限あり）。なかよし度の節目ごとに +200 🍬。販売も課金もありません。',
-      tabs: { skin: 'ウィジェットスキン', widget_deco: 'デコ', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル' },
+      tabs: { skin: 'ウィジェットスキン', widget_deco: 'デコ', effect: 'エフェクト', side_set: 'キャラクター', miu_set: 'ミニミウ', bubble: '吹き出し', flower: 'お花', line_pack: 'セリフ', model: 'モデル', fish: 'お魚', tank_bg: '水槽の背景', tank_deco: '水槽の飾り' },
+      toTank: '🐠 もう1匹入れる', placeDeco: '🐠 水槽に飾る', addedFish: '{item}をもう1匹水槽に入れたよ～🐠',
+      boughtFish: '{item}を手に入れて、1匹水槽に入れたよ～🐠', boughtFishFull: '{item}を手に入れたよ！水槽がいっぱいだから、🐠 水槽で1匹出してから入れてね。',
       rarity: { common: 'ノーマル', rare: 'レア', epic: 'エピック', legendary: 'レジェンド' },
       using: '使用中', use: '使う', buy: '{price} 🍬 で交換', short: 'あと {n} 🍬', on: 'オン', off: 'オンにする',
       preview: 'プレビュー', free: '最初から', unlocked: '解放済み', empty: 'このグループにはまだアイテムがありません。', close: '閉じる',
       download: '⬇ ダウンロード{size}', downloadingPct: 'ダウンロード中 {n}%', update: '⬆ v{v} に更新', installed: '{item} のダウンロード完了！「使う」で切り替えてね。',
       bought: '{item} は{you}のもの！🍬', sideOff: 'バニーラウンジはオフです：設定 → 🎨 Diện mạo でオンにするとキャラクターが見えます。',
-      modes: { gacha: 'キャンディカプセル', shop: 'キャンディショップ', quests: 'ミッション', history: '履歴' },
+      modes: { gacha: 'キャンディカプセル', shop: 'キャンディショップ', aquarium: '水槽', quests: 'ミッション', history: '履歴' },
+      aqIntro: 'デスクトップの🐠水槽のお魚・背景・飾り。お魚を買うと1匹すぐ水槽に入ります。', openTank: '🐠 水槽を開く',
       q: {
         bubble: '毎日ちいさなミッションが3つ。{pet}といっしょにやろうね！💗',
         title: '今日のミッション', sub: '3つ全部クリアでガチャ+{n}回🎁。1日1回ミッションを交換できます。',
@@ -125,6 +136,7 @@
       err: {
         not_found: 'アイテムが見つかりません。', no_gift: 'プレゼントのガチャは使い切ったよ。', reroll_used: '今日はもう交換したよ。', reroll_done: 'クリアしたミッションは交換できないよ。', already_owned: 'もう持ってるよ～', not_enough: 'あと {n} 🍬 足りないよ。',
         wrong_category: 'ここでは使えないアイテムです。', not_owned: 'まだ持っていません。', locked: 'このモデルはまだロックされています。',
+        aq_tank_full: '水槽がいっぱい（最大8匹）。🐠 水槽で1匹出してね。', aq_species_limit: 'この種類はもう3匹います。', aq_not_owned: 'この種類はまだアンロックしていません。', aq_not_found: 'この種類が見つかりません。',
         downloading: 'モデルをダウンロード中。終わったら自動で切り替わるよ。', busy: 'ダウンロード中だよ、ちょっと待ってね。',
         offline: 'モデルのダウンロードサーバーにつながりません。ネットワークを確認してもう一度試してね。',
         no_package: 'このモデルはまだ公開されていません。あとで試してね。',
@@ -141,13 +153,16 @@
       howTitle: 'How to earn candy', earn: ['✅ Finish tasks', '🍅 Focus sessions', '🎮 Win mini games', '💗 Chat & headpats', '🏆 Reach milestones', '📋 Daily quests'],
       noMoney: 'Candy can never be bought with real money.',
       howTo: 'Candy comes from finished tasks, focus sessions, chat, headpats and game wins (daily caps apply). Every friendship milestone adds +200 🍬. Never sold, never bought with real money.',
-      tabs: { skin: 'Widget skins', widget_deco: 'Decor', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models' },
+      tabs: { skin: 'Widget skins', widget_deco: 'Decor', effect: 'Effects', side_set: 'Characters', miu_set: 'Mini Miu', bubble: 'Bubbles', flower: 'Flower', line_pack: 'Lines', model: 'Models', fish: 'Fish', tank_bg: 'Tank backgrounds', tank_deco: 'Tank decor' },
+      toTank: '🐠 Add one more', placeDeco: '🐠 Place in tank', addedFish: 'One more {item} is in the tank~ 🐠',
+      boughtFish: 'Got {item}, and one is already swimming in the tank~ 🐠', boughtFishFull: 'Got {item}! The tank is full, so take one out in 🐠 Aquarium and add it later.',
       rarity: { common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' },
       using: 'In use', use: 'Use', buy: 'Trade {price} 🍬', short: '{n} 🍬 short', on: 'On', off: 'Turn on',
       preview: 'Preview', free: 'Included', unlocked: 'Unlocked', empty: 'Nothing in this group yet.', close: 'Close',
       download: '⬇ Download{size}', downloadingPct: 'Downloading {n}%', update: '⬆ Update to v{v}', installed: '{item} is downloaded! Press Use to switch.',
       bought: '{item} is yours now! 🍬', sideOff: 'Bunny Lounge is off: turn it on in Settings → 🎨 Diện mạo to see the characters.',
-      modes: { gacha: 'Candy Capsule', shop: 'Candy shop', quests: 'Quests', history: 'History' },
+      modes: { gacha: 'Candy Capsule', shop: 'Candy shop', aquarium: 'Aquarium', quests: 'Quests', history: 'History' },
+      aqIntro: 'Fish, backgrounds and decor for the 🐠 desktop aquarium. Buying a fish puts one in the tank right away.', openTank: '🐠 Open aquarium',
       q: {
         bubble: "Just 3 little quests a day. Let's do them with {pet}! 💗",
         title: "Today's quests", sub: 'Finish all 3: +{n} spin 🎁. You can swap 1 quest a day.',
@@ -186,6 +201,7 @@
       err: {
         not_found: 'No such item.', no_gift: 'No gift spins left.', reroll_used: 'You already swapped a quest today.', reroll_done: "Finished quests can't be swapped.", already_owned: 'You already have it~', not_enough: 'Still {n} 🍬 short.',
         wrong_category: 'This item cannot be used here.', not_owned: "You don't have this item yet.", locked: 'This model is still locked.',
+        aq_tank_full: 'The tank is full (8 fish max). Take one out in 🐠 Aquarium first.', aq_species_limit: 'You already have 3 of this species.', aq_not_owned: 'Unlock this species first.', aq_not_found: 'That species was not found.',
         downloading: 'Downloading the model; it switches over when done.', busy: 'Already downloading, hang on.',
         offline: "Can't reach the model download server. Check your connection and try again.",
         no_package: "This model hasn't been published for download yet. Try again later.",
@@ -240,6 +256,9 @@
     }
     if (item.cat === 'effect') {
       return item.on ? { kind: 'on', label: S.on, disabled: false } : { kind: 'off', label: S.off, disabled: false };
+    }
+    if (AQUARIUM_USE.includes(item.cat)) {
+      return { kind: 'aquarium', label: item.cat === 'fish' ? S.toTank : S.placeDeco, disabled: false };
     }
     if (SELECTABLE.includes(item.cat)) {
       return item.selected ? { kind: 'using', label: S.using, disabled: true } : { kind: 'use', label: S.use, disabled: false };
@@ -318,7 +337,17 @@
   }
 
   /** Thứ tự chế độ trên thanh trên cùng. */
-  const MODES = ['gacha', 'shop', 'quests', 'history'];
+  const MODES = ['gacha', 'shop', 'aquarium', 'quests', 'history'];
+
+  /** Chế độ chứa nhóm cat: đồ bể cá ở 🐠 Bể cá, còn lại ở Cửa hàng kẹo. */
+  function modeOfCat(cat) {
+    return AQUARIUM_CATS.includes(cat) ? 'aquarium' : 'shop';
+  }
+
+  /** Các nhóm (theo thứ tự CATS) của chế độ shop / aquarium. */
+  function groupsFor(items, mode) {
+    return groupByCategory(items).filter(([cat]) => modeOfCat(cat) === (mode === 'aquarium' ? 'aquarium' : 'shop'));
+  }
   const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
 
   /** Nút quay: đủ kẹo thì bấm được, thiếu thì báo thiếu bao nhiêu; máy khoá thì tắt. */
@@ -395,7 +424,7 @@
     return lang === 'ja' ? `${p(d.getMonth() + 1)}/${p(d.getDate())} ${hm}` : `${hm} ${p(d.getDate())}/${p(d.getMonth() + 1)}`;
   }
 
-  const api = { sizeLabel, RARITY_RANK, MODES, pullState, giftState, summarize, miuReaction, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
+  const api = { sizeLabel, RARITY_RANK, MODES, pullState, giftState, summarize, miuReaction, featured, formatTime, CATS, TAB_ICONS, SELECTABLE, AQUARIUM_USE, AQUARIUM_CATS, modeOfCat, groupsFor, T, strings, fill, groupByCategory, sortItems, buttonState, rarityClass, errorText, swatch, swatchInk, swatchAccent, flowerGlyph, thumb, effectIcon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CollectionCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
