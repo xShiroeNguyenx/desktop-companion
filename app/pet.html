@@ -14,6 +14,12 @@
   <link rel="stylesheet" href="/media/companion.css" />
   <style>
     html, body { background: transparent; height: 100%; margin: 0; overflow: hidden; }
+    /* Click-through bật + rê chuột vào nhân vật: mờ đi để đọc được app phía sau
+       (js/pet-seethrough.js). Mờ nhanh, hiện lại chậm hơn cho dịu mắt.
+       Đặt trên body, KHÔNG trên .companion-container: cái đó có `animation: fadeIn … both`
+       (companion.css), giá trị cuối của animation thắng mọi opacity khai báo thường. */
+    body { transition: opacity 0.4s ease; }
+    html.pet-see-through body { opacity: 0.15; transition-duration: 0.2s; }
   </style>
 </head>
 <body class="desktop-pet-mode">
@@ -60,6 +66,7 @@
   <script src="js/radial-pins.js"></script>
   <script src="js/bridge.js"></script>
   <script src="js/pet-lookat.js"></script>
+  <script src="js/pet-seethrough.js"></script>
   <script src="js/pet-zoom.js"></script>
   <script src="js/pet-fps.js"></script>
   <script>

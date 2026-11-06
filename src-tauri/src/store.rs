@@ -82,6 +82,10 @@ pub struct Settings {
     /// Đã hỏi "nên gọi bạn là gì" sau lần đặt tên đầu chưa.
     #[serde(default)]
     pub address_asked: bool,
+    /// Click-through của pet (bật / tắt ở tray, click_through.rs). Không có trên form
+    /// Cài đặt: settings_set giữ nguyên giá trị cũ.
+    #[serde(default)]
+    pub click_through: bool,
 
     // ── Nhắc nhở (reminders.rs) ── phút ngồi máy liên tục; 0 = tắt.
     #[serde(default = "default_remind_eyes")]
@@ -379,6 +383,7 @@ impl Default for Settings {
             name_asks: 0,
             name_asked_at: 0,
             address_asked: false,
+            click_through: false,
             remind_eyes_min: default_remind_eyes(),
             remind_water_min: default_remind_hourly(),
             remind_stand_min: default_remind_hourly(),

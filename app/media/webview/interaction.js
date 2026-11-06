@@ -554,6 +554,37 @@ function applyModelHoverCursor() {
   state.model.on('pointerupoutside', () => setHover(false));
 }
 
+// Click-through bật thì trang không nhận chuột: js/pet-seethrough.js hỏi một điểm
+// (toạ độ client của trang) có nằm trên nhân vật không. Thử theo hộp bao của từng
+// mảnh đang hiện (tóc, tay, váy…), sát hơn nhiều so với cả khung canvas của model.
+const hitPoint = { x: 0, y: 0 };
+const hitBox = {};
+function petHitTest(clientX, clientY) {
+  const model = state.model;
+  const canvas = document.getElementById('live2dCanvas');
+  if (!model || !state.app || !canvas || canvas.style.display === 'none') return false;
+  const r = canvas.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0) return false;
+  const screen = state.app.renderer.screen;
+  hitPoint.x = ((clientX - r.left) * screen.width) / r.width;
+  hitPoint.y = ((clientY - r.top) * screen.height) / r.height;
+  if (hitPoint.x < 0 || hitPoint.y < 0 || hitPoint.x > screen.width || hitPoint.y > screen.height) return false;
+  const im = model.internalModel;
+  const core = im && im.coreModel;
+  if (!core || typeof im.getDrawableBounds !== 'function' || typeof core.getDrawableCount !== 'function') {
+    return model.getBounds().contains(hitPoint.x, hitPoint.y);
+  }
+  model.toModelPosition(hitPoint, hitPoint);
+  const n = core.getDrawableCount();
+  for (let i = 0; i < n; i++) {
+    if (!core.getDrawableDynamicFlagIsVisible(i) || core.getDrawableOpacity(i) < 0.1) continue;
+    const b = im.getDrawableBounds(i, hitBox);
+    if (hitPoint.x >= b.x && hitPoint.x <= b.x + b.width && hitPoint.y >= b.y && hitPoint.y <= b.y + b.height) return true;
+  }
+  return false;
+}
+window.__petHitTest__ = petHitTest;
+
 export function fitModel() {
   if (!state.model || !state.app) return;
   const wrapper = document.getElementById('characterWrapper');
@@ -1334,6 +1365,24 @@ function setupCompactContextMenu() {
     mainMenu.classList.add('show');
     positionMenu(mainMenu, e.clientX, e.clientY);
   }, true);
+
+  // Click-through bật: trang không nhận cú chuột phải thật. Ctrl + chuột phải trên nhân
+  // vật bị Rust bắt (hook chuột) rồi gọi qua js/pet-seethrough.js để mở menu tại con trỏ;
+  // bấm ra ngoài cửa sổ pet thì Rust bảo đóng hết.
+  window.__petOpenMenuAt__ = (x, y) => {
+    closeContextMenus();
+    if (radialMenu) {
+      radialMenu.openAt(x, y);
+      return;
+    }
+    syncMuteMenuLabel(mainMenu);
+    mainMenu.classList.add('show');
+    positionMenu(mainMenu, x, y);
+  };
+  window.__petCloseMenus__ = () => {
+    closeContextMenus();
+    closeAllPanels();
+  };
 
   window.addEventListener('click', (e) => {
     if (allMenus.some((m) => m.contains(e.target))) return;

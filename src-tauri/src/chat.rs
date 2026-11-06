@@ -544,6 +544,12 @@ fn abort_active(app: &AppHandle) {
     }
 }
 
+/// "Hỏi em" đang tạm tắt click-through (để gõ được): đổi ở tray lúc này thì chỉ ghi
+/// nhận, `restore_click_through` sẽ áp khi xong.
+pub fn click_through_paused(app: &AppHandle) -> bool {
+    app.state::<ChatState>().restore_click_through.load(Ordering::SeqCst)
+}
+
 /// Trả click-through về như người dùng đã chọn, nếu "Hỏi em" đã tạm tắt nó.
 pub fn restore_click_through(app: &AppHandle) {
     if app.state::<ChatState>().restore_click_through.swap(false, Ordering::SeqCst) {

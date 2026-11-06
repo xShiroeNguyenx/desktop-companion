@@ -219,7 +219,8 @@ duyệt, Word…).
   hay bỏ đi. Mua thêm cá, nền bể và đồ trang trí ở 🍬 Bộ sưu tập (chế độ 🐠 Bể cá), đặt
   tên và sắp xếp bể trong cửa sổ riêng. ⛶ thả cả đàn cá ra bơi trên hình nền, sau mọi
   cửa sổ và dưới icon desktop: bấm chỗ trống để thả thức ăn, bấm trúng cá để cá giật
-  mình. Bể tự dừng khi có cửa sổ che kín màn hình.
+  mình. Bể tự dừng khi có cửa sổ che kín màn hình. Cá bảy màu và tiên cá Miu có vây
+  quạt riêng, và khi đổi hướng sẽ từ từ quay mặt nhìn bạn.
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, thông số máy, theo dõi website, bể cá (hoặc bể cá full), chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
   thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
@@ -235,6 +236,10 @@ duyệt, Word…).
 - **Pet vào đứng giữa bảng** — mở Cài đặt hoặc Tasks thì pet tự dời vào khoảng
   giữa hai cột (click xuyên qua được nên không vướng tay), đóng hoặc thu nhỏ bảng
   thì pet quay về đúng chỗ cũ.
+- **👻 Click-through** — khay hệ thống → *🖱️ Bật click-through*: bấm, cuộn, kéo đều
+  xuyên qua pet xuống app phía sau. Rê chuột vào thì pet mờ gần hết để đọc được chữ
+  bên dưới; giữ `Ctrl` + chuột phải lên pet để mở menu mà không cần tắt (Windows).
+  Mở lại app vẫn giữ nguyên tới khi bạn tắt ở khay.
 - **🌸 Bunny Lounge** (tuỳ chọn, Cài đặt → *Diện mạo*) — các cô nàng tựa bên khung
   Cài đặt, Công việc, Trợ lý văn bản, thẻ thời tiết và trang Mini Games; phần đè lên
   bảng mờ đi nên vẫn đọc rõ.
@@ -296,7 +301,7 @@ Companion**. Không cấp quyền thì các tính năng khác vẫn chạy bình
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · Bật/Tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · 🛰 Ghim / gỡ theo dõi website · Thoát
+Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · 🖱️ Bật / tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · 🛰 Ghim / gỡ theo dõi website · 🐠 Ghim / gỡ bể cá · Thoát
 
 ### Chuột phải vào pet
 

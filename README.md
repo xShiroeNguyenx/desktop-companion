@@ -242,7 +242,9 @@
   🍬 Collection (🐠 Aquarium mode), name them and arrange the tank in its own
   window. ⛶ lets the whole tank swim on your wallpaper, behind every window and
   under the desktop icons: click an empty spot to drop food, click a fish to
-  startle it. It pauses while a window covers the screen.
+  startle it. It pauses while a window covers the screen. The Guppy and Miu the
+  mermaid sway their fins on their own and slowly turn to face you when they
+  change direction.
 - **🧩 Widgets in one place** — Settings → *🧩 Widgets* pins or unpins the
   calendar, the clock, the weather widget, the system monitor, the site
   monitor and the aquarium (or its full-screen mode), picks the
@@ -262,6 +264,11 @@
 - **The pet joins your panels** — open Settings or Tasks and the pet steps into
   the gap between their two columns (click-through, so it stays out of the way),
   then returns to where it was when you close or minimize them.
+- **👻 Click-through** — tray → *🖱️ Turn on click-through*: clicks, scrolling and
+  dragging go straight through the pet to the app behind. Hover over her and she
+  fades almost away so you can read what's under her; hold `Ctrl` and right-click
+  her to open her menu without turning it off (Windows). It stays on after a
+  restart until you turn it off in the tray.
 - **🌸 Bunny Lounge** (optional, Settings → *🎨 Appearance*) — companion girls lean
   on the edge of Settings, Tasks, the text assistant, the weather card and the
   Mini Games page; the part over the panel fades so everything stays readable.
@@ -324,7 +331,7 @@ else still works.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · 🗒️ Notes · Settings · Toggle click-through · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · 🛰 Pin / unpin the site monitor · Quit
+Show/Hide pet · Tasks · 🗒️ Notes · Settings · 🖱️ Click-through on / off · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · 🛰 Pin / unpin the site monitor · 🐠 Pin / unpin the aquarium · Quit
 
 ### Right-click the pet
 

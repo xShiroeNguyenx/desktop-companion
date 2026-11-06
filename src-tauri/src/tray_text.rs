@@ -1,6 +1,6 @@
 // Chữ trên menu khay (tray) theo ngôn ngữ chữ của pet (vi / ja / en). Đổi
-// ngôn ngữ thì `relabel` viết lại mọi mục; mục có trạng thái (Đừng làm phiền,
-// Tập trung, hiệu ứng thời tiết) tự lấy chữ ở đây mỗi lần đổi trạng thái.
+// ngôn ngữ thì `relabel` viết lại mọi mục; mục có trạng thái (Click-through, Đừng
+// làm phiền, Tập trung, hiệu ứng thời tiết) tự lấy chữ ở đây mỗi lần đổi trạng thái.
 
 use std::sync::Mutex;
 
@@ -15,7 +15,8 @@ pub enum Tray {
     Tasks,
     Notes,
     Settings,
-    ClickThrough,
+    ClickThroughOn,
+    ClickThroughOff,
     DndOff,
     DndOn,
     FocusStart,
@@ -32,12 +33,13 @@ pub enum Tray {
 
 impl Tray {
     #[cfg(test)]
-    const ALL: [Tray; 17] = [
+    const ALL: [Tray; 18] = [
         Tray::ToggleShow,
         Tray::Tasks,
         Tray::Notes,
         Tray::Settings,
-        Tray::ClickThrough,
+        Tray::ClickThroughOn,
+        Tray::ClickThroughOff,
         Tray::DndOff,
         Tray::DndOn,
         Tray::FocusStart,
@@ -69,9 +71,12 @@ pub fn text(t: Tray, lang: Lang) -> &'static str {
         (Settings, Vi) => "Cài đặt",
         (Settings, Ja) => "設定",
         (Settings, En) => "Settings",
-        (ClickThrough, Vi) => "Bật / Tắt click-through",
-        (ClickThrough, Ja) => "クリック透過 オン / オフ",
-        (ClickThrough, En) => "Click-through on / off",
+        (ClickThroughOn, Vi) => "🖱️ Bật click-through (bấm xuyên qua pet)",
+        (ClickThroughOn, Ja) => "🖱️ クリック透過をオン（ペットを素通り）",
+        (ClickThroughOn, En) => "🖱️ Turn on click-through (click past the pet)",
+        (ClickThroughOff, Vi) => "✅ Tắt click-through (đang bật)",
+        (ClickThroughOff, Ja) => "✅ クリック透過をオフ（オン中）",
+        (ClickThroughOff, En) => "✅ Turn off click-through (on now)",
         (DndOff, Vi) => "🔕 Đừng làm phiền (1 giờ)",
         (DndOff, Ja) => "🔕 おやすみモード（1時間）",
         (DndOff, En) => "🔕 Do not disturb (1 hour)",
@@ -131,6 +136,7 @@ pub fn relabel(app: &AppHandle) {
     }
     crate::companion::sync_tray_labels(app);
     crate::fx::refresh_tray(app);
+    crate::click_through::refresh_tray(app);
 }
 
 #[cfg(test)]

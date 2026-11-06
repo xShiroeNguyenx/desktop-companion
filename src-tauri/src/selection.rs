@@ -90,6 +90,9 @@ struct CursorPos {
 static DOWN_X: AtomicI32 = AtomicI32::new(0);
 static DOWN_Y: AtomicI32 = AtomicI32::new(0);
 static DOWN_ACTIVE: AtomicBool = AtomicBool::new(false);
+/// Cú nhấn chuột phải vừa rồi đã bị nuốt (mở menu pet): nuốt luôn cú nhả tương ứng.
+#[cfg(target_os = "windows")]
+static SWALLOW_RIGHT_UP: AtomicBool = AtomicBool::new(false);
 
 pub fn init(app: &AppHandle) {
     let _ = APP.set(app.clone());
@@ -112,6 +115,14 @@ pub fn set_auto_enabled(enabled: bool) {
 
 pub fn set_lookat_enabled(enabled: bool) {
     LOOKAT_ENABLED.store(enabled, Ordering::SeqCst);
+}
+
+/// Click-through đang bật: pet mờ đi khi rê chuột vào nhân vật, nên cần vị trí con
+/// trỏ cả khi người dùng tắt "nhìn theo chuột" (click_through.rs).
+static SEE_THROUGH: AtomicBool = AtomicBool::new(false);
+
+pub fn set_see_through(on: bool) {
+    SEE_THROUGH.store(on, Ordering::SeqCst);
 }
 
 pub fn last_selection_json() -> Option<Value> {
@@ -141,7 +152,8 @@ fn lookat_emit_thread() {
     let mut last_seq = 0u64;
     loop {
         std::thread::sleep(Duration::from_millis(33));
-        let lookat = LOOKAT_ENABLED.load(Ordering::Relaxed);
+        // Trang pet cần con trỏ để nhìn theo chuột, hoặc để mờ đi khi click-through.
+        let lookat = LOOKAT_ENABLED.load(Ordering::Relaxed) || SEE_THROUGH.load(Ordering::Relaxed);
         // 🐠 Bể cá full cũng cần vị trí con trỏ (vẽ tên cá), kể cả khi tắt nhìn theo chuột.
         if !lookat && !crate::aquarium_full::wants_cursor() {
             continue;
@@ -324,8 +336,10 @@ unsafe extern "system" fn low_level_mouse_proc(
     wparam: windows_sys::Win32::Foundation::WPARAM,
     lparam: windows_sys::Win32::Foundation::LPARAM,
 ) -> windows_sys::Win32::Foundation::LRESULT {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, MSLLHOOKSTRUCT, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE,
+        CallNextHookEx, MSLLHOOKSTRUCT, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_RBUTTONDOWN,
+        WM_RBUTTONUP,
     };
 
     if code >= 0 {
@@ -338,10 +352,26 @@ unsafe extern "system" fn low_level_mouse_proc(
                 MOVE_Y.store(y, Ordering::Relaxed);
                 MOVE_SEQ.fetch_add(1, Ordering::Relaxed);
             }
+            // Click-through: Ctrl + chuột phải trên nhân vật mở menu của pet. Nuốt cả cú
+            // nhấn lẫn cú nhả (trả 1, không gọi hook sau): app phía sau không nhận gì.
+            WM_RBUTTONDOWN => {
+                let ctrl = (GetAsyncKeyState(VK_CONTROL as i32) as u16 & 0x8000) != 0;
+                if crate::click_through::on_right_down(x, y, ctrl) {
+                    SWALLOW_RIGHT_UP.store(true, Ordering::SeqCst);
+                    return 1;
+                }
+                crate::click_through::on_press(x, y);
+            }
+            WM_RBUTTONUP => {
+                if SWALLOW_RIGHT_UP.swap(false, Ordering::SeqCst) {
+                    return 1;
+                }
+            }
             WM_LBUTTONDOWN => {
                 DOWN_X.store(x, Ordering::SeqCst);
                 DOWN_Y.store(y, Ordering::SeqCst);
                 DOWN_ACTIVE.store(true, Ordering::SeqCst);
+                crate::click_through::on_press(x, y);
             }
             WM_LBUTTONUP => {
                 let was_down = DOWN_ACTIVE.swap(false, Ordering::SeqCst);

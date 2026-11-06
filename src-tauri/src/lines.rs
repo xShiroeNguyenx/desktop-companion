@@ -25,6 +25,9 @@ pub enum Key {
     AddressSet,
     DndOn,
     DndOff,
+    /// Bật / tắt click-through ở tray (click_through.rs).
+    ClickThroughOn,
+    ClickThroughOff,
     /// Xong việc ngay trên tờ note ghim. Biến: {task}.
     PinDone,
     /// Ghi chú dưới câu trả lời chat. Biến: {task} / {name} / {err}.
@@ -207,6 +210,8 @@ impl Key {
         Key::AddressSet,
         Key::DndOn,
         Key::DndOff,
+        Key::ClickThroughOn,
+        Key::ClickThroughOff,
         Key::PinDone,
         Key::TaskSaved,
         Key::TaskFailed,
@@ -488,6 +493,32 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (DndOff, En) => &[
             "I'm back on reminder duty~ 🔔",
             "Quiet time's over! I'm here with you again~ 🔔",
+        ],
+
+        (ClickThroughOn, Vi) => &[
+            "Giờ bấm sẽ xuyên qua {me} nha~ Rê chuột vào là {me} mờ đi, muốn mở menu thì giữ Ctrl rồi bấm chuột phải lên {me}! 👻",
+            "{Me} tàng hình một nửa rồi nè 👻 Giữ Ctrl + chuột phải lên {me} để mở menu, tắt hẳn thì vào khay hệ thống nha~",
+        ],
+        (ClickThroughOn, Ja) => &[
+            "クリックはわたしを素通りするよ～ マウスを乗せると透けるよ。メニューはCtrlを押しながら右クリックしてね👻",
+            "半分とうめいモードだよ👻 メニューはCtrl＋右クリック、オフはタスクトレイからどうぞ～",
+        ],
+        (ClickThroughOn, En) => &[
+            "Clicks go right through me now~ Hover and I'll fade; hold Ctrl and right-click me for my menu! 👻",
+            "Half-invisible mode on 👻 Ctrl + right-click me for the menu, or turn it off from the tray~",
+        ],
+
+        (ClickThroughOff, Vi) => &[
+            "{Me} quay lại rồi nè~ {You} bấm được vào {me} rồi! ✨",
+            "Hết tàng hình rồi! {You} kéo, chạm {me} được như cũ nha~ ✨",
+        ],
+        (ClickThroughOff, Ja) => &[
+            "ただいま～ またわたしをクリックできるよ✨",
+            "とうめいモードおしまい！また触ったり動かしたりできるよ～✨",
+        ],
+        (ClickThroughOff, En) => &[
+            "I'm back~ You can click on me again! ✨",
+            "No more invisibility! Drag me and poke me like before~ ✨",
         ],
 
         (PinDone, Vi) => &[

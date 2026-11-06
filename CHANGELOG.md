@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-06
+
+### Added
+- **👻 See through the pet.** With click-through on, hover over her (or her speech bubble)
+  and she fades almost away, so you can read the app behind her. Clicks still go straight
+  through; move the mouse off her and she comes back.
+- **Ctrl + right-click opens her menu while click-through is on** (Windows). Only that one
+  gesture on her is caught: other Ctrl clicks, Ctrl + scroll and dragging still reach the
+  app behind. Anything you open from the menu, a chat included, stays clickable until you
+  close it (and until she finishes answering); click outside her and the menu closes like
+  any popup. Then click-through comes back on by itself.
+
+### Changed
+- **Click-through is easier to keep track of.** The tray item now says what it will do
+  ("🖱️ Turn on click-through" / "✅ Turn off click-through (on now)"), the pet tells you when
+  you switch it, and it stays the way you left it the next time the app starts (it used to
+  turn itself off).
+- **🐠 A new Guppy.** A red leopard guppy replaces the old picture. While it swims, its
+  pectoral, pelvic and anal fins now flap on their own, each a little out of step with the
+  others, and when it turns around it takes its time: it slowly fades into a head-on view,
+  looks at you for a moment, then fades back facing the other way, instead of turning flat
+  like a sheet of paper.
+- **🐠 A new Goldfish picture:** a sleeker common goldfish, drawn a little bigger in the tank.
+- **🧜 Miu the mermaid, redrawn.** The fin on top of her tail, the fin under it and the big
+  fin by her skirt now sway on their own while she swims, and when she turns around she
+  slowly fades into facing you, arms open, for a moment before swimming off the other way.
+
+### Fixed
+- Turning click-through off from the tray while the pet sits in the middle of Settings or
+  Tasks no longer makes her clickable there; she follows your choice once the panel closes.
+
 ## [0.12.1] - 2026-11-05
 
 ### Added
@@ -1083,6 +1114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.2
 [0.12.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.1
 [0.12.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.0
 [0.11.9]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.11.9

@@ -9,6 +9,7 @@ mod calendar_pin;
 mod clock_pin;
 mod collection;
 mod chat;
+mod click_through;
 mod events;
 mod commands;
 mod companion;
@@ -60,20 +61,12 @@ mod windows;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{
-    fs,
-    path::PathBuf,
-    sync::atomic::{AtomicBool, Ordering},
-};
+use std::{fs, path::PathBuf};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::TrayIconBuilder,
     AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
-
-struct AppState {
-    click_through: AtomicBool,
-}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct SavedWindowPosition {
@@ -88,6 +81,9 @@ struct SavedWindowPosition {
 // Apply click-through. set_ignore_cursor_events toggles WS_EX_TRANSPARENT, but
 // transparent + decorationless windows need a forced frame change to re-evaluate
 // the style — hence the follow-up SetWindowPos(SWP_FRAMECHANGED).
+// GỌI TRÊN LUỒNG CHÍNH: từ luồng khác, tao chỉ gửi thư đổi kiểu (PostMessageW) rồi trả
+// về, nên SetWindowPos chạy TRƯỚC khi kiểu đổi và cửa sổ có lúc vẫn chặn chuột. Pet
+// thì đi qua set_pet_click_through (tự chuyển sang luồng chính).
 fn apply_click_through(window: &tauri::WebviewWindow, ignore: bool) -> Result<(), String> {
     window
         .set_ignore_cursor_events(ignore)
@@ -122,18 +118,47 @@ fn set_click_through(window: tauri::WebviewWindow, ignore: bool) -> Result<(), S
     apply_click_through(&window, ignore)
 }
 
-// ── Dùng bởi windows.rs khi ghép/tách pet khỏi cửa sổ Cài đặt ──────────────
-/// Trạng thái click-through do NGƯỜI DÙNG chọn (qua tray), tách bạch với việc
-/// tạm khoá lúc pet đang nằm giữa bảng Cài đặt.
-pub fn user_click_through(app: &AppHandle) -> bool {
-    app.state::<AppState>().click_through.load(Ordering::SeqCst)
+/// Trang pet vừa nạp hỏi: click-through có đang bật (pet mờ khi rê chuột vào) không.
+/// Trả thẳng qua invoke, không qua sự kiện: sự kiện gửi trong lúc app vừa mở bị rơi vì
+/// trang chưa kịp nghe (đo 2026-11-06: tray ghi "đang bật" mà pet không mờ tới khi bấm lại).
+#[tauri::command]
+fn pet_see_through() -> bool {
+    click_through::see_now()
 }
 
-/// Bật/tắt click-through cho pet kèm khắc phục frame trên Windows.
+// ── Dùng bởi windows.rs khi ghép/tách pet khỏi cửa sổ Cài đặt ──────────────
+/// Trạng thái click-through do NGƯỜI DÙNG chọn (qua tray, đã lưu), tách bạch với
+/// việc tạm khoá lúc pet đang nằm giữa bảng Cài đặt (click_through.rs).
+pub fn user_click_through(_app: &AppHandle) -> bool {
+    click_through::user_on()
+}
+
+/// Bật/tắt click-through cho cửa sổ pet kèm khắc phục frame trên Windows, rồi báo
+/// trang pet (mờ đi khi rê chuột vào hay không). Gọi được từ luồng nào cũng được: việc
+/// đổi cửa sổ luôn chạy trên luồng chính (xem apply_click_through), rồi đọc lại kiểu
+/// thật của cửa sổ để biết đã ăn chưa.
 pub fn set_pet_click_through(app: &AppHandle, ignore: bool) {
-    if let Some(w) = app.get_webview_window("main") {
-        let _ = apply_click_through(&w, ignore);
+    let app2 = app.clone();
+    let run = move || {
+        let Some(w) = app2.get_webview_window("main") else { return };
+        if let Err(e) = apply_click_through(&w, ignore) {
+            click_through::log(&format!("could not change the pet window: {e}"));
+            return;
+        }
+        #[cfg(target_os = "windows")]
+        if let Ok(handle) = w.hwnd() {
+            use windows_sys::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT};
+            let ex = unsafe { GetWindowLongPtrW(handle.0 as _, GWL_EXSTYLE) } as u32;
+            let now = ex & WS_EX_TRANSPARENT != 0;
+            if now != ignore {
+                click_through::log(&format!("pet window did NOT take ignore={ignore} (WS_EX_TRANSPARENT={now})"));
+            }
+        }
+    };
+    if let Err(e) = app.run_on_main_thread(run) {
+        click_through::log(&format!("could not reach the main thread: {e}"));
     }
+    click_through::on_applied(app, ignore);
 }
 
 /// Ghi thẳng vị trí pet ra file trạng thái (dùng khi undock, vì event Moved
@@ -409,12 +434,25 @@ fn pet_command(app: AppHandle, payload: Value) {
         "openNotes" => windows::open_notes(&app),
         // Menu chuột phải → 🗂️ Mở đầy đủ: Trợ lý văn bản, người dùng tự gõ văn bản.
         "openAssistant" => windows::open_assistant(&app),
+        // Menu cũ của pet (trang tự hiện bong bóng báo). Bản desktop dùng tray.
         "setClickThrough" => {
             let v = payload.get("value").and_then(|b| b.as_bool()).unwrap_or(false);
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = apply_click_through(&w, v);
-            }
-            app.state::<AppState>().click_through.store(v, Ordering::SeqCst);
+            click_through::set(&app, v, false);
+        }
+        // Con trỏ vào / ra khỏi nhân vật (để Ctrl + chuột phải mở menu khi click-through).
+        "seeThrough:hover" => {
+            click_through::set_hover(payload.get("over").and_then(|b| b.as_bool()).unwrap_or(false));
+        }
+        // Menu / panel mở bằng Ctrl + chuột phải đã đóng hết: bật lại click-through.
+        "seeThrough:menuClosed" => click_through::menu_closed(&app),
+        // Trang đã mở được menu (không thì click_through tự bật lại sau ACK_MS).
+        "seeThrough:menuOpened" => {
+            click_through::menu_opened(payload.get("what").and_then(|v| v.as_str()).unwrap_or(""));
+        }
+        // Chẩn đoán từ trang (lỗi lúc mở menu, thứ gì còn giữ menu mở lâu).
+        "seeThrough:log" => {
+            let msg = payload.get("message").and_then(|v| v.as_str()).unwrap_or("");
+            click_through::log(&format!("page: {}", msg.chars().take(400).collect::<String>()));
         }
         "setFocusFollow" => {
             let v = payload.get("value").and_then(|b| b.as_bool()).unwrap_or(true);
@@ -669,11 +707,9 @@ fn main() {
         })
         .manage(chat::ChatState::default())
         .manage(companion::CompanionState::default())
-        .manage(AppState {
-            click_through: AtomicBool::new(false),
-        })
         .invoke_handler(tauri::generate_handler![
             set_click_through,
+            pet_see_through,
             set_hotkey,
             check_update,
             install_update,
@@ -868,7 +904,9 @@ fn main() {
                 .build()?;
 
             let _ = window.set_shadow(false);
-            let _ = apply_click_through(&window, false);
+            // Click-through theo lựa chọn đã lưu (trước đây lần nào mở app cũng tắt).
+            click_through::load(&app_handle);
+            set_pet_click_through(&app_handle, click_through::user_on());
 
             let saved = load_saved_window_position(&app_handle);
             if let Some(saved) = saved {
@@ -969,8 +1007,15 @@ fn main() {
             let tasks_item = MenuItem::with_id(app, "open_tasks", tr(Tray::Tasks, lang), true, None::<&str>)?;
             let notes_item = MenuItem::with_id(app, "open_notes", tr(Tray::Notes, lang), true, None::<&str>)?;
             let settings_item = MenuItem::with_id(app, "open_settings", tr(Tray::Settings, lang), true, None::<&str>)?;
-            let click_through_item =
-                MenuItem::with_id(app, "click_through", tr(Tray::ClickThrough, lang), true, None::<&str>)?;
+            // Chữ đổi theo trạng thái (đang tắt: "Bật…", đang bật: "Tắt…").
+            let click_through_item = MenuItem::with_id(
+                app,
+                "click_through",
+                tr(click_through::tray_label(click_through::user_on()), lang),
+                true,
+                None::<&str>,
+            )?;
+            click_through::set_tray_item(click_through_item.clone());
             let dnd_item =
                 MenuItem::with_id(app, "dnd", tr(Tray::DndOff, lang), true, None::<&str>)?;
             companion::set_tray_item(&app_handle, dnd_item.clone());
@@ -997,7 +1042,6 @@ fn main() {
                 (Tray::Tasks, &tasks_item),
                 (Tray::Notes, &notes_item),
                 (Tray::Settings, &settings_item),
-                (Tray::ClickThrough, &click_through_item),
                 (Tray::Forecast, &forecast_item),
                 (Tray::Calendar, &calendar_item),
                 (Tray::Sysmon, &sysmon_item),
@@ -1091,13 +1135,7 @@ fn main() {
                         let on = !companion::dnd_active(app);
                         companion::set_dnd(app, on, true);
                     }
-                    "click_through" => {
-                        let new_value = !app.state::<AppState>().click_through.load(Ordering::SeqCst);
-                        app.state::<AppState>().click_through.store(new_value, Ordering::SeqCst);
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = apply_click_through(&w, new_value);
-                        }
-                    }
+                    "click_through" => click_through::set(app, !click_through::user_on(), true),
                     // Trả pet về chỗ cũ trước khi thoát, nếu không lần mở sau
                     // nó sẽ nằm lại giữa nơi bảng Cài đặt từng ở.
                     "quit" => {
