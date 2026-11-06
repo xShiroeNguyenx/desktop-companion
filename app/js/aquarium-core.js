@@ -5,17 +5,19 @@
 (function (root) {
   // ─── Loài ─────────────────────────────────────────────────────────────────
   // ĐỒNG BỘ với aquarium::SPECIES. len = dài thân (px) ở cỡ lớn; h = cao / dài;
-  // speed = px/giây; school = bơi theo đàn cùng loài.
+  // speed = px/giây; school = bơi theo đàn cùng loài. turnSec (tuỳ chọn) = thời gian một
+  // vòng quay đầu, cho loài có ảnh nhìn thẳng (aquarium-draw SPRITES.front): quay chậm để
+  // ảnh hoà dần sang ảnh thẳng, dừng một lúc, rồi hoà lại (frontTurn). Mặc định 2 / TURN_RATE.
   const SHAPES = {
-    'fish.goldfish': { len: 30, h: 0.55, body: '#ff9a3c', belly: '#ffd08a', fin: '#ffb766', tail: 'fan', pattern: 'none', speed: 26, school: false },
+    'fish.goldfish': { len: 34, h: 0.55, body: '#ff9a3c', belly: '#ffd08a', fin: '#ffb766', tail: 'fan', pattern: 'none', speed: 26, school: false },
     'fish.neon': { len: 20, h: 0.32, body: '#5fd2ff', belly: '#e8f7ff', fin: '#b7ecff', tail: 'fork', pattern: 'neon', speed: 34, school: true },
-    'fish.guppy': { len: 28, h: 0.38, body: '#c9d6e3', belly: '#f2f6fa', fin: '#ff6fb1', tail: 'fan', pattern: 'spots', speed: 30, school: true },
+    'fish.guppy': { len: 21, h: 0.38, body: '#c9d6e3', belly: '#f2f6fa', fin: '#ff6fb1', tail: 'fan', pattern: 'spots', speed: 30, school: true, turnSec: 1.4 },
     'fish.molly': { len: 26, h: 0.45, body: '#f4f1f6', belly: '#ffffff', fin: '#ffb04a', tail: 'round', pattern: 'none', speed: 24, school: true },
     'fish.betta': { len: 32, h: 0.42, body: '#7a5cff', belly: '#b6a4ff', fin: '#ff5f9e', tail: 'long', pattern: 'none', speed: 18, school: false },
     'fish.angel': { len: 30, h: 1.0, body: '#e9e4d4', belly: '#fffaf0', fin: '#d8d0b8', tail: 'fork', pattern: 'stripe', speed: 16, school: false },
     'fish.clown': { len: 26, h: 0.5, body: '#ff7a1a', belly: '#ff9a4a', fin: '#ff8a2a', tail: 'round', pattern: 'stripe', speed: 22, school: false },
     'fish.koi': { len: 46, h: 0.36, body: '#fffaf2', belly: '#ffffff', fin: '#ffe9d8', tail: 'fan', pattern: 'koi', speed: 14, school: false },
-    'fish.miu': { len: 56, h: 0.6, body: '#c7a6ff', belly: '#f1e6ff', fin: '#ff9fd0', tail: 'fan', pattern: 'none', speed: 20, school: false, ears: true },
+    'fish.miu': { len: 56, h: 0.6, body: '#c7a6ff', belly: '#f1e6ff', fin: '#ff9fd0', tail: 'fan', pattern: 'none', speed: 20, school: false, ears: true, turnSec: 1.4 },
   };
   const SPECIES = Object.keys(SHAPES);
   const STAGE_SCALE = [0.6, 0.8, 1];
@@ -220,7 +222,7 @@
         if (f.vx > 3) f.dir = 1;
         else if (f.vx < -3) f.dir = -1;
       }
-      f.face = turnToward(f.face, f.dir, d);
+      f.face = turnToward(f.face, f.dir, d, turnRate(f.species));
       // Ngóc lên / chúi xuống theo hướng bơi (mượt, nhỏ dần khi đang quay đầu).
       const pitchWant = opts.reduced ? 0 : pitchFor(f.vx, f.vy) * Math.abs(f.face == null ? 1 : f.face);
       f.pitch = (f.pitch || 0) + (pitchWant - (f.pitch || 0)) * Math.min(1, d * 3);
@@ -231,10 +233,16 @@
   }
 
   /** face tiến dần về dir (mượt, không lật tức thì). Cá cũ chưa có face thì nhận luôn dir. */
-  function turnToward(face, dir, dt) {
+  function turnToward(face, dir, dt, rate = TURN_RATE) {
     if (face == null || !Number.isFinite(face)) return dir;
-    const step = TURN_RATE * Math.max(0, dt);
+    const step = rate * Math.max(0, dt);
     return Math.abs(dir - face) <= step ? dir : face + Math.sign(dir - face) * step;
+  }
+
+  /** Tốc độ quay đầu (face / giây) của loài: loài có turnSec quay chậm hơn. */
+  function turnRate(species) {
+    const s = shape(species).turnSec;
+    return s > 0 ? 2 / s : TURN_RATE;
   }
 
   // ─── Quay đầu (xoay quanh trục dọc, thân cong chữ C, phối cảnh) ────────────
@@ -301,6 +309,43 @@
       const sb = cam / (cam - (g.zb - cz));
       return { u0: g.u0, u1: g.u1, yaw: g.yaw, pa: (g.xa - cx) * sa, pb: (g.xb - cx) * sb, s: (sa + sb) / 2, z: (g.za + g.zb) / 2 - cz };
     });
+  }
+
+  /**
+   * Quay đầu của loài có ảnh nhìn thẳng (SPRITES.front, quay trong turnSec giây). Theo tiến
+   * độ vòng quay (đều theo thời gian), đối xứng hai nửa:
+   *   - thân bắt đầu xoay vào trong (cong chữ C), ảnh thẳng hiện mờ dần lên trên;
+   *   - giữa vòng: dừng ở ảnh thẳng (FRONT_HOLD của vòng);
+   *   - ảnh thẳng mờ dần đi, thân (đã quay sang hướng mới) xoay nốt ra ngang.
+   * Trả { phi: góc xoay cho ảnh nghiêng, mix: 0 (chỉ ảnh nghiêng) … 1 (chỉ ảnh thẳng) }.
+   */
+  const FRONT_HOLD = 0.25;
+  const FRONT_FADE = 0.5;
+  function frontTurn(f) {
+    const face = f.face == null ? f.dir || 1 : clamp(f.face, -1, 1);
+    const p = (1 - face) / 2;
+    const u = Math.abs(2 * p - 1); // 1 = hai đầu vòng, 0 = giữa vòng
+    const mix = 1 - smooth((u - FRONT_HOLD) / FRONT_FADE);
+    const half = (Math.PI / 2) * smooth((1 - u) / (1 - FRONT_HOLD));
+    return { phi: p <= 0.5 ? half : Math.PI - half, mix };
+  }
+
+  /** Smoothstep trên t (kẹp 0..1): đi chậm ở hai đầu. */
+  function smooth(t) {
+    const x = clamp(t, 0, 1);
+    return x * x * (3 - 2 * x);
+  }
+
+  /**
+   * Tư thế một vây rời theo nhịp bơi `wag`: góc xoay quanh gốc (rad) và bề ngang
+   * (1 = như ảnh, nhỏ hơn = vây quạt ra sau / vào trong). part: { rot, flap, speed, lag }.
+   * reduced (giảm chuyển động): còn 30% biên độ.
+   */
+  function finPose(part, wag, reduced) {
+    const k = reduced ? 0.3 : 1;
+    const t = (wag || 0) * (part.speed || 1) + (part.lag || 0);
+    const s = Math.sin(t);
+    return { angle: (part.rot || 0) * k * s, scaleX: 1 - (part.flap || 0) * k * (0.5 + 0.5 * s) };
   }
 
   function nearest(food, x, y) {
@@ -546,7 +591,7 @@
 
   const api = {
     SHAPES, SPECIES, STAGE_SCALE, MAX_FOOD, REST_SECS, WATER, STR,
-    TURN_RATE, PITCH_MAX, TURN_BEND, turnToward, turnPhi, spine, depthScale, depthAlpha, byDepth, pitchFor,
+    TURN_RATE, PITCH_MAX, TURN_BEND, turnToward, turnRate, turnPhi, spine, frontTurn, finPose, depthScale, depthAlpha, byDepth, pitchFor,
     shape, fishLen, rng, swimBox, syncSim, step, maxSpeed,
     dropFood, dropFoodAt, fishNear, sinkFood, eat, scatter, fishAt, lightAt, strings, fill, fishLabel, errorText, canAdd,
   };

@@ -285,32 +285,123 @@
   // trái lắc theo nhịp bơi, phần bên phải đứng yên. cy = tâm thân theo chiều dọc.
   // wag (tuỳ chọn) = biên độ lắc, mặc định 0.16: loài có vây lưng / bụng kéo dài qua
   // điểm nối (cá thần tiên) để nhỏ, không thì thấy vết cắt trên vây.
+  //
+  // Tuỳ chọn, cá có lớp rời (khuôn: docs/aquarium/fish-sprite-guide.png):
+  // - parts: vây quạt riêng. Ảnh thân đã XOÁ các vây này; mỗi vây là một PNG cắt sát,
+  //   cắt từ CHÍNH ảnh cá gốc (cùng tỉ lệ). x, y, w = hộp của vây; px, py = gốc vây (trục
+  //   xoay); tất cả tính theo phần của ảnh thân (0..1). rot = biên độ xoay (rad), flap =
+  //   co bề ngang tối đa (0..1), speed = nhịp so với nhịp đuôi, lag = lệch pha (rad).
+  //   under = vây nằm SAU thân (thân che gốc vây): ảnh vây có thêm một đoạn gốc giấu dưới
+  //   thân, quạt mạnh mà không hở khe; dùng cho vây gắn dọc mép thân / chui ra từ dưới váy.
+  //   Vây được ghép lên thân trước, rồi cả con mới uốn dải / quay đầu như thường.
+  // - front: ảnh nhìn thẳng (đối xứng), hoà vào giữa vòng quay đầu. h = cao so với ảnh
+  //   thân, cy = tâm mặt theo chiều dọc của ảnh thẳng. Loài có front phải có turnSec trong
+  //   aquarium-core SHAPES (quay chậm để kịp hoà ảnh; test kiểm).
   const SPRITES = {
-    'fish.goldfish': { src: 'media/aquarium/fish/fish.goldfish.png', joint: 0.42, cy: 0.48 },
-    'fish.guppy': { src: 'media/aquarium/fish/fish.guppy.png', joint: 0.38, cy: 0.49 },
+    'fish.goldfish': { src: 'media/aquarium/fish/fish.goldfish.png', joint: 0.32, cy: 0.52 },
+    'fish.guppy': {
+      src: 'media/aquarium/fish/fish.guppy.png',
+      joint: 0.366,
+      cy: 0.525,
+      parts: [
+        { src: 'media/aquarium/fish/fish.guppy.anal.png', x: 0.4277, y: 0.6775, w: 0.2317, px: 0.6059, py: 0.6884, rot: 0.09, flap: 0, speed: 1, lag: 1.7 },
+        { src: 'media/aquarium/fish/fish.guppy.pelvic.png', x: 0.604, y: 0.692, w: 0.1287, px: 0.705, py: 0.6993, rot: 0.13, flap: 0, speed: 1, lag: 0.9 },
+        { src: 'media/aquarium/fish/fish.guppy.pectoral.png', x: 0.6673, y: 0.5036, w: 0.1386, px: 0.7941, py: 0.5688, rot: 0.22, flap: 0.28, speed: 1.7, lag: 0 },
+      ],
+      front: { src: 'media/aquarium/fish/fish.guppy.front.png', h: 1.1, cy: 0.6 },
+    },
     'fish.betta': { src: 'media/aquarium/fish/fish.betta.png', joint: 0.44, cy: 0.45 },
     'fish.molly': { src: 'media/aquarium/fish/fish.molly.png', joint: 0.39, cy: 0.55 },
     'fish.angel': { src: 'media/aquarium/fish/fish.angel.png', joint: 0.38, cy: 0.47, wag: 0.05 },
     'fish.koi': { src: 'media/aquarium/fish/fish.koi.png', joint: 0.26, cy: 0.54, wag: 0.12 },
-    // Nàng tiên cá: chỉ vây đuôi (bên trái điểm nối) lắc; tóc bắt đầu ngay sau đó nên lắc nhẹ.
-    'fish.miu': { src: 'media/aquarium/fish/fish.miu.png', joint: 0.28, cy: 0.55, wag: 0.1 },
+    // Nàng tiên cá: vây đuôi lắc nhẹ (tóc bắt đầu ngay sau điểm nối); ba vây nhỏ nằm sau
+    // thân quạt riêng; giữa vòng quay hiện ảnh nhìn thẳng (cả người, đuôi buông xuống).
+    'fish.miu': {
+      src: 'media/aquarium/fish/fish.miu.png',
+      joint: 0.269,
+      cy: 0.566,
+      wag: 0.1,
+      parts: [
+        { src: 'media/aquarium/fish/fish.miu.dorsal.png', x: 0.2968, y: 0.3387, w: 0.2144, px: 0.4847, py: 0.5037, rot: 0.09, flap: 0, speed: 1, lag: 0.8, under: true },
+        { src: 'media/aquarium/fish/fish.miu.anal.png', x: 0.2138, y: 0.6215, w: 0.2049, px: 0.4071, py: 0.7334, rot: 0.08, flap: 0, speed: 1, lag: 1.6, under: true },
+        { src: 'media/aquarium/fish/fish.miu.hip.png', x: 0.4364, y: 0.7025, w: 0.1736, px: 0.599, py: 0.7467, rot: 0.12, flap: 0.1, speed: 1, lag: 0, under: true },
+      ],
+      // Mắt ảnh thẳng ngang mắt ảnh nghiêng (không nhảy lúc hoà); đuôi buông thấp hơn thân.
+      front: { src: 'media/aquarium/fish/fish.miu.front.png', h: 1.45, cy: 0.39 },
+    },
   };
   const loaded = {};
 
-  /** Ảnh đã nạp xong của loài, hoặc null (chưa có ảnh / đang nạp / không có Image). */
-  function sprite(species, onReady) {
-    const meta = SPRITES[species];
-    if (!meta || typeof Image === 'undefined') return null;
-    let img = loaded[species];
+  /** Ảnh theo đường dẫn (nạp một lần), hoặc null khi chưa xong. */
+  function image(src, onReady) {
+    let img = loaded[src];
     if (!img) {
       img = new Image();
       img.decoding = 'async';
-      img.src = meta.src;
-      loaded[species] = img;
+      img.src = src;
+      loaded[src] = img;
     }
-    if (img.complete && img.naturalWidth > 0) return { img, meta };
+    if (img.complete && img.naturalWidth > 0) return img;
     if (onReady) img.addEventListener('load', onReady, { once: true });
     return null;
+  }
+
+  /**
+   * Ảnh đã nạp xong của loài, hoặc null (chưa có ảnh / đang nạp / không có Image).
+   * Loài có vây rời: chỉ sẵn sàng khi thân và mọi vây đã nạp (thân không có vây trông
+   * cụt). Ảnh thẳng thì không bắt buộc: chưa có thì quay đầu kiểu cũ.
+   */
+  function sprite(species, onReady) {
+    const meta = SPRITES[species];
+    if (!meta || typeof Image === 'undefined') return null;
+    const img = image(meta.src, onReady);
+    const parts = (meta.parts || []).map((p) => ({ p, img: image(p.src, onReady) }));
+    if (!img || parts.some((x) => !x.img)) return null;
+    const front = meta.front ? image(meta.front.src) : null;
+    return { img, meta, parts, front };
+  }
+
+  /** Canvas ghép thân + vây, mỗi loài một cái (vẽ lần lượt từng con, không song song). */
+  const finCanvas = {};
+
+  /**
+   * Thân với các vây ở tư thế lúc này (A.finPose), cùng cỡ ảnh thân, để uốn dải / quay
+   * đầu dùng y như ảnh gốc. Không có vây rời, hoặc không có document (node test): ảnh thân.
+   */
+  function withFins(sp, f, reduced) {
+    const { img, meta, parts } = sp;
+    if (!parts || !parts.length || typeof document === 'undefined') return img;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    let c = finCanvas[meta.src];
+    if (!c) {
+      const canvas = document.createElement('canvas');
+      c = finCanvas[meta.src] = { canvas, ctx: canvas.getContext('2d') };
+    }
+    if (c.canvas.width !== iw || c.canvas.height !== ih) {
+      c.canvas.width = iw;
+      c.canvas.height = ih;
+    }
+    const g = c.ctx;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, iw, ih);
+    const fin = ({ p, img: pi }) => {
+      const pose = A.finPose(p, f.wag, reduced);
+      const px = p.px * iw;
+      const py = p.py * ih;
+      const w = p.w * iw;
+      const h = (w * pi.naturalHeight) / pi.naturalWidth;
+      g.save();
+      g.translate(px, py);
+      g.rotate(pose.angle);
+      g.scale(pose.scaleX, 1);
+      g.drawImage(pi, p.x * iw - px, p.y * ih - py, w, h);
+      g.restore();
+    };
+    parts.filter((x) => x.p.under).forEach(fin); // sau thân: thân che gốc vây
+    g.drawImage(img, 0, 0, iw, ih);
+    parts.filter((x) => !x.p.under).forEach(fin);
+    return c.canvas;
   }
 
   /**
@@ -332,15 +423,21 @@
     const reach = Math.min(1, meta.joint + 0.45);
     const phase = f.wag || 0;
     // Quay đầu: xoay quanh trục dọc, thân cong chữ C, phối cảnh (aquarium-core spine).
-    const phi = A.turnPhi(f);
+    // Loài có ảnh thẳng: quay chậm, hoà dần sang ảnh thẳng, dừng, hoà lại (frontTurn).
+    const ft = sp.front ? A.frontTurn(f) : null;
+    const phi = ft ? ft.phi : A.turnPhi(f);
     const turning = Math.sin(phi) > 0.03;
     const segs = A.spine(phi, W, STRIPS, f.len);
     const facingRight = Math.cos(phi) >= 0;
+    const mix = ft ? ft.mix : 0;
+    const alpha = A.depthAlpha(f);
+    const body = mix < 0.99 ? withFins(sp, f, opts.reduced) : null;
 
     ctx.save();
     ctx.translate(f.x, f.y);
     ctx.rotate(-(f.pitch || 0) * (facingRight ? 1 : -1));
-    ctx.globalAlpha = A.depthAlpha(f);
+    // Hoà chéo không "ma": hình đang chiếm ưu thế giữ đặc, hình kia hiện dần lên trên.
+    ctx.globalAlpha = alpha * Math.min(1, 2 * (1 - mix));
     if (opts.mode === 'night' && !opts.glow) ctx.filter = 'brightness(0.72)';
     if (opts.glow) {
       ctx.shadowBlur = 8;
@@ -349,7 +446,7 @@
 
     // Đang quay: vẽ vào canvas phụ để phủ tối dải đang nghiêng (source-atop chỉ phủ lên
     // chính con cá), rồi mới đưa lên. Bơi thẳng: vẽ thẳng (không tốn canvas phụ).
-    const scratch = turning ? scratchCanvas(W * 2.2, H * 2.2) : null;
+    const scratch = turning && body ? scratchCanvas(W * 2.2, H * 2.2) : null;
     const c = scratch ? scratch.ctx : ctx;
     const ox = scratch ? scratch.w / 2 : 0;
     const oy = scratch ? scratch.h / 2 : 0;
@@ -357,7 +454,7 @@
       c.setTransform(scratch.r, 0, 0, scratch.r, 0, 0);
       c.clearRect(0, 0, scratch.w, scratch.h);
     }
-    const order = turning ? [...segs].sort((a, b) => a.z - b.z) : segs; // xa trước
+    const order = !body ? [] : turning ? [...segs].sort((a, b) => a.z - b.z) : segs; // xa trước
     for (const g of order) {
       const uc = (g.u0 + g.u1) / 2;
       const env = Math.pow(Math.max(0, 1 - uc / reach), 1.4);
@@ -371,7 +468,7 @@
       c.save();
       c.translate(ox + (flip ? left + w : left), oy);
       c.scale(flip ? -1 : 1, 1);
-      c.drawImage(img, sx, 0, sw, ih, 0, top * g.s + off, w, H * g.s);
+      c.drawImage(body, sx, 0, sw, ih, 0, top * g.s + off, w, H * g.s);
       if (scratch) {
         const shade = (1 - Math.abs(Math.cos(g.yaw))) * TURN_SHADE;
         if (shade > 0.01) {
@@ -384,6 +481,14 @@
       c.restore();
     }
     if (scratch) ctx.drawImage(scratch.canvas, 0, 0, scratch.canvas.width, scratch.canvas.height, -ox, -oy, scratch.w, scratch.h);
+    if (mix > 0.01) {
+      // Ảnh thẳng: tâm mặt đặt đúng tâm thân, cao theo ảnh thân (meta.front.h).
+      const fi = sp.front;
+      const fh = H * (meta.front.h || 0.8);
+      const fw = (fh * fi.naturalWidth) / fi.naturalHeight;
+      ctx.globalAlpha = alpha * Math.min(1, 2 * mix);
+      ctx.drawImage(fi, -fw / 2, -fh * (meta.front.cy || 0.5), fw, fh);
+    }
     ctx.restore();
   }
 

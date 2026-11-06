@@ -294,9 +294,12 @@ test('ngóc lên khi bơi chéo lên, chúi xuống khi bơi xuống, tối đa 
 });
 
 test('gõ trúng cá liên tục: cá quay hết vòng rồi mới đổi hướng, không kẹt giữa vòng / giật vòng', () => {
-  for (const seed of [41, 42, 43, 44, 45]) {
+  // Koi: quay nhanh, giữa vòng (nằm nghiêng) chỉ thoáng qua. Miu: quay chậm, dừng ở ảnh
+  // thẳng (frontTurn) — có chủ ý, nhưng vẫn không kẹt ở giữa vòng.
+  const cases = [['fish.koi', 0.4], ['fish.miu', 0.6]].flatMap(([sp, max]) => [41, 42, 43, 44, 45].map((seed) => [sp, max, seed]));
+  for (const [species, maxMid, seed] of cases) {
     const rand = A.rng(seed);
-    const sim = A.syncSim([], [{ uid: 1, species: 'fish.miu', stage: 2 }], { w: 1920, h: 1000, sand: 0 }, rand, 2.7, 0.3);
+    const sim = A.syncSim([], [{ uid: 1, species, stage: 2 }], { w: 1920, h: 1000, sand: 0 }, rand, 2.7, 0.3);
     const f = sim[0];
     const big = { w: 1920, h: 1000, sand: 0 };
     let midFrames = 0;
@@ -315,8 +318,8 @@ test('gõ trúng cá liên tục: cá quay hết vòng rồi mới đổi hướ
       dirAtStart = f.dir;
       lastFace = f.face;
     }
-    // Giữa vòng (gần đứng thẳng) chỉ thoáng qua: < 40% thời gian dù bị gõ mỗi 1.3 giây.
-    assert.ok(midFrames < 300 * 0.4, `hạt ${seed}: ${midFrames}/300 khung đứng thẳng`);
+    // Bị gõ mỗi 1.3 giây mà phần lớn thời gian vẫn bơi ngang.
+    assert.ok(midFrames < 300 * maxMid, `${species} hạt ${seed}: ${midFrames}/300 khung giữa vòng`);
   }
 });
 
@@ -375,4 +378,60 @@ test('spine: bơi thẳng = vẽ như trước; quay xong = gương; các dải 
   for (const phi of [0.3, 1.2, 2.0, 2.8]) {
     for (const g of A.spine(phi, W, n, len)) assert.ok(g.yaw >= 0 && g.yaw <= Math.PI && g.s > 0);
   }
+});
+
+test('frontTurn: hoà dần sang ảnh thẳng, dừng ở giữa vòng, hoà lại; đầu / cuối đúng hướng', () => {
+  assert.deepEqual(A.frontTurn({ face: 1 }), { phi: 0, mix: 0 });
+  const end = A.frontTurn({ face: -1 });
+  assert.ok(Math.abs(end.phi - Math.PI) < 1e-12 && end.mix === 0, 'quay xong: nhìn trái, chỉ ảnh nghiêng');
+  const mid = A.frontTurn({ face: 0 });
+  assert.ok(Math.abs(mid.phi - Math.PI / 2) < 1e-12 && mid.mix === 1, 'giữa vòng: chỉ ảnh thẳng');
+  assert.deepEqual(A.frontTurn({ dir: -1 }), A.frontTurn({ face: -1 }), 'chưa có face thì theo dir');
+  // face đi đều theo thời gian: đếm phần vòng quay dừng ở ảnh thẳng / đang hoà.
+  const n = 1000;
+  let hold = 0;
+  let fading = 0;
+  let prev = A.frontTurn({ face: 1 });
+  for (let i = 1; i <= n; i++) {
+    const t = A.frontTurn({ face: 1 - (2 * i) / n });
+    if (t.mix >= 0.99) hold++;
+    else if (t.mix > 0.01) fading++;
+    assert.ok(t.phi >= prev.phi - 1e-12, `góc không lùi (${i})`);
+    // mượt: không nhảy cóc giữa hai bước nhỏ
+    assert.ok(Math.abs(t.mix - prev.mix) < 0.01 && Math.abs(t.phi - prev.phi) < 0.02, `mượt (${i})`);
+    prev = t;
+  }
+  assert.ok(hold / n > 0.2, `dừng ở ảnh thẳng ${Math.round((100 * hold) / n)}% vòng quay`);
+  assert.ok(fading / n > 0.3, `hoà dần ${Math.round((100 * fading) / n)}% vòng quay (không đổi cái rụp)`);
+});
+
+test('loài có turnSec quay chậm đúng thời gian đó, loài khác giữ TURN_RATE', () => {
+  assert.equal(A.turnRate('fish.koi'), A.TURN_RATE);
+  for (const sp of A.SPECIES.filter((s) => A.shape(s).turnSec)) {
+    let face = 1;
+    let frames = 0;
+    while (face !== -1 && frames < 1000) {
+      face = A.turnToward(face, -1, 1 / 30, A.turnRate(sp));
+      frames++;
+    }
+    assert.ok(Math.abs(frames / 30 - A.shape(sp).turnSec) <= 1 / 30 + 1e-9, `${sp}: ${frames} khung`);
+    assert.ok(A.turnRate(sp) < A.TURN_RATE, `${sp}: chậm hơn mặc định`);
+  }
+});
+
+test('finPose: vây xoay quanh gốc theo nhịp, co bề ngang, giảm chuyển động thì nhỏ lại', () => {
+  const p = { rot: 0.2, flap: 0.3, speed: 2, lag: 0.5 };
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let i = 0; i < 200; i++) {
+    const { angle, scaleX } = A.finPose(p, i * 0.05, false);
+    assert.ok(Math.abs(angle) <= 0.2 + 1e-12);
+    assert.ok(scaleX >= 0.7 - 1e-12 && scaleX <= 1 + 1e-12);
+    lo = Math.min(lo, angle);
+    hi = Math.max(hi, angle);
+  }
+  assert.ok(hi - lo > 0.35, 'có quạt thật');
+  const r = A.finPose(p, Math.PI / 4 - 0.5 / 2, true);
+  assert.ok(Math.abs(r.angle) <= 0.06 + 1e-12 && r.scaleX >= 0.91 - 1e-12, 'reduced: 30%');
+  assert.deepEqual(A.finPose({}, 3, false), { angle: 0, scaleX: 1 }, 'vây không khai báo thì đứng yên');
 });
