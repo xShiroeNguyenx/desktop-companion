@@ -48,9 +48,11 @@ jobs:
 
       - name: Build app + create release
         id: build
-        # macOS: bundle_dmg.sh sometimes fails on GitHub runners (hdiutil "Resource busy");
-        # let the job go on so the retry step below can build the .dmg once more.
-        continue-on-error: ${{ matrix.platform == 'macos-latest' }}
+        # Bundling sometimes fails for reasons outside the code: on macOS bundle_dmg.sh
+        # (hdiutil "Resource busy"), on Windows the NSIS / WiX download from GitHub
+        # (HTTP 502/504). Let the job go on so the retry step below bundles once more;
+        # the compiled app is already in target/, so the retry is quick.
+        continue-on-error: true
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -66,8 +68,8 @@ jobs:
           includeUpdaterJson: true
           args: ${{ matrix.args }}
 
-      - name: Retry macOS build (flaky .dmg bundling)
-        if: matrix.platform == 'macos-latest' && steps.build.outcome == 'failure'
+      - name: Retry build (flaky bundling / tool download)
+        if: steps.build.outcome == 'failure'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,5 +82,5 @@ jobs:
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
-          # --verbose prints bundle_dmg.sh's own output, so a second failure shows the real cause.
+          # --verbose prints the bundler's own output, so a second failure shows the real cause.
           args: ${{ matrix.args }} --verbose
