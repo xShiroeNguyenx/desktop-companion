@@ -27,8 +27,8 @@
   const MAX_LEVEL = MIUS.length + MODELS.length + ANGELS.length; // 13, như 2 → 8192
   // Thắng ở Angel tím = mốc 2048; Angel tuyết / hồng là phần chơi tiếp lấy thêm điểm.
   const WIN_LEVEL = FIRST_ANGEL; // 11
-  // Dòng model có đủ 5 bậc (pink chưa có lolita nên chưa có mặt ở đây).
-  const SERIES = ['gothic', 'snow'];
+  // Dòng model có đủ 4 bậc trong MODELS, cùng thứ tự màu với Miu / Angel.
+  const SERIES = ['gothic', 'snow', 'pink'];
   const DIRS = ['left', 'right', 'up', 'down'];
 
   /**

@@ -31,10 +31,10 @@
     },
     {
       "id": "gothic-lolita",
-      "version": 1,
-      "file": "gothic-lolita-1.zip",
-      "sha256": "b003d0ab4452bbc8e87e30cdf9638d687763a3ad9a025a1c522104ef9637aba8",
-      "size": 1753796
+      "version": 2,
+      "file": "gothic-lolita-2.zip",
+      "sha256": "0f53f5cee20a26ae6c902bb23c4f7ba2bd6b052c53b2e6f4e656dbd35d20a503",
+      "size": 1834108
     },
     {
       "id": "gothic-pastel",
@@ -70,6 +70,13 @@
       "file": "pink-kawaii-1.zip",
       "sha256": "3432ed0bd0f24614ad81713499b45c233ffea56eb8ad5fc6b5b1434f512b1f38",
       "size": 2145978
+    },
+    {
+      "id": "pink-lolita",
+      "version": 1,
+      "file": "pink-lolita-1.zip",
+      "sha256": "a5b391ac904333fef85c334696be1058f99b773c928fb36534d04037a6dbf6fc",
+      "size": 1860704
     },
     {
       "id": "pink-pastel",
@@ -115,10 +122,10 @@
     },
     {
       "id": "snow-lolita",
-      "version": 1,
-      "file": "snow-lolita-1.zip",
-      "sha256": "ee4b5d5ae325af61876987e2e8c06eb37936e9f93201f0bc607892386b2aba1f",
-      "size": 2061505
+      "version": 2,
+      "file": "snow-lolita-2.zip",
+      "sha256": "d6b6d33cce1bead57b5a7c1b09c8a7409ec6ad1f2d680c535329e73ba658c85f",
+      "size": 2358217
     },
     {
       "id": "snow-pastel",

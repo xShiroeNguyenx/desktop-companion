@@ -146,6 +146,10 @@ A **new** model also needs an app release, because the app has to know it: a
 `app/media/model-previews/`. Publish the model (steps 1–3) **before** that app
 release goes out, or buyers get "not published yet" until you do.
 
+A **free** model (like the Lolita line) is the same, except its item has
+`price: 0` and no drop rate: everyone owns it, its card shows Download right
+away, and it is never downloaded without the user asking.
+
 ## How the updater finds releases
 
 `src-tauri/tauri.conf.json` → `plugins.updater.endpoints` points at:

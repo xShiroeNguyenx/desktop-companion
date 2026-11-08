@@ -43,7 +43,9 @@ test('ảnh: Miu và Angel cố định theo màu, model theo dòng; dòng lạ 
   assert.equal(M.tileSrc(3, 'gothic'), 'media/miu/snow/rps-sleepy.webp');
   assert.equal(M.tileSrc(6, 'gothic'), 'media/game/rps-cheer.png');
   assert.equal(M.tileSrc(7, 'snow'), 'media/model-previews/snow-lolita.png');
-  assert.equal(M.tileSrc(10, 'pink'), 'media/model-previews/gothic-aristocrat.png');
+  assert.equal(M.tileSrc(7, 'pink'), 'media/model-previews/pink-lolita.png');
+  assert.equal(M.tileSrc(10, 'pink'), 'media/model-previews/pink-aristocrat.png');
+  assert.equal(M.tileSrc(10, 'nope'), 'media/model-previews/gothic-aristocrat.png');
   assert.equal(M.tileSrc(11, 'snow'), 'media/model-previews/gothic-angel.png');
   assert.equal(M.tileSrc(12, 'gothic'), 'media/model-previews/snow-angel.png');
   assert.equal(M.tileSrc(13, 'gothic'), 'media/model-previews/pink-angel.png');

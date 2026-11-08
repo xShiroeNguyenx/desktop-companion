@@ -5,7 +5,8 @@
 //! - **Đóng gói** (`item = None`): miễn phí, file nằm trong `app/media/live2d/<dir>/`.
 //! - **Tải riêng** (`item = Some(món)`): món Bộ sưu tập (collection.rs, nhóm Model),
 //!   KHÔNG nằm trong bộ cài. Mở khoá rồi mới tải từ release `models` (model_dl.rs);
-//!   dùng được khi đã sở hữu **và** đã cài.
+//!   dùng được khi đã sở hữu **và** đã cài. Món giá 0 (dòng Lolita) là model
+//!   **miễn phí tải riêng**: ai cũng sở hữu sẵn, chỉ cần bấm Tải về (`free_download`).
 //!
 //! Model người dùng tự thêm từ thư mục (`store::CustomModel`) luôn dùng được và
 //! nằm ngoài catalog.
@@ -191,16 +192,25 @@ pub const BUILTIN: &[Builtin] = &[
         dir: "Gothic_Lolita",
         entry: crate::model_pack::PACK_ENTRY,
         name: "Gothic Lolita",
-        desc: "Cô gái tai mèo gothic tím 🦇",
+        desc: "Cô gái tai mèo áo lông bông tuyết nơ tím 🦇",
         item: Some("model.gothic-lolita"),
         preview: Some("media/model-previews/gothic-lolita.png"),
+    },
+    Builtin {
+        id: "pink-lolita",
+        dir: "Pink_Lolita",
+        entry: crate::model_pack::PACK_ENTRY,
+        name: "Pink Lolita",
+        desc: "Cô gái tai mèo áo lông bông tuyết nơ hồng 🌸",
+        item: Some("model.pink-lolita"),
+        preview: Some("media/model-previews/pink-lolita.png"),
     },
     Builtin {
         id: "snow-lolita",
         dir: "Snow_Lolita",
         entry: crate::model_pack::PACK_ENTRY,
         name: "Snow Lolita",
-        desc: "Cô gái tai mèo áo lông bông tuyết ❄️",
+        desc: "Cô gái tai mèo áo lông bông tuyết nơ xanh ❄️",
         item: Some("model.snow-lolita"),
         preview: Some("media/model-previews/snow-lolita.png"),
     },
@@ -230,6 +240,19 @@ pub fn owned(m: &Builtin, c: &Collection) -> bool {
         None => true,
         Some(item) => collection::item(item).is_some_and(|it| collection::owns(c, it)),
     }
+}
+
+/// Model tải riêng nhưng miễn phí (món giá 0): sở hữu sẵn, không phải đổi kẹo.
+pub fn free_download(m: &Builtin) -> bool {
+    m.item.and_then(collection::item).is_some_and(|it| it.price == 0)
+}
+
+/// Lúc mở app có xét model này không (`installed`: phiên bản đang cài). Đã mua
+/// mà chưa cài (cài lại máy) thì tải lại; model miễn phí thì chỉ cập nhật khi đã
+/// cài, để không tự tải về máy của mọi người. Bản mới hơn hay không: model_dl so
+/// với manifest.
+pub fn sync_on_start(m: &Builtin, c: &Collection, installed: Option<u32>) -> bool {
+    m.downloadable() && owned(m, c) && (installed.is_some() || !free_download(m))
 }
 
 /// Model này có dùng được không: miễn phí; tải riêng thì đã sở hữu và đã cài
@@ -344,12 +367,40 @@ mod tests {
         assert_eq!(effective("custom-9", &c, &mine, &none), DEFAULT_ID);
         assert_eq!(effective("nope", &c, &[], &none), DEFAULT_ID);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), DEFAULT_ID, "đã tải (máy khác chép sang) nhưng chưa mua");
-        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "pink-lolita", "snow-lolita", "snow-dancer"]);
         c.owned.push("model.gothic-aristocrat".into());
         assert_eq!(effective("gothic-aristocrat", &c, &[], &none), DEFAULT_ID, "đã mua nhưng chưa tải xong");
-        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &none), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "gothic-aristocrat", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "pink-lolita", "snow-lolita", "snow-dancer"]);
         assert_eq!(effective("gothic-aristocrat", &c, &[], &got), "gothic-aristocrat");
-        assert_eq!(locked(&c, &got), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "snow-lolita", "snow-dancer"]);
+        assert_eq!(locked(&c, &got), vec!["gothic-kawaii", "pink-kawaii", "snow-kawaii", "gothic-pastel", "pink-pastel", "snow-pastel", "gothic-dream", "pink-dream", "snow-dream", "pink-aristocrat", "snow-aristocrat", "gothic-angel", "pink-angel", "snow-angel", "gothic-lolita", "pink-lolita", "snow-lolita", "snow-dancer"]);
+    }
+
+    #[test]
+    fn lolita_line_is_free_but_still_downloaded() {
+        let c = Collection::default();
+        let none: Vec<String> = Vec::new();
+        for id in ["gothic-lolita", "pink-lolita", "snow-lolita"] {
+            let m = builtin(id).unwrap();
+            assert!(m.downloadable() && free_download(m), "{id}: miễn phí nhưng không nằm trong bộ cài");
+            assert!(owned(m, &c), "{id}: chưa đổi kẹo vẫn sở hữu");
+            assert_eq!(effective(id, &c, &[], &none), DEFAULT_ID, "{id}: chưa tải thì chưa dùng được");
+            assert_eq!(effective(id, &c, &[], &[id.to_string()]), id);
+        }
+        assert!(!free_download(builtin("gothic-kawaii").unwrap()));
+        assert!(!free_download(builtin("hiyori").unwrap()), "đóng gói, không phải tải riêng");
+    }
+
+    #[test]
+    fn start_sync_never_downloads_free_models_on_its_own() {
+        let mut c = Collection::default();
+        let free = builtin("pink-lolita").unwrap();
+        let paid = builtin("gothic-kawaii").unwrap();
+        assert!(!sync_on_start(free, &c, None), "chưa từng tải: để người dùng tự bấm");
+        assert!(sync_on_start(free, &c, Some(1)), "đã cài: vẫn nhận bản mới");
+        assert!(!sync_on_start(paid, &c, None), "chưa mua");
+        c.owned.push("model.gothic-kawaii".into());
+        assert!(sync_on_start(paid, &c, None), "đã mua mà chưa cài (cài lại máy): tải lại");
+        assert!(!sync_on_start(builtin("hiyori").unwrap(), &c, None), "đóng gói sẵn");
     }
 
     #[test]

@@ -167,7 +167,7 @@ pub async fn manifest(app: &AppHandle, fresh: bool) -> Result<Manifest, String> 
     Ok(m)
 }
 
-/// Có model tải riêng nào đã mở khoá không (không thì khỏi gọi mạng).
+/// Các model tải riêng đã sở hữu (kể cả model miễn phí): chỉ những model này được cài.
 fn owned_downloadables(app: &AppHandle) -> Vec<&'static models::Builtin> {
     let c = store::load_collection(app);
     models::BUILTIN
@@ -278,14 +278,19 @@ async fn install_inner(app: &AppHandle, b: &'static models::Builtin) -> Result<u
     Ok(e.version)
 }
 
-/// Lúc mở app: model đã mở khoá mà chưa cài (cài lại máy) hoặc có bản mới → tải.
+/// Lúc mở app: model đã mua mà chưa cài (cài lại máy) hoặc model đã cài có bản
+/// mới → tải. Model miễn phí chưa cài thì để người dùng tự bấm (models::sync_on_start).
 pub async fn sync_on_start(app: AppHandle) {
-    let owned = owned_downloadables(&app);
-    if owned.is_empty() {
+    let c = store::load_collection(&app);
+    let wanted: Vec<&'static models::Builtin> = models::BUILTIN
+        .iter()
+        .filter(|m| models::sync_on_start(m, &c, installed_version(&app, m.id)))
+        .collect();
+    if wanted.is_empty() {
         return;
     }
     let Ok(man) = manifest(&app, false).await else { return };
-    for m in owned {
+    for m in wanted {
         let newer = man.get(m.id).is_some_and(|e| installed_version(&app, m.id).is_none_or(|v| v < e.version));
         if newer {
             let _ = install(app.clone(), m.id.to_string()).await;

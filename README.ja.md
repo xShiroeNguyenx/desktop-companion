@@ -56,12 +56,13 @@
   <img src="docs/landing/img/model-snow-angel.png" height="180" alt="Snow Angel" />
   <br />
   <img src="docs/landing/img/model-gothic-lolita.png" height="180" alt="Gothic Lolita" />
+  <img src="docs/landing/img/model-pink-lolita.png" height="180" alt="Pink Lolita" />
   <img src="docs/landing/img/model-snow-lolita.png" height="180" alt="Snow Lolita" />
   <img src="docs/landing/img/model-snow-dancer.png" height="180" alt="Snow Dancer" />
   <img src="docs/landing/img/model-gothic-dream.png" height="180" alt="Gothic Dream" />
   <img src="docs/landing/img/model-pink-dream.png" height="180" alt="Pink Dream" />
   <img src="docs/landing/img/model-snow-dream.png" height="180" alt="Snow Dream" />
-  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Kawaii・Pink Kawaii・Snow Kawaii・Gothic Pastel・Pink Pastel・Snow Pastel・Gothic Aristocrat・Pink Aristocrat・Snow Aristocrat・Gothic Angel・Pink Angel・Snow Angel・Gothic Lolita・Snow Lolita・Snow Dancer・Gothic Dream・Pink Dream・Snow Dream</sub>
+  <br /><sub>🎭 コレクションの Live2D モデル：Gothic Kawaii・Pink Kawaii・Snow Kawaii・Gothic Pastel・Pink Pastel・Snow Pastel・Gothic Aristocrat・Pink Aristocrat・Snow Aristocrat・Gothic Angel・Pink Angel・Snow Angel・Gothic Lolita・Pink Lolita・Snow Lolita・Snow Dancer・Gothic Dream・Pink Dream・Snow Dream</sub>
 </p>
 
 ---
@@ -183,22 +184,24 @@
   セリフパック 📜 とびきりのほめ言葉（タスク・集中・朝のあいさつのほめ言葉が増える）、
   Live2D モデルと交換できます。雪の国・ネコ・狐は全パネルの見た目も変えます
   （氷・ゴシックロリータ・狐の社）。飾りだけで、お金では買えません。
-- **🎭 コレクションの Live2D モデル** — 18 人の追加キャラクター。笑顔・悲しみ・怒り・
+- **🎭 コレクションの Live2D モデル** — 19 人の追加キャラクター。笑顔・悲しみ・怒り・
   驚き・照れ・ウインクの表情と、それぞれのモーションつき：
 
   | モデル | 価格 | カプセル排出率 |
   |---|---|---|
   | 🦇 Gothic Aristocrat・🌸 Pink Aristocrat・❄️ Snow Aristocrat・🦇 Gothic Angel・👼 Pink Angel・❄️ Snow Angel | 10000 🍬 | 各 0.1% |
   | 🦇 Gothic Pastel・🌸 Pink Pastel・❄️ Snow Pastel・🦇 Gothic Dream・🌸 Pink Dream・❄️ Snow Dream | 7500 🍬 | 各 0.2% |
-  | 🦇 Gothic Kawaii・🐰 Pink Kawaii・❄️ Snow Kawaii・🦇 Gothic Lolita・❄️ Snow Lolita・❄️ Snow Dancer | 5000 🍬 | 各 0.4% |
+  | 🦇 Gothic Kawaii・🐰 Pink Kawaii・❄️ Snow Kawaii・❄️ Snow Dancer | 5000 🍬 | 各 0.4% |
+  | 🦇 Gothic Lolita・🌸 Pink Lolita・❄️ Snow Lolita | 無料 | — |
 
   インストーラーには含まれず、解放するとダウンロードされます（数 MB、進み具合はカードに
   表示）。署名つきリストで検証してからインストールし、新しい版が出ればアプリを更新しなくても
-  自動で更新されます。**使う** を押すと画面のキャラクターがすぐに入れ替わります。Hiyori・
-  Haru・Mao・Miara とフォルダから追加したモデルは引き続き無料です。
+  自動で更新されます。**使う** を押すと画面のキャラクターがすぐに入れ替わります。Lolita
+  シリーズはキャンディ不要で、最初から **ダウンロード** できます。Hiyori・Haru・Mao・Miara
+  （インストーラーに同梱）とフォルダから追加したモデルも引き続き無料です。
 - **🎰 キャンディカプセル** — コレクションのうさぎカプセルマシンをまわせます。1回 100 🍬、
-  10回 1000 🍬、排出率はマシンに表示（ノーマル 60.8%・レア 25%・エピック 10%・🌈 レジェンド
-  4.2%、Live2D モデルのみ）。レアが出ないまま10回目はレア以上確定、エピックが出ないまま
+  10回 1000 🍬、排出率はマシンに表示（ノーマル 61.6%・レア 25%・エピック 10%・🌈 レジェンド
+  3.4%、Live2D モデルのみ）。レアが出ないまま10回目はレア以上確定、エピックが出ないまま
   50回目はエピック以上確定、ダブりはそのアイテムの価格の 10% がキャンディで返ってきます。
   レア度ごとに専用の演出で開き、レジェンドは虹色の光と大量の紙吹雪。ショップでの交換も
   いつでもできます。

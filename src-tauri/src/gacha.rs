@@ -28,9 +28,9 @@ pub const BASE_RATES: [(Rarity, u32); 3] = [(Rarity::Common, 650), (Rarity::Rare
 pub const RATE_TOTAL: u32 = 1000;
 /// Tỉ lệ (‰) của từng món Huyền thoại (PLAN.md 16.4), trừ vào phần của Thường.
 /// Theo giá: model 10000 🍬 mỗi con 0.1%, 7500 🍬 mỗi con 0.2%, 5000 🍬 mỗi con 0.4%
-/// (rẻ hơn thì ra dễ hơn; 6 × 1 + 6 × 2 + 6 × 4 = 42‰, cả hạng 4.2%). Xếp theo dòng
-/// như catalog: Kawaii → Pastel → Dream → Aristocrat → Angel → Lolita → Dancer. Món chưa có
-/// trong catalog thì bỏ qua.
+/// (rẻ hơn thì ra dễ hơn; 6 × 1 + 6 × 2 + 4 × 4 = 34‰, cả hạng 3.4%). Xếp theo dòng
+/// như catalog: Kawaii → Pastel → Dream → Aristocrat → Angel → Dancer. Dòng Lolita
+/// miễn phí (giá 0) nên không có ở đây. Món chưa có trong catalog thì bỏ qua.
 pub const LEGENDARY_PCT: &[(&str, u32)] = &[
     ("model.gothic-kawaii", 4),
     ("model.pink-kawaii", 4),
@@ -47,8 +47,6 @@ pub const LEGENDARY_PCT: &[(&str, u32)] = &[
     ("model.gothic-angel", 1),
     ("model.pink-angel", 1),
     ("model.snow-angel", 1),
-    ("model.gothic-lolita", 4),
-    ("model.snow-lolita", 4),
     ("model.snow-dancer", 4),
 ];
 /// Lượt thứ N kể từ lần cuối ra Hiếm+ chắc chắn Hiếm+.
@@ -432,21 +430,21 @@ mod tests {
     #[test]
     fn legendary_comes_out_of_common_share() {
         let r = rates();
-        assert_eq!(r, vec![(Rarity::Common, 608), (Rarity::Rare, 250), (Rarity::Epic, 100), (Rarity::Legendary, 42)]);
-        assert_eq!(roll_rarity(&r, 0.607, 0.0, Rarity::Common), (Rarity::Common, false));
-        assert_eq!(roll_rarity(&r, 0.6085, 0.0, Rarity::Common), (Rarity::Rare, false));
-        assert_eq!(roll_rarity(&r, 0.957, 0.0, Rarity::Common), (Rarity::Epic, false));
-        assert_eq!(roll_rarity(&r, 0.9585, 0.0, Rarity::Common), (Rarity::Legendary, false));
-        // Bảo hiểm Hiếm+ chia 250:100:42; bảo hiểm Sử thi+ chia 100:42.
-        assert_eq!(roll_rarity(&r, 0.1, 0.89, Rarity::Rare), (Rarity::Epic, true));
-        assert_eq!(roll_rarity(&r, 0.1, 0.90, Rarity::Rare), (Rarity::Legendary, true));
-        assert_eq!(roll_rarity(&r, 0.1, 0.70, Rarity::Epic), (Rarity::Epic, true));
-        assert_eq!(roll_rarity(&r, 0.1, 0.71, Rarity::Epic), (Rarity::Legendary, true));
-        // Trong hạng Huyền thoại (42‰): 0.4% mỗi model 5000 🍬, 0.2% mỗi model 7500 🍬,
+        assert_eq!(r, vec![(Rarity::Common, 616), (Rarity::Rare, 250), (Rarity::Epic, 100), (Rarity::Legendary, 34)]);
+        assert_eq!(roll_rarity(&r, 0.615, 0.0, Rarity::Common), (Rarity::Common, false));
+        assert_eq!(roll_rarity(&r, 0.6165, 0.0, Rarity::Common), (Rarity::Rare, false));
+        assert_eq!(roll_rarity(&r, 0.965, 0.0, Rarity::Common), (Rarity::Epic, false));
+        assert_eq!(roll_rarity(&r, 0.9665, 0.0, Rarity::Common), (Rarity::Legendary, false));
+        // Bảo hiểm Hiếm+ chia 250:100:34; bảo hiểm Sử thi+ chia 100:34.
+        assert_eq!(roll_rarity(&r, 0.1, 0.91, Rarity::Rare), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.92, Rarity::Rare), (Rarity::Legendary, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.74, Rarity::Epic), (Rarity::Epic, true));
+        assert_eq!(roll_rarity(&r, 0.1, 0.75, Rarity::Epic), (Rarity::Legendary, true));
+        // Trong hạng Huyền thoại (34‰): 0.4% mỗi model 5000 🍬, 0.2% mỗi model 7500 🍬,
         // 0.1% mỗi model 10000 🍬. Giữa đoạn của mỗi model thì ra đúng model đó, theo thứ tự bảng.
         let l: Vec<_> = legendary().collect();
         let total: u32 = l.iter().map(|(_, w)| w).sum();
-        assert_eq!(total, 42);
+        assert_eq!(total, 34);
         let mut acc = 0;
         for (it, w) in &l {
             let mid = (acc as f64 + *w as f64 / 2.0) / total as f64;
@@ -456,8 +454,12 @@ mod tests {
         assert_eq!(l.first().unwrap().0.id, "model.gothic-kawaii");
         assert_eq!(
             l.iter().map(|(_, p)| pct(*p)).collect::<Vec<_>>(),
-            vec![0.4, 0.4, 0.4, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.4, 0.4, 0.4]
+            vec![0.4, 0.4, 0.4, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.4]
         );
+        // Dòng Lolita miễn phí: không quay ra, không có trong bảng tỉ lệ.
+        for id in ["model.gothic-lolita", "model.pink-lolita", "model.snow-lolita"] {
+            assert!(!pool().any(|i| i.id == id) && !LEGENDARY_PCT.iter().any(|(i, _)| *i == id), "{id}");
+        }
     }
 
     #[test]

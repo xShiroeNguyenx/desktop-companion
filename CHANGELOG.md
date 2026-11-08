@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-11-08
+
+### Added
+- **🌸 Pink Lolita** joins the Collection: a long pink-haired cat girl in glasses, in a pink
+  fur-trimmed coat with snowflakes and big pink bows, a frilled pink skirt and fur boots.
+- **Miu Merge has a pink model line.** Next to Gothic and Snow you can now pick Pink, so
+  the Lolita → Kawaii → Pastel → Aristocrat steps show the pink girls.
+
+### Changed
+- **🎀 The Lolita line is free for everyone.** Gothic, Pink and Snow Lolita need no candy:
+  their cards show **Download** from the start, then **Use**. Like the other Collection models
+  they are not in the installer and only download when you ask, so the app never pulls them
+  onto your PC by itself.
+- **Gothic Lolita and Snow Lolita are redrawn** to match Pink Lolita: white fur-trimmed
+  coats with purple or blue snowflakes, big bows, frilled skirts and fur boots. If you
+  already have one downloaded, the new look installs itself the next time the app starts.
+- **Candy Capsule rates:** the free Lolita models no longer drop from the capsule, so
+  Legendary is now 3.4% in total (was 4.2%) and Common 61.6% (was 60.8%). Rare and Epic
+  stay at 25% and 10%.
+
 ## [0.12.2] - 2026-11-06
 
 ### Added
@@ -1114,6 +1134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.3
 [0.12.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.2
 [0.12.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.1
 [0.12.0]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.0

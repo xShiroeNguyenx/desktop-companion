@@ -830,7 +830,7 @@ Pastel → Aristocrat, dòng Gothic / Snow do người chơi chọn), rồi Ange
 **Thắng ở Angel tím (bậc 11 = mốc 2048)**, sau đó chơi tiếp lấy điểm. Ván dở / thành tích ở
 localStorage (`mergeGame4`, `mergeStats4`). `quests::GAMES` thêm `merge` (vòng "game của ngày" đổi
 từ 3 thành 4 trò). Trang Mini Games 4 thẻ (thẻ Ghép Miu chưa có ảnh vẽ sẵn, đang ghép ảnh Angel +
-mặt Miu). **Chưa làm:** dòng model pink (thiếu `pink-lolita`), đưa sang Anna App, thưởng kẹo riêng.
+mặt Miu). **v0.12.3:** thêm dòng model Pink (có `pink-lolita`). **Chưa làm:** đưa sang Anna App, thưởng kẹo riêng.
 
 ### 12.9 Settings mới (tổng hợp)
 
@@ -1634,6 +1634,11 @@ riêng thì chưa có hình để hiện; tham số chỉ biến dạng lưới 
   không đổi con số (60/150/300 đúng bằng 10% giá).
 - **Hoạt cảnh** (`gacha-fx.js`): capsule và tia cầu vồng, rung và mở lâu hơn Sử thi, confetti
   dày, chữ "HUYỀN THOẠI!" đổi màu. Ô tỉ lệ trên máy ghi từng model: tên, %, kẹo hoàn khi trùng.
+
+**Model miễn phí tải riêng (v0.12.3, dòng Lolita).** Món Model giá 0: `collection::owns` coi là đã
+sở hữu nên thẻ hiện ngay nút Tải về, `gacha::pool` bỏ qua (không có trong `LEGENDARY_PCT`), vẫn
+là `Rarity::Legendary` (test catalog). Lúc mở app `models::sync_on_start` chỉ cập nhật model miễn
+phí **đã cài**, không tự tải về máy của mọi người. Người đã đổi kẹo trước đó không được hoàn.
 
 **Catalog.** `collection::Category::Model`, `asset` = id model (`"gothic-aristocrat"`,
 `"gothic-loli"`). Model chỉ ở hạng Huyền thoại, nên không làm loãng tỉ lệ ra bộ nhân vật bám mép.

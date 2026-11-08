@@ -187,8 +187,9 @@
     filter: drop-shadow(0 10px 18px rgba(255,115,171,.25)); }
   .cast figcaption { margin-top: 8px; font-weight: 700; }
   .cast small { display: block; color: var(--muted); font-weight: 400; font-size: 13px; }
-  /* Live2D characters, grouped by line (Kawaii, Pastel, Dream, Aristocrat, Angel/Lolita/Dancer) */
+  /* Live2D characters, grouped by line (free Lolita across the top, then Kawaii, Pastel, Dream, Aristocrat, Angel, Dancer) */
   .lines { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .lines .line.free { grid-column: 1 / -1; }
   @media (max-width: 900px){ .lines { grid-template-columns: 1fr; } }
   .line { background: linear-gradient(180deg, var(--card), var(--panel)); border: 1px solid var(--edge); border-radius: 18px; padding: 16px; }
   .line-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -380,11 +381,19 @@
 <section id="characters">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="kicker">18 Live2D characters to unlock</div>
+      <div class="kicker">19 Live2D characters, 3 of them free</div>
       <h2>🎭 Meet the cast</h2>
-      <p>Every character is a full Live2D model with smile, sad, angry, surprised, shy and wink expressions and her own motions. Unlock one with candy in the Collection, or win her from the 🎰 Candy Capsule. Press <b>Use</b> and she takes over your desktop right away.</p>
+      <p>Every character is a full Live2D model with smile, sad, angry, surprised, shy and wink expressions and her own motions. The Lolita line is free for everyone: just press <b>Download</b>. Unlock the others with candy in the Collection, or win them from the 🎰 Candy Capsule. Press <b>Use</b> and she takes over your desktop right away.</p>
     </div>
     <div class="lines reveal">
+      <div class="line free">
+        <div class="line-head"><h3>🎀 Lolita</h3><span>fur coats &amp; snowflakes · free for everyone</span></div>
+        <div class="line-cards">
+          <figure class="gothic"><img src="img/model-gothic-lolita.webp" alt="Gothic Lolita" loading="lazy" width="342" height="512" /><figcaption>Gothic Lolita<small>Free</small></figcaption></figure>
+          <figure class="pink"><img src="img/model-pink-lolita.webp" alt="Pink Lolita" loading="lazy" width="342" height="512" /><figcaption>Pink Lolita<small>Free</small></figcaption></figure>
+          <figure class="snow"><img src="img/model-snow-lolita.webp" alt="Snow Lolita" loading="lazy" width="342" height="512" /><figcaption>Snow Lolita<small>Free</small></figcaption></figure>
+        </div>
+      </div>
       <div class="line">
         <div class="line-head"><h3>🐰 Kawaii</h3><span>oversized jackets &amp; bunny sneakers</span></div>
         <div class="line-cards">
@@ -426,15 +435,13 @@
         </div>
       </div>
       <div class="line">
-        <div class="line-head"><h3>✨ Lolita &amp; Dancer</h3><span>one-of-a-kind outfits</span></div>
+        <div class="line-head"><h3>✨ Dancer</h3><span>street style</span></div>
         <div class="line-cards">
-          <figure class="gothic"><img src="img/model-gothic-lolita.webp" alt="Gothic Lolita" loading="lazy" width="342" height="512" /><figcaption>Gothic Lolita<small>5000 🍬</small></figcaption></figure>
-          <figure class="snow"><img src="img/model-snow-lolita.webp" alt="Snow Lolita" loading="lazy" width="342" height="512" /><figcaption>Snow Lolita<small>5000 🍬</small></figcaption></figure>
           <figure class="snow"><img src="img/model-snow-dancer.webp" alt="Snow Dancer" loading="lazy" width="342" height="512" /><figcaption>Snow Dancer<small>5000 🍬</small></figcaption></figure>
         </div>
       </div>
     </div>
-    <p class="chars-note reveal">Characters are not in the installer: once unlocked she downloads in a few seconds (a few MB), is checked against a signed list, and updates herself when a new version comes out. The free sample models Hiyori, Haru, Mao and Miara are always included, and you can add your own Live2D models from a folder.</p>
+    <p class="chars-note reveal">Characters are not in the installer: once unlocked (the Lolita line from the start) she downloads in a few seconds (a few MB), is checked against a signed list, and updates herself when a new version comes out. The free sample models Hiyori, Haru, Mao and Miara are always included, and you can add your own Live2D models from a folder.</p>
   </div>
 </section>
 
