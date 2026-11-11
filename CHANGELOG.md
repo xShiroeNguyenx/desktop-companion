@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.6] - 2026-11-11
+
 ### Added
 - **🌸 Copy method per app.** If selecting text in some app makes the flower interrupt a
   command or drop your highlight, set how it copies there: Settings → *⚙️ System* →
@@ -1189,6 +1191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.6]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.6
 [0.12.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.5
 [0.12.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.4
 [0.12.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.3
