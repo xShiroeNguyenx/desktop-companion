@@ -352,7 +352,8 @@
       return r;
     };
     (q.main || []).forEach((it, i) => list.append(row(it, C.fill(s.q.groups[i] || '', { pet }), false)));
-    if (q.optional) list.append(row(q.optional, s.q.optional, true));
+    // Nhiệm vụ phụ (xong 1 việc, cho cá ăn): không tính vào "xong cả 3".
+    for (const it of q.optionals || []) list.append(row(it, s.q.optional, true));
 
     const left = (q.main || []).filter((it) => !it.done).length;
     const full = $('qFull');

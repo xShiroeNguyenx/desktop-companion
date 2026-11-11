@@ -24,6 +24,38 @@ test('chữ kết quả', () => {
   assert.equal(M.resultText(null, 'vi'), 'đang kiểm…');
 });
 
+test('site cần đăng nhập: 401 / 403 hiện 🔐, gợi ý bật khi đang tính là sập', () => {
+  assert.equal(M.resultText({ state: 'up', ms: 90, status: 401 }, 'vi'), '🔐 90 ms');
+  assert.equal(M.resultText({ state: 'up', ms: 90, status: 403 }, 'en'), '🔐 90 ms');
+  assert.equal(M.needsLogin({ state: 'down', reason: 'http401' }), true);
+  assert.equal(M.needsLogin({ state: 'down', reason: 'http403' }), true);
+  for (const o of [
+    { state: 'down', reason: 'http404' },
+    { state: 'down', reason: 'http500' },
+    { state: 'down', reason: 'timeout' },
+    { state: 'up', ms: 90, status: 401 },
+    null,
+  ]) {
+    assert.equal(M.needsLogin(o), false, JSON.stringify(o));
+  }
+});
+
+test('Cài đặt và Rust nối cờ 🔐 login', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const js = fs.readFileSync(path.join(__dirname, 'settings.js'), 'utf8');
+  assert.match(js, /invoke\('monitor_add', \{[^}]*login: \$\('monLogin'\)\.checked/);
+  assert.match(js, /invoke\('monitor_test', \{[^}]*login: \$\('monLogin'\)\.checked/);
+  assert.match(js, /login: !s\.login/);
+  const html = fs.readFileSync(path.join(__dirname, '../settings.html'), 'utf8');
+  assert.match(html, /id="monLogin"/);
+  const rs = fs.readFileSync(path.join(__dirname, '../../src-tauri/src/commands.rs'), 'utf8');
+  assert.match(rs, /pub fn monitor_add\([^)]*login: Option<bool>/);
+  assert.match(rs, /pub async fn monitor_test\([^)]*login: Option<bool>/);
+  const net = fs.readFileSync(path.join(__dirname, '../../src-tauri/src/monitor_net.rs'), 'utf8');
+  assert.match(net, /"login": s\.login/);
+});
+
 test('chấm màu và tóm tắt', () => {
   const up = { up: true, last: { state: 'up', ms: 50 } };
   const down = { up: false, last: { state: 'down', reason: 'http500' } };

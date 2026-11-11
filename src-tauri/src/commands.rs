@@ -717,6 +717,7 @@ pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), S
     settings.launcher_hotkey = settings.launcher_hotkey.trim().to_string();
     // Bang tự thêm sai thì báo đúng dòng, không lưu ngầm giá trị hỏng.
     crate::launcher::parse_bangs(&settings.custom_bangs).map_err(|e| format!("Bang tự thêm: {e}"))?;
+    crate::selection::parse_app_rules(&settings.flower_apps).map_err(|e| format!("Cách chép theo từng app: {e}"))?;
     // Đồng hồ thêm thì chỉnh ở form (nhóm 🧩 Widget): chỉ làm sạch.
     settings.clock_zones = crate::clock_pin::clean_zones(&settings.clock_zones);
 
@@ -897,8 +898,9 @@ pub fn monitor_stats(app: AppHandle) -> Value {
     crate::monitor_net::stats(&app)
 }
 
+/// `login` = site cần đăng nhập (401 / 403 tính là chạy); không gửi = không.
 #[tauri::command]
-pub fn monitor_add(app: AppHandle, name: String, url: String) -> Result<(), String> {
+pub fn monitor_add(app: AppHandle, name: String, url: String, login: Option<bool>) -> Result<(), String> {
     let (name, url) = crate::monitor::clean(&name, &url)?;
     store::update_monitors(&app, |list| {
         if list.len() >= crate::monitor::MAX_SITES {
@@ -908,21 +910,32 @@ pub fn monitor_add(app: AppHandle, name: String, url: String) -> Result<(), Stri
             return Err("Site này đã có trong danh sách.".to_string());
         }
         let id = crate::monitor::next_id(list, now_millis());
-        list.push(crate::monitor::Site { id, name, url, notify: true });
+        list.push(crate::monitor::Site { id, name, url, notify: true, login: login.unwrap_or(false) });
         Ok(())
     })??;
     monitor_changed(&app);
     Ok(())
 }
 
+/// `login`: không gửi = giữ như cũ.
 #[tauri::command]
-pub fn monitor_update(app: AppHandle, id: String, name: String, url: String, notify: bool) -> Result<(), String> {
+pub fn monitor_update(
+    app: AppHandle,
+    id: String,
+    name: String,
+    url: String,
+    notify: bool,
+    login: Option<bool>,
+) -> Result<(), String> {
     let (name, url) = crate::monitor::clean(&name, &url)?;
     let found = store::update_monitors(&app, |list| {
         let Some(s) = list.iter_mut().find(|s| s.id == id) else { return false };
         s.name = name;
         s.url = url;
         s.notify = notify;
+        if let Some(login) = login {
+            s.login = login;
+        }
         true
     })?;
     if !found {
@@ -941,10 +954,10 @@ pub fn monitor_delete(app: AppHandle, id: String) -> Result<(), String> {
 
 /// Nút "Thử ngay": kiểm một URL ngay, không lưu gì.
 #[tauri::command]
-pub async fn monitor_test(url: String) -> Result<crate::monitor::Outcome, String> {
+pub async fn monitor_test(url: String, login: Option<bool>) -> Result<crate::monitor::Outcome, String> {
     let url = crate::links::safe_web_url(&url)?;
     let client = crate::monitor_net::client()?;
-    Ok(crate::monitor_net::check(&client, &url).await)
+    Ok(crate::monitor_net::check(&client, &url, login.unwrap_or(false)).await)
 }
 
 /// Danh sách đổi: kiểm lại ngay, widget đổi chiều cao theo số site.
@@ -1530,6 +1543,23 @@ pub fn set_auto_flower(app: AppHandle, enabled: bool) -> Result<(), String> {
     s.auto_flower = enabled;
     selection::set_auto_enabled(enabled);
     store::save_settings(&app, &s)
+}
+
+/// 🧩 Widget vẫn hiện khi bấm Win+D: áp dụng và lưu ngay (như các công tắc widget khác).
+#[tauri::command]
+pub fn show_desktop_set(app: AppHandle, on: bool) -> Result<(), String> {
+    let mut s = store::load_settings(&app);
+    s.widgets_over_desktop = on;
+    store::save_settings(&app, &s)?;
+    crate::show_desktop::set_enabled(on);
+    Ok(())
+}
+
+/// Tên exe của app vừa bôi đen gần nhất (chỉ trong RAM), để Cài đặt gợi ý thêm vào
+/// "Cách chép theo từng app". None = chưa bôi đen lần nào từ lúc mở app.
+#[tauri::command]
+pub fn flower_last_app() -> Option<String> {
+    selection::last_app()
 }
 
 #[tauri::command]

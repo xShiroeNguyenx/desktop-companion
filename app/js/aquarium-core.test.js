@@ -128,6 +128,41 @@ test('ban đêm và reduced motion bơi chậm hơn; giật mình thì nhanh hơ
   assert.equal(A.maxSpeed({ ...f, startle: 1 }, { reduced: true }), A.maxSpeed(f, { reduced: true }));
 });
 
+test('cá đói bơi chậm dần, no thì như thường; mã lạ coi như no', () => {
+  const f = { species: 'fish.goldfish', startle: 0 };
+  const base = A.maxSpeed(f, {});
+  assert.equal(A.maxSpeed(f, { hunger: 'full' }), base);
+  const peckish = A.maxSpeed(f, { hunger: 'peckish' });
+  const hungry = A.maxSpeed(f, { hunger: 'hungry' });
+  assert.ok(peckish < base && hungry < peckish, `${hungry} < ${peckish} < ${base}`);
+  assert.ok(hungry > 0, 'đói vẫn bơi, không đứng im');
+  assert.equal(A.hungerScale('lạ'), 1);
+  assert.equal(A.hungerScale(undefined), 1);
+});
+
+test('dòng trạng thái ăn: đã ăn > đói lắm > hơi đói > chưa ăn hôm nay, đủ 3 thứ tiếng', () => {
+  for (const lang of ['vi', 'ja', 'en']) {
+    const s = A.strings(lang);
+    assert.equal(A.fedText({ fedToday: true, hunger: 'hungry' }, s), s.fed, lang);
+    assert.equal(A.fedText({ fedToday: false, hunger: 'hungry' }, s), s.hungry, lang);
+    assert.equal(A.fedText({ fedToday: false, hunger: 'peckish' }, s), s.peckish, lang);
+    assert.equal(A.fedText({ fedToday: false, hunger: 'full' }, s), s.notFed, lang);
+    assert.equal(A.fedText(null, s), s.notFed, lang);
+  }
+});
+
+test('Rust gửi mức đói đúng bộ mã mà trang hiểu', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const rs = fs.readFileSync(path.join(__dirname, '../../src-tauri/src/aquarium.rs'), 'utf8');
+  for (const code of ['full', 'peckish', 'hungry']) assert.match(rs, new RegExp(`=> "${code}"`), code);
+  assert.match(rs, /"hunger": hunger\(/);
+  for (const f of ['aquarium-pin.js', 'aquarium.js', 'aquarium-full.js']) {
+    const js = fs.readFileSync(path.join(__dirname, f), 'utf8');
+    assert.match(js, /hunger: /, `${f} truyền mức đói cho step()`);
+  }
+});
+
 test('gõ kính chỉ làm giật mình cá ở gần', () => {
   const rand = A.rng(9);
   const sim = A.syncSim([], tank(2), BOUNDS, rand);

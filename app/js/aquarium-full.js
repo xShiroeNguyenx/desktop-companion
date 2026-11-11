@@ -113,7 +113,7 @@
     const dt = lastT ? Math.min(0.15, (now - lastT) / 1000) : FRAME_MS / 1000;
     lastT = now;
     const night = A.lightAt(new Date().getHours()) === 'night';
-    A.step(sim, dt, { bounds, food, rand, night, reduced: reduced(), speedScale: scale * 0.8 });
+    A.step(sim, dt, { bounds, food, rand, night, reduced: reduced(), speedScale: scale * 0.8, hunger: data.tank && data.tank.hunger });
     food = A.eat(sim, A.sinkFood(food, dt * scale, bounds));
     D.stepBubbles(scene, dt, bounds, [], rand, reduced());
     draw();

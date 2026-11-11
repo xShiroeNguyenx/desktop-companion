@@ -75,6 +75,8 @@
   → **click** for an instant translation, or **press-and-hold** to fan out a
   **radial menu**: 🌐 translate · 📋 copy · 💬 reply · 💭 ask the pet · 📝 save as task ·
   🗒️ save as note · 🗂️ full panel. **Ctrl+C** (while the flower is up) still copies the selected text.
+  In terminals it copies with Ctrl+Shift+C so a running command is not interrupted; if some app
+  misbehaves when you select text, set how to copy there in Settings → *⚙️ System* → *Copy method per app*.
 - **Chat with the pet** — right-click → 💬 **Quick Chat**. The reply streams into
   the bubble word by word and the pet's face changes with the mood of what it
   says. It knows the time and your unfinished tasks, remembers the last 10 turns
@@ -129,7 +131,8 @@
   button) and a desktop widget shows each one green or red with its response
   time. The pet tells you when a site goes down and when it is back, also as a
   Windows notification. A site counts as down only after two failed checks,
-  and if every site fails at once she just says you seem to be offline.
+  and if every site fails at once she just says you seem to be offline. Mark a
+  site 🔐 if it needs a login, so a 401 / 403 answer counts as up.
 - **🔎 Quick launcher** — **Ctrl+Alt+Space** anywhere opens a search box: type a
   bookmark name, `!yt` / `!gh` / `!g` / `!w` / `!map` / `!tr` + words, a web
   address, or anything to search Google. Add your own bangs in Settings.
@@ -241,7 +244,9 @@
   are free, and one of those 20 spins is sure to be a model you don't own yet.
 - **🐠 Aquarium** — a small tank pinned to the desktop (🧩 → 🐠 on the ring).
   Click the water to feed the fish once a day and they grow from small to big;
-  they never die or leave. Buy more fish, backgrounds and decorations in the
+  they never die or leave. Skip a few days and they swim slower and the pet
+  reminds you (at most once a day; switch it off in Settings → *🧩 Widgets*).
+  Feeding them also completes the optional daily quest 🐠. Buy more fish, backgrounds and decorations in the
   🍬 Collection (🐠 Aquarium mode), name them and arrange the tank in its own
   window. ⛶ lets the whole tank swim on your wallpaper, behind every window and
   under the desktop icons: click an empty spot to drop food, click a fish to
@@ -253,7 +258,9 @@
   monitor and the aquarium (or its full-screen mode), picks the
   extra clocks, and 🧹 tidies every pinned widget into a column on the right.
   They all share one
-  width and padding, so they line up on both edges.
+  width and padding, so they line up on both edges. Pinned widgets and notes
+  stay on the desktop when you press **Win+D** (switch it off there if you
+  prefer them hidden).
 - **Quick reply** — select a message, type your reply in Vietnamese, and the AI
   composes a natural reply in the message's language (English / Japanese / …).
 - **Text assistant without selecting** — right-click → 🗂️ **Open full view** opens
@@ -334,7 +341,7 @@ else still works.
 
 ### Tray menu
 
-Show/Hide pet · Tasks · 🗒️ Notes · Settings · 🖱️ Click-through on / off · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · 🛰 Pin / unpin the site monitor · 🐠 Pin / unpin the aquarium · Quit
+Show/Hide pet · Tasks · 🗒️ Notes · Settings · 🖱️ Click-through on / off · 🍅 Start / stop focus · 🔕 Do not disturb (1 hour) · 🌦 Weather effects on / off · ☁️ Weather forecast · 📅 Pin / unpin the month calendar · 📊 Pin / unpin the system monitor · 🛰 Pin / unpin the site monitor · 🐠 Pin / unpin the aquarium · ❓ Quick tour · Quit
 
 ### Right-click the pet
 

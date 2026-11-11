@@ -174,6 +174,8 @@ pub fn toggle(app: &AppHandle, spec: &'static Spec) -> Result<bool, String> {
 
 pub fn set_top(app: &AppHandle, spec: &Spec, top: bool) -> Result<(), String> {
     update(app, spec, |st| st.top = top)?;
+    // 📍 do người dùng chọn: Win+D không còn tự trả widget này về đáy (show_desktop.rs).
+    crate::show_desktop::forget(spec.label);
     if let Some(w) = app.get_webview_window(spec.label) {
         w.set_always_on_top(top).map_err(|e| e.to_string())?;
     }

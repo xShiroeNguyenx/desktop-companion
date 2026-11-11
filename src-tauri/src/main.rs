@@ -45,6 +45,7 @@ mod reminders;
 mod rewards;
 mod secrets;
 mod selection;
+mod show_desktop;
 mod sidegirl;
 mod fx;
 mod gacha;
@@ -55,6 +56,7 @@ mod store;
 mod sysmon_pin;
 mod top_procs;
 mod taskref;
+mod tour;
 mod tray_text;
 mod tts;
 mod windows;
@@ -371,7 +373,12 @@ fn pet_command(app: AppHandle, payload: Value) {
         // vào khung thì tạm tắt để bấm được quay / × (click_through::on_cursor).
         "gacha:rect" => {
             let rect = payload.get("rect").and_then(click_through::Rect::from_json);
-            click_through::set_island(&app, rect);
+            click_through::set_island(&app, "gacha", rect);
+        }
+        // Thẻ hướng dẫn (tour.rs): bấm được cả lúc click-through, như khung 🎁.
+        "tour:rect" => {
+            let rect = payload.get("rect").and_then(click_through::Rect::from_json);
+            click_through::set_island(&app, "tour", rect);
         }
         // Nút "Xem" trên thẻ quà: mở Bộ sưu tập ở đúng món vừa quay.
         "gacha:view" => {
@@ -784,6 +791,8 @@ fn main() {
             commands::settings_get,
             commands::settings_set,
             commands::set_auto_flower,
+            commands::flower_last_app,
+            commands::show_desktop_set,
             commands::set_side_girls,
             commands::autostart_status,
             commands::autostart_set,
@@ -974,6 +983,8 @@ fn main() {
             weather_net::start(app_handle.clone());
             // Widget ghim (lịch, đồng hồ) đang ghim thì hiện lại.
             pin_widget::start(&app_handle);
+            // Win+D không che widget ghim (Cài đặt → 🧩 Widget).
+            show_desktop::start(app_handle.clone());
 
             // Silent update check ~5s after launch; if a newer version exists,
             // mở hộp thoại cập nhật (kèm bong bóng nhắc từ pet). Version mà
@@ -1041,6 +1052,7 @@ fn main() {
                 MenuItem::with_id(app, "monitor", tr(Tray::Monitor, lang), true, None::<&str>)?;
             let aquarium_item =
                 MenuItem::with_id(app, "aquarium", tr(Tray::Aquarium, lang), true, None::<&str>)?;
+            let tour_item = MenuItem::with_id(app, "open_tour", tr(Tray::Tour, lang), true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
             let quit_item = MenuItem::with_id(app, "quit", tr(Tray::Quit, lang), true, None::<&str>)?;
             for (t, item) in [
@@ -1053,6 +1065,7 @@ fn main() {
                 (Tray::Sysmon, &sysmon_item),
                 (Tray::Monitor, &monitor_item),
                 (Tray::Aquarium, &aquarium_item),
+                (Tray::Tour, &tour_item),
                 (Tray::Quit, &quit_item),
             ] {
                 tray_text::remember(t, item);
@@ -1073,6 +1086,7 @@ fn main() {
                     &sysmon_item,
                     &monitor_item,
                     &aquarium_item,
+                    &tour_item,
                     &sep,
                     &quit_item,
                 ],
@@ -1100,6 +1114,7 @@ fn main() {
                     "open_tasks" => windows::open_tasks(app),
                     "open_notes" => windows::open_notes(app),
                     "open_settings" => windows::open_settings(app),
+                    "open_tour" => tour::open(app, false),
                     "focus" => companion::toggle_focus(app),
                     "weather" => {
                         fx::toggle(app);

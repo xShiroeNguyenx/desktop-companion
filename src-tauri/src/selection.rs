@@ -81,6 +81,14 @@ static MOVE_SEQ: AtomicU64 = AtomicU64::new(0);
 
 // Most-recent captured selection, for the popup to read on open.
 static LAST_SELECTION: Mutex<Option<SelectionPayload>> = Mutex::new(None);
+/// Tên exe của app vừa bôi đen gần nhất (kể cả lần bị bỏ qua / chép hỏng), để Cài đặt
+/// gợi ý thêm vào "Cách chép theo từng app". Chỉ trong RAM, không ghi ra đĩa.
+static LAST_APP: Mutex<Option<String>> = Mutex::new(None);
+
+/// App vừa bôi đen gần nhất (lệnh `flower_last_app` của Cài đặt).
+pub fn last_app() -> Option<String> {
+    LAST_APP.lock().ok().and_then(|g| g.clone())
+}
 
 #[derive(Serialize, Clone)]
 struct CursorPos {
@@ -204,7 +212,14 @@ fn worker(rx: mpsc::Receiver<CaptureReq>) {
         // Phím chép giả tuỳ app đang focus (copy_plan): trong terminal Ctrl+C là ngắt
         // lệnh, trong công cụ chụp màn hình là huỷ vùng đang khoanh.
         let exe = foreground_exe();
-        let Some(keys) = copy_plan(req.source, exe.as_deref()) else {
+        if let (Some(name), Ok(mut last)) = (&exe, LAST_APP.lock()) {
+            *last = Some(name.clone());
+        }
+        let rules = match (&exe, APP.get()) {
+            (Some(_), Some(app)) => parse_app_rules(&crate::store::load_settings(app).flower_apps).unwrap_or_default(),
+            _ => Vec::new(),
+        };
+        let Some(keys) = copy_plan(req.source, exe.as_deref(), &rules) else {
             log_sel(&format!(
                 "[selection] skip {}: no safe copy key in {:?}",
                 req.source.as_str(),
@@ -487,14 +502,73 @@ const NO_COPY_KEY_TERMINALS: &[&str] = &[
     "securecrt",
 ];
 
+/// Luật người dùng tự thêm ở Cài đặt (`Settings.flower_apps`, mỗi dòng "tên-app cách"),
+/// xét trước các danh sách có sẵn ở trên: app lạ tự gửi ^C thì người dùng tự chặn được,
+/// không phải chờ bản mới. Cũng dùng để bỏ một app khỏi danh sách có sẵn (`ctrl`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AppRule {
+    /// Tên exe viết thường, bỏ ".exe"; khớp đầu tên như các danh sách có sẵn.
+    stem: String,
+    /// None = không gửi phím nào (`skip`).
+    plan: Option<CopyKeys>,
+}
+
+/// Số luật tối đa / độ dài tên tối đa (đủ cho mọi tên exe thật).
+const APP_RULES_MAX: usize = 50;
+const APP_NAME_MAX: usize = 64;
+
+/// Đọc ô "Cách chép theo từng app". Dòng trống / bắt đầu bằng `#` bỏ qua; mỗi dòng còn
+/// lại là tên app (có thể có dấu cách, ".exe" tuỳ ý) + một từ cuối: `shift` (chép bằng
+/// Ctrl+Shift+C), `skip` (không tự chép), `ctrl` (Ctrl+C như app thường). Sai thì báo
+/// đúng dòng để Cài đặt không lưu ngầm giá trị hỏng.
+pub fn parse_app_rules(text: &str) -> Result<Vec<AppRule>, String> {
+    let mut out: Vec<AppRule> = Vec::new();
+    for (i, raw) in text.lines().enumerate() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let n = i + 1;
+        let (name, mode) = line
+            .rsplit_once(char::is_whitespace)
+            .map(|(a, m)| (a.trim(), m.trim()))
+            .ok_or(format!("Dòng {n}: cần dạng \"tên-app.exe shift\" (hoặc skip / ctrl)."))?;
+        let plan = match mode.to_ascii_lowercase().as_str() {
+            "shift" => Some(CopyKeys::CtrlShift),
+            "ctrl" => Some(CopyKeys::Ctrl),
+            "skip" => None,
+            _ => return Err(format!("Dòng {n}: cách chép \"{mode}\" phải là shift, skip hoặc ctrl.")),
+        };
+        let lower = name.to_lowercase();
+        let stem = lower.strip_suffix(".exe").unwrap_or(&lower).trim();
+        if stem.is_empty()
+            || stem.chars().count() > APP_NAME_MAX
+            || stem.chars().any(|c| c.is_control() || matches!(c, '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
+        {
+            return Err(format!("Dòng {n}: \"{name}\" không phải tên file exe (chỉ tên, không có đường dẫn)."));
+        }
+        if out.iter().any(|r| r.stem == stem) {
+            return Err(format!("Dòng {n}: app \"{name}\" bị trùng."));
+        }
+        if out.len() == APP_RULES_MAX {
+            return Err(format!("Tối đa {APP_RULES_MAX} app."));
+        }
+        out.push(AppRule { stem: stem.to_string(), plan });
+    }
+    Ok(out)
+}
+
 /// Phím chép nên gửi vào app `exe` (tên file exe đang focus, None khi không đọc được);
-/// None = không gửi phím nào, bỏ qua lần bắt này.
-fn copy_plan(source: Source, exe: Option<&str>) -> Option<CopyKeys> {
+/// None = không gửi phím nào, bỏ qua lần bắt này. `rules` (người dùng thêm) xét trước.
+fn copy_plan(source: Source, exe: Option<&str>, rules: &[AppRule]) -> Option<CopyKeys> {
     let Some(exe) = exe else {
         return Some(CopyKeys::Ctrl);
     };
-    let name = exe.to_ascii_lowercase();
+    let name = exe.to_lowercase();
     let stem = name.strip_suffix(".exe").unwrap_or(&name);
+    if let Some(rule) = rules.iter().find(|r| stem.starts_with(r.stem.as_str())) {
+        return rule.plan;
+    }
     if NO_COPY_KEY_TERMINALS.iter().any(|t| stem.starts_with(t)) {
         return None;
     }
@@ -680,11 +754,11 @@ mod tests {
 
     #[test]
     fn ordinary_apps_get_ctrl_c() {
-        assert_eq!(copy_plan(Source::Drag, Some("chrome.exe")), Some(CopyKeys::Ctrl));
-        assert_eq!(copy_plan(Source::Drag, Some("Code.exe")), Some(CopyKeys::Ctrl));
-        assert_eq!(copy_plan(Source::Hotkey, Some("WINWORD.EXE")), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Drag, Some("chrome.exe"), &[]), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Drag, Some("Code.exe"), &[]), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Hotkey, Some("WINWORD.EXE"), &[]), Some(CopyKeys::Ctrl));
         // Không đọc được app đang focus (và trên macOS): giữ phím chép thường.
-        assert_eq!(copy_plan(Source::Drag, None), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Drag, None, &[]), Some(CopyKeys::Ctrl));
     }
 
     #[test]
@@ -696,8 +770,8 @@ mod tests {
             "alacritty.exe",
             "Tabby.exe",
         ] {
-            assert_eq!(copy_plan(Source::Drag, Some(exe)), Some(CopyKeys::CtrlShift), "{exe}");
-            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), Some(CopyKeys::CtrlShift), "{exe}");
+            assert_eq!(copy_plan(Source::Drag, Some(exe), &[]), Some(CopyKeys::CtrlShift), "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe), &[]), Some(CopyKeys::CtrlShift), "{exe}");
         }
     }
 
@@ -711,16 +785,60 @@ mod tests {
             "Xshell.exe",
             "SecureCRT.exe",
         ] {
-            assert_eq!(copy_plan(Source::Drag, Some(exe)), None, "{exe}");
-            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), None, "{exe}");
+            assert_eq!(copy_plan(Source::Drag, Some(exe), &[]), None, "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe), &[]), None, "{exe}");
         }
     }
 
     #[test]
     fn screenshot_tools_skip_the_drag_but_not_the_hotkey() {
         for exe in ["Lightshot.exe", "ShareX.exe", "SnippingTool.exe", "ScreenClippingHost.exe"] {
-            assert_eq!(copy_plan(Source::Drag, Some(exe)), None, "{exe}");
-            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), Some(CopyKeys::Ctrl), "{exe}");
+            assert_eq!(copy_plan(Source::Drag, Some(exe), &[]), None, "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe), &[]), Some(CopyKeys::Ctrl), "{exe}");
         }
+    }
+
+    #[test]
+    fn user_rules_win_over_the_built_in_lists() {
+        let rules = parse_app_rules(
+            "# terminal riêng của công ty\n\
+             MyTerm.exe shift\n\
+             \n\
+             game client skip\n\
+             WindowsTerminal ctrl\n",
+        )
+        .unwrap();
+        assert_eq!(rules.len(), 3);
+        // App lạ: người dùng tự chọn cách chép.
+        assert_eq!(copy_plan(Source::Drag, Some("myterm.exe"), &rules), Some(CopyKeys::CtrlShift));
+        assert_eq!(copy_plan(Source::Hotkey, Some("MYTERM.EXE"), &rules), Some(CopyKeys::CtrlShift));
+        // Tên có dấu cách, khớp đầu tên như danh sách có sẵn.
+        assert_eq!(copy_plan(Source::Drag, Some("Game Client 2.exe"), &rules), None);
+        // Bỏ một app khỏi danh sách có sẵn: Ctrl+C như app thường.
+        assert_eq!(copy_plan(Source::Drag, Some("WindowsTerminal.exe"), &rules), Some(CopyKeys::Ctrl));
+        // App không có luật vẫn theo danh sách có sẵn.
+        assert_eq!(copy_plan(Source::Drag, Some("putty.exe"), &rules), None);
+        assert_eq!(copy_plan(Source::Drag, Some("chrome.exe"), &rules), Some(CopyKeys::Ctrl));
+    }
+
+    #[test]
+    fn bad_app_rules_name_the_line() {
+        assert_eq!(parse_app_rules("").unwrap(), Vec::new());
+        assert_eq!(parse_app_rules("  \n# chỉ có ghi chú\n").unwrap(), Vec::new());
+        let err = |text: &str| parse_app_rules(text).unwrap_err();
+        assert!(err("myterm.exe").starts_with("Dòng 1:"));
+        assert!(err("ok.exe skip\nmyterm.exe copy").starts_with("Dòng 2:"));
+        // Đường dẫn, ký tự cấm trong tên file, chỉ có ".exe".
+        assert!(err(r"C:\Tools\myterm.exe shift").starts_with("Dòng 1:"));
+        assert!(err("my*term shift").starts_with("Dòng 1:"));
+        assert!(err(".exe shift").starts_with("Dòng 1:"));
+        assert!(err(&format!("{} shift", "a".repeat(APP_NAME_MAX + 1))).starts_with("Dòng 1:"));
+        // Trùng tên, kể cả khác hoa thường / có hoặc không ".exe".
+        assert!(err("MyTerm.exe shift\nmyterm skip").contains("trùng"));
+        // Quá số luật tối đa.
+        let many: String = (0..=APP_RULES_MAX).map(|i| format!("app{i} skip\n")).collect();
+        assert!(err(&many).contains("Tối đa"));
+        // Cách chép không phân biệt hoa thường.
+        assert_eq!(parse_app_rules("x.exe SHIFT").unwrap()[0].plan, Some(CopyKeys::CtrlShift));
     }
 }

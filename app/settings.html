@@ -173,7 +173,7 @@
     /* 🛰 Danh sách site theo dõi. */
     .mon-list { display: flex; flex-direction: column; gap: 4px; }
     .mon-list:empty { display: none; }
-    .mon-row { display: grid; grid-template-columns: 10px 1fr auto auto auto; align-items: center; gap: 8px; font-size: 12px; }
+    .mon-row { display: grid; grid-template-columns: 10px 1fr auto auto auto auto; align-items: center; gap: 8px; font-size: 12px; }
     .mon-row .n { min-width: 0; display: flex; flex-direction: column; }
     .mon-row .n b, .mon-row .n small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mon-row .n small { color: var(--muted); }
@@ -368,6 +368,14 @@
           </div>
         </div>
         <div class="set-toggle">
+          <label for="fishHunger" data-i18n="settings.widget.fishHunger">🐠 Cá đói khi mấy ngày không cho ăn (bơi chậm, em nhắc). Cá không bao giờ chết.</label>
+          <input type="checkbox" id="fishHunger" />
+        </div>
+        <div class="set-toggle">
+          <label for="wOverDesktop" data-i18n="settings.widget.overDesktop">Widget vẫn hiện khi bấm Win+D (xem desktop)</label>
+          <input type="checkbox" id="wOverDesktop" />
+        </div>
+        <div class="set-toggle">
           <label for="calendarTalk" data-i18n="settings.widget.calendarTalk">Em nhắc ngày lễ, Rằm, mùng 1 (hôm nay và tối hôm trước)</label>
           <input type="checkbox" id="calendarTalk" />
         </div>
@@ -389,6 +397,10 @@
             <input type="text" id="monName" data-i18n-placeholder="settings.mon.namePh" placeholder="Tên (trống thì lấy tên miền)" style="flex:1;" />
             <button class="ghost" id="monTest" data-i18n="settings.mon.test" type="button" style="flex:0 0 auto;">Thử ngay</button>
             <button class="action" id="monAdd" data-i18n="settings.mon.addBtn" type="button" style="flex:0 0 auto;">Thêm</button>
+          </div>
+          <div class="set-toggle" style="margin-top:6px;">
+            <label for="monLogin" data-i18n="settings.mon.login">🔐 Site cần đăng nhập (mã 401 / 403 vẫn tính là đang chạy)</label>
+            <input type="checkbox" id="monLogin" />
           </div>
           <div class="status" id="monStatus" data-i18n="settings.mon.hint">Chỉ gửi yêu cầu GET tới đúng địa chỉ này, không đọc nội dung trang. Lưu ngay, không cần bấm Lưu.</div>
         </div>
@@ -489,7 +501,7 @@
             <select id="ramWarn" class="warn-select"></select>
           </div>
         </div>
-        <div class="status" data-i18n="settings.pc.privacy">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM, % pin, dung lượng ổ đĩa. Em không đọc tên cửa sổ hay nội dung màn hình. Tên ứng dụng chỉ được đọc khi bạn tự mở bảng "ngốn máy nhất" trên widget 📊 Thông số máy, chỉ để hiện ở đó: không lưu, không gửi đi. Tắt cảnh báo CPU / RAM thì em không đo CPU / RAM.</div>
+        <div class="status" data-i18n="settings.pc.privacy">Em chỉ đọc số liệu: bao lâu không có chuột/phím, có đang toàn màn hình không, % CPU / RAM, % pin, dung lượng ổ đĩa. Em không đọc tên cửa sổ hay nội dung màn hình. Tên ứng dụng chỉ được đọc khi bạn tự mở bảng "ngốn máy nhất" trên widget 📊 Thông số máy (để hiện ở đó) và khi bạn bôi đen chữ (để bông hoa chọn đúng phím chép): không lưu, không gửi đi. Tắt cảnh báo CPU / RAM thì em không đo CPU / RAM.</div>
       </div>
 
       <div class="set-group">
@@ -497,6 +509,16 @@
         <div class="set-toggle">
           <label for="autoFlower" data-i18n="settings.sys.autoFlower">Tự hiện bông hoa khi bôi đen</label>
           <input type="checkbox" id="autoFlower" />
+        </div>
+        <div class="set-field">
+          <label for="flowerApps" data-i18n="settings.sys.flowerApps">Cách chép theo từng app</label>
+          <textarea id="flowerApps" rows="3" spellcheck="false" placeholder="myterm.exe shift"></textarea>
+          <div class="row tight" id="flowerLastRow">
+            <span class="status" id="flowerLast" style="flex:1;" data-i18n="settings.sys.flowerLastNone">Chưa bôi đen trong app nào từ lúc mở. Bôi đen trong app cần chỉnh rồi mở lại Cài đặt để thêm nhanh.</span>
+            <button class="ghost" id="flowerAddShift" type="button" style="flex:0 0 auto; display:none;" data-i18n="settings.sys.flowerAddShift">+ Ctrl+Shift+C</button>
+            <button class="ghost" id="flowerAddSkip" type="button" style="flex:0 0 auto; display:none;" data-i18n="settings.sys.flowerAddSkip">+ Không tự chép</button>
+          </div>
+          <div class="status" data-i18n="settings.sys.flowerAppsHint">Mỗi dòng: tên app + shift (chép bằng Ctrl+Shift+C, cho terminal), skip (không tự chép) hoặc ctrl (Ctrl+C như thường). Dùng khi bôi đen trong một app mà lệnh bị ngắt (^C) hoặc mất vùng tô. Ưu tiên hơn danh sách có sẵn.</div>
         </div>
         <div class="set-field">
           <label for="proactive" data-i18n="settings.sys.proactive">Em tự bắt chuyện</label>
@@ -710,6 +732,7 @@
   <script src="js/theme-apply.js"></script>
   <script src="js/clock-core.js"></script>
   <script src="js/monitor-core.js"></script>
+  <script src="js/flower-apps.js"></script>
   <script src="js/settings.js"></script>
 </body>
 </html>

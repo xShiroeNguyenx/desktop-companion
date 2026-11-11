@@ -113,8 +113,11 @@ pub fn set_top(app: &AppHandle, id: &str, top: bool) -> Result<(), String> {
             n.desk_top = top;
         }
     })?;
-    if let Some(w) = label_for(id).and_then(|l| app.get_webview_window(&l)) {
-        w.set_always_on_top(top).map_err(|e| e.to_string())?;
+    if let Some(label) = label_for(id) {
+        crate::show_desktop::forget(&label);
+        if let Some(w) = app.get_webview_window(&label) {
+            w.set_always_on_top(top).map_err(|e| e.to_string())?;
+        }
     }
     Ok(())
 }

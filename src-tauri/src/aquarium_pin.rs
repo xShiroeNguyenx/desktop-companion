@@ -87,7 +87,7 @@ pub fn view(app: &AppHandle) -> Value {
         "skin": crate::collection::effective_skin(&c),
         "deco": crate::collection::effective_widget_deco(&c),
         "bg": crate::collection::effective_tank_bg(&c),
-        "tank": crate::aquarium::view_json(&aq, day, |id| {
+        "tank": crate::aquarium::view_json(&aq, day, s.fish_hunger, |id| {
             crate::collection::owned_aquarium_item(&c, Category::TankDeco, id)
         }),
         // Cửa sổ quản lý: loài đã mua (thả thêm), vật trang trí đã mua (đặt vào ô),
@@ -144,6 +144,7 @@ pub fn feed(app: &AppHandle) -> Result<Value, String> {
     let (out, aq) = store::update_aquarium(app, |aq| (crate::aquarium::feed(aq, day), aq.clone()))?;
     let v = match &out {
         crate::aquarium::Feed::Fed { grew } => {
+            crate::collection::quest_fish_fed(app);
             match grew.first().and_then(|uid| aq.fish.iter().find(|f| f.uid == *uid)) {
                 Some(f) => say(app, crate::lines::Key::FishGrown, &[("fish", &fish_name(app, f))], "happy"),
                 None => say(app, crate::lines::Key::FishFed, &[], "happy"),

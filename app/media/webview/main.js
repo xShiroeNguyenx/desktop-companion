@@ -29,6 +29,7 @@ import {
 } from './ui.js';
 import { handleTtsAudio, stopTts } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
+import { handleTourMessage } from './tour.js';
 import { handleDailyGachaMessage, initDailyGacha } from './daily-gacha.js';
 import { handleBondMessage } from './bond.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
@@ -326,6 +327,10 @@ window.addEventListener('message', (event) => {
     case 'naming:done':
     case 'naming:error':
       handleNamingMessage(event.data);
+      break;
+    // ❓ Hướng dẫn nhanh (tour.rs): lần đầu sau thẻ hỏi tên, hoặc tray → ❓.
+    case 'tour:open':
+      handleTourMessage(event.data);
       break;
     // Khung 🎁 quay miễn phí mỗi ngày (companion.rs offer_free_spin, commands.rs free_spin).
     case 'gacha:offer':

@@ -77,6 +77,8 @@ duyệt, Word…).
   🌐 dịch nhanh · 📋 sao chép · 💬 trả lời · 💭 hỏi em · 📝 lưu vào task · 🗒️ lưu ghi chú ·
   🗂️ mở bảng đầy đủ.
   Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
+  Trong terminal, bông hoa chép bằng Ctrl+Shift+C để không ngắt lệnh đang chạy; app nào bôi đen
+  xong bị trục trặc thì chỉnh cách chép ở Cài đặt → *⚙️ Hệ thống* → *Cách chép theo từng app*.
 - **Trò chuyện với pet** — chuột phải → 💬 **Chat nhanh**. Câu trả lời hiện dần
   từng chữ trong bong bóng, nét mặt pet đổi theo cảm xúc của câu nói. Pet biết giờ
   và các việc anh chưa làm xong, nhớ 10 lượt gần nhất (chỉ lưu trên máy; 🗑 để xoá),
@@ -123,7 +125,8 @@ duyệt, Word…).
 - **🛰 Theo dõi website** — thêm tối đa 8 website (Cài đặt → 🛰, có nút Thử ngay),
   widget trên desktop hiện từng site xanh / đỏ kèm thời gian phản hồi. Pet báo khi
   site sập và khi chạy lại, cả bằng thông báo Windows. Chỉ coi là sập sau 2 lần lỗi
-  liên tiếp; mọi site cùng lỗi một lúc thì pet chỉ báo "máy mất mạng".
+  liên tiếp; mọi site cùng lỗi một lúc thì pet chỉ báo "máy mất mạng". Site cần đăng
+  nhập thì đánh dấu 🔐 để mã 401 / 403 vẫn tính là đang chạy.
 - **🔎 Ô mở nhanh** — **Ctrl+Alt+Space** ở bất kỳ đâu mở ô tìm: gõ tên bookmark,
   `!yt` / `!gh` / `!g` / `!w` / `!map` / `!tr` + từ khoá, địa chỉ web, hoặc chữ bất kỳ
   để tìm trên Google. Tự thêm bang trong Cài đặt. Bookmark nằm ở tab 🔖 của bảng
@@ -219,7 +222,8 @@ duyệt, Word…).
   phí, và trong 20 lượt đó chắc chắn có một model bạn chưa có.
 - **🐠 Bể cá** — một bể cá nhỏ ghim trên desktop (🧩 → 🐠 trên menu tròn). Bấm vào
   nước để cho cá ăn, mỗi ngày một lần, cá lớn dần từ bé tới lớn; cá không bao giờ chết
-  hay bỏ đi. Mua thêm cá, nền bể và đồ trang trí ở 🍬 Bộ sưu tập (chế độ 🐠 Bể cá), đặt
+  hay bỏ đi. Bỏ đói mấy ngày thì cá bơi chậm lại và pet nhắc (tối đa một lần mỗi ngày;
+  tắt ở Cài đặt → *🧩 Widget*). Cho cá ăn cũng xong luôn nhiệm vụ phụ 🐠 trong ngày. Mua thêm cá, nền bể và đồ trang trí ở 🍬 Bộ sưu tập (chế độ 🐠 Bể cá), đặt
   tên và sắp xếp bể trong cửa sổ riêng. ⛶ thả cả đàn cá ra bơi trên hình nền, sau mọi
   cửa sổ và dưới icon desktop: bấm chỗ trống để thả thức ăn, bấm trúng cá để cá giật
   mình. Bể tự dừng khi có cửa sổ che kín màn hình. Cá bảy màu và tiên cá Miu có vây
@@ -227,6 +231,8 @@ duyệt, Word…).
 - **🧩 Widget ở một chỗ** — Cài đặt → *🧩 Widget* ghim / gỡ lịch, đồng hồ, widget
   thời tiết, thông số máy, theo dõi website, bể cá (hoặc bể cá full), chọn đồng hồ thêm, và 🧹 xếp gọn mọi widget đang ghim
   thành một cột bên phải. Các widget cùng chiều rộng và lề nên thẳng hàng cả hai mép.
+  Widget và tờ note đang ghim vẫn nằm trên desktop khi bấm **Win+D** (muốn ẩn theo
+  thì tắt ở đó).
 - **Trả lời nhanh** — bôi đen tin nhắn, gõ ý trả lời bằng tiếng Việt, AI soạn câu
   trả lời tự nhiên theo ngôn ngữ của tin nhắn (Anh / Nhật / …).
 - **Trợ lý văn bản không cần bôi đen** — chuột phải → 🗂️ **Mở đầy đủ** mở trợ lý
@@ -304,7 +310,7 @@ Companion**. Không cấp quyền thì các tính năng khác vẫn chạy bình
 
 ### Menu tray
 
-Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · 🖱️ Bật / tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · 🛰 Ghim / gỡ theo dõi website · 🐠 Ghim / gỡ bể cá · Thoát
+Hiện/Ẩn pet · Công việc · 🗒️ Ghi chú · Cài đặt · 🖱️ Bật / tắt click-through · 🍅 Bắt đầu / dừng tập trung · 🔕 Đừng làm phiền (1 giờ) · 🌦 Bật / tắt hiệu ứng thời tiết · ☁️ Dự báo thời tiết · 📅 Ghim / gỡ lịch tháng · 📊 Ghim / gỡ thông số máy · 🛰 Ghim / gỡ theo dõi website · 🐠 Ghim / gỡ bể cá · ❓ Hướng dẫn nhanh · Thoát
 
 ### Chuột phải vào pet
 

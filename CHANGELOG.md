@@ -6,6 +6,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **🌸 Copy method per app.** If selecting text in some app makes the flower interrupt a
+  command or drop your highlight, set how it copies there: Settings → *⚙️ System* →
+  *Copy method per app*, one app per line with `shift` (Ctrl+Shift+C, for terminals),
+  `skip` (no auto copy) or `ctrl`. Settings shows the last app you selected in, so one
+  click adds it. Your lines win over the built-in terminal list.
+- **🛰 Sites that need a login.** Tick 🔐 when adding a site (or click 🔐 on its row) and a
+  401 / 403 answer counts as up, so an admin page or internal dashboard is no longer
+  reported down every check. *Test now* suggests it when a site answers 401 / 403.
+- **🧩 Widgets stay on the desktop when you press Win+D.** Before, *Show desktop* hid
+  the calendar, clock, notes and other pinned widgets along with every window. Now they
+  float above the desktop while you look at it, and go back below your apps as soon as
+  you open one. Widgets with 📍 are left as they are. Switch it off in Settings →
+  *🧩 Widgets* if you prefer them hidden.
+- **🐠 A daily bonus quest for feeding the fish.** "Feed the fish" sits next to "Finish 1
+  task" as an optional quest (+20 🍬). Like that one, it does not count toward the 3 daily
+  quests, so you lose nothing if you don't use the aquarium.
+- **🐠 Fish get hungry.** After 2 days without food they swim a little slower, after 4 days
+  clearly slower, and the pet reminds you at most once a day, only while the tank is pinned
+  or swimming on the wallpaper. They still never die, shrink or leave, and one feeding
+  brings them back to normal. Switch it off in Settings → *🧩 Widgets*.
+- **❓ A quick tour for new users.** A little after the naming card (once the pet's usual
+  pause between lines has passed), a five-step card on the pet shows what is hard to find
+  alone: the selection flower, the right-click menu,
+  click-through with Ctrl + right-click, where to add an AI key, and the features that
+  start switched off. It opens once on a fresh install (people upgrading are not shown
+  it) and can be reopened any time from the tray → ❓ Quick tour. It stays clickable with
+  click-through on, like the 🎁 box.
+
+### Changed
+- The privacy page now says where the AI key really lives (the system credential store,
+  not the settings file) and that the app watches the mouse position and the name of the
+  app you select text in. Settings' privacy note says the same.
+
 ## [0.12.5] - 2026-11-11
 
 ### Fixed

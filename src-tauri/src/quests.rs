@@ -1,11 +1,13 @@
 // 📋 Nhiệm vụ hằng ngày (PLAN.md 15.2 B4). Mỗi ngày 3 nhiệm vụ, mỗi nhóm một:
-// 🌸 với pet, 🍅 tập trung, 🎮 giải trí; thêm "xong 1 việc" là nhiệm vụ phụ (có
-// ngày không có việc gì, nên không bắt buộc). Xong cả 3 → +1 lượt quay; tuần đủ
-// WEEK_DAYS ngày như vậy → +WEEK_SPINS lượt.
+// 🌸 với pet, 🍅 tập trung, 🎮 giải trí; thêm hai nhiệm vụ phụ "xong 1 việc" và
+// "cho cá ăn" (có ngày không có việc gì, có người không dùng bể cá, nên không bắt
+// buộc). Xong cả 3 → +1 lượt quay; tuần đủ WEEK_DAYS ngày như vậy → +WEEK_SPINS lượt.
 //
 // Đếm bằng chính các sự kiện của điểm thân thiết (companion::bond_award), không
-// theo dõi gì thêm. Không có nhiệm vụ "mở app", bỏ ngày không bị phạt gì (14.2).
-// Trạng thái nằm trong collection.json (Collection.quests). Phần thuần ở đây.
+// theo dõi gì thêm. Cho cá ăn đếm riêng (record_fish): nó không cộng điểm thân thiết
+// nên không tự ra kẹo (PLAN 18.1), chỉ nhiệm vụ mới thưởng. Không có nhiệm vụ "mở
+// app", bỏ ngày không bị phạt gì (14.2). Trạng thái nằm trong collection.json
+// (Collection.quests). Phần thuần ở đây.
 
 use std::collections::BTreeMap;
 
@@ -38,6 +40,8 @@ enum Counter {
     /// Đã chơi "game của ngày" chưa (0 / 1).
     DailyGame,
     Task,
+    /// Cho cá ăn lần đầu trong ngày (bể cá).
+    Fish,
 }
 
 pub struct Def {
@@ -70,10 +74,13 @@ const GROUPS: [&[Def]; 3] = [
 ];
 
 /// Nhiệm vụ phụ: không tính vào "xong cả 3".
-const OPTIONAL: Def = def("task1", Counter::Task, 1, ["Xong 1 việc trong bảng Công việc", "タスクを1つ完了する", "Finish 1 task"]);
+const OPTIONALS: [Def; 2] = [
+    def("task1", Counter::Task, 1, ["Xong 1 việc trong bảng Công việc", "タスクを1つ完了する", "Finish 1 task"]),
+    def("fish1", Counter::Fish, 1, ["Cho cá ăn 🐠", "魚にエサをあげる 🐠", "Feed the fish 🐠"]),
+];
 
 fn find(id: &str) -> Option<&'static Def> {
-    GROUPS.iter().flat_map(|g| g.iter()).chain(std::iter::once(&OPTIONAL)).find(|d| d.id == id)
+    GROUPS.iter().flat_map(|g| g.iter()).chain(OPTIONALS.iter()).find(|d| d.id == id)
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -147,6 +154,7 @@ fn progress(q: &Quests, d: &Def) -> u32 {
         Counter::Focus => q.counts.get("focus").copied().unwrap_or(0),
         Counter::Game => q.counts.get("game").copied().unwrap_or(0),
         Counter::Task => q.counts.get("task").copied().unwrap_or(0),
+        Counter::Fish => q.counts.get("fish").copied().unwrap_or(0),
         Counter::DistinctGames => q.games.len() as u32,
         Counter::DailyGame => {
             let daily = daily_game(q.day);
@@ -177,7 +185,7 @@ pub struct Outcome {
 /// Ghi nhận nhiệm vụ nào vừa đủ, trao thưởng đúng một lần.
 fn settle(q: &mut Quests, today: Day) -> Outcome {
     let mut out = Outcome::default();
-    let ids: Vec<String> = q.picks.iter().cloned().chain(std::iter::once(OPTIONAL.id.to_string())).collect();
+    let ids: Vec<String> = q.picks.iter().cloned().chain(OPTIONALS.iter().map(|d| d.id.to_string())).collect();
     for id in ids {
         let Some(d) = find(&id) else { continue };
         if q.done.iter().any(|x| x == d.id) || progress(q, d) < d.goal {
@@ -221,6 +229,14 @@ pub fn record(q: &mut Quests, today: Day, h: Happened) -> Outcome {
             q.games.push(g.to_string());
         }
     }
+    settle(q, today)
+}
+
+/// Cho cá ăn lần đầu trong ngày (aquarium::Feed::Fed). Lần cho ăn thêm trong ngày
+/// không gọi tới đây.
+pub fn record_fish(q: &mut Quests, today: Day) -> Outcome {
+    roll(q, today);
+    *q.counts.entry("fish".to_string()).or_insert(0) += 1;
     settle(q, today)
 }
 
@@ -284,7 +300,7 @@ pub fn view_json(q: &Quests, today: Day, lang_idx: usize, pet: &str) -> Value {
     let week_days: Vec<bool> = (0..7).map(|i| q.full_days.contains(&(week * 7 - 3 + i))).collect();
     json!({
         "main": main,
-        "optional": item(&OPTIONAL, None),
+        "optionals": OPTIONALS.iter().map(|d| item(d, None)).collect::<Vec<_>>(),
         "rerolled": q.rerolled,
         "fullToday": q.full_days.contains(&today),
         "fullSpins": FULL_DAY_SPINS,
@@ -401,6 +417,33 @@ mod tests {
         hit(&mut q, D, Event::Headpat, 3);
         hit(&mut q, D, Event::FocusDone, 1);
         assert!(game(&mut q, D, "rps").full_day);
+    }
+
+    #[test]
+    fn fish_quest_is_optional_and_pays_once() {
+        let mut q = easy(D);
+        let o = record_fish(&mut q, D);
+        assert_eq!((o.completed, o.candy, o.spins), (vec!["fish1"], QUEST_CANDY, 0));
+        assert_eq!(record_fish(&mut q, D), Outcome::default(), "xong rồi thì không thưởng lại");
+        // Không tính vào "xong cả 3": vẫn cần đủ 3 nhiệm vụ chính.
+        hit(&mut q, D, Event::Headpat, 3);
+        hit(&mut q, D, Event::FocusDone, 1);
+        assert!(game(&mut q, D, "rps").full_day);
+        // Sang ngày mới thì đếm lại.
+        let o = record_fish(&mut q, D + 1);
+        assert_eq!(o.completed, vec!["fish1"]);
+    }
+
+    #[test]
+    fn view_lists_both_optional_quests() {
+        let mut q = easy(D);
+        record_fish(&mut q, D);
+        let v = view_json(&q, D, 2, "Miu");
+        let opts = v["optionals"].as_array().unwrap();
+        assert_eq!(opts.iter().map(|o| o["id"].as_str().unwrap()).collect::<Vec<_>>(), ["task1", "fish1"]);
+        assert_eq!(opts[1]["done"], true);
+        assert_eq!(opts[0]["done"], false);
+        assert_eq!(opts[1]["canReroll"], false, "nhiệm vụ phụ không đổi được");
     }
 
     #[test]

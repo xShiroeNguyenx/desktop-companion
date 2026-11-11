@@ -137,9 +137,16 @@
     return v < lo ? lo : v > hi ? hi : v;
   }
 
+  /** Lâu không được ăn thì bơi chậm lại (Rust: aquarium::hunger). Lạ / thiếu = no. */
+  const HUNGER_SCALE = { full: 1, peckish: 0.8, hungry: 0.55 };
+  function hungerScale(h) {
+    return HUNGER_SCALE[h] || 1;
+  }
+
   /** Tốc độ tối đa (px/s) của một con lúc này. */
   function maxSpeed(f, opts) {
     let v = shape(f.species).speed * ((opts && opts.speedScale) || 1);
+    v *= hungerScale(opts && opts.hunger);
     // Con ở xa (nhỏ hơn) bơi chậm hơn một chút: đúng phối cảnh.
     v *= depthScale(f.depth, f.depthRange);
     if (opts && opts.night) v *= 0.25;
@@ -149,7 +156,7 @@
   }
 
   /**
-   * Một bước mô phỏng. opts: { bounds, food, rand, night, reduced }.
+   * Một bước mô phỏng. opts: { bounds, food, rand, night, reduced, hunger }.
    * Cá lang thang tới một điểm, loài bơi đàn kéo về giữa đàn, có thức ăn thì
    * đuổi theo viên gần nhất (ban đêm cá ngủ, không đuổi).
    */
@@ -474,6 +481,7 @@
   const STR = {
     vi: {
       title: 'Bể cá', fed: 'Đã cho ăn', notFed: 'Chưa cho ăn hôm nay', feed: 'Cho cá ăn',
+      peckish: 'Cá hơi đói rồi', hungry: 'Cá đói lắm, cho ăn nha!',
       bigger: 'Bể lớn', smaller: 'Bể nhỏ', top: 'Luôn nổi', unpin: 'Gỡ bể cá',
       empty: 'Bể đang trống', age: '{n} ngày tuổi', newborn: 'mới thả',
       stages: ['bé', 'nhỡ', 'lớn'], grew: 'Cá lớn thêm rồi!', alreadyFed: '🍤 Hôm nay cá ăn rồi, thả thêm cho vui thôi~',
@@ -501,6 +509,7 @@
     },
     ja: {
       title: '水槽', fed: 'ごはん済み', notFed: '今日はまだごはん前', feed: 'ごはんをあげる',
+      peckish: 'ちょっとおなかがすいてる', hungry: 'おなかぺこぺこ、ごはんをあげてね！',
       bigger: '大きい水槽', smaller: '小さい水槽', top: '常に手前', unpin: '水槽を外す',
       empty: '水槽は空っぽ', age: '{n}日目', newborn: '新入り',
       stages: ['ちび', '中', '大'], grew: '大きくなった！', alreadyFed: '🍤 今日はもうごはん済み、これはおまけだよ～',
@@ -528,6 +537,7 @@
     },
     en: {
       title: 'Aquarium', fed: 'Fed today', notFed: 'Not fed yet today', feed: 'Feed the fish',
+      peckish: 'A little hungry', hungry: 'Very hungry, please feed them!',
       bigger: 'Bigger tank', smaller: 'Smaller tank', top: 'Always on top', unpin: 'Remove aquarium',
       empty: 'The tank is empty', age: '{n} days old', newborn: 'just arrived',
       stages: ['small', 'medium', 'big'], grew: 'The fish grew!', alreadyFed: '🍤 Already fed today, this is just a snack~',
@@ -557,6 +567,14 @@
 
   function strings(lang) {
     return STR[lang] || STR.vi;
+  }
+
+  /** Dòng trạng thái ăn của bể: đã ăn hôm nay / đói lắm / hơi đói / chưa ăn hôm nay. */
+  function fedText(tank, s) {
+    if (tank && tank.fedToday) return s.fed;
+    if (tank && tank.hunger === 'hungry') return s.hungry;
+    if (tank && tank.hunger === 'peckish') return s.peckish;
+    return s.notFed;
   }
 
   function fill(tpl, vars) {
@@ -592,7 +610,7 @@
   const api = {
     SHAPES, SPECIES, STAGE_SCALE, MAX_FOOD, REST_SECS, WATER, STR,
     TURN_RATE, PITCH_MAX, TURN_BEND, turnToward, turnRate, turnPhi, spine, frontTurn, finPose, depthScale, depthAlpha, byDepth, pitchFor,
-    shape, fishLen, rng, swimBox, syncSim, step, maxSpeed,
+    shape, fishLen, rng, swimBox, syncSim, step, maxSpeed, hungerScale, fedText,
     dropFood, dropFoodAt, fishNear, sinkFood, eat, scatter, fishAt, lightAt, strings, fill, fishLabel, errorText, canAdd,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

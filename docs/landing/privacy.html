@@ -51,7 +51,7 @@
 
 <main class="wrap">
   <h1>Privacy Policy</h1>
-  <p class="meta">Effective date: October 29, 2026</p>
+  <p class="meta">Effective date: November 11, 2026</p>
 
   <div class="summary">
     <p><strong>In short:</strong> Desktop Companion has no account, no analytics and no telemetry, and we run no server
@@ -67,8 +67,9 @@
   <h2>Data stored on your computer</h2>
   <p>The app keeps its data as plain files in its own config folder on your computer. This includes:</p>
   <ul>
-    <li><strong>Settings</strong>, including the AI API key you enter. The key is kept in the local settings file and
-    is only sent to the AI provider you picked.</li>
+    <li><strong>Settings.</strong> The AI API key you enter is not written to the settings file: it goes into your
+    operating system's credential store (Windows Credential Manager, or Keychain on macOS) and is only sent to the AI
+    provider you picked.</li>
     <li><strong>Chat history</strong> with your companion.</li>
     <li><strong>Your content</strong>: tasks, notes, reminders, bookmarks, the websites you ask it to monitor, and the
     city you choose for weather.</li>
@@ -80,7 +81,14 @@
   <h2>What the app reads on your computer</h2>
   <ul>
     <li><strong>Selected text.</strong> When you select text or press the capture shortcut, the app copies that text
-    (restoring your clipboard afterwards) so it can translate it or draft a reply. It does not record keystrokes.</li>
+    (restoring your clipboard afterwards) so it can translate it or draft a reply. It does not record keystrokes. To
+    send the right copy shortcut (some terminals use <code>Ctrl+Shift+C</code>), it checks the program name of the
+    app you selected in, for example <code>WindowsTerminal.exe</code>. The last name is kept in memory only, so
+    Settings can offer it when you set a copy method per app. It is not written to disk unless you add it there
+    yourself, and never sent anywhere.</li>
+    <li><strong>Mouse position.</strong> Her eyes follow the cursor, she fades when you hover her in click-through mode,
+    and the desktop aquarium reacts to clicks, so the app watches where the mouse is and when its buttons are
+    pressed. It uses the position only at that moment and does not record it.</li>
     <li><strong>Activity state.</strong> To avoid interrupting you, it checks how long the mouse and keyboard have been
     idle and whether a full-screen app is running or the screen is locked. It does <strong>not</strong> read window
     titles, process names or screen contents for this.</li>

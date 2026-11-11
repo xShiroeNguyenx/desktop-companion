@@ -38,10 +38,22 @@
     return n < 1000 ? `${Math.round(n)} ms` : `${(n / 1000).toFixed(1)} s`;
   }
 
-  /** Chữ ngắn cho một kết quả: "120 ms", "502", "Hết giờ"… */
+  /** Mã "cần đăng nhập": server có trả lời, chỉ là chưa đăng nhập. */
+  function isLoginStatus(status) {
+    return status === 401 || status === 403;
+  }
+
+  /**
+   * Kết quả sập vì 401 / 403 (site chưa bật 🔐): gợi ý bật thay vì báo "không vào được".
+   */
+  function needsLogin(o) {
+    return !!o && o.state === 'down' && isLoginStatus(Number(String(o.reason || '').replace(/^http/, '')));
+  }
+
+  /** Chữ ngắn cho một kết quả: "120 ms", "🔐 120 ms" (401 / 403 ở site cần đăng nhập), "502", "Hết giờ"… */
   function resultText(last, lang) {
     if (!last) return strings(lang).checking;
-    if (last.state === 'up') return fmtMs(last.ms);
+    if (last.state === 'up') return (isLoginStatus(last.status) ? '🔐 ' : '') + fmtMs(last.ms);
     const r = String(last.reason || '');
     if (r.startsWith('http')) return r.slice(4);
     return strings(lang).reasons[r] || strings(lang).reasons.error;
@@ -65,7 +77,7 @@
     return fill(strings(lang).running, { up, n: list.length });
   }
 
-  const api = { T, strings, fill, fmtMs, resultText, dot, summary };
+  const api = { T, strings, fill, fmtMs, needsLogin, resultText, dot, summary };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MonitorCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

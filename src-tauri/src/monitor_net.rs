@@ -37,12 +37,16 @@ pub fn kick(app: &AppHandle) {
     KICK.store(true, Ordering::SeqCst);
 }
 
-/// Kiểm một URL một lần.
-pub async fn check(client: &reqwest::Client, url: &str) -> Outcome {
+/// Kiểm một URL một lần. `login` = site cần đăng nhập (401 / 403 tính là chạy).
+pub async fn check(client: &reqwest::Client, url: &str, login: bool) -> Outcome {
     let start = Instant::now();
     match client.get(url).send().await {
         // Không đọc body: chỉ cần mã trạng thái. Bỏ resp là đóng kết nối.
-        Ok(resp) => monitor::classify_status(resp.status().as_u16(), start.elapsed().as_millis().min(u32::MAX as u128) as u32),
+        Ok(resp) => monitor::classify_status(
+            resp.status().as_u16(),
+            start.elapsed().as_millis().min(u32::MAX as u128) as u32,
+            login,
+        ),
         Err(e) => {
             if e.is_timeout() {
                 return monitor::classify_error(NetErr::Timeout);
@@ -79,8 +83,8 @@ async fn check_all(sites: &[Site]) -> Vec<(String, Outcome)> {
         let handles: Vec<_> = chunk
             .iter()
             .map(|s| {
-                let (c, url) = (c.clone(), s.url.clone());
-                tauri::async_runtime::spawn(async move { check(&c, &url).await })
+                let (c, url, login) = (c.clone(), s.url.clone(), s.login);
+                tauri::async_runtime::spawn(async move { check(&c, &url, login).await })
             })
             .collect();
         for (s, h) in chunk.iter().zip(handles) {
@@ -104,7 +108,7 @@ pub fn stats(app: &AppHandle) -> Value {
         .map(|s| {
             let h = guard.as_ref().and_then(|m| m.health.get(&s.id));
             json!({
-                "id": s.id, "name": s.name, "url": s.url, "notify": s.notify,
+                "id": s.id, "name": s.name, "url": s.url, "notify": s.notify, "login": s.login,
                 "up": h.and_then(|h| h.up),
                 "last": h.and_then(|h| h.last.clone()),
             })
@@ -187,7 +191,11 @@ mod tests {
     }
 
     fn run(url: &str) -> Outcome {
-        tauri::async_runtime::block_on(async { check(&client().unwrap(), url).await })
+        run_as(url, false)
+    }
+
+    fn run_as(url: &str, login: bool) -> Outcome {
+        tauri::async_runtime::block_on(async { check(&client().unwrap(), url, login).await })
     }
 
     #[test]
@@ -196,6 +204,13 @@ mod tests {
         assert!(matches!(run(&ok), Outcome::Up { status: 200, .. }));
         let bad = serve(Some("HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"));
         assert_eq!(run(&bad), Outcome::Down { reason: "http502".into() });
+    }
+
+    #[test]
+    fn real_401_is_up_only_for_login_sites() {
+        const DENY: &str = "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        assert!(matches!(run_as(&serve(Some(DENY)), true), Outcome::Up { status: 401, .. }));
+        assert_eq!(run(&serve(Some(DENY))), Outcome::Down { reason: "http401".into() });
     }
 
     #[test]
@@ -210,8 +225,8 @@ mod tests {
     #[test]
     fn tags_respect_notify() {
         let sites = vec![
-            Site { id: "1".into(), name: "a".into(), url: "https://example.com".into(), notify: true },
-            Site { id: "2".into(), name: "b".into(), url: "https://example.net".into(), notify: false },
+            Site { id: "1".into(), name: "a".into(), url: "https://example.com".into(), notify: true, login: false },
+            Site { id: "2".into(), name: "b".into(), url: "https://example.net".into(), notify: false, login: false },
         ];
         assert_eq!(tag(&Event::Down { id: "1".into(), reason: "http502".into() }, &sites).as_deref(), Some("mon:down:1:http502"));
         assert_eq!(tag(&Event::Down { id: "2".into(), reason: "dns".into() }, &sites), None);

@@ -82,6 +82,56 @@ pub struct Aquarium {
     /// Đã tặng cá vàng (một lần trong đời, kể cả khi người dùng vớt hết cá sau này).
     #[serde(default)]
     pub starter: bool,
+    /// Ngày Miu đã nhắc "cá đói" (tối đa một lần mỗi ngày).
+    #[serde(default)]
+    pub hungry_said: Option<Day>,
+}
+
+// ─── Đói (PLAN.md 18.7) ──────────────────────────────────────────────────────
+// Lâu không cho ăn thì cá bơi chậm lại và Miu nhắc (tối đa một lần / ngày). Cá
+// KHÔNG chết, không bỏ đi, không nhỏ lại, không trừ kẹo: cho ăn là bơi lại như thường.
+
+/// Không được ăn từ bấy nhiêu ngày: hơi đói (bơi chậm một chút).
+pub const PECKISH_DAYS: Day = 2;
+/// Từ bấy nhiêu ngày: đói (bơi chậm hẳn, Miu nhắc).
+pub const HUNGRY_DAYS: Day = 4;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Hunger {
+    Full,
+    Peckish,
+    Hungry,
+}
+
+impl Hunger {
+    pub fn code(self) -> &'static str {
+        match self {
+            Hunger::Full => "full",
+            Hunger::Peckish => "peckish",
+            Hunger::Hungry => "hungry",
+        }
+    }
+}
+
+/// Mức đói của bể hôm nay. `enabled` = công tắc trong Cài đặt (tắt = luôn no).
+/// Chưa cho ăn lần nào thì tính từ ngày con cá lâu nhất được thả (bể mới không bị
+/// coi là đói ngay). Đồng hồ lùi (ngày cho ăn ở tương lai) thì coi như vừa ăn.
+pub fn hunger(a: &Aquarium, today: Day, enabled: bool) -> Hunger {
+    if !enabled || a.fish.is_empty() {
+        return Hunger::Full;
+    }
+    let since = a.last_fed.unwrap_or_else(|| a.fish.iter().map(|f| f.born).min().unwrap_or(today));
+    match (today - since).max(0) {
+        d if d >= HUNGRY_DAYS => Hunger::Hungry,
+        d if d >= PECKISH_DAYS => Hunger::Peckish,
+        _ => Hunger::Full,
+    }
+}
+
+/// Miu có nên nhắc "cá đói" hôm nay không: đói thật, chưa nhắc hôm nay, và người
+/// dùng đang dùng bể (đang ghim widget hoặc bật bể full; không thì nhắc là thừa).
+pub fn should_nag(a: &Aquarium, today: Day, enabled: bool, in_use: bool) -> bool {
+    in_use && hunger(a, today, enabled) == Hunger::Hungry && a.hungry_said != Some(today)
 }
 
 /// Cỡ cá: 0 bé · 1 nhỡ · 2 lớn.
@@ -250,7 +300,7 @@ fn fish_json(f: &Fish, today: Day) -> Option<Value> {
 /// Dữ liệu cho widget và cửa sổ Bể cá. Cá loài lạ bị ẩn nhưng KHÔNG xoá khỏi file.
 /// decor_ok(id) → id tĩnh nếu món có thật và đã sở hữu
 /// (collection::owned_aquarium_item); ô có món lạ / chưa sở hữu hiện trống.
-pub fn view_json(a: &Aquarium, today: Day, decor_ok: impl Fn(&str) -> Option<&'static str>) -> Value {
+pub fn view_json(a: &Aquarium, today: Day, hunger_on: bool, decor_ok: impl Fn(&str) -> Option<&'static str>) -> Value {
     let fish: Vec<Value> = a.fish.iter().take(MAX_IN_TANK).filter_map(|f| fish_json(f, today)).collect();
     let stored: Vec<Value> = a.stored.iter().filter_map(|f| fish_json(f, today)).collect();
     let decor: Vec<&str> = (0..DECOR_SLOTS)
@@ -261,6 +311,7 @@ pub fn view_json(a: &Aquarium, today: Day, decor_ok: impl Fn(&str) -> Option<&'s
         "stored": stored,
         "decor": decor,
         "fedToday": fed_today(a, today),
+        "hunger": hunger(a, today, hunger_on).code(),
         "max": MAX_IN_TANK,
         "perSpecies": MAX_PER_SPECIES,
     })
@@ -420,11 +471,11 @@ mod tests {
     fn view_hides_unknown_species_and_unowned_decor_without_deleting() {
         let mut a = Aquarium::default();
         ensure_starter(&mut a, 10);
-        a.fish.push(Fish { uid: 99, species: "fish.removed".into(), ..Default::default() });
+        a.fish.push(Fish { uid: 99, species: "fish.removed".into(), born: 10, ..Default::default() });
         a.fish[0].name = "Bé\u{7}Vàng".into();
         a.fish[0].fed_days = 5;
         a.decor = vec!["tdeco.castle".into(), "tdeco.hacked".into()];
-        let v = view_json(&a, 12, |id| (id == "tdeco.castle").then_some("tdeco.castle"));
+        let v = view_json(&a, 12, true, |id| (id == "tdeco.castle").then_some("tdeco.castle"));
         let list = v["fish"].as_array().unwrap();
         assert_eq!(list.len(), 2);
         assert_eq!(list[0]["species"], "fish.goldfish");
@@ -432,8 +483,52 @@ mod tests {
         assert_eq!(list[0]["stage"], 1);
         assert_eq!(list[0]["age"], 2);
         assert_eq!(v["fedToday"], false);
+        assert_eq!(v["hunger"], "peckish", "thả từ ngày 10, chưa ăn lần nào, hôm nay ngày 12");
         assert_eq!(v["decor"], json!(["tdeco.castle", "", "", ""]));
         assert_eq!(a.fish.len(), 3, "cá loài lạ vẫn nằm trong file");
+    }
+
+    #[test]
+    fn hunger_grows_with_days_unfed_and_never_harms_the_fish() {
+        let mut a = Aquarium::default();
+        ensure_starter(&mut a, 100);
+        // Bể mới, chưa ăn lần nào: tính từ ngày thả.
+        assert_eq!(hunger(&a, 100, true), Hunger::Full);
+        assert_eq!(hunger(&a, 100 + PECKISH_DAYS, true), Hunger::Peckish);
+        assert_eq!(hunger(&a, 100 + HUNGRY_DAYS, true), Hunger::Hungry);
+        feed(&mut a, 110);
+        assert_eq!(hunger(&a, 110, true), Hunger::Full);
+        assert_eq!(hunger(&a, 111, true), Hunger::Full);
+        assert_eq!(hunger(&a, 112, true), Hunger::Peckish);
+        assert_eq!(hunger(&a, 200, true), Hunger::Hungry);
+        // Tắt công tắc: luôn no. Bể trống: không có ai đói.
+        assert_eq!(hunger(&a, 200, false), Hunger::Full);
+        assert_eq!(hunger(&Aquarium::default(), 200, true), Hunger::Full);
+        // Đồng hồ lùi: coi như vừa ăn.
+        assert_eq!(hunger(&a, 105, true), Hunger::Full);
+        // Đói bao lâu cũng không mất cá, không nhỏ lại; cho ăn là no lại.
+        let fed_days = a.fish[0].fed_days;
+        assert_eq!(a.fish.len(), 2);
+        feed(&mut a, 200);
+        assert_eq!(hunger(&a, 200, true), Hunger::Full);
+        assert_eq!(a.fish[0].fed_days, fed_days + 1);
+    }
+
+    #[test]
+    fn nag_at_most_once_a_day_and_only_when_the_tank_is_used() {
+        let mut a = Aquarium::default();
+        ensure_starter(&mut a, 0);
+        let day = HUNGRY_DAYS;
+        assert!(should_nag(&a, day, true, true));
+        assert!(!should_nag(&a, day, true, false), "không ghim bể / không bật bể full: không nhắc");
+        assert!(!should_nag(&a, day, false, true), "tắt công tắc: không nhắc");
+        assert!(!should_nag(&a, day - 1, true, true), "mới hơi đói: chưa nhắc");
+        a.hungry_said = Some(day);
+        assert!(!should_nag(&a, day, true, true), "hôm nay nhắc rồi");
+        assert!(should_nag(&a, day + 1, true, true), "hôm sau vẫn đói thì nhắc lại");
+        // File cũ chưa có trường mới vẫn đọc được.
+        let old: Aquarium = serde_json::from_str(r#"{"fish":[],"last_fed":3}"#).unwrap();
+        assert_eq!(old.hungry_said, None);
     }
 
     #[test]

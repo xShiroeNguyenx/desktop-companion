@@ -16,9 +16,10 @@
 // `seeThrough:menuClosed` và click-through bật lại. Chỉ bắt đúng cú này: Ctrl + click /
 // cuộn / kéo khác vẫn xuống app phía sau như thường.
 //
-// Khung 🎁 quay free trên đầu pet phải bấm được (quay, ×) cả lúc click-through: trang
-// báo hộp của khung (`gacha:rect`), con trỏ vào khung thì tạm tắt click-through, ra khỏi
-// khung (hay khung đóng) thì bật lại (on_cursor / set_island).
+// Khung bấm được trên pet (🎁 quay free trên đầu, thẻ hướng dẫn) phải bấm được cả lúc
+// click-through: trang báo hộp của từng khung (`gacha:rect`, `tour:rect`), con trỏ vào
+// khung nào thì tạm tắt click-through, ra khỏi mọi khung (hay khung đóng) thì bật lại
+// (on_cursor / set_island).
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
@@ -46,10 +47,10 @@ static MENU_OPEN: AtomicBool = AtomicBool::new(false);
 static MENU_ACK: AtomicBool = AtomicBool::new(false);
 /// Trang không xác nhận trong bấy nhiêu ms thì coi như không mở được: bật lại click-through.
 const ACK_MS: u64 = 1500;
-/// Khung bấm được nằm trên pet (🎁 quay free trên đầu): hộp px màn hình do trang báo
-/// (`gacha:rect`), None khi khung đóng. Cửa sổ bỏ qua chuột thì không bấm được khung,
-/// nên con trỏ vào khung là tạm tắt click-through, ra khỏi khung thì bật lại.
-static ISLAND: Mutex<Option<Rect>> = Mutex::new(None);
+/// Các khung bấm được nằm trên pet (🎁 quay free, thẻ hướng dẫn): tên + hộp px màn hình
+/// do trang báo, bỏ khỏi danh sách khi khung đóng. Cửa sổ bỏ qua chuột thì không bấm
+/// được khung, nên con trỏ vào khung là tạm tắt click-through, ra khỏi thì bật lại.
+static ISLANDS: Mutex<Vec<(&'static str, Rect)>> = Mutex::new(Vec::new());
 /// Đang có khung (đọc nhanh mỗi lần con trỏ di chuyển, khỏi khoá mutex).
 static HAS_ISLAND: AtomicBool = AtomicBool::new(false);
 /// Click-through đang tạm tắt vì con trỏ nằm trên khung.
@@ -134,11 +135,21 @@ pub enum IslandStep {
 }
 
 /// `see`: pet đang click-through vì người dùng chọn; `active`: đang tạm tắt vì khung.
-pub fn island_step(see: bool, active: bool, rect: Rect, x: i32, y: i32) -> Option<IslandStep> {
+/// `rects`: mọi khung bấm được đang mở (🎁, thẻ hướng dẫn…); con trỏ ở khung nào cũng được.
+pub fn island_step(see: bool, active: bool, rects: &[Rect], x: i32, y: i32) -> Option<IslandStep> {
     if active {
-        return (!rect.contains(x, y, ISLAND_MARGIN)).then_some(IslandStep::Leave);
+        return (!rects.iter().any(|r| r.contains(x, y, ISLAND_MARGIN))).then_some(IslandStep::Leave);
     }
-    (see && rect.contains(x, y, 0)).then_some(IslandStep::Enter)
+    (see && rects.iter().any(|r| r.contains(x, y, 0))).then_some(IslandStep::Enter)
+}
+
+/// Đặt / bỏ khung `key` trong danh sách; trả danh sách còn rỗng không.
+fn put_island(list: &mut Vec<(&'static str, Rect)>, key: &'static str, rect: Option<Rect>) -> bool {
+    list.retain(|(k, _)| *k != key);
+    if let Some(r) = rect {
+        list.push((key, r));
+    }
+    list.is_empty()
 }
 
 /// Luồng vị trí con trỏ (selection.rs) cần chạy để canh khung không.
@@ -148,19 +159,22 @@ pub fn wants_cursor() -> bool {
 
 /// Luồng vị trí con trỏ (selection.rs), mỗi lần con trỏ di chuyển khi có khung.
 pub fn on_cursor(x: i32, y: i32) {
-    let Some(rect) = *ISLAND.lock().unwrap_or_else(|e| e.into_inner()) else { return };
-    let step = island_step(SEE.load(Ordering::SeqCst), ISLAND_ACTIVE.load(Ordering::SeqCst), rect, x, y);
+    let rects: Vec<Rect> = ISLANDS.lock().unwrap_or_else(|e| e.into_inner()).iter().map(|(_, r)| *r).collect();
+    if rects.is_empty() {
+        return;
+    }
+    let step = island_step(SEE.load(Ordering::SeqCst), ISLAND_ACTIVE.load(Ordering::SeqCst), &rects, x, y);
     let Some(app) = APP.get() else { return };
     match step {
         Some(IslandStep::Enter) => {
             if !ISLAND_ACTIVE.swap(true, Ordering::SeqCst) {
-                log("cursor over the 🎁 box: click-through off so it can be clicked");
+                log("cursor over a clickable box on the pet: click-through off so it can be clicked");
                 crate::set_pet_click_through(app, false);
             }
         }
         Some(IslandStep::Leave) => {
             if ISLAND_ACTIVE.swap(false, Ordering::SeqCst) {
-                log("cursor left the 🎁 box: click-through back on");
+                log("cursor left the clickable boxes: click-through back on");
                 restore(app);
             }
         }
@@ -168,13 +182,14 @@ pub fn on_cursor(x: i32, y: i32) {
     }
 }
 
-/// Trang báo chỗ khung 🎁 (`gacha:rect`), None khi khung đóng. Đóng lúc đang tạm tắt
-/// (bấm ×, thẻ quà tự đóng) thì bật lại click-through ngay.
-pub fn set_island(app: &AppHandle, rect: Option<Rect>) {
-    *ISLAND.lock().unwrap_or_else(|e| e.into_inner()) = rect;
-    HAS_ISLAND.store(rect.is_some(), Ordering::SeqCst);
-    if rect.is_none() && ISLAND_ACTIVE.swap(false, Ordering::SeqCst) {
-        log("the 🎁 box closed: click-through back on");
+/// Trang báo chỗ khung `key` ("gacha" = 🎁 quay free, "tour" = thẻ hướng dẫn), None
+/// khi khung đóng. Khung cuối cùng đóng lúc đang tạm tắt (bấm ×, thẻ tự đóng) thì
+/// bật lại click-through ngay.
+pub fn set_island(app: &AppHandle, key: &'static str, rect: Option<Rect>) {
+    let empty = put_island(&mut ISLANDS.lock().unwrap_or_else(|e| e.into_inner()), key, rect);
+    HAS_ISLAND.store(!empty, Ordering::SeqCst);
+    if empty && ISLAND_ACTIVE.swap(false, Ordering::SeqCst) {
+        log(&format!("the last clickable box ({key}) closed: click-through back on"));
         restore(app);
     }
 }
@@ -384,26 +399,45 @@ mod tests {
         assert!(inside(i32::MAX - 1, 0, i32::MAX - 5, 0, 10, 10), "cộng không tràn số");
     }
 
-    const BOX: Rect = Rect { x: 500, y: 200, w: 60, h: 70 };
+    const BOX: [Rect; 1] = [Rect { x: 500, y: 200, w: 60, h: 70 }];
 
     #[test]
     fn the_gift_box_turns_click_through_off_only_while_the_cursor_is_on_it() {
-        assert_eq!(island_step(true, false, BOX, 530, 230), Some(IslandStep::Enter));
-        assert_eq!(island_step(true, false, BOX, 500, 200), Some(IslandStep::Enter), "góc trên-trái");
-        assert_eq!(island_step(true, false, BOX, 495, 230), None, "ngoài khung: chưa tắt (lề chỉ tính lúc ra)");
-        assert_eq!(island_step(false, false, BOX, 530, 230), None, "click-through đang tắt: không cần làm gì");
+        assert_eq!(island_step(true, false, &BOX, 530, 230), Some(IslandStep::Enter));
+        assert_eq!(island_step(true, false, &BOX, 500, 200), Some(IslandStep::Enter), "góc trên-trái");
+        assert_eq!(island_step(true, false, &BOX, 495, 230), None, "ngoài khung: chưa tắt (lề chỉ tính lúc ra)");
+        assert_eq!(island_step(false, false, &BOX, 530, 230), None, "click-through đang tắt: không cần làm gì");
         // Đang tạm tắt: còn trong khung + lề thì giữ, ra ngoài lề mới bật lại.
-        assert_eq!(island_step(false, true, BOX, 530, 230), None);
-        assert_eq!(island_step(false, true, BOX, 494, 194), None, "sát mép ngoài: trong lề trễ, chưa bật lại");
-        assert_eq!(island_step(false, true, BOX, 500 - ISLAND_MARGIN - 1, 230), Some(IslandStep::Leave));
-        assert_eq!(island_step(false, true, BOX, 530, 200 + 70 + ISLAND_MARGIN), Some(IslandStep::Leave), "mép dưới là ngoài");
+        assert_eq!(island_step(false, true, &BOX, 530, 230), None);
+        assert_eq!(island_step(false, true, &BOX, 494, 194), None, "sát mép ngoài: trong lề trễ, chưa bật lại");
+        assert_eq!(island_step(false, true, &BOX, 500 - ISLAND_MARGIN - 1, 230), Some(IslandStep::Leave));
+        assert_eq!(island_step(false, true, &BOX, 530, 200 + 70 + ISLAND_MARGIN), Some(IslandStep::Leave), "mép dưới là ngoài");
     }
 
     #[test]
     fn island_margin_does_not_overflow_at_the_screen_edges() {
-        let edge = Rect { x: i32::MIN + 2, y: 0, w: u32::MAX - 1, h: 10 };
-        assert_eq!(island_step(false, true, edge, i32::MIN, 5), None);
-        assert_eq!(island_step(true, false, edge, i32::MIN + 2, 0), Some(IslandStep::Enter));
+        let edge = [Rect { x: i32::MIN + 2, y: 0, w: u32::MAX - 1, h: 10 }];
+        assert_eq!(island_step(false, true, &edge, i32::MIN, 5), None);
+        assert_eq!(island_step(true, false, &edge, i32::MIN + 2, 0), Some(IslandStep::Enter));
+    }
+
+    #[test]
+    fn several_boxes_count_as_one_clickable_area() {
+        // 🎁 trên đầu + thẻ hướng dẫn dưới chân.
+        let both = [Rect { x: 500, y: 200, w: 60, h: 70 }, Rect { x: 450, y: 500, w: 260, h: 150 }];
+        assert_eq!(island_step(true, false, &both, 600, 600), Some(IslandStep::Enter), "vào thẻ hướng dẫn");
+        // Từ khung này sang khung kia (qua chỗ trống giữa hai khung) thì bật lại, vào khung kia lại tắt.
+        assert_eq!(island_step(false, true, &both, 600, 600), None);
+        assert_eq!(island_step(false, true, &both, 600, 400), Some(IslandStep::Leave));
+        assert_eq!(island_step(false, false, &[], 600, 600), None, "không còn khung nào");
+
+        let mut list = Vec::new();
+        assert!(!put_island(&mut list, "gacha", Some(both[0])));
+        assert!(!put_island(&mut list, "tour", Some(both[1])));
+        assert!(!put_island(&mut list, "gacha", Some(both[1])), "báo lại thì thay chỗ, không thêm dòng");
+        assert_eq!(list.len(), 2);
+        assert!(!put_island(&mut list, "gacha", None), "còn thẻ hướng dẫn");
+        assert!(put_island(&mut list, "tour", None), "khung cuối cùng đóng");
     }
 
     #[test]

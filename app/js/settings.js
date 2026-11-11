@@ -181,6 +181,31 @@
     setHotkeyDisplay([...mods, key].join('+'));
   });
 
+  // 🌸 Cách chép theo từng app: gợi ý app vừa bôi đen (Rust giữ trong RAM) để thêm
+  // bằng một cú bấm, vì người dùng thường không biết tên file exe. Lưu khi bấm Lưu.
+  let flowerLastApp = null;
+  function renderFlowerLast() {
+    $('flowerLast').textContent = flowerLastApp
+      ? t('settings.sys.flowerLast', { app: flowerLastApp })
+      : t('settings.sys.flowerLastNone');
+    for (const id of ['flowerAddShift', 'flowerAddSkip']) $(id).style.display = flowerLastApp ? '' : 'none';
+  }
+  async function showFlowerLast() {
+    try {
+      flowerLastApp = (await invoke('flower_last_app')) || null;
+    } catch (e) {
+      flowerLastApp = null;
+      log('flower_last_app: ' + e);
+    }
+    renderFlowerLast();
+  }
+  for (const [id, mode] of [['flowerAddShift', 'shift'], ['flowerAddSkip', 'skip']]) {
+    $(id).addEventListener('click', () => {
+      if (!flowerLastApp) return;
+      $('flowerApps').value = window.FlowerApps.addRule($('flowerApps').value, flowerLastApp, mode);
+    });
+  }
+
   $('hotkeyReset').addEventListener('click', () => {
     setHotkeyDisplay('Ctrl+Shift+Space');
     $('hotkeyStatus').className = 'status';
@@ -431,6 +456,17 @@
       syncWidgets();
     });
   }
+  // Win+D không che widget (show_desktop.rs): áp dụng + lưu ngay như các công tắc trên.
+  $('wOverDesktop').addEventListener('change', async () => {
+    const on = $('wOverDesktop').checked;
+    try {
+      await invoke('show_desktop_set', { on });
+      widgetMsg(on ? t('settings.widget.overDesktopOn') : t('settings.widget.overDesktopOff'), true);
+    } catch (e) {
+      $('wOverDesktop').checked = !on;
+      widgetMsg(String(e), false);
+    }
+  });
   $('widgetsTidy').addEventListener('click', async () => {
     try {
       await invoke('widgets_tidy');
@@ -503,6 +539,20 @@
           monMsg(String(e), false);
         }
       });
+      // 🔐 Site cần đăng nhập: 401 / 403 tính là đang chạy.
+      const lock = document.createElement('button');
+      lock.type = 'button';
+      lock.textContent = '🔐';
+      lock.className = s.login ? '' : 'off';
+      lock.title = s.login ? t('settings.mon.loginOn') : t('settings.mon.loginOff');
+      lock.addEventListener('click', async () => {
+        try {
+          await invoke('monitor_update', { id: s.id, name: s.name, url: s.url, notify: s.notify, login: !s.login });
+          loadMonitors();
+        } catch (e) {
+          monMsg(String(e), false);
+        }
+      });
       const del = document.createElement('button');
       del.type = 'button';
       del.textContent = '🗑';
@@ -521,7 +571,7 @@
           monMsg(String(e), false);
         }
       });
-      row.append(dot, n, val, bell, del);
+      row.append(dot, n, val, lock, bell, del);
       list.append(row);
     }
   }
@@ -535,8 +585,10 @@
   $('monTest').addEventListener('click', async () => {
     monMsg(t('settings.mon.checking'));
     try {
-      const o = await invoke('monitor_test', { url: $('monUrl').value });
+      const o = await invoke('monitor_test', { url: $('monUrl').value, login: $('monLogin').checked });
       if (o.state === 'up') monMsg(t('settings.mon.up', { code: o.status, ms: MC.fmtMs(o.ms) }), true);
+      // Server có trả lời nhưng đòi đăng nhập: gợi ý tick 🔐 thay vì báo "không vào được".
+      else if (MC.needsLogin(o)) monMsg(t('settings.mon.needLogin', { code: o.reason.slice(4) }), false);
       else monMsg(t('settings.mon.down', { reason: MC.resultText(o, window.I18n.lang()) }), false);
     } catch (e) {
       monMsg(String(e), false);
@@ -544,9 +596,10 @@
   });
   $('monAdd').addEventListener('click', async () => {
     try {
-      await invoke('monitor_add', { name: $('monName').value, url: $('monUrl').value });
+      await invoke('monitor_add', { name: $('monName').value, url: $('monUrl').value, login: $('monLogin').checked });
       $('monUrl').value = '';
       $('monName').value = '';
+      $('monLogin').checked = false;
       monMsg(t('settings.mon.added'), true);
       loadMonitors();
     } catch (e) {
@@ -624,12 +677,16 @@
       renderCustomModels();
       setHotkeyDisplay(s.hotkey || 'Ctrl+Shift+Space');
       $('autoFlower').checked = s.auto_flower !== false;
+      $('flowerApps').value = s.flower_apps || '';
+      $('wOverDesktop').checked = s.widgets_over_desktop !== false;
+      void showFlowerLast();
       $('sideGirls').checked = s.side_girls === true;
       $('weatherMode').value = ['off', 'manual', 'season', 'live'].includes(s.weather_mode) ? s.weather_mode : 'off';
       $('weatherLightning').checked = s.weather_lightning === true;
       $('weatherKind').value = ['rain', 'snow', 'sakura', 'leaves', 'fog', 'sun', 'stars'].includes(s.weather_manual) ? s.weather_manual : 'rain';
       $('weatherTalk').checked = s.weather_talk !== false;
       $('calendarTalk').checked = s.calendar_talk !== false;
+      $('fishHunger').checked = s.fish_hunger !== false;
       setZone($('clockZone1'), (s.clock_zones || [])[0]);
       setZone($('clockZone2'), (s.clock_zones || [])[1]);
       syncWeatherFields();
@@ -802,6 +859,7 @@
       contexts: contexts,
       default_context: $('defaultContext').value,
       auto_flower: $('autoFlower').checked,
+      flower_apps: $('flowerApps').value,
       side_girls: $('sideGirls').checked,
       proactive_minutes: Number($('proactive').value) || 0,
       tts_engine: $('ttsEngine').value,
@@ -836,6 +894,7 @@
       weather_mode: $('weatherMode').value,
       weather_talk: $('weatherTalk').checked,
       calendar_talk: $('calendarTalk').checked,
+      fish_hunger: $('fishHunger').checked,
       // Rust làm sạch (bỏ trống / trùng, tối đa 2).
       clock_zones: [$('clockZone1').value, $('clockZone2').value],
       weather_lightning: $('weatherLightning').checked,
@@ -937,6 +996,7 @@
     syncWeatherFields();
     showWeatherStatus();
     showLauncherStatus();
+    renderFlowerLast();
   }
   applySubs();
   relabelMinutes();

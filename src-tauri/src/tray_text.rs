@@ -28,12 +28,13 @@ pub enum Tray {
     Sysmon,
     Monitor,
     Aquarium,
+    Tour,
     Quit,
 }
 
 impl Tray {
     #[cfg(test)]
-    const ALL: [Tray; 18] = [
+    const ALL: [Tray; 19] = [
         Tray::ToggleShow,
         Tray::Tasks,
         Tray::Notes,
@@ -51,6 +52,7 @@ impl Tray {
         Tray::Sysmon,
         Tray::Monitor,
         Tray::Aquarium,
+        Tray::Tour,
         Tray::Quit,
     ];
 }
@@ -110,6 +112,9 @@ pub fn text(t: Tray, lang: Lang) -> &'static str {
         (Aquarium, Vi) => "🐠 Ghim / gỡ bể cá",
         (Aquarium, Ja) => "🐠 水槽を固定 / 解除",
         (Aquarium, En) => "🐠 Pin / unpin the aquarium",
+        (Tour, Vi) => "❓ Hướng dẫn nhanh",
+        (Tour, Ja) => "❓ かんたんガイド",
+        (Tour, En) => "❓ Quick tour",
         (Quit, Vi) => "Thoát",
         (Quit, Ja) => "終了",
         (Quit, En) => "Quit",

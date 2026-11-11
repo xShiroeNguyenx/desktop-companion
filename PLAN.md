@@ -1515,9 +1515,9 @@ key; tắt/mở app giữa phiên 🍅 vẫn đếm tiếp; thêm một widget c
 | # | Việc | Ghi chú |
 |---|---|---|
 | C1 | ✅ (2026-11-03, js/i18n.js + js/strings/*, tray_text.rs) **i18n toàn giao diện** | Mục 12.4b: menu, Cài đặt, Công việc, tờ note mới chỉ tiếng Việt. Thêm khoá vi/ja/en cùng lúc, có test "mọi khoá đủ ngôn ngữ" như `every_key_has_all_languages`. |
-| C2 | Onboarding lần đầu | Tour ngắn sau thẻ đặt tên: tính năng mặc định tắt (thời tiết, side girl, cảnh báo CPU), cách nhập key AI. |
+| C2 | ✅ (2026-11-11, tour.rs + webview/tour.js, cần thử GUI) Onboarding lần đầu | Tour ngắn sau thẻ đặt tên: tính năng mặc định tắt (thời tiết, side girl, cảnh báo CPU), cách nhập key AI. 5 bước, tự mở một lần cho cài mới (`tour_done` thiếu trong file cũ = đã xem), mở lại ở tray → ❓; bấm được lúc click-through (khung bấm được nhiều tên, click_through.rs). |
 | C3 | Accessibility | ARIA / `role` cho Công việc, Arcade, widget, Cài đặt; menu tròn đi được bằng bàn phím; nhãn cho nút chỉ có emoji. |
-| C4 | Widget và tờ note không bị Win+D che | Mục 12.4c, 13.9: gắn vào lớp `WorkerW`. |
+| C4 | ✅ (2026-11-11, show_desktop.rs, cần thử GUI) Widget và tờ note không bị Win+D che | Không gắn vào `WorkerW` (widget phải bấm được). Ý Rainmeter: cửa sổ mốc 0×0 ở đáy z-order; lớp icon desktop (Progman 24H2+, WorkerW chứa SHELLDLL_DefView bản cũ) nằm trên mốc + foreground là desktop / app mình = đang xem desktop → widget lên "luôn nổi", hết thì về đáy. Widget 📍 không đụng. Tắt ở 🧩 Widget. |
 | C5 | Tiếng sấm, mưa / tuyết xiên theo gió | Mục 13.9 Phase 16. |
 
 ### 15.4 Đợt D: Hiệu năng & chất lượng (làm xen kẽ, không chặn bản nào)
@@ -1885,8 +1885,8 @@ thêm / sửa / xoá, tên + URL + nhóm (tuỳ chọn), tìm không dấu, bấ
   phép, nhưng phải thử thật trên Windows 11 (kể cả khi đang ở ứng dụng toàn màn hình).
 - **Báo nhầm site sập:** VPN tắt (site nội bộ), Wi-Fi chập chờn, sleep → đã có 2 lần lỗi, bỏ lượt
   sau sleep, gộp "mất mạng". Vẫn cần chạy thử vài ngày trên máy thật.
-- **Site cần đăng nhập** trả 401 / 403: v1 coi là sập; cân nhắc tuỳ chọn "mã chấp nhận được" ở
-  bản sau (Glance có `alt-status-codes`).
+- **Site cần đăng nhập** trả 401 / 403: v1 coi là sập. ✅ (2026-11-11) cờ 🔐 `Site.login` mỗi
+  site: 401 / 403 tính là chạy; "Thử ngay" gợi ý bật khi gặp 401 / 403.
 - WebView2 dựng sẵn thêm 1 cửa sổ (`launcher`): thêm RAM; đo cùng mục 15.4.
 
 ### 17.5 Kiểm thử bằng tay
@@ -2076,10 +2076,12 @@ và ba sửa hiệu năng ở 15.4 (pet 30/60 fps, pet ẩn dừng vẽ, trang t
 
 ### 18.7 Để sau
 
-- Đói / tâm trạng (2–4 ngày không ăn → bơi chậm, Miu nhắc tối đa 1 lần/ngày, có công tắc); vẫn
-  không chết, không bỏ đi.
+- ✅ (2026-11-11) Đói (2 ngày không ăn → hơi đói ×0.8 tốc độ, 4 ngày → đói ×0.55, Miu nhắc tối
+  đa 1 lần/ngày khi bể đang ghim / full, `Kind::Fish`; công tắc `fish_hunger`); vẫn không chết,
+  không bỏ đi, không nhỏ lại. Chưa có "tâm trạng" riêng.
 - Fish / Tank vào pool Candy Capsule, kèm ưu tiên loài chưa có để bộ nhân vật không bị loãng.
-- Nhiệm vụ "cho cá ăn" (`quests.rs`).
+- ✅ (2026-11-11) Nhiệm vụ phụ "cho cá ăn" (`quests::record_fish`, `fish1`): đếm riêng, không qua
+  điểm thân thiết nên cho ăn không tự ra kẹo (18.1); không tính vào "xong cả 3".
 - Cá bơi tự do dọc mép taskbar (lớp phủ); đưa sang Anna App; tiếng bọt nước; kéo thả trang trí.
 
 ### 18.8 Rủi ro & kiểm thử bằng tay

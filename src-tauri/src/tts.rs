@@ -24,6 +24,8 @@ use crate::store;
 /// Tạm tắt toàn bộ giọng nói: các giọng hiện có không khớp giọng của nhân vật.
 /// Bật lại = đổi thành true + bỏ style="display:none" của nhóm "Giọng nói" trong
 /// app/settings.html. Khi tắt, setting tts_engine đã lưu bị bỏ qua.
+/// Bật lại thì thêm dòng giọng Edge (văn bản gửi lên máy chủ Microsoft) vào bảng
+/// "Data sent over the network" của docs/landing/privacy.html trước khi phát hành.
 pub const TTS_ENABLED: bool = false;
 
 /// Giọng Edge cho người dùng chọn (id, nhãn hiển thị).

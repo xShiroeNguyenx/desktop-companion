@@ -1651,9 +1651,19 @@ mod glue {
         if matches!(ev, Event::Present | Event::Named) {
             return;
         }
+        quest_apply(app, |q, today| crate::quests::record(q, today, crate::quests::Happened { ev, game }));
+    }
+
+    /// 🐠 Cho cá ăn lần đầu trong ngày → nhiệm vụ phụ "Cho cá ăn" (không qua điểm
+    /// thân thiết: cho ăn không tự ra kẹo, PLAN 18.1).
+    pub fn quest_fish_fed(app: &AppHandle) {
+        quest_apply(app, crate::quests::record_fish);
+    }
+
+    fn quest_apply(app: &AppHandle, f: impl FnOnce(&mut crate::quests::Quests, crate::bond::Day) -> crate::quests::Outcome) {
         let (today, _) = crate::companion::today_and_hour(crate::commands::now_millis() as u64 / 1000);
         let res = store::update_collection(app, |c| {
-            let out = crate::quests::record(&mut c.quests, today, crate::quests::Happened { ev, game });
+            let out = f(&mut c.quests, today);
             super::apply_quest_reward(c, &out);
             out
         });

@@ -29,6 +29,10 @@ pub struct Settings {
     pub default_context: String,
     #[serde(default = "default_true")]
     pub auto_flower: bool,
+    /// 🌸 Cách chép theo từng app, mỗi dòng "tên-app shift|skip|ctrl"
+    /// (selection::parse_app_rules), xét trước danh sách terminal có sẵn.
+    #[serde(default)]
+    pub flower_apps: String,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
     #[serde(default = "default_model_id")]
@@ -230,6 +234,16 @@ pub struct Settings {
     /// Bang tự thêm, mỗi dòng "!key URL-có-{q}" (launcher::parse_bangs).
     #[serde(default)]
     pub custom_bangs: String,
+    /// 🧩 Widget ghim vẫn hiện khi bấm Win+D (show_desktop.rs).
+    #[serde(default = "default_true")]
+    pub widgets_over_desktop: bool,
+    /// 🐠 Cá đói khi lâu không cho ăn: bơi chậm, Miu nhắc (aquarium::hunger).
+    #[serde(default = "default_true")]
+    pub fish_hunger: bool,
+    /// ❓ Đã tự mở hướng dẫn nhanh (tour.rs). Thiếu trong file = true: người nâng cấp
+    /// từ bản cũ không bị hiện hướng dẫn; chỉ cài mới (Settings::default) mới là false.
+    #[serde(default = "default_true")]
+    pub tour_done: bool,
 }
 
 fn default_monitor_interval() -> u32 {
@@ -365,6 +379,7 @@ impl Default for Settings {
             contexts: default_contexts(),
             default_context: String::new(),
             auto_flower: true,
+            flower_apps: String::new(),
             hotkey: default_hotkey(),
             pet_model: default_model_id(),
             custom_models: Vec::new(),
@@ -432,6 +447,9 @@ impl Default for Settings {
             launcher_hotkey: default_launcher_hotkey(),
             search_engine: default_search_engine(),
             custom_bangs: String::new(),
+            widgets_over_desktop: true,
+            fish_hunger: true,
+            tour_done: false,
         }
     }
 }

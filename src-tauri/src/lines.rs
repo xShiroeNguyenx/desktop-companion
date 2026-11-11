@@ -140,6 +140,8 @@ pub enum Key {
     // ── 🐠 Bể cá (aquarium_pin.rs): lần cho ăn đầu tiên trong ngày; cá vừa lên cỡ. Biến: {fish}.
     FishFed,
     FishGrown,
+    /// Cá đói lâu rồi (aquarium::should_nag), tối đa một lần mỗi ngày.
+    FishHungry,
     // ── 🎁 Quà 20 lượt quay (gacha::grant_gift), báo một lần. Biến: {n}.
     GiftSpins,
     // ── Khung "mở khoá thành tựu" trên pet khi xong việc lớn (rewards.rs):
@@ -284,6 +286,7 @@ impl Key {
         Key::ItemUnlocked,
         Key::FishFed,
         Key::FishGrown,
+        Key::FishHungry,
         Key::GiftSpins,
         Key::AchKicker,
         Key::AchAllDone,
@@ -1571,6 +1574,19 @@ pub fn templates(key: Key, lang: Lang) -> &'static [&'static str] {
         (FishGrown, En) => &[
             "{You}, {fish} just grew bigger! 🐠✨ That's thanks to you feeding them every day~",
             "Wow, {fish} is clearly bigger now! I'm so proud of you 🐠💕",
+        ],
+
+        (FishHungry, Vi) => &[
+            "{You} ơi, mấy hôm rồi chưa ai cho cá ăn đó… 🐠 Tụi nó bơi chậm rì luôn, {you} rắc chút thức ăn nha~",
+            "Bể cá đói meo rồi {you} ơi 🍤 Bấm vào mặt nước thả ít thức ăn cho tụi nó với~",
+        ],
+        (FishHungry, Ja) => &[
+            "{you}、ここ何日かお魚さんにごはんをあげてないよ…🐠 ゆっくりしか泳げてないの、エサをあげてね～",
+            "水槽のみんな、おなかぺこぺこだよ{you}🍤 水面をクリックしてエサをあげてね～",
+        ],
+        (FishHungry, En) => &[
+            "{You}, nobody has fed the fish for a few days… 🐠 They're barely swimming, could you drop in some food?~",
+            "The fish are getting hungry, {you} 🍤 Click the water to sprinkle a little food for them~",
         ],
 
         (GiftSpins, Vi) => &[

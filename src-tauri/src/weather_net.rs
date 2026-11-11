@@ -355,6 +355,7 @@ pub fn set_top(app: &AppHandle, top: bool) -> Result<(), String> {
     let mut s = store::load_settings(app);
     s.weather_pin_top = top;
     store::save_settings(app, &s)?;
+    crate::show_desktop::forget(PIN_LABEL);
     if let Some(w) = app.get_webview_window(PIN_LABEL) {
         w.set_always_on_top(top).map_err(|e| e.to_string())?;
     }

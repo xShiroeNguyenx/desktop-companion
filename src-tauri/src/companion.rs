@@ -42,6 +42,8 @@ pub enum Kind {
     Welcome,
     /// Xin người dùng đặt tên cho pet (naming.rs).
     AskName,
+    /// ❓ Hướng dẫn nhanh cho người mới cài, một lần (tour.rs).
+    Tour,
     Health,
     Milestone,
     /// Ngày lễ, Rằm, mùng 1 hôm nay / nhắc trước ngày mai (lunar.rs).
@@ -49,6 +51,8 @@ pub enum Kind {
     SysWarn,
     /// Thời tiết vừa đổi / vừa bật hiệu ứng (weather.rs). Ưu tiên thấp.
     Weather,
+    /// 🐠 Cá trong bể đói lâu rồi (aquarium::should_nag), tối đa một lần mỗi ngày.
+    Fish,
     Chatter,
 }
 
@@ -939,6 +943,11 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
         && persona::name_ask_due(&settings.pet_name, settings.name_asks, settings.name_asked_at, now);
     sync_kind(pending, Kind::AskName, &if ask_name { vec!["ask-name".to_string()] } else { vec![] }, now);
 
+    // ❓ Hướng dẫn nhanh: một lần cho người mới cài, sau bước hỏi tên. Thẻ bấm được cả
+    // lúc click-through (khung bấm được, click_through.rs), nên không cần chờ tắt.
+    let tour = crate::tour::should_offer(settings);
+    sync_kind(pending, Kind::Tour, &if tour { vec!["tour".to_string()] } else { vec![] }, now);
+
     // Thời tiết đổi (hoặc người dùng vừa bật hiệu ứng): một câu, cùng loại cách
     // nhau ≥ 2 giờ. Quá 10 phút chưa nói được thì thôi. Tắt hiệu ứng → bỏ câu chờ.
     let seen = crate::fx::current_kind();
@@ -977,6 +986,15 @@ fn collect(app: &AppHandle, pending: &mut Vec<Candidate>, now: u64, settings: &s
         Vec::new()
     };
     sync_kind(pending, Kind::Calendar, &cal, now);
+
+    // 🐠 Cá đói lâu: một câu mỗi ngày, chỉ khi bể đang được dùng (ghim widget / bể
+    // full). Cho ăn rồi (hoặc tắt công tắc) thì câu đang chờ tự bỏ ở lượt sau.
+    let fish_due = {
+        let (today, _) = today_and_hour(now);
+        let in_use = settings.aquarium_pin.pinned || settings.aquarium_full;
+        in_use && crate::aquarium::should_nag(&store::load_aquarium(app), today, settings.fish_hunger, in_use)
+    };
+    sync_kind(pending, Kind::Fish, &if fish_due { vec!["fish:hungry".to_string()] } else { vec![] }, now);
 
     // Tự bắt chuyện (cần key). Tắt / xoá key / vừa chat xong → bỏ câu đang chờ.
     let chatter_due = chat::has_key(settings)
@@ -1246,6 +1264,13 @@ fn line_for(app: &AppHandle, c: &Candidate) -> Option<(String, Option<String>)> 
             clock.reset(&kinds);
             Some((lines::line(key, &persona::address(&settings), &[]), Some("happy".into())))
         }
+        Kind::Fish => {
+            let settings = store::load_settings(app);
+            let (today, _) = today_and_hour(now_secs());
+            // Ghi "hôm nay đã nhắc" trước: ghi lỗi thì thôi không nói, khỏi nhắc lặp mỗi lượt.
+            store::update_aquarium(app, |a| a.hungry_said = Some(today)).ok()?;
+            Some((lines::line(Key::FishHungry, &persona::address(&settings), &[]), Some("surprised".into())))
+        }
         Kind::Chatter => match chat::proactive_line(app) {
             Ok(line) => line,
             Err(e) => {
@@ -1262,6 +1287,11 @@ fn speak(app: &AppHandle, c: &Candidate) -> bool {
     if c.kind == Kind::AskName {
         // Thẻ hỏi tên có ô nhập riêng trên pet, không phải một câu bubble thường.
         naming::ask_name(app);
+        return true;
+    }
+    if c.kind == Kind::Tour {
+        // Thẻ hướng dẫn nhiều bước trên pet; mở là ghi đã xem (tour.rs).
+        crate::tour::open(app, true);
         return true;
     }
     let Some((text, emotion)) = line_for(app, c) else { return false };

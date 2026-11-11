@@ -70,7 +70,7 @@
     const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 1 / 30;
     lastT = now;
     clock += dt;
-    A.step(sim, dt, { bounds, food, rand, night: light() === 'night', reduced: reduced() });
+    A.step(sim, dt, { bounds, food, rand, night: light() === 'night', reduced: reduced(), hunger: tank().hunger });
     food = A.eat(sim, A.sinkFood(food, dt, bounds));
     D.stepBubbles(scene, dt, bounds, decorAssets(), rand, reduced());
     draw();
@@ -117,7 +117,7 @@
     const t = A.strings(data.lang);
     const tk = tank();
     $('title').textContent = '🐠 ' + t.title;
-    $('fedState').textContent = tk.fedToday ? '🍤 ' + t.fed : '🍤 ' + t.notFed;
+    $('fedState').textContent = '🍤 ' + A.fedText(tk, t);
     $('fedState').classList.toggle('hungry', !tk.fedToday);
     $('count').textContent = `${(tk.fish || []).length}/${tk.max || 8}`;
     $('empty').hidden = (tk.fish || []).length > 0;

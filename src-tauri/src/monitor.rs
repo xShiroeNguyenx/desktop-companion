@@ -24,6 +24,10 @@ pub struct Site {
     /// Pet báo khi site này sập / sống lại.
     #[serde(default = "yes")]
     pub notify: bool,
+    /// Site cần đăng nhập (trang quản trị, dashboard nội bộ): 401 / 403 nghĩa là server
+    /// vẫn trả lời, chỉ là chưa đăng nhập, nên tính là đang chạy.
+    #[serde(default)]
+    pub login: bool,
 }
 
 fn yes() -> bool {
@@ -114,9 +118,10 @@ impl Outcome {
     }
 }
 
-/// Mã HTTP → chạy hay sập. 2xx / 3xx là chạy (redirect đã được theo trước đó).
-pub fn classify_status(status: u16, ms: u32) -> Outcome {
-    if (200..400).contains(&status) {
+/// Mã HTTP → chạy hay sập. 2xx / 3xx là chạy (redirect đã được theo trước đó);
+/// site cần đăng nhập (`login`) thì 401 / 403 cũng là chạy.
+pub fn classify_status(status: u16, ms: u32, login: bool) -> Outcome {
+    if (200..400).contains(&status) || (login && matches!(status, 401 | 403)) {
         Outcome::Up { ms, status }
     } else {
         Outcome::Down { reason: format!("http{status}") }
@@ -247,10 +252,10 @@ mod tests {
     use super::*;
 
     fn up() -> Outcome {
-        classify_status(200, 120)
+        classify_status(200, 120, false)
     }
     fn down(code: u16) -> Outcome {
-        classify_status(code, 50)
+        classify_status(code, 50, false)
     }
     fn net(e: NetErr) -> Outcome {
         classify_error(e)
@@ -271,9 +276,9 @@ mod tests {
 
     #[test]
     fn classify_results() {
-        assert_eq!(classify_status(204, 80), Outcome::Up { ms: 80, status: 204 });
-        assert_eq!(classify_status(302, 80), Outcome::Up { ms: 80, status: 302 });
-        assert_eq!(classify_status(502, 80), Outcome::Down { reason: "http502".into() });
+        assert_eq!(classify_status(204, 80, false), Outcome::Up { ms: 80, status: 204 });
+        assert_eq!(classify_status(302, 80, false), Outcome::Up { ms: 80, status: 302 });
+        assert_eq!(classify_status(502, 80, false), Outcome::Down { reason: "http502".into() });
         assert_eq!(NetErr::from_text("operation timed out"), NetErr::Timeout);
         assert_eq!(NetErr::from_text("error trying to connect: dns error: No such host is known. (os error 11001)"), NetErr::Dns);
         assert_eq!(NetErr::from_text("tcp connect error: No connection could be made because the target machine actively refused it. (os error 10061)"), NetErr::Refused);
@@ -346,5 +351,19 @@ mod tests {
     fn old_file_reads() {
         let v: Vec<Site> = serde_json::from_str(r#"[{"id":"1","name":"x","url":"https://example.com"}]"#).unwrap();
         assert!(v[0].notify);
+        assert!(!v[0].login, "file cũ: 401 / 403 vẫn là sập như trước");
+    }
+
+    #[test]
+    fn login_sites_count_401_and_403_as_up() {
+        assert_eq!(classify_status(401, 90, true), Outcome::Up { ms: 90, status: 401 });
+        assert_eq!(classify_status(403, 90, true), Outcome::Up { ms: 90, status: 403 });
+        // Không bật thì vẫn là sập như trước.
+        assert_eq!(classify_status(401, 90, false), Outcome::Down { reason: "http401".into() });
+        assert_eq!(classify_status(403, 90, false), Outcome::Down { reason: "http403".into() });
+        // Chỉ 401 / 403: lỗi khác vẫn là sập dù site cần đăng nhập.
+        for code in [400, 404, 407, 429, 500, 502, 503] {
+            assert_eq!(classify_status(code, 90, true), Outcome::Down { reason: format!("http{code}") }, "{code}");
+        }
     }
 }

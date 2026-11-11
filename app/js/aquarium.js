@@ -69,7 +69,7 @@
     const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.05;
     lastT = now;
     clock += dt;
-    A.step(sim, dt, { bounds, food, rand, night: A.lightAt(new Date().getHours()) === 'night', reduced: reduced() });
+    A.step(sim, dt, { bounds, food, rand, night: A.lightAt(new Date().getHours()) === 'night', reduced: reduced(), hunger: tank().hunger });
     food = A.eat(sim, A.sinkFood(food, dt, bounds));
     D.stepBubbles(scene, dt, bounds, decorAssets(), rand, reduced());
     draw();
@@ -259,7 +259,7 @@
     $('fullBtn').title = s.fullHint;
     $('closeBtn').title = s.close;
     $('feedBtn').textContent = '🍤 ' + s.feed;
-    $('fedState').textContent = tk.fedToday ? '✔ ' + s.fed : s.notFed;
+    $('fedState').textContent = (tk.fedToday ? '✔ ' : '') + A.fedText(tk, s);
     $('fedState').classList.toggle('hungry', !tk.fedToday);
     $('tank').title = s.dblHint.split('·')[0].trim();
     $('tabTank').textContent = `🐠 ${s.tabTank}`;
