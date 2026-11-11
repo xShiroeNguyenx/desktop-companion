@@ -32,6 +32,20 @@
     return { x: pos.x / dpr - win.screenX, y: pos.y / dpr - win.screenY };
   }
 
+  /**
+   * Hộp px màn hình (như hook gửi) từ getBoundingClientRect, ngược với toClient. Rust dùng
+   * nó để tạm tắt click-through khi con trỏ nằm trên khung bấm được (khung 🎁 quay free).
+   */
+  function toScreenRect(r, win) {
+    const dpr = win.devicePixelRatio || 1;
+    return {
+      x: Math.round((r.left + win.screenX) * dpr),
+      y: Math.round((r.top + win.screenY) * dpr),
+      w: Math.round(r.width * dpr),
+      h: Math.round(r.height * dpr),
+    };
+  }
+
   /** Điểm nằm trong trang (w × h) không. */
   function inside(p, w, h) {
     return p.x >= 0 && p.y >= 0 && p.x < w && p.y < h;
@@ -42,7 +56,7 @@
     return !!r && p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
   }
 
-  const api = { LEAVE_MS, UI_OPEN, WATCH_MS, CLOSE_AFTER, toClient, inside, inRect, nextMisses };
+  const api = { LEAVE_MS, UI_OPEN, WATCH_MS, CLOSE_AFTER, toClient, toScreenRect, inside, inRect, nextMisses };
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
     return;

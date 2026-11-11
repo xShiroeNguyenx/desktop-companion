@@ -156,8 +156,10 @@ fn lookat_emit_thread() {
         std::thread::sleep(Duration::from_millis(33));
         // Trang pet cần con trỏ để nhìn theo chuột, hoặc để mờ đi khi click-through.
         let lookat = LOOKAT_ENABLED.load(Ordering::Relaxed) || SEE_THROUGH.load(Ordering::Relaxed);
-        // 🐠 Bể cá full cũng cần vị trí con trỏ (vẽ tên cá), kể cả khi tắt nhìn theo chuột.
-        if !lookat && !crate::aquarium_full::wants_cursor() {
+        // 🐠 Bể cá full cũng cần vị trí con trỏ (vẽ tên cá), kể cả khi tắt nhìn theo chuột;
+        // 🎁 khung quay free trên pet cũng vậy (click_through::on_cursor).
+        let island = crate::click_through::wants_cursor();
+        if !lookat && !island && !crate::aquarium_full::wants_cursor() {
             continue;
         }
         let seq = MOVE_SEQ.load(Ordering::Relaxed);
@@ -168,6 +170,9 @@ fn lookat_emit_thread() {
         let x = MOVE_X.load(Ordering::Relaxed);
         let y = MOVE_Y.load(Ordering::Relaxed);
         crate::aquarium_full::on_move(x, y);
+        if island {
+            crate::click_through::on_cursor(x, y);
+        }
         if !lookat {
             continue;
         }

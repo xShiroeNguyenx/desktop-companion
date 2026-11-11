@@ -270,8 +270,8 @@
 - **👻 Click-through** — tray → *🖱️ Turn on click-through*: clicks, scrolling and
   dragging go straight through the pet to the app behind. Hover over her and she
   fades almost away so you can read what's under her; hold `Ctrl` and right-click
-  her to open her menu without turning it off (Windows). It stays on after a
-  restart until you turn it off in the tray.
+  her to open her menu without turning it off (Windows). The 🎁 free spin box over
+  her head stays clickable. It stays on after a restart until you turn it off in the tray.
 - **🌸 Bunny Lounge** (optional, Settings → *🎨 Appearance*) — companion girls lean
   on the edge of Settings, Tasks, the text assistant, the weather card and the
   Mini Games page; the part over the panel fades so everything stays readable.

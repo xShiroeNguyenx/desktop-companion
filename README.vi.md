@@ -242,7 +242,7 @@ duyệt, Word…).
 - **👻 Click-through** — khay hệ thống → *🖱️ Bật click-through*: bấm, cuộn, kéo đều
   xuyên qua pet xuống app phía sau. Rê chuột vào thì pet mờ gần hết để đọc được chữ
   bên dưới; giữ `Ctrl` + chuột phải lên pet để mở menu mà không cần tắt (Windows).
-  Mở lại app vẫn giữ nguyên tới khi bạn tắt ở khay.
+  Khung 🎁 quay free trên đầu pet vẫn bấm được. Mở lại app vẫn giữ nguyên tới khi bạn tắt ở khay.
 - **🌸 Bunny Lounge** (tuỳ chọn, Cài đặt → *Diện mạo*) — các cô nàng tựa bên khung
   Cài đặt, Công việc, Trợ lý văn bản, thẻ thời tiết và trang Mini Games; phần đè lên
   bảng mờ đi nên vẫn đọc rõ.

@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.5] - 2026-11-11
+
+### Fixed
+- **🎁 The free spin box over her head works with click-through on.** Before, clicks went
+  straight through it to the app behind, so you could neither spin nor close it. Now
+  click-through pauses while the mouse is over the box (the × shows on hover as usual),
+  and comes back once you move off it or the box closes. Everywhere else, clicks still go
+  through.
+
 ## [0.12.4] - 2026-11-11
 
 ### Fixed
@@ -1146,6 +1155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.5
 [0.12.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.4
 [0.12.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.3
 [0.12.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.2

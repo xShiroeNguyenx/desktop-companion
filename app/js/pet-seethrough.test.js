@@ -12,6 +12,30 @@ test('toạ độ màn hình (px vật lý của hook) → toạ độ trang, th
   assert.deepEqual(S.toClient({ x: 10, y: 20 }, { screenX: 0, screenY: 0 }), { x: 10, y: 20 });
 });
 
+test('hộp của trang → px màn hình của hook: ngược với toClient, làm tròn tới px', () => {
+  const win = { devicePixelRatio: 1.5, screenX: 100, screenY: 50 };
+  const r = { left: 20, top: 4, width: 61, height: 70.3 };
+  const s = S.toScreenRect(r, win);
+  assert.deepEqual(s, { x: 180, y: 81, w: 92, h: 105 });
+  // Góc trên-trái của hộp quy ngược về đúng chỗ cũ (sai số < 1 px vật lý).
+  const back = S.toClient({ x: s.x, y: s.y }, win);
+  assert.ok(Math.abs(back.x - r.left) < 1 && Math.abs(back.y - r.top) < 1, JSON.stringify(back));
+  // Màn hình bên trái (toạ độ âm), không có devicePixelRatio.
+  assert.deepEqual(S.toScreenRect({ left: 5, top: 6, width: 7, height: 8 }, { screenX: -1920, screenY: 0 }), { x: -1915, y: 6, w: 7, h: 8 });
+});
+
+test('khung 🎁 báo chỗ của nó cho Rust, Rust nhận lệnh đó (bấm được cả lúc click-through)', () => {
+  // Lỗi thật 2026-11-11: click-through bật thì khung quay free trên đầu pet không bấm được
+  // (quay lẫn ×), vì cả cửa sổ pet bỏ qua chuột.
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const gacha = fs.readFileSync(path.join(__dirname, '..', 'media', 'webview', 'daily-gacha.js'), 'utf8');
+  assert.match(gacha, /command: 'gacha:rect'/);
+  assert.match(gacha, /PetSeeThrough[\s\S]*toScreenRect/);
+  const main = fs.readFileSync(path.join(__dirname, '..', '..', 'src-tauri', 'src', 'main.rs'), 'utf8');
+  assert.match(main, /"gacha:rect" =>[\s\S]{0,200}click_through::set_island/);
+});
+
 test('trong trang / trong hộp: mép trái-trên tính là trong, mép phải-dưới của trang thì không', () => {
   assert.ok(S.inside({ x: 0, y: 0 }, 300, 420));
   assert.ok(S.inside({ x: 299.5, y: 419.5 }, 300, 420));

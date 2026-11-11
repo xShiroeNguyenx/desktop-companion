@@ -367,6 +367,12 @@ fn pet_command(app: AppHandle, payload: Value) {
         "gacha:gift" => {
             windows::open_collection_at(&app, serde_json::json!({ "mode": "gacha" }));
         }
+        // Khung 🎁 báo chỗ của nó (px màn hình, null khi đóng): lúc click-through, con trỏ
+        // vào khung thì tạm tắt để bấm được quay / × (click_through::on_cursor).
+        "gacha:rect" => {
+            let rect = payload.get("rect").and_then(click_through::Rect::from_json);
+            click_through::set_island(&app, rect);
+        }
         // Nút "Xem" trên thẻ quà: mở Bộ sưu tập ở đúng món vừa quay.
         "gacha:view" => {
             let id = payload.get("id").and_then(|i| i.as_str()).unwrap_or("");

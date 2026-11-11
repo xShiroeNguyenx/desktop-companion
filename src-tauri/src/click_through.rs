@@ -15,6 +15,10 @@
 // giữ). Khi mọi thứ mở từ menu đã đóng hết, kể cả lúc pet trả lời xong, trang báo
 // `seeThrough:menuClosed` và click-through bật lại. Chỉ bắt đúng cú này: Ctrl + click /
 // cuộn / kéo khác vẫn xuống app phía sau như thường.
+//
+// Khung 🎁 quay free trên đầu pet phải bấm được (quay, ×) cả lúc click-through: trang
+// báo hộp của khung (`gacha:rect`), con trỏ vào khung thì tạm tắt click-through, ra khỏi
+// khung (hay khung đóng) thì bật lại (on_cursor / set_island).
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
@@ -42,6 +46,17 @@ static MENU_OPEN: AtomicBool = AtomicBool::new(false);
 static MENU_ACK: AtomicBool = AtomicBool::new(false);
 /// Trang không xác nhận trong bấy nhiêu ms thì coi như không mở được: bật lại click-through.
 const ACK_MS: u64 = 1500;
+/// Khung bấm được nằm trên pet (🎁 quay free trên đầu): hộp px màn hình do trang báo
+/// (`gacha:rect`), None khi khung đóng. Cửa sổ bỏ qua chuột thì không bấm được khung,
+/// nên con trỏ vào khung là tạm tắt click-through, ra khỏi khung thì bật lại.
+static ISLAND: Mutex<Option<Rect>> = Mutex::new(None);
+/// Đang có khung (đọc nhanh mỗi lần con trỏ di chuyển, khỏi khoá mutex).
+static HAS_ISLAND: AtomicBool = AtomicBool::new(false);
+/// Click-through đang tạm tắt vì con trỏ nằm trên khung.
+static ISLAND_ACTIVE: AtomicBool = AtomicBool::new(false);
+/// Ra khỏi khung quá bấy nhiêu px mới bật lại: con trỏ nằm sát mép không làm cửa sổ
+/// bật / tắt liên tục. (Nút × lòi ra ngoài thì trang đã tự nới hộp.)
+const ISLAND_MARGIN: i32 = 10;
 static TRAY_ITEM: Mutex<Option<MenuItem<Wry>>> = Mutex::new(None);
 
 /// Nhật ký chẩn đoán (cùng file với selection.rs / windows.rs): chỉ các lần đổi trạng thái.
@@ -72,6 +87,96 @@ pub fn ctrl_menu_wanted(see: bool, hover: bool, ctrl: bool, menu_open: bool) -> 
 /// Điểm (x, y) nằm trong hộp (left, top, w, h), cùng đơn vị px màn hình.
 pub fn inside(x: i32, y: i32, left: i32, top: i32, w: u32, h: u32) -> bool {
     x >= left && y >= top && (x as i64) < left as i64 + w as i64 && (y as i64) < top as i64 + h as i64
+}
+
+/// Hộp px màn hình (góc trên-trái, cỡ).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Rect {
+    pub x: i32,
+    pub y: i32,
+    pub w: u32,
+    pub h: u32,
+}
+
+impl Rect {
+    /// `{x, y, w, h}` trang gửi; thiếu số hay cỡ bằng 0 thì None.
+    pub fn from_json(v: &serde_json::Value) -> Option<Rect> {
+        let int = |k: &str| v.get(k).and_then(|n| n.as_f64()).filter(|n| n.is_finite());
+        let (x, y, w, h) = (int("x")?, int("y")?, int("w")?, int("h")?);
+        if w < 1.0 || h < 1.0 {
+            return None;
+        }
+        let i = |n: f64| n.round().clamp(i32::MIN as f64, i32::MAX as f64) as i32;
+        let u = |n: f64| n.round().min(u32::MAX as f64) as u32;
+        Some(Rect { x: i(x), y: i(y), w: u(w), h: u(h) })
+    }
+
+    fn contains(&self, x: i32, y: i32, margin: i32) -> bool {
+        let grow = (margin.max(0) as u32).saturating_mul(2);
+        inside(
+            x,
+            y,
+            self.x.saturating_sub(margin),
+            self.y.saturating_sub(margin),
+            self.w.saturating_add(grow),
+            self.h.saturating_add(grow),
+        )
+    }
+}
+
+/// Con trỏ di chuyển khi đang có khung bấm được trên pet.
+#[derive(Debug, PartialEq, Eq)]
+pub enum IslandStep {
+    /// Vào khung lúc pet đang click-through: tạm tắt để bấm được.
+    Enter,
+    /// Ra khỏi khung (cộng lề) lúc đang tạm tắt: bật lại.
+    Leave,
+}
+
+/// `see`: pet đang click-through vì người dùng chọn; `active`: đang tạm tắt vì khung.
+pub fn island_step(see: bool, active: bool, rect: Rect, x: i32, y: i32) -> Option<IslandStep> {
+    if active {
+        return (!rect.contains(x, y, ISLAND_MARGIN)).then_some(IslandStep::Leave);
+    }
+    (see && rect.contains(x, y, 0)).then_some(IslandStep::Enter)
+}
+
+/// Luồng vị trí con trỏ (selection.rs) cần chạy để canh khung không.
+pub fn wants_cursor() -> bool {
+    HAS_ISLAND.load(Ordering::Relaxed)
+}
+
+/// Luồng vị trí con trỏ (selection.rs), mỗi lần con trỏ di chuyển khi có khung.
+pub fn on_cursor(x: i32, y: i32) {
+    let Some(rect) = *ISLAND.lock().unwrap_or_else(|e| e.into_inner()) else { return };
+    let step = island_step(SEE.load(Ordering::SeqCst), ISLAND_ACTIVE.load(Ordering::SeqCst), rect, x, y);
+    let Some(app) = APP.get() else { return };
+    match step {
+        Some(IslandStep::Enter) => {
+            if !ISLAND_ACTIVE.swap(true, Ordering::SeqCst) {
+                log("cursor over the 🎁 box: click-through off so it can be clicked");
+                crate::set_pet_click_through(app, false);
+            }
+        }
+        Some(IslandStep::Leave) => {
+            if ISLAND_ACTIVE.swap(false, Ordering::SeqCst) {
+                log("cursor left the 🎁 box: click-through back on");
+                restore(app);
+            }
+        }
+        None => {}
+    }
+}
+
+/// Trang báo chỗ khung 🎁 (`gacha:rect`), None khi khung đóng. Đóng lúc đang tạm tắt
+/// (bấm ×, thẻ quà tự đóng) thì bật lại click-through ngay.
+pub fn set_island(app: &AppHandle, rect: Option<Rect>) {
+    *ISLAND.lock().unwrap_or_else(|e| e.into_inner()) = rect;
+    HAS_ISLAND.store(rect.is_some(), Ordering::SeqCst);
+    if rect.is_none() && ISLAND_ACTIVE.swap(false, Ordering::SeqCst) {
+        log("the 🎁 box closed: click-through back on");
+        restore(app);
+    }
 }
 
 /// Trang pet báo con trỏ vừa vào / ra khỏi nhân vật (`seeThrough:hover`).
@@ -227,6 +332,8 @@ pub fn set(app: &AppHandle, on: bool, announce: bool) {
         }
     }
     refresh_tray(app);
+    // Áp thẳng lựa chọn mới: bỏ cờ tạm tắt vì khung 🎁, lần sau con trỏ vào khung thì tính lại.
+    ISLAND_ACTIVE.store(false, Ordering::SeqCst);
     // Bấm tray là ý người dùng: bỏ menu Ctrl + chuột phải đang mở (nếu có) và áp ngay.
     if MENU_OPEN.swap(false, Ordering::SeqCst) {
         let _ = app.emit_to("main", "pet-message", json!({ "command": "closeMenus" }));
@@ -275,6 +382,38 @@ mod tests {
         assert!(!inside(99, 100, 100, 50, 300, 420));
         assert!(inside(-50, -10, -1920, -100, 1920, 1080), "màn hình bên trái (toạ độ âm)");
         assert!(inside(i32::MAX - 1, 0, i32::MAX - 5, 0, 10, 10), "cộng không tràn số");
+    }
+
+    const BOX: Rect = Rect { x: 500, y: 200, w: 60, h: 70 };
+
+    #[test]
+    fn the_gift_box_turns_click_through_off_only_while_the_cursor_is_on_it() {
+        assert_eq!(island_step(true, false, BOX, 530, 230), Some(IslandStep::Enter));
+        assert_eq!(island_step(true, false, BOX, 500, 200), Some(IslandStep::Enter), "góc trên-trái");
+        assert_eq!(island_step(true, false, BOX, 495, 230), None, "ngoài khung: chưa tắt (lề chỉ tính lúc ra)");
+        assert_eq!(island_step(false, false, BOX, 530, 230), None, "click-through đang tắt: không cần làm gì");
+        // Đang tạm tắt: còn trong khung + lề thì giữ, ra ngoài lề mới bật lại.
+        assert_eq!(island_step(false, true, BOX, 530, 230), None);
+        assert_eq!(island_step(false, true, BOX, 494, 194), None, "sát mép ngoài: trong lề trễ, chưa bật lại");
+        assert_eq!(island_step(false, true, BOX, 500 - ISLAND_MARGIN - 1, 230), Some(IslandStep::Leave));
+        assert_eq!(island_step(false, true, BOX, 530, 200 + 70 + ISLAND_MARGIN), Some(IslandStep::Leave), "mép dưới là ngoài");
+    }
+
+    #[test]
+    fn island_margin_does_not_overflow_at_the_screen_edges() {
+        let edge = Rect { x: i32::MIN + 2, y: 0, w: u32::MAX - 1, h: 10 };
+        assert_eq!(island_step(false, true, edge, i32::MIN, 5), None);
+        assert_eq!(island_step(true, false, edge, i32::MIN + 2, 0), Some(IslandStep::Enter));
+    }
+
+    #[test]
+    fn page_rect_is_parsed_or_rejected() {
+        let ok = serde_json::json!({ "x": -1920.4, "y": 12.6, "w": 92, "h": 118 });
+        assert_eq!(Rect::from_json(&ok), Some(Rect { x: -1920, y: 13, w: 92, h: 118 }));
+        assert_eq!(Rect::from_json(&serde_json::json!({ "x": 1, "y": 2, "w": 0, "h": 5 })), None, "cỡ 0");
+        assert_eq!(Rect::from_json(&serde_json::json!({ "x": 1, "y": 2, "w": 3 })), None, "thiếu h");
+        assert_eq!(Rect::from_json(&serde_json::json!({ "x": "1", "y": 2, "w": 3, "h": 4 })), None, "không phải số");
+        assert_eq!(Rect::from_json(&serde_json::Value::Null), None, "khung đã đóng");
     }
 
     #[test]

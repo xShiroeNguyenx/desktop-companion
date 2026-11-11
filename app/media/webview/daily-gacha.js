@@ -49,6 +49,8 @@ const HEAD_BAND = 0.08;
 const HEAD_OVERLAP = 6;
 const PLACE_MS = 1500;
 const EDGE_GAP = 8;
+// Hộp báo Rust (bấm được lúc click-through) rộng hơn khung chừng này px mỗi phía.
+const RECT_PAD = 8;
 const BURST_GLYPHS = ['✦', '•', '♥', '✧'];
 
 let box = null;
@@ -61,6 +63,8 @@ let placeTimer = 0;
 let giftMode = false;
 // Người dùng bấm × trên khung quà: không nhắc lại tới lần mở app sau.
 let giftHidden = false;
+// Hộp đã báo Rust lần cuối (JSON), để chỉ gửi khi đổi.
+let reportedRect = '';
 
 function L() {
   return LABELS[lang] || LABELS.vi;
@@ -404,6 +408,24 @@ function isolate(node) {
   }
 }
 
+// Click-through bật thì cả cửa sổ pet bỏ qua chuột: khung không bấm được (quay lẫn ×).
+// Báo Rust chỗ của khung (px màn hình, null khi đóng); con trỏ vào khung thì Rust tạm
+// tắt click-through, ra khỏi khung thì bật lại (src-tauri/src/click_through.rs on_cursor).
+function reportRect() {
+  const S = window.PetSeeThrough;
+  let rect = null;
+  if (box && box.isConnected && S) {
+    // Nới ra RECT_PAD: nút × lòi ra ngoài khung 6 px.
+    const r = box.getBoundingClientRect();
+    const p = RECT_PAD;
+    rect = S.toScreenRect({ left: r.left - p, top: r.top - p, width: r.width + 2 * p, height: r.height + 2 * p }, window);
+  }
+  const key = JSON.stringify(rect);
+  if (key === reportedRect) return;
+  reportedRect = key;
+  vscode.postMessage({ command: 'gacha:rect', rect });
+}
+
 function close() {
   clearTimeout(replyTimer);
   clearTimeout(closeTimer);
@@ -411,6 +433,7 @@ function close() {
   window.removeEventListener('resize', place);
   if (box) box.remove();
   box = null;
+  reportRect();
 }
 
 // Đỉnh đầu nhân vật trong `host` (px CSS), tìm như capturePinAvatar
@@ -455,18 +478,21 @@ function headAnchor(host) {
 
 // Đặt khung nằm trên đầu: đáy khung chạm đỉnh tóc, giữa theo tâm đầu. Không đủ
 // chỗ phía trên (cửa sổ thấp, thẻ quà cao) thì dừng ở mép trên. Chưa tìm được
-// đầu thì giữ chỗ mặc định trong CSS (giữa, sát mép trên).
+// đầu thì giữ chỗ mặc định trong CSS (giữa, sát mép trên). Xong thì báo chỗ mới
+// cho Rust (chạy mỗi PLACE_MS nên cửa sổ pet dời đi cũng được cập nhật).
 function place() {
   if (!box || !box.parentElement) return;
   const host = box.parentElement;
   const head = headAnchor(host);
-  if (!head) return;
-  // Chừa lề cho ✦ ở góc thẻ và quầng sáng.
-  const half = box.offsetWidth / 2 + EDGE_GAP;
-  const x = Math.max(half, Math.min(host.clientWidth - half, head.x));
-  const y = Math.max(0, head.y + HEAD_OVERLAP - box.offsetHeight);
-  box.style.left = `${Math.round(x)}px`;
-  box.style.top = `${Math.round(y)}px`;
+  if (head) {
+    // Chừa lề cho ✦ ở góc thẻ và quầng sáng.
+    const half = box.offsetWidth / 2 + EDGE_GAP;
+    const x = Math.max(half, Math.min(host.clientWidth - half, head.x));
+    const y = Math.max(0, head.y + HEAD_OVERLAP - box.offsetHeight);
+    box.style.left = `${Math.round(x)}px`;
+    box.style.top = `${Math.round(y)}px`;
+  }
+  reportRect();
 }
 
 function showError(text) {
@@ -474,6 +500,7 @@ function showError(text) {
   box.classList.remove('spinning');
   box.querySelector('.dg-btn').disabled = false;
   box.querySelector('.dg-err').textContent = text;
+  reportRect();
 }
 
 function spin() {
@@ -520,6 +547,8 @@ function offer(data) {
   const tag = el('span', 'dg-tag', giftMode ? S.giftTag.replace('{n}', n) : S.free);
   box.append(x, btn, tag, el('div', 'dg-card'), el('div', 'dg-err'));
   isolate(box);
+  // Khung hiện ra / thẻ quà mở ra bằng hiệu ứng phóng to: đo lại khi xong, lúc đầu còn nhỏ.
+  box.addEventListener('animationend', reportRect);
   // Cả cửa sổ pet, không chỉ vùng nhân vật: thẻ quà cao dùng được cả khoảng trống
   // phía trên đầu (chỗ bong bóng thoại) để khỏi che mặt.
   const host = document.querySelector('.companion-container') || document.getElementById('characterWrapper') || document.body;
@@ -629,6 +658,8 @@ export function handleDailyGachaMessage(data) {
 
 /** Trang pet vừa nạp (lại): hỏi Rust hôm nay còn lượt free không (khung cũ mất theo trang). */
 export function initDailyGacha() {
+  // Trang vừa nạp lại (đổi model…): khung cũ mất theo trang, Rust đừng giữ chỗ của nó.
+  reportRect();
   const T = window.__TAURI__ || {};
   const invoke = (T.core && T.core.invoke) || T.invoke;
   if (!invoke) return;
