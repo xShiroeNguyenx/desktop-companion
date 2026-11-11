@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-11-11
+
+### Fixed
+- **🌸 Selecting text in a terminal no longer stops the running command.** To read your
+  selection the flower sends a copy shortcut to the app, and in terminals Ctrl+C means
+  "interrupt": it could stop a `tail -f` or a deploy, and terminals like Infra Companion
+  also dropped the highlight, so clicking it to copy did nothing. Infra Companion, Windows Terminal,
+  WezTerm, Alacritty and Tabby now get Ctrl+Shift+C, their copy shortcut, so the
+  highlight stays and the flower shows up as usual. PuTTY, KiTTY, MobaXterm, Git Bash
+  (mintty), Xshell and SecureCRT have no safe copy shortcut, so the flower stays out of
+  them (they copy on select anyway).
+
 ## [0.12.3] - 2026-11-08
 
 ### Added
@@ -1134,6 +1146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.4
 [0.12.3]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.3
 [0.12.2]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.2
 [0.12.1]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.1

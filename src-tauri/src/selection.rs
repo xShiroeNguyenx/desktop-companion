@@ -10,6 +10,8 @@
 // Capture itself (save clipboard → simulated Ctrl+C / Cmd+C → read → restore clipboard)
 // runs on a dedicated worker thread so the hook callback stays fast. On success
 // we emit "selection-captured" { text, x, y, source } to the app and log it.
+// The copy keys depend on the foreground app (copy_plan): terminals get
+// Ctrl+Shift+C or nothing, since Ctrl+C there interrupts the running command.
 
 use std::sync::{
     atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
@@ -194,6 +196,18 @@ pub fn request_capture_at_cursor() {
 
 fn worker(rx: mpsc::Receiver<CaptureReq>) {
     while let Ok(req) = rx.recv() {
+        // Phím chép giả tuỳ app đang focus (copy_plan): trong terminal Ctrl+C là ngắt
+        // lệnh, trong công cụ chụp màn hình là huỷ vùng đang khoanh.
+        let exe = foreground_exe();
+        let Some(keys) = copy_plan(req.source, exe.as_deref()) else {
+            log_sel(&format!(
+                "[selection] skip {}: no safe copy key in {:?}",
+                req.source.as_str(),
+                exe
+            ));
+            continue;
+        };
+
         // A still-visible flower has Ctrl+C grabbed as a global shortcut; hiding
         // it first releases that grab so our own simulated Ctrl+C below actually
         // reaches the source app instead of being intercepted.
@@ -206,8 +220,8 @@ fn worker(rx: mpsc::Receiver<CaptureReq>) {
         // propagating in the source app) — also covers the unregister latency.
         std::thread::sleep(Duration::from_millis(40));
 
-        log_sel("[selection] worker got request, reading clipboard...");
-        let text = capture_selection_text();
+        log_sel(&format!("[selection] worker got request ({keys:?}), reading clipboard..."));
+        let text = capture_selection_text(keys);
         match &text {
             None => {
                 log_sel("[selection] capture -> None (clipboard unchanged/empty)");
@@ -255,9 +269,9 @@ fn truncate(s: &str, max: usize) -> String {
     }
 }
 
-// Save the current clipboard text, fire Ctrl+C, poll for the clipboard to
+// Save the current clipboard text, fire the copy keys, poll for the clipboard to
 // change, then restore the original clipboard. Returns the newly copied text.
-fn capture_selection_text() -> Option<String> {
+fn capture_selection_text(keys: CopyKeys) -> Option<String> {
     // macOS bỏ phím giả mà không báo lỗi nếu app chưa có quyền Trợ năng: kiểm
     // trước, thiếu thì nhắc người dùng thay vì "bắt" mà không bao giờ ra chữ.
     #[cfg(target_os = "macos")]
@@ -269,8 +283,11 @@ fn capture_selection_text() -> Option<String> {
 
     #[cfg(target_os = "windows")]
     unsafe {
-        send_ctrl_c();
+        send_copy_keys(keys);
     }
+    // macOS: Cmd+C là phím chép ở mọi app, terminal cũng vậy (ngắt lệnh là Ctrl+C).
+    #[cfg(not(target_os = "windows"))]
+    let _ = keys;
     #[cfg(target_os = "macos")]
     crate::macos::send_cmd_c();
 
@@ -387,17 +404,15 @@ unsafe extern "system" fn low_level_mouse_proc(
                 if was_down && dist < DRAG_THRESHOLD_PX {
                     crate::aquarium_full::on_click(x, y);
                 }
-                if was_down && auto && is_blocked_foreground() {
-                    log_sel("[selection] skip: foreground is a screenshot/blocked app");
-                } else if was_down && auto {
-                    if dist >= DRAG_THRESHOLD_PX {
-                        if let Some(tx) = SENDER.get() {
-                            let _ = tx.send(CaptureReq {
-                                x,
-                                y,
-                                source: Source::Drag,
-                            });
-                        }
+                // App đang focus (chụp màn hình, terminal…) được xét ở worker (copy_plan):
+                // hook chỉ xếp hàng rồi trả về ngay.
+                if was_down && auto && dist >= DRAG_THRESHOLD_PX {
+                    if let Some(tx) = SENDER.get() {
+                        let _ = tx.send(CaptureReq {
+                            x,
+                            y,
+                            source: Source::Drag,
+                        });
                     }
                 }
             }
@@ -417,11 +432,20 @@ unsafe fn cursor_pos() -> (i32, i32) {
     (p.x, p.y)
 }
 
+/// Tổ hợp phím chép giả gửi vào app đang focus.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CopyKeys {
+    /// Ctrl+C (macOS: Cmd+C): app thường.
+    Ctrl,
+    /// Ctrl+Shift+C: terminal, nơi Ctrl+C là ngắt lệnh.
+    CtrlShift,
+}
+
 // Executable names of screenshot / region-select tools whose drag gesture must
 // NOT be treated as a text selection (our simulated Ctrl+C would cancel their
-// region capture). Matched case-insensitively against the foreground process.
-#[cfg(target_os = "windows")]
-const BLOCKED_FOREGROUND: &[&str] = &[
+// region capture). Only the drag is skipped: the capture hotkey still works.
+// Matched case-insensitively as a substring of the foreground exe name.
+const SCREENSHOT_TOOLS: &[&str] = &[
     "lightshot",
     "screenshot",       // Lightshot's exe is often "Lightshot.exe"; keep broad
     "sharex",
@@ -435,22 +459,59 @@ const BLOCKED_FOREGROUND: &[&str] = &[
     "flameshot",
 ];
 
-// True if the current foreground window belongs to a blocked screenshot tool.
-#[cfg(target_os = "windows")]
-fn is_blocked_foreground() -> bool {
-    match foreground_process_name() {
-        Some(name) => {
-            let lower = name.to_ascii_lowercase();
-            BLOCKED_FOREGROUND.iter().any(|b| lower.contains(b))
-        }
-        None => false,
+// Terminal mà Ctrl+C là ngắt lệnh (gửi ^C xuống shell) còn Ctrl+Shift+C là chép.
+// Gửi Ctrl+C vào đây sẽ dừng lệnh đang chạy (tail -f, deploy…), và xterm.js còn
+// xoá luôn vùng đang tô khối nên chẳng chép được gì. Ctrl+Shift+C không gửi gì
+// xuống shell. So khớp đầu tên exe, không phân biệt hoa thường.
+const SHIFT_COPY_TERMINALS: &[&str] = &[
+    "infracompanion",   // Infra Companion: xterm.js, phím chép mặc định Ctrl+Shift+C
+    "windowsterminal",
+    "wezterm",          // wezterm-gui.exe
+    "alacritty",
+    "tabby",
+];
+
+// Terminal không có phím chép nào an toàn: tự chép khi bôi đen, còn Ctrl+C (và
+// Ctrl+Shift+C) đều gửi ^C xuống shell. Không gửi phím nào, kể cả với phím tắt bắt chữ.
+const NO_COPY_KEY_TERMINALS: &[&str] = &[
+    "putty",
+    "kitty",            // KiTTY (bản PuTTY)
+    "mobaxterm",        // cả MobaXterm_Personal_<phiên bản>.exe
+    "mintty",           // Git Bash
+    "xshell",
+    "securecrt",
+];
+
+/// Phím chép nên gửi vào app `exe` (tên file exe đang focus, None khi không đọc được);
+/// None = không gửi phím nào, bỏ qua lần bắt này.
+fn copy_plan(source: Source, exe: Option<&str>) -> Option<CopyKeys> {
+    let Some(exe) = exe else {
+        return Some(CopyKeys::Ctrl);
+    };
+    let name = exe.to_ascii_lowercase();
+    let stem = name.strip_suffix(".exe").unwrap_or(&name);
+    if NO_COPY_KEY_TERMINALS.iter().any(|t| stem.starts_with(t)) {
+        return None;
     }
+    if SHIFT_COPY_TERMINALS.iter().any(|t| stem.starts_with(t)) {
+        return Some(CopyKeys::CtrlShift);
+    }
+    if matches!(source, Source::Drag) && SCREENSHOT_TOOLS.iter().any(|b| stem.contains(b)) {
+        return None;
+    }
+    Some(CopyKeys::Ctrl)
 }
 
-#[cfg(not(target_os = "windows"))]
-#[allow(dead_code)]
-fn is_blocked_foreground() -> bool {
-    false
+/// Tên exe của app đang focus. Chỉ Windows mới cần: macOS chép bằng Cmd+C ở mọi app.
+fn foreground_exe() -> Option<String> {
+    #[cfg(target_os = "windows")]
+    {
+        foreground_process_name()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        None
+    }
 }
 
 // Lower-cased file name (without path) of the process owning the foreground
@@ -497,9 +558,10 @@ fn foreground_process_name() -> Option<String> {
 }
 
 #[cfg(target_os = "windows")]
-unsafe fn send_ctrl_c() {
+unsafe fn send_copy_keys(keys: CopyKeys) {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_CONTROL,
+        MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+        MAPVK_VK_TO_VSC, VK_CONTROL, VK_SHIFT,
     };
 
     const VK_C: u16 = 0x43;
@@ -510,7 +572,10 @@ unsafe fn send_ctrl_c() {
             Anonymous: INPUT_0 {
                 ki: KEYBDINPUT {
                     wVk: vk,
-                    wScan: 0,
+                    // Kèm scan code thật: Chromium/Electron dựng KeyboardEvent.code từ
+                    // scan code, để 0 thì code rỗng và app so phím tắt theo code (như
+                    // Infra Companion) không nhận ra Ctrl+Shift+C.
+                    wScan: MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) as u16,
                     dwFlags: if up { KEYEVENTF_KEYUP } else { 0 },
                     time: 0,
                     dwExtraInfo: 0,
@@ -519,12 +584,22 @@ unsafe fn send_ctrl_c() {
         }
     }
 
-    let mut inputs = [
-        key(VK_CONTROL, false),
-        key(VK_C, false),
-        key(VK_C, true),
-        key(VK_CONTROL, true),
-    ];
+    let mut inputs = match keys {
+        CopyKeys::Ctrl => vec![
+            key(VK_CONTROL, false),
+            key(VK_C, false),
+            key(VK_C, true),
+            key(VK_CONTROL, true),
+        ],
+        CopyKeys::CtrlShift => vec![
+            key(VK_CONTROL, false),
+            key(VK_SHIFT, false),
+            key(VK_C, false),
+            key(VK_C, true),
+            key(VK_SHIFT, true),
+            key(VK_CONTROL, true),
+        ],
+    };
 
     SendInput(
         inputs.len() as u32,
@@ -591,5 +666,56 @@ fn mac_poll_thread() {
             }
         }
         was_down = down;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_apps_get_ctrl_c() {
+        assert_eq!(copy_plan(Source::Drag, Some("chrome.exe")), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Drag, Some("Code.exe")), Some(CopyKeys::Ctrl));
+        assert_eq!(copy_plan(Source::Hotkey, Some("WINWORD.EXE")), Some(CopyKeys::Ctrl));
+        // Không đọc được app đang focus (và trên macOS): giữ phím chép thường.
+        assert_eq!(copy_plan(Source::Drag, None), Some(CopyKeys::Ctrl));
+    }
+
+    #[test]
+    fn terminals_where_ctrl_c_interrupts_get_ctrl_shift_c() {
+        for exe in [
+            "InfraCompanion.exe",
+            "WindowsTerminal.exe",
+            "wezterm-gui.exe",
+            "alacritty.exe",
+            "Tabby.exe",
+        ] {
+            assert_eq!(copy_plan(Source::Drag, Some(exe)), Some(CopyKeys::CtrlShift), "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), Some(CopyKeys::CtrlShift), "{exe}");
+        }
+    }
+
+    #[test]
+    fn terminals_without_a_safe_copy_key_are_skipped_even_on_hotkey() {
+        for exe in [
+            "putty.exe",
+            "KiTTY.exe",
+            "MobaXterm_Personal_24.2.exe",
+            "mintty.exe",
+            "Xshell.exe",
+            "SecureCRT.exe",
+        ] {
+            assert_eq!(copy_plan(Source::Drag, Some(exe)), None, "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), None, "{exe}");
+        }
+    }
+
+    #[test]
+    fn screenshot_tools_skip_the_drag_but_not_the_hotkey() {
+        for exe in ["Lightshot.exe", "ShareX.exe", "SnippingTool.exe", "ScreenClippingHost.exe"] {
+            assert_eq!(copy_plan(Source::Drag, Some(exe)), None, "{exe}");
+            assert_eq!(copy_plan(Source::Hotkey, Some(exe)), Some(CopyKeys::Ctrl), "{exe}");
+        }
     }
 }
