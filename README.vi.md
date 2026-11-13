@@ -366,6 +366,7 @@ cd src-tauri && cargo test   # test Rust
 ## Ghi công
 
 - Model mẫu Live2D © Live2D Inc. (dùng theo Free Material License).
+- Giọng tiếng Việt và tiếng Anh được tạo bằng [ElevenLabs](https://elevenlabs.io); giọng tiếng Việt thứ hai là bản AI nhân bản của giọng đó, tạo bằng [OmniVoice](https://huggingface.co/k2-fsa/OmniVoice). Chỉ dùng phi thương mại, xem [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
 - Dữ liệu thời tiết: [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
 - Xây trên runtime render của dự án Anime Companion.
 

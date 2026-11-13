@@ -354,6 +354,7 @@ cd src-tauri && cargo test   # Rust ユニットテスト
 ## クレジット
 
 - Live2D サンプルモデル © Live2D Inc.（Free Material License に基づき使用）。
+- ベトナム語と英語の音声は [ElevenLabs](https://elevenlabs.io) で生成しました。もう一つのベトナム語の声は、その声を [OmniVoice](https://huggingface.co/k2-fsa/OmniVoice) で AI クローンしたものです。非商用利用のみ。[ASSETS-LICENSE.md](ASSETS-LICENSE.md) を参照。
 - Anime Companion プロジェクトの描画ランタイムを基盤に構築。
 - 天気データ: [Open-Meteo.com](https://open-meteo.com)（CC BY 4.0）。
 

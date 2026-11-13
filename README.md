@@ -398,6 +398,7 @@ cd src-tauri && cargo test   # Rust unit tests
 ## Credits
 
 - Live2D sample models © Live2D Inc. (used under their Free Material License).
+- Vietnamese and English voice lines generated with [ElevenLabs](https://elevenlabs.io); the second Vietnamese voice is an AI clone of it made with [OmniVoice](https://huggingface.co/k2-fsa/OmniVoice). Non-commercial use only, see [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
 - Built on the rendering runtime from the Anime Companion project.
 - Weather data by [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
 
