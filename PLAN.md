@@ -358,7 +358,15 @@ xưng hô khác, tiếng Nhật / tiếng Anh.
 tên file: `vi` (OmniVoice, bản nhân bản, weights CC BY-NC nên chỉ phi thương mại) và
 `vi-el` (ElevenLabs, giọng gốc "Linh" do tác giả tự thiết kế; đủ 121 câu mẫu + 11 bubble,
 đã nén lại 24 kHz). Rust chỉ gửi tên file (`pet:tts:clip`), webview lấy thư mục theo giọng
-đang chọn. Sáu clip gốc (headpat, poke…) giống nhau ở cả hai thư mục. Nếu app chuyển sang
+đang chọn. Sáu clip gốc (headpat, poke…) giống nhau ở cả hai thư mục.
+
+**Để giọng mới được nghe thấy (code 2026-11-13, cần thử GUI).** Giọng mặc định cũ là `ja`
+nên clip tiếng Việt chỉ phát khi người dùng tự đổi giọng. `app/js/voice-core.js` (hàm thuần,
+có test): bản cài mới (`__INIT_FRESH__` = chưa xem hướng dẫn, Rust tiêm) lấy giọng theo ngôn
+ngữ chữ (vi → `vi-el`, en → `en`) và ghi lại ngay; người dùng cũ chưa chọn giọng giữ `ja` và
+được mời MỘT lần đổi sang giọng Việt (thẻ `openVoiceOffer` trong `tour.js`, dùng chung khung
+thẻ hướng dẫn nên bấm được lúc click-through; cờ `voiceOffered` trong localStorage; hiện là
+tính đã hỏi). Tour thêm bước 🔊 (thành 6 bước). Nếu app chuyển sang
 thương mại: gỡ thư mục clip của `vi` (hoặc thay bằng bản ElevenLabs) trước khi bật thu tiền.
 
 **Hướng làm.** Thêm một engine thứ ba gọi tới server nhân bản giọng (model quá nặng để

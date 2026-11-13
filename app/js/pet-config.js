@@ -39,14 +39,6 @@
   window.__DESKTOP_PET_MODE__ = true;
   window.__MODEL_ID__ = initId;
   window.__MODEL_URL__ = MODELS[initId];
-  let voiceLang = 'ja';
-  try {
-    const saved = localStorage.getItem('voiceLanguage');
-    // 'vi' = giọng Việt nhân bản (OmniVoice), 'vi-el' = giọng Việt gốc (ElevenLabs).
-    if (saved === 'ja' || saved === 'vi' || saved === 'vi-el' || saved === 'en') voiceLang = saved;
-  } catch (_) { /* ignore */ }
-  window.__VOICE_LANGUAGE__ = voiceLang;
-  window.__AUDIO_BASE_URL__ = '/media/audio/' + voiceLang;
   // Ngôn ngữ chữ: lựa chọn vừa đổi trong phiên này (sessionStorage, vì
   // initialization_script tiêm lúc dựng cửa sổ và không cập nhật khi nạp lại
   // trang) thắng giá trị đã lưu mà Rust tiêm vào.
@@ -56,6 +48,20 @@
     if (recent) messageLang = recent;
   } catch (_) { /* ignore */ }
   window.__MESSAGE_LANGUAGE__ = ['vi', 'ja', 'en'].includes(messageLang) ? messageLang : 'vi';
+  // Giọng: lựa chọn đã lưu; bản cài mới (__INIT_FRESH__, Rust tiêm) lấy giọng theo
+  // ngôn ngữ chữ; người dùng cũ chưa chọn thì giữ 'ja' (voice-core.js).
+  let savedVoice = null;
+  try { savedVoice = localStorage.getItem('voiceLanguage'); } catch (_) { /* ignore */ }
+  const picked = window.VoiceCore.initial({
+    saved: savedVoice,
+    fresh: window.__INIT_FRESH__ === true,
+    textLang: window.__MESSAGE_LANGUAGE__,
+  });
+  if (picked.persist) {
+    try { localStorage.setItem('voiceLanguage', picked.voice); } catch (_) { /* ignore */ }
+  }
+  window.__VOICE_LANGUAGE__ = picked.voice;
+  window.__AUDIO_BASE_URL__ = '/media/audio/' + picked.voice;
   // Tắt tiếng: như ngôn ngữ chữ, lựa chọn trong phiên này (sessionStorage, trang
   // nạp lại khi đổi model) thắng giá trị đã lưu mà Rust tiêm vào lúc dựng cửa sổ.
   let muted = window.__INIT_MUTED__ === true;

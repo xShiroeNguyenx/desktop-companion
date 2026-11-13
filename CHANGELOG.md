@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.8] - 2026-11-13
+
+### Changed
+- **🔊 New installs start with a voice that matches the text language.** With Vietnamese
+  text the pet now starts on the Vietnamese voice, so its spoken lines are heard right away
+  instead of only after you find the *Voice* menu. English text starts on the English voice.
+- **🔊 A one-time offer to switch to the Vietnamese voice.** If you already use the app with
+  Vietnamese text and another voice, the pet asks once whether to speak Vietnamese. Your
+  voice is never changed without asking; *Later* keeps it as it is and the pet does not ask
+  again.
+- **❓ The quick tour has a step about the voice**: what is spoken, and where to change the
+  voice or mute.
+
+### Fixed
+- **❓ The quick tour buttons stay on one row.** With six steps the *Next* button dropped
+  to a second line; the progress dots now sit next to the step counter.
+
 ## [0.12.7] - 2026-11-13
 
 ### Added
@@ -1207,6 +1224,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.8]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.8
 [0.12.7]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.7
 [0.12.6]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.6
 [0.12.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.5

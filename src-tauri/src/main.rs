@@ -895,7 +895,7 @@ fn main() {
                 .initialization_script(&format!(
                     "window.__INIT_MODEL__ = {:?}; window.__CUSTOM_MODELS__ = {}; \
                      window.__BUILTIN_MODELS__ = {}; window.__INIT_MESSAGE_LANGUAGE__ = {:?}; \
-                     window.__INIT_MUTED__ = {};",
+                     window.__INIT_MUTED__ = {}; window.__INIT_FRESH__ = {};",
                     // Model chưa mở khoá (sửa tay settings.json…) thì về mặc định.
                     models::effective(
                         &settings.pet_model,
@@ -906,7 +906,10 @@ fn main() {
                     custom_json,
                     models::builtin_json(),
                     persona::Lang::from_code(&settings.message_language).code(),
-                    settings.muted
+                    settings.muted,
+                    // Bản cài mới (chưa xem hướng dẫn lần nào): trang pet lấy giọng
+                    // theo ngôn ngữ chữ thay cho mặc định cũ (app/js/voice-core.js).
+                    !settings.tour_done
                 ))
                 .inner_size(300.0, 420.0)
                 .min_inner_size(220.0, 300.0)

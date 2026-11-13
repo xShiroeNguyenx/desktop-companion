@@ -88,4 +88,18 @@ mod tests {
         assert!(main_rs.contains(r#""tour:rect" =>"#));
         assert!(main_rs.contains(r#""open_tour" =>"#), "mục tray mở lại hướng dẫn");
     }
+
+    // Bản cài mới lấy giọng theo ngôn ngữ chữ: Rust báo "cài mới" bằng cờ
+    // __INIT_FRESH__ (= chưa xem hướng dẫn), trang pet đọc nó trong pet-config.js.
+    #[test]
+    fn fresh_install_flag_reaches_the_pet_page() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let read = |p: &str| std::fs::read_to_string(root.join(p)).unwrap();
+        let main_rs = read("src/main.rs");
+        assert!(main_rs.contains("window.__INIT_FRESH__ = {};"));
+        assert!(main_rs.contains("!settings.tour_done"));
+        assert!(read("../app/js/pet-config.js").contains("window.__INIT_FRESH__ === true"));
+        let main_js = read("../app/media/webview/main.js");
+        assert!(main_js.contains("openVoiceOffer("), "người dùng cũ được mời đổi giọng một lần");
+    }
 }

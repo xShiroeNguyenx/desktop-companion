@@ -11,6 +11,7 @@ export const LABELS = {
       ['🌸 Bôi đen là có hoa', 'Bôi đen chữ ở bất kỳ app nào (hoặc nhấn {hotkey}) → bông hoa hiện cạnh con trỏ. Bấm để dịch, nhấn giữ để mở menu: trả lời, hỏi {pet}, lưu task, ghi chú.'],
       ['💞 Chuột phải vào {pet}', 'Mở menu tròn: Chat nhanh, Công việc, Ghi chú, widget, mini game, Bộ sưu tập 🍬… Kéo {pet} đi đâu cũng được, giữ Ctrl + lăn chuột để đổi cỡ.'],
       ['🖱️ Bấm xuyên qua {pet}', 'Bật click-through ở biểu tượng khay: chuột đi xuyên qua {pet} xuống app phía sau. Lúc đó giữ Ctrl + chuột phải vào {pet} vẫn mở được menu.'],
+      ['🔊 {pet} nói được thành tiếng', 'Lời chào, lời nhắc nghỉ, chuyện thời tiết… {pet} nói bằng tiếng Việt. Đổi giọng (hai giọng Việt, Nhật, Anh) hay tắt tiếng: chuột phải vào {pet} → Âm thanh.'],
       ['🔑 Trò chuyện, dịch bằng AI', 'Nhập API key của Anthropic (Claude) hoặc Google (Gemini) ở Cài đặt → 🤖 Trí tuệ nhân tạo. Key cất trong két bảo mật của Windows, chỉ gửi tới nhà cung cấp bạn chọn.', true],
       ['✨ Còn nhiều thứ đang tắt sẵn', 'Hiệu ứng thời tiết, Bunny Lounge, cảnh báo CPU / RAM, lịch, đồng hồ, bể cá… bật trong Cài đặt khi bạn muốn. Mở lại hướng dẫn này ở biểu tượng khay → ❓.', true],
     ],
@@ -22,6 +23,7 @@ export const LABELS = {
       ['🌸 選択するとお花', 'どのアプリでもテキストを選択（または {hotkey}）→ カーソルの横にお花が出ます。クリックで翻訳、長押しでメニュー：返信・{pet}に質問・タスク保存・メモ。'],
       ['💞 {pet}を右クリック', '円形メニュー：クイックチャット・タスク・メモ・ウィジェット・ミニゲーム・コレクション🍬… {pet}はドラッグで好きな場所へ、Ctrl + ホイールで大きさを変えられます。'],
       ['🖱️ {pet}を素通りクリック', 'トレイからクリック透過をオンにすると、マウスが{pet}を通り抜けて後ろのアプリに届きます。そのときも Ctrl + 右クリックでメニューを開けます。'],
+      ['🔊 {pet}は声でも話します', 'あいさつ・休憩のお知らせ・天気のひとことを声に出します。いまはベトナム語だけなので、聞くには文字の言語と声をベトナム語にしてください。声の切り替えとミュートは、{pet}を右クリック → サウンド。'],
       ['🔑 AI でおしゃべり・翻訳', '設定 → 🤖 AI で Anthropic（Claude）か Google（Gemini）の API キーを入力してください。キーは Windows の資格情報マネージャーに保存され、選んだプロバイダーにだけ送られます。', true],
       ['✨ オフになっている機能も', '天気エフェクト・Bunny Lounge・CPU／RAM の警告・カレンダー・時計・水槽… 使いたくなったら設定でオンにしてね。このガイドはトレイ → ❓ でまた開けます。', true],
     ],
@@ -33,10 +35,19 @@ export const LABELS = {
       ['🌸 Select text, get a flower', 'Select text in any app (or press {hotkey}) and a flower appears by the cursor. Click it to translate, press and hold for more: reply, ask {pet}, save as task or note.'],
       ['💞 Right-click {pet}', 'Opens the ring menu: quick chat, tasks, notes, widgets, mini games, the 🍬 Collection… Drag {pet} anywhere, and hold Ctrl + scroll to resize.'],
       ['🖱️ Click right past {pet}', 'Turn on click-through from the tray icon and the mouse goes through {pet} to the app behind. Ctrl + right-click on {pet} still opens the menu.'],
+      ['🔊 Spoken lines', 'Greetings, break reminders and weather remarks can be said out loud. They are in Vietnamese only for now: set both the text language and the voice to Vietnamese to hear them. Change the voice or mute: right-click {pet} → Sound.'],
       ['🔑 Chat and translate with AI', 'Add an Anthropic (Claude) or Google (Gemini) API key in Settings → 🤖 AI. The key is kept in the Windows credential store and only sent to the provider you pick.', true],
       ['✨ More is switched off for now', 'Weather effects, Bunny Lounge, CPU / RAM warnings, the calendar, clock, aquarium… turn them on in Settings whenever you like. Reopen this tour from the tray icon → ❓.', true],
     ],
   },
+};
+// Thẻ mời đổi sang giọng tiếng Việt (openVoiceOffer). Chỉ hiện khi chữ đang là
+// tiếng Việt (voice-core.js offerDue), nên chỉ cần chữ tiếng Việt.
+export const VOICE_OFFER = {
+  title: '🔊 Em nói được tiếng Việt rồi nè',
+  body: 'Lời chào, lời nhắc nghỉ, chuyện thời tiết… giờ em nói thành tiếng bằng tiếng Việt được rồi. Đổi sang giọng tiếng Việt nha? Muốn đổi lại: chuột phải vào em → Âm thanh → Giọng nói.',
+  yes: '🔊 Nói tiếng Việt',
+  later: 'Để sau',
 };
 // Không ai bấm gì thì thẻ tự đóng (lâu hơn thẻ đặt tên vì có chữ để đọc).
 const IDLE_CLOSE_MS = 180_000;
@@ -81,15 +92,18 @@ function injectStyle() {
     }
     @keyframes tour-in { from { opacity: 0; transform: translate(-50%, 8px); } }
     @media (prefers-reduced-motion: reduce) { .tour-card { animation: none; } }
-    .tour-card .tc-kicker { font-size: 10.5px; color: #9a6a84; display: flex; justify-content: space-between; }
+    .tour-card .tc-kicker { font-size: 10.5px; color: #9a6a84; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .tour-card .tc-progress { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
     .tour-card .tc-title { font-weight: 700; font-size: 13.5px; margin: 2px 0 4px; }
     .tour-card .tc-body { margin: 0 0 7px; }
     .tour-card .tc-dots { display: flex; gap: 4px; }
     .tour-card .tc-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(232, 110, 160, 0.3); }
     .tour-card .tc-dots i.on { background: #ff73ab; }
-    .tour-card .tc-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .tour-card .tc-foot .tc-sp { flex: 1; }
+    /* Ba nút luôn nằm một hàng: chấm tiến độ nằm ở dòng tiêu đề nhỏ phía trên. */
+    .tour-card .tc-foot { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .tour-card .tc-foot .tc-sp { flex: 1; min-width: 0; }
     .tour-card button {
+      flex: 0 0 auto; white-space: nowrap;
       border: none; border-radius: 8px; padding: 4px 9px;
       font: inherit; font-weight: 600; cursor: pointer;
       background: #fff; color: #5b2f47; border: 1px solid rgba(232, 110, 160, 0.45);
@@ -162,6 +176,7 @@ function close() {
 function onKey(e) {
   if (!card) return;
   if (e.key === 'Escape') close();
+  else if (!ctx) return; // thẻ mời đổi giọng: không có bước để chuyển
   else if (e.key === 'ArrowRight') go(step + 1);
   else if (e.key === 'ArrowLeft') go(step - 1);
 }
@@ -184,7 +199,11 @@ function render() {
   card.textContent = '';
 
   const kicker = el('div', 'tc-kicker');
-  kicker.append(el('span', null, `❓ ${L.title}`), el('span', null, `${step + 1} / ${L.steps.length}`));
+  const dots = el('div', 'tc-dots');
+  L.steps.forEach((_, i) => dots.appendChild(el('i', i === step ? 'on' : '')));
+  const progress = el('div', 'tc-progress');
+  progress.append(dots, el('span', null, `${step + 1} / ${L.steps.length}`));
+  kicker.append(el('span', null, `❓ ${L.title}`), progress);
   card.append(kicker, el('div', 'tc-title', fillStep(title, vars)), el('p', 'tc-body', fillStep(body, vars)));
   if (withSettings) {
     const extra = el('div', 'tc-extra');
@@ -193,9 +212,7 @@ function render() {
   }
 
   const foot = el('div', 'tc-foot');
-  const dots = el('div', 'tc-dots');
-  L.steps.forEach((_, i) => dots.appendChild(el('i', i === step ? 'on' : '')));
-  foot.append(dots, el('span', 'tc-sp'));
+  foot.append(el('span', 'tc-sp'));
   if (!last) foot.appendChild(button('tc-skip', L.skip, close));
   if (step > 0) foot.appendChild(button('', L.prev, () => go(step - 1)));
   foot.appendChild(button('tc-main', last ? L.done : L.next, () => go(step + 1)));
@@ -204,14 +221,13 @@ function render() {
   requestAnimationFrame(reportRect);
 }
 
-function open(data) {
+/** Dựng khung thẻ rỗng trên pet (dùng chung cho hướng dẫn và thẻ mời đổi giọng). */
+function mountCard(ariaLabel) {
   injectStyle();
   close();
-  ctx = { lang: data.lang, pet: data.pet, hotkey: data.hotkey };
-  step = 0;
   card = el('div', 'tour-card');
   card.setAttribute('role', 'dialog');
-  card.setAttribute('aria-label', labels(ctx.lang).title);
+  card.setAttribute('aria-label', ariaLabel);
   // Bấm trong thẻ không bị tính là chọc / kéo pet.
   for (const type of ['pointerdown', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel']) {
     card.addEventListener(type, (e) => e.stopPropagation());
@@ -219,8 +235,38 @@ function open(data) {
   card.addEventListener('animationend', reportRect);
   (document.querySelector('.companion-container') || document.body).appendChild(card);
   window.addEventListener('keydown', onKey, true);
+}
+
+function open(data) {
+  mountCard(labels(data.lang).title);
+  ctx = { lang: data.lang, pet: data.pet, hotkey: data.hotkey };
+  step = 0;
   render();
   touch();
+}
+
+/**
+ * Thẻ mời người dùng cũ đổi sang giọng tiếng Việt (hỏi một lần, main.js lo điều
+ * kiện). Trả false nếu đang có thẻ khác trên pet (hướng dẫn, đặt tên) — nơi gọi
+ * thử lại sau. `onAccept` chạy khi bấm đồng ý.
+ */
+export function openVoiceOffer(onAccept) {
+  if (card || document.querySelector('.naming-card')) return false;
+  mountCard(VOICE_OFFER.title);
+  ctx = null;
+  const foot = el('div', 'tc-foot');
+  foot.append(
+    el('span', 'tc-sp'),
+    button('tc-skip', VOICE_OFFER.later, close),
+    button('tc-main', VOICE_OFFER.yes, () => {
+      close();
+      onAccept();
+    }),
+  );
+  card.append(el('div', 'tc-title', VOICE_OFFER.title), el('p', 'tc-body', VOICE_OFFER.body), foot);
+  requestAnimationFrame(reportRect);
+  touch();
+  return true;
 }
 
 /** Xử lý lệnh tour:* từ Rust. Trả true nếu đã xử lý. */

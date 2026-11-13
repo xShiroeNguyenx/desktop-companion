@@ -29,7 +29,7 @@ import {
 } from './ui.js';
 import { handleTtsAudio, stopTts, playVoiceClip } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
-import { handleTourMessage } from './tour.js';
+import { handleTourMessage, openVoiceOffer } from './tour.js';
 import { handleDailyGachaMessage, initDailyGacha } from './daily-gacha.js';
 import { handleBondMessage } from './bond.js';
 import { applyShowcaseBanner, openQuickChatOverlay, openShareCardPreview, receiveShareCardSaveResult, renderAgentAvailableTools, renderAgentProfileList, setupModel, showAchievementUnlockEffect, showAchievementsPanel, updateAchievementsPanelData } from './interaction.js';
@@ -581,3 +581,38 @@ vscode.postMessage({ command: 'focus:sync' });
 initDailyGacha();
 initAmbientAudio();
 initLive2D();
+
+// 🔊 Mời người dùng cũ đổi sang giọng tiếng Việt, MỘT lần: chữ đang là tiếng Việt
+// mà giọng thì chưa (voice-core.js). Bản cài mới đã có giọng Việt sẵn nên không
+// bị hỏi. Đợi pet lên hình rồi mới hỏi; đang "Đừng làm phiền" hay có thẻ khác
+// trên pet thì thử lại sau, quá số lần thì để lần mở app sau.
+const VOICE_OFFER_DELAY_MS = 20_000;
+const VOICE_OFFER_RETRY_MS = 60_000;
+const VOICE_OFFER_TRIES = 5;
+
+function voiceOffered() {
+  try { return localStorage.getItem('voiceOffered') === '1'; } catch (_) { return true; }
+}
+
+function tryVoiceOffer(attempt) {
+  const due = window.VoiceCore.offerDue({
+    textLang: window.__MESSAGE_LANGUAGE__,
+    voice: window.__VOICE_LANGUAGE__ || 'ja',
+    offered: voiceOffered(),
+    muted: window.__AUDIO_MUTED__,
+  });
+  if (!due) return;
+  const shown = !window.__DND__ && state.isLive2DReady && openVoiceOffer(() => {
+    vscode.postMessage({ command: 'setVoiceLanguage', voiceLanguage: window.VoiceCore.forLanguage('vi') });
+    // Nói thử ngay một câu bằng giọng mới.
+    showBubble(I18n.t('pet.bubbles.muteOff'));
+    playVoiceClip('bubble-muteOff.mp3');
+  });
+  if (shown) {
+    // Hiện là tính đã hỏi: bấm "Để sau" hay để thẻ tự đóng cũng không hỏi lại.
+    try { localStorage.setItem('voiceOffered', '1'); } catch (_) { /* ignore */ }
+  } else if (attempt + 1 < VOICE_OFFER_TRIES) {
+    setTimeout(() => tryVoiceOffer(attempt + 1), VOICE_OFFER_RETRY_MS);
+  }
+}
+setTimeout(() => tryVoiceOffer(0), VOICE_OFFER_DELAY_MS);
