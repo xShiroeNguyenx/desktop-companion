@@ -315,6 +315,7 @@ pub fn set_dnd(app: &AppHandle, on: bool, announce: bool) {
         let a = persona::address(&store::load_settings(app));
         let text = lines::line(if on { Key::DndOn } else { Key::DndOff }, &a, &[]);
         let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": text }));
+        tts::say(app, &text);
     }
 }
 
@@ -344,7 +345,9 @@ fn hold_expression(app: &AppHandle, expression: &str) {
 /// không qua trọng tài vì người dùng vừa bấm, đang chờ phản hồi.
 fn say_now(app: &AppHandle, key: Key, vars: &[(&str, &str)]) {
     let a = persona::address(&store::load_settings(app));
-    pet(app, json!({ "command": "showMessage", "text": lines::line(key, &a, vars) }));
+    let text = lines::line(key, &a, vars);
+    pet(app, json!({ "command": "showMessage", "text": text }));
+    tts::say(app, &text);
 }
 
 pub fn set_focus_tray_item(app: &AppHandle, item: tauri::menu::MenuItem<tauri::Wry>) {
@@ -1303,10 +1306,7 @@ fn speak(app: &AppHandle, c: &Candidate) -> bool {
         );
     }
     let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": text }));
-    if let Some(mut sp) = tts::Speaker::new(app) {
-        sp.feed(&text);
-        sp.finish();
-    }
+    tts::say(app, &text);
     true
 }
 

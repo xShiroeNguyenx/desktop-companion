@@ -6,16 +6,24 @@ import { state, debugLog } from './core.js';
 //
 // Rust tổng hợp từng câu tuần tự nên audio tới đúng thứ tự; ở đây chỉ cần một
 // hàng đợi. `gen` tăng mỗi lượt đọc mới — lượt mới tới thì bỏ ngay lượt cũ.
+//
+// Cũng phát clip thu sẵn của các câu bubble phía giao diện (playVoiceClip), đi
+// chung hàng đợi này để miệng mấp máy như mọi câu khác.
 
 let ctx = null;
 let analyser = null;
 let samples = null;
 let currentGen = -1;
+// Mỗi phần tử là một ArrayBuffer audio đã mã hoá (mp3 / wav).
 let queue = [];
 // null = rảnh; true = đang giải mã; AudioBufferSourceNode = đang phát.
 let playing = null;
 let mouth = 0;
 let hookedModel = null;
+// Tăng mỗi lần dừng / phát clip mới: clip đang tải dở của lượt cũ thì bỏ.
+let clipToken = 0;
+// Clip đang tải / đang phát là câu "em sẽ im lặng": lệnh tắt tiếng không cắt nó.
+let keepOnMute = false;
 
 // Độ nhạy miệng: RMS của giọng nói thường ~0.03–0.2.
 const MOUTH_GAIN = 7;
@@ -55,13 +63,18 @@ export function handleTtsAudio(data) {
     stopTts();
     currentGen = data.gen;
   }
-  queue.push(data.data);
+  queue.push(base64ToBuffer(data.data));
   if (!playing) void playNext();
 }
 
-export function stopTts(gen) {
+// `forMute`: gọi vì người dùng vừa tắt tiếng. Câu xác nhận tắt tiếng được nói
+// nốt (keepOnMute); mọi thứ khác dừng như thường.
+export function stopTts(gen, forMute) {
   if (typeof gen === 'number' && gen > currentGen) currentGen = gen;
   queue = [];
+  if (forMute && keepOnMute) return;
+  keepOnMute = false;
+  clipToken++;
   if (playing && typeof playing.stop === 'function') {
     try {
       playing.onended = null;
@@ -71,17 +84,49 @@ export function stopTts(gen) {
   playing = null;
 }
 
+// Các giọng tiếng Việt có clip thu sẵn: "vi" (OmniVoice) và "vi-el" (ElevenLabs).
+// Mỗi giọng một thư mục media/audio/<giọng>/ với cùng tên file.
+const CLIP_VOICES = ['vi', 'vi-el'];
+
+// Phát một clip thu sẵn của giọng đang chọn (media/audio/<giọng>/<file>). Chỉ có
+// clip tiếng Việt, nên chỉ phát khi đang chọn một giọng Việt và chưa tắt tiếng.
+// Trả true nếu sẽ phát — nơi gọi dùng để quyết định có phát âm thanh dự phòng.
+// Giọng đang chọn thiếu clip này (404) thì im lặng.
+export function playVoiceClip(file, opts = {}) {
+  const voice = window.__VOICE_LANGUAGE__ || 'ja';
+  if (window.__AUDIO_MUTED__ || !CLIP_VOICES.includes(voice)) return false;
+  stopTts();
+  keepOnMute = Boolean(opts.keepOnMute);
+  const token = clipToken;
+  fetch('/media/audio/' + voice + '/' + file)
+    .then((r) => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.arrayBuffer();
+    })
+    .then((buffer) => {
+      if (token !== clipToken) return; // đã có lượt đọc khác chen vào
+      queue.push(buffer);
+      if (!playing) void playNext();
+    })
+    .catch((e) => {
+      if (token === clipToken) keepOnMute = false;
+      debugLog('TTS: không tải được clip ' + file + ': ' + e);
+    });
+  return true;
+}
+
 async function playNext() {
-  const b64 = queue.shift();
-  if (!b64) {
+  const encoded = queue.shift();
+  if (!encoded) {
     playing = null;
+    keepOnMute = false;
     return;
   }
   const gen = currentGen;
   playing = true;
   try {
     const c = ensureContext();
-    const buffer = await c.decodeAudioData(base64ToBuffer(b64));
+    const buffer = await c.decodeAudioData(encoded);
     // Bị dừng / có lượt mới trong lúc giải mã → lượt mới tự lo phát.
     if (gen !== currentGen || playing !== true) return;
     const src = c.createBufferSource();

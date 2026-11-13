@@ -27,7 +27,7 @@ import {
   takeWatchdogCancel,
   streamTimeoutText,
 } from './ui.js';
-import { handleTtsAudio, stopTts } from './tts-player.js';
+import { handleTtsAudio, stopTts, playVoiceClip } from './tts-player.js';
 import { handleNamingMessage } from './naming.js';
 import { handleTourMessage } from './tour.js';
 import { handleDailyGachaMessage, initDailyGacha } from './daily-gacha.js';
@@ -220,7 +220,7 @@ window.addEventListener('message', (event) => {
       break;
     case 'setMutedState':
       setGlobalAudioMuted(event.data.muted);
-      if (event.data.muted) stopTts();
+      if (event.data.muted) stopTts(undefined, true);
       break;
     case 'playMotion':
       playMotion(event.data.group, event.data.index);
@@ -355,6 +355,12 @@ window.addEventListener('message', (event) => {
       break;
     case 'pet:tts:audio':
       handleTtsAudio(event.data);
+      break;
+    case 'pet:tts:clip':
+      // Câu mẫu có clip thu sẵn: phát bản của giọng tiếng Việt đang chọn.
+      if (typeof event.data.file === 'string' && /^[0-9a-f]{16}\.mp3$/.test(event.data.file)) {
+        playVoiceClip('lines/' + event.data.file);
+      }
       break;
     case 'pet:tts:stop':
       stopTts(event.data.gen);

@@ -272,7 +272,7 @@
         </div>
       </div>
 
-      <!-- Tạm ẩn: giọng hiện có chưa khớp nhân vật (xem TTS_ENABLED trong tts.rs). -->
+      <!-- Tạm ẩn: chưa có engine giọng nói phù hợp (xem TTS_ENABLED trong tts.rs). -->
       <div class="set-group" style="display:none">
         <h3 data-sub="Giọng đọc của em" data-i18n-sub="settings.tts.sub" data-i18n="settings.tts.title">🔊 Giọng nói</h3>
         <div class="set-field">
@@ -281,13 +281,19 @@
             <option value="off" data-i18n="settings.off">Tắt</option>
             <option value="windows" data-i18n="settings.tts.windows">Giọng có sẵn của Windows (offline)</option>
             <option value="edge" data-i18n="settings.tts.edge">Giọng Edge Neural (trực tuyến)</option>
+            <option value="server" data-i18n="settings.tts.server">Server giọng nói tự chạy (giọng nhân bản)</option>
           </select>
           <div class="status" id="ttsEngineNote"></div>
+        </div>
+        <div class="set-field" id="ttsServerBlock">
+          <label for="ttsServerUrl" data-i18n="settings.tts.serverUrl">Địa chỉ server</label>
+          <input type="text" id="ttsServerUrl" placeholder="http://127.0.0.1:3900" spellcheck="false" />
         </div>
         <div class="set-field" id="ttsVoiceBlock">
           <label for="ttsVoice" data-i18n="settings.tts.voice">Giọng</label>
           <div class="row tight">
             <select id="ttsVoice" style="flex:1;"></select>
+            <input type="text" id="ttsVoiceName" data-i18n-placeholder="settings.tts.voiceNamePh" placeholder="Tên giọng trên server (trống = mặc định)" style="flex:1;" spellcheck="false" />
             <button class="ghost" id="ttsPreview" data-i18n="settings.tts.preview" type="button" style="flex:0 0 auto;">▶ Nghe thử</button>
           </div>
           <div class="status" id="ttsStatus"></div>

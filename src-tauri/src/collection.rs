@@ -1638,6 +1638,7 @@ mod glue {
         if let Some(text) = crate::quests::announce(out, lang_index(a.lang), &a.pet) {
             let _ = app.emit_to("main", "pet-message", json!({ "command": "setExpression", "expression": "happy", "duration": 6000 }));
             let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": text }));
+            crate::tts::say(app, &text);
         }
         if out.spins > 0 {
             let gift = store::load_collection(app).gift_spins;

@@ -1229,6 +1229,7 @@ pub async fn collection_buy(app: AppHandle, id: String) -> Result<Value, String>
     let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", item.name[idx])]);
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
     let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+    tts::say(&app, &line);
     // 🐠 Mua cá: thả luôn một con vào bể nếu còn chỗ (đầy thì nằm ở "Loài đã có" trong
     // cửa sổ Bể cá, thả sau). Lỗi ở đây không làm hỏng lần mua.
     let fish_added = item.cat == crate::collection::Category::Fish
@@ -1346,6 +1347,7 @@ fn pull_response(app: &AppHandle, pulls: &[crate::gacha::Pull]) -> Value {
         let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", best.item.name[idx])]);
         let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
         let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+        tts::say(&app, &line);
     }
     crate::collection::changed(&app);
     for p in pulls.iter().filter(|p| !p.dup) {
@@ -1391,6 +1393,7 @@ fn announce_gift(app: &AppHandle, a: &persona::Address) {
         let line = crate::lines::line(crate::lines::Key::GiftSpins, a, &[("n", &n.to_string())]);
         let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
         let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": line }));
+        tts::say(app, &line);
     }
 }
 
@@ -1435,6 +1438,7 @@ pub fn free_spin(app: &AppHandle) {
         let line = crate::lines::line(crate::lines::Key::ItemUnlocked, &a, &[("item", pull.item.name[idx])]);
         emit(serde_json::json!({ "command": "setExpression", "expression": "love", "duration": 8000 }));
         emit(serde_json::json!({ "command": "showMessage", "text": line }));
+        tts::say(app, &line);
         install_if_model(app, pull.item);
     }
     crate::collection::changed(app);
@@ -1610,9 +1614,10 @@ pub async fn tts_voices(engine: String) -> Result<Vec<(String, String)>, String>
 
 // Nút "Nghe thử": tổng hợp một câu mẫu, trả { mime, data(base64) }.
 #[tauri::command]
-pub async fn tts_preview(engine: String, voice: String, text: String) -> Result<Value, String> {
+pub async fn tts_preview(engine: String, voice: String, server: Option<String>, text: String) -> Result<Value, String> {
+    let server = server.unwrap_or_default();
     let (audio, mime) =
-        tauri::async_runtime::spawn_blocking(move || tts::synthesize(&engine, &voice, &text))
+        tauri::async_runtime::spawn_blocking(move || tts::synthesize(&engine, &voice, &server, &text))
             .await
             .map_err(|e| e.to_string())??;
     Ok(serde_json::json!({ "mime": mime, "data": tts::encode_audio(&audio) }))

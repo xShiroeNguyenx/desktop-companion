@@ -123,6 +123,7 @@ fn say(app: &AppHandle, key: crate::lines::Key, vars: &[(&str, &str)], expressio
     let line = crate::lines::line(key, &a, vars);
     let _ = app.emit_to("main", "pet-message", json!({ "command": "setExpression", "expression": expression, "duration": 6000 }));
     let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": line }));
+    crate::tts::say(app, &line);
 }
 
 /// Tên hiển thị của một con: tên người dùng đặt, không thì tên loài theo ngôn ngữ.

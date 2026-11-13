@@ -1,8 +1,11 @@
-// Đọc thành tiếng lời của pet (TTS). Hai engine, chọn trong Cài đặt:
+// Đọc thành tiếng lời của pet (TTS). Ba engine, chọn trong Cài đặt:
 //   "windows" — WinRT SpeechSynthesizer: giọng có sẵn của Windows, offline.
 //   "edge"    — giọng Neural của Microsoft Edge "Read aloud" qua WebSocket.
 //               Dịch vụ KHÔNG chính thức: văn bản đi lên máy chủ Microsoft và
 //               có thể ngừng hoạt động bất cứ lúc nào.
+//   "server"  — server giọng nói do người dùng tự chạy, nói giao thức
+//               POST /v1/audio/speech kiểu OpenAI (VoiceStudio, OmniVoice…).
+//               Dùng cho giọng nhân bản: model quá nặng để nhúng vào app.
 //
 // Luồng (theo Open-LLM-VTuber): câu trả lời đang stream được cắt thành từng câu
 // (SentenceSplitter) → lọc chữ không nên đọc (clean_for_tts) → một luồng worker
@@ -21,12 +24,18 @@ use tauri::{AppHandle, Emitter};
 
 use crate::store;
 
-/// Tạm tắt toàn bộ giọng nói: các giọng hiện có không khớp giọng của nhân vật.
+/// Tạm tắt các engine giọng nói (Windows / Edge / server tự chạy): giọng có sẵn
+/// không khớp nhân vật, còn giọng nhân bản cần server quá nặng với máy người dùng.
+/// Clip thu sẵn (`say`) KHÔNG phụ thuộc cờ này và vẫn phát.
 /// Bật lại = đổi thành true + bỏ style="display:none" của nhóm "Giọng nói" trong
 /// app/settings.html. Khi tắt, setting tts_engine đã lưu bị bỏ qua.
-/// Bật lại thì thêm dòng giọng Edge (văn bản gửi lên máy chủ Microsoft) vào bảng
-/// "Data sent over the network" của docs/landing/privacy.html trước khi phát hành.
+/// Bật lại thì thêm vào bảng "Data sent over the network" của
+/// docs/landing/privacy.html trước khi phát hành: giọng Edge (văn bản gửi lên máy
+/// chủ Microsoft) và server giọng nói (văn bản gửi tới địa chỉ người dùng nhập).
 pub const TTS_ENABLED: bool = false;
+
+/// Địa chỉ mặc định của server giọng nói trên máy (cổng mặc định của VoiceStudio).
+pub const DEFAULT_SERVER_URL: &str = "http://127.0.0.1:3900";
 
 /// Giọng Edge cho người dùng chọn (id, nhãn hiển thị).
 pub const EDGE_VOICES: &[(&str, &str)] = &[
@@ -397,6 +406,82 @@ fn edge_once(voice: &str, text: &str) -> Result<Vec<u8>, EdgeError> {
     Ok(audio)
 }
 
+// ─── Server giọng nói (POST /v1/audio/speech kiểu OpenAI) ────────────────────
+
+/// Địa chỉ người dùng nhập → URL đầy đủ của endpoint. Nhận cả địa chỉ gốc
+/// ("http://127.0.0.1:3900"), dạng có "/v1" lẫn URL endpoint đầy đủ.
+pub fn speech_endpoint(base: &str) -> Result<String, String> {
+    let base = base.trim();
+    let base = if base.is_empty() { DEFAULT_SERVER_URL } else { base };
+    let lower = base.to_ascii_lowercase();
+    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+        return Err("Địa chỉ server giọng nói phải bắt đầu bằng http:// hoặc https://.".to_string());
+    }
+    let base = base.trim_end_matches('/');
+    Ok(if base.ends_with("/v1/audio/speech") {
+        base.to_string()
+    } else if base.ends_with("/v1") {
+        format!("{base}/audio/speech")
+    } else {
+        format!("{base}/v1/audio/speech")
+    })
+}
+
+/// Thân request. "tts-1" là bí danh của engine đang bật trên VoiceStudio; giọng
+/// rỗng → "default". Xin WAV vì server tự dựng không cần ffmpeg để xuất.
+pub fn speech_body(voice: &str, text: &str) -> serde_json::Value {
+    let voice = voice.trim();
+    json!({
+        "model": "tts-1",
+        "input": text,
+        "voice": if voice.is_empty() { "default" } else { voice },
+        "response_format": "wav",
+    })
+}
+
+/// Câu lỗi của server, rút gọn để hiện trong bong bóng.
+pub fn short_detail(body: &str) -> String {
+    let flat = body.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut out: String = flat.chars().take(160).collect();
+    if flat.chars().count() > 160 {
+        out.push('…');
+    }
+    out
+}
+
+fn server_synthesize(server: &str, voice: &str, text: &str) -> Result<Vec<u8>, String> {
+    let url = speech_endpoint(server)?;
+    let body = speech_body(voice, text);
+    tauri::async_runtime::block_on(async move {
+        let client = reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(3))
+            // Câu đầu sau khi server vừa bật có thể phải chờ nạp model.
+            .timeout(std::time::Duration::from_secs(120))
+            .build()
+            .map_err(|e| format!("Server giọng nói: {e}"))?;
+        let resp = client.post(&url).json(&body).send().await.map_err(|e| {
+            if e.is_connect() {
+                format!("Không kết nối được server giọng nói ở {url}. Server đã chạy chưa?")
+            } else if e.is_timeout() {
+                "Server giọng nói không trả lời sau 120 giây.".to_string()
+            } else {
+                format!("Server giọng nói lỗi: {e}")
+            }
+        })?;
+        let status = resp.status();
+        if !status.is_success() {
+            let detail = short_detail(&resp.text().await.unwrap_or_default());
+            return Err(format!("Server giọng nói trả lỗi {}: {detail}", status.as_u16()));
+        }
+        let audio = resp.bytes().await.map_err(|e| format!("Server giọng nói: không đọc được audio: {e}"))?;
+        // Server lạ có thể trả 200 kèm JSON/HTML: phát ra sẽ im lặng mà không báo gì.
+        if audio.len() < 44 || &audio[..4] != b"RIFF" {
+            return Err("Server giọng nói trả về dữ liệu không phải WAV.".to_string());
+        }
+        Ok(audio.to_vec())
+    })
+}
+
 // ─── Windows (WinRT) ─────────────────────────────────────────────────────────
 
 #[cfg(windows)]
@@ -476,11 +561,13 @@ pub fn parse_say_voices(out: &str) -> Vec<(String, String)> {
 
 // ─── API cho phần còn lại của app ────────────────────────────────────────────
 
-/// Tổng hợp một đoạn (blocking). Trả (audio, mime).
-pub fn synthesize(engine: &str, voice: &str, text: &str) -> Result<(Vec<u8>, &'static str), String> {
+/// Tổng hợp một đoạn (blocking). Trả (audio, mime). `server` chỉ dùng cho
+/// engine "server" (địa chỉ server giọng nói).
+pub fn synthesize(engine: &str, voice: &str, server: &str, text: &str) -> Result<(Vec<u8>, &'static str), String> {
     match engine {
         "edge" => edge_synthesize(voice, text).map(|a| (a, "audio/mpeg")),
         "windows" => windows_synthesize(voice, text).map(|a| (a, "audio/wav")),
+        "server" => server_synthesize(server, voice, text).map(|a| (a, "audio/wav")),
         other => Err(format!("Engine giọng nói không rõ: {other}")),
     }
 }
@@ -502,6 +589,7 @@ struct Job {
     seq: u32,
     engine: String,
     voice: String,
+    server: String,
     text: String,
 }
 
@@ -522,7 +610,7 @@ pub fn start(app: AppHandle) {
             if job.gen != CURRENT_GEN.load(Ordering::SeqCst) {
                 continue;
             }
-            match synthesize(&job.engine, &job.voice, &job.text) {
+            match synthesize(&job.engine, &job.voice, &job.server, &job.text) {
                 Ok((audio, mime)) => {
                     let _ = app.emit_to(
                         "main",
@@ -547,6 +635,57 @@ pub fn start(app: AppHandle) {
     });
 }
 
+// ─── Clip thu sẵn cho câu mẫu ────────────────────────────────────────────────
+//
+// Câu mẫu tiếng Việt không có biến lúc chạy (lines.rs) được đọc sẵn bằng giọng
+// nhân vật và đóng gói trong app: `app/media/audio/<giọng>/lines/<mã>.mp3`, với
+// <mã> tính từ chính câu đã dựng (clip_file). Máy người dùng không cần model hay
+// server. Sinh lại clip: xem test `dump_fixed_vi_lines`.
+//
+// Có hai giọng tiếng Việt, cùng tên file: "vi" (OmniVoice, bản nhân bản) và
+// "vi-el" (ElevenLabs, giọng gốc). Người dùng chọn giọng ở menu của pet, lựa chọn
+// đó chỉ webview biết — nên ở đây chỉ gửi tên file, webview tự lấy đúng thư mục.
+
+/// Các thư mục clip trong frontendDist, mỗi giọng tiếng Việt một thư mục.
+const CLIP_DIRS: &[&str] = &["media/audio/vi/lines", "media/audio/vi-el/lines"];
+
+/// Tên file clip của một câu: 16 ký tự hex đầu của SHA-256 trên câu đã lọc
+/// (clean_for_tts), nên emoji hay dấu "~" đổi không làm lệch mã. None nếu câu
+/// không có gì để đọc.
+pub fn clip_file(text: &str) -> Option<String> {
+    let clean = clean_for_tts(text);
+    if !speakable(&clean) {
+        return None;
+    }
+    let digest = Sha256::digest(clean.as_bytes());
+    let hex: String = digest[..8].iter().map(|b| format!("{b:02x}")).collect();
+    Some(format!("{hex}.mp3"))
+}
+
+/// Đọc một câu pet vừa nói (câu mẫu hoặc câu tự bắt chuyện). Thứ tự:
+/// 1. Đang bật engine giọng nói → engine đọc (một giọng thống nhất cho mọi câu).
+/// 2. Không thì báo webview phát clip thu sẵn nếu câu này có clip ở ít nhất một
+///    giọng; webview chỉ phát khi người dùng đang chọn một giọng tiếng Việt và
+///    giọng đó có clip này (tts-player.js).
+/// 3. Không có cả hai thì im lặng như trước.
+pub fn say(app: &AppHandle, text: &str) {
+    if let Some(mut sp) = Speaker::new(app) {
+        sp.feed(text);
+        sp.finish();
+        return;
+    }
+    if store::load_settings(app).muted {
+        return;
+    }
+    let Some(file) = clip_file(text) else { return };
+    if !CLIP_DIRS.iter().any(|dir| app.asset_resolver().get(format!("{dir}/{file}")).is_some()) {
+        return;
+    }
+    let gen = CURRENT_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    let _ = app.emit_to("main", "pet-message", json!({ "command": "pet:tts:stop", "gen": gen }));
+    let _ = app.emit_to("main", "pet-message", json!({ "command": "pet:tts:clip", "gen": gen, "file": file }));
+}
+
 /// Dừng mọi thứ đang/sắp đọc.
 pub fn stop(app: &AppHandle) {
     let gen = CURRENT_GEN.fetch_add(1, Ordering::SeqCst) + 1;
@@ -559,6 +698,7 @@ pub struct Speaker {
     seq: u32,
     engine: String,
     voice: String,
+    server: String,
     splitter: SentenceSplitter,
 }
 
@@ -576,12 +716,20 @@ impl Speaker {
         let voice = match s.tts_engine.as_str() {
             "edge" => s.tts_voice_edge,
             "windows" => s.tts_voice_windows,
+            "server" => s.tts_voice_server,
             _ => return None,
         };
         let gen = CURRENT_GEN.fetch_add(1, Ordering::SeqCst) + 1;
         // Câu cũ còn đang phát thì im ngay, đừng đợi audio của lượt mới tới.
         let _ = app.emit_to("main", "pet-message", json!({ "command": "pet:tts:stop", "gen": gen }));
-        Some(Self { gen, seq: 0, engine: s.tts_engine, voice, splitter: SentenceSplitter::default() })
+        Some(Self {
+            gen,
+            seq: 0,
+            engine: s.tts_engine,
+            voice,
+            server: s.tts_server_url,
+            splitter: SentenceSplitter::default(),
+        })
     }
 
     pub fn feed(&mut self, text: &str) {
@@ -607,6 +755,7 @@ impl Speaker {
                 seq: self.seq,
                 engine: self.engine.clone(),
                 voice: self.voice.clone(),
+                server: self.server.clone(),
                 text,
             });
             self.seq += 1;
@@ -708,7 +857,7 @@ mod tests {
     fn live_windows_voice() {
         let voices = list_voices("windows").unwrap();
         eprintln!("giọng Windows: {voices:?}");
-        let (audio, mime) = synthesize("windows", "", "Xin chào, hello").unwrap();
+        let (audio, mime) = synthesize("windows", "", "", "Xin chào, hello").unwrap();
         assert_eq!(mime, "audio/wav");
         assert_eq!(&audio[..4], b"RIFF");
     }
@@ -716,9 +865,190 @@ mod tests {
     #[test]
     #[ignore]
     fn live_edge_voice() {
-        let (audio, mime) = synthesize("edge", "vi-VN-HoaiMyNeural", "Xin chào anh").unwrap();
+        let (audio, mime) = synthesize("edge", "vi-VN-HoaiMyNeural", "", "Xin chào anh").unwrap();
         assert_eq!(mime, "audio/mpeg");
         assert!(audio.len() > 1000, "audio quá ngắn: {} byte", audio.len());
+    }
+
+    // Cần server giọng nói đang chạy ở địa chỉ mặc định.
+    #[test]
+    #[ignore]
+    fn live_server_voice() {
+        let (audio, mime) = synthesize("server", "", "", "Xin chào anh").unwrap();
+        assert_eq!(mime, "audio/wav");
+        assert_eq!(&audio[..4], b"RIFF");
+    }
+
+    /// Câu đưa cho model đọc khi thu clip: như clean_for_tts nhưng giữ chỗ ngắt
+    /// ở dấu "~" (thành dấu phẩy), không thì hai vế bị đọc dính vào nhau.
+    fn speak_text(text: &str) -> String {
+        let s = clean_for_tts(&text.replace('~', ", "));
+        let s = s.replace(" ,", ",").replace(",,", ",").replace("!,", "!").replace("?,", "?").replace(".,", ".");
+        s.trim_end_matches([',', ' ']).to_string()
+    }
+
+    /// Mọi câu mẫu tiếng Việt chỉ dùng biến xưng hô, dựng theo từng cặp xưng hô
+    /// trong `pairs`: (tên file clip, câu để model đọc).
+    fn fixed_vi_lines(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
+        use crate::lines::{templates, Key};
+        use crate::persona::{render, Address, Lang};
+        let mut out: Vec<(String, String)> = Vec::new();
+        for &(me, you) in pairs {
+            let a = Address { lang: Lang::Vi, me: me.into(), you: you.into(), pet: String::new() };
+            for &key in Key::ALL {
+                for t in templates(key, Lang::Vi) {
+                    let only_address = t
+                        .split('{')
+                        .skip(1)
+                        .filter_map(|p| p.split_once('}'))
+                        .all(|(name, _)| matches!(name, "me" | "you" | "Me" | "You"));
+                    if !only_address {
+                        continue;
+                    }
+                    let text = render(t, &a, &[]);
+                    if let Some(file) = clip_file(&text) {
+                        if !out.iter().any(|(f, _)| *f == file) {
+                            out.push((file, speak_text(&text)));
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    fn clip_dirs() -> Vec<std::path::PathBuf> {
+        let app = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("app");
+        CLIP_DIRS.iter().map(|d| app.join(d)).collect()
+    }
+
+    #[test]
+    fn clip_file_ignores_emoji_and_is_stable() {
+        let a = clip_file("Dạ, em đây~ 💕").unwrap();
+        assert_eq!(a, clip_file("Dạ, em đây").unwrap());
+        assert_ne!(a, clip_file("Dạ, anh đây").unwrap());
+        assert_eq!(a.len(), 16 + 4);
+        assert!(a.ends_with(".mp3") && a[..16].chars().all(|c| c.is_ascii_hexdigit()));
+        assert_eq!(clip_file("✨~"), None);
+    }
+
+    #[test]
+    fn speak_text_keeps_a_pause_where_the_tilde_was() {
+        assert_eq!(speak_text("Dừng rồi nha~ cần thì gọi em! 💕"), "Dừng rồi nha, cần thì gọi em!");
+        assert_eq!(speak_text("Em đây nè~ 🎀"), "Em đây nè");
+        assert_eq!(speak_text("Thật hả?~ Vui ghê~"), "Thật hả? Vui ghê");
+    }
+
+    // Clip còn sót của một câu đã sửa/xoá sẽ không bao giờ được phát mà vẫn làm
+    // nặng bộ cài: mọi file trong thư mục clip phải khớp một câu mẫu hiện có.
+    #[test]
+    fn every_bundled_clip_belongs_to_a_current_line() {
+        let known: Vec<String> = fixed_vi_lines(crate::persona::VI_PAIRS).into_iter().map(|(f, _)| f).collect();
+        for dir in clip_dirs() {
+            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            let orphans: Vec<String> = entries
+                .filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| n.ends_with(".mp3") && !known.contains(n))
+                .collect();
+            assert!(orphans.is_empty(), "clip không còn câu mẫu tương ứng trong {dir:?}: {orphans:?}");
+        }
+    }
+
+    // Xuất danh sách câu cần thu sẵn cho script sinh clip:
+    //   $env:CLIP_LINES_OUT = "d:\tmp\lines.json"; cargo test dump_fixed_vi_lines -- --ignored
+    // CLIP_LINES_PAIRS=all để lấy mọi cặp xưng hô (mặc định chỉ cặp đầu: em / anh).
+    #[test]
+    #[ignore]
+    fn dump_fixed_vi_lines() {
+        let out = std::env::var("CLIP_LINES_OUT").expect("đặt CLIP_LINES_OUT = đường dẫn file json");
+        let all = std::env::var("CLIP_LINES_PAIRS").map(|v| v == "all").unwrap_or(false);
+        let pairs = if all { crate::persona::VI_PAIRS } else { &crate::persona::VI_PAIRS[..1] };
+        let list: Vec<serde_json::Value> =
+            fixed_vi_lines(pairs).into_iter().map(|(file, text)| json!({ "file": file, "text": text })).collect();
+        std::fs::write(&out, serde_json::to_string_pretty(&list).unwrap()).unwrap();
+        eprintln!("{} câu → {out}", list.len());
+    }
+
+    #[test]
+    fn speech_endpoint_accepts_base_v1_and_full_url() {
+        let full = "http://127.0.0.1:3900/v1/audio/speech";
+        assert_eq!(speech_endpoint("").unwrap(), full);
+        assert_eq!(speech_endpoint("  http://127.0.0.1:3900/ ").unwrap(), full);
+        assert_eq!(speech_endpoint("http://127.0.0.1:3900/v1").unwrap(), full);
+        assert_eq!(speech_endpoint(full).unwrap(), full);
+        assert_eq!(speech_endpoint("HTTPS://example.com/tts/").unwrap(), "HTTPS://example.com/tts/v1/audio/speech");
+        assert!(speech_endpoint("127.0.0.1:3900").is_err());
+        assert!(speech_endpoint("file:///c:/x").is_err());
+    }
+
+    #[test]
+    fn speech_body_defaults_voice_and_asks_for_wav() {
+        let b = speech_body("  ", "Chào \"anh\"");
+        assert_eq!(b["voice"], "default");
+        assert_eq!(b["input"], "Chào \"anh\"");
+        assert_eq!(b["response_format"], "wav");
+        assert_eq!(speech_body(" pet ", "x")["voice"], "pet");
+    }
+
+    #[test]
+    fn short_detail_flattens_and_truncates_on_char_boundary() {
+        assert_eq!(short_detail("  lỗi\n  gì đó "), "lỗi gì đó");
+        let long = "ế".repeat(200);
+        let s = short_detail(&long);
+        assert_eq!(s.chars().count(), 161);
+        assert!(s.ends_with('…'));
+    }
+
+    #[test]
+    fn server_engine_reports_unreachable_server() {
+        // Cổng ephemeral vừa đóng: chắc chắn không ai nghe.
+        let port = {
+            let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            l.local_addr().unwrap().port()
+        };
+        let err = synthesize("server", "", &format!("http://127.0.0.1:{port}"), "xin chào").unwrap_err();
+        assert!(err.contains("Không kết nối được"), "{err}");
+    }
+
+    #[test]
+    fn server_engine_plays_wav_and_rejects_non_wav() {
+        use std::io::{Read, Write};
+        // Server giả: trả lần lượt một WAV hợp lệ rồi một trang JSON kèm mã 200.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let mut wav = b"RIFF".to_vec();
+        wav.extend_from_slice(&[0u8; 60]);
+        let bodies: Vec<Vec<u8>> = vec![wav.clone(), b"{\"ok\":true}".to_vec()];
+        let server = std::thread::spawn(move || {
+            let mut seen = Vec::new();
+            for body in bodies {
+                let (mut s, _) = listener.accept().unwrap();
+                let mut req = Vec::new();
+                let mut buf = [0u8; 2048];
+                // Đọc tới khi thấy đủ thân JSON (kết thúc bằng '}').
+                loop {
+                    let n = s.read(&mut buf).unwrap();
+                    req.extend_from_slice(&buf[..n]);
+                    if n == 0 || (req.windows(4).any(|w| w == b"\r\n\r\n") && req.ends_with(b"}")) {
+                        break;
+                    }
+                }
+                seen.push(String::from_utf8_lossy(&req).to_string());
+                let head = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+                s.write_all(head.as_bytes()).unwrap();
+                s.write_all(&body).unwrap();
+            }
+            seen
+        });
+        let url = format!("http://127.0.0.1:{port}");
+        let (audio, mime) = synthesize("server", "pet", &url, "xin chào").unwrap();
+        assert_eq!((audio, mime), (wav, "audio/wav"));
+        let err = synthesize("server", "pet", &url, "xin chào").unwrap_err();
+        assert!(err.contains("không phải WAV"), "{err}");
+        let seen = server.join().unwrap();
+        assert!(seen[0].starts_with("POST /v1/audio/speech "), "{}", seen[0]);
+        assert!(seen[0].contains("\"voice\":\"pet\""), "{}", seen[0]);
     }
 
     #[test]

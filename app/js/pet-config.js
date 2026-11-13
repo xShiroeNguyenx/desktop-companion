@@ -42,7 +42,8 @@
   let voiceLang = 'ja';
   try {
     const saved = localStorage.getItem('voiceLanguage');
-    if (saved === 'ja' || saved === 'vi' || saved === 'en') voiceLang = saved;
+    // 'vi' = giọng Việt nhân bản (OmniVoice), 'vi-el' = giọng Việt gốc (ElevenLabs).
+    if (saved === 'ja' || saved === 'vi' || saved === 'vi-el' || saved === 'en') voiceLang = saved;
   } catch (_) { /* ignore */ }
   window.__VOICE_LANGUAGE__ = voiceLang;
   window.__AUDIO_BASE_URL__ = '/media/audio/' + voiceLang;

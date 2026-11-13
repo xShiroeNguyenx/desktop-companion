@@ -46,7 +46,7 @@ pub struct Settings {
     /// Pet tự lên tiếng sau ngần này phút không trò chuyện. 0 = tắt.
     #[serde(default = "default_proactive_minutes")]
     pub proactive_minutes: u32,
-    /// Đọc thành tiếng: "off" | "windows" | "edge".
+    /// Đọc thành tiếng: "off" | "windows" | "edge" | "server".
     #[serde(default = "default_tts_engine")]
     pub tts_engine: String,
     /// Id giọng WinRT; rỗng = giọng mặc định của Windows.
@@ -54,6 +54,12 @@ pub struct Settings {
     pub tts_voice_windows: String,
     #[serde(default = "default_tts_voice_edge")]
     pub tts_voice_edge: String,
+    /// Địa chỉ server giọng nói tự chạy (engine "server").
+    #[serde(default = "default_tts_server_url")]
+    pub tts_server_url: String,
+    /// Tên/id giọng trên server đó; rỗng = giọng mặc định của server.
+    #[serde(default)]
+    pub tts_voice_server: String,
 
     // ── Bạn đồng hành (persona.rs) ──
     /// Tên người dùng đặt cho pet; rỗng = chưa đặt.
@@ -322,6 +328,9 @@ fn default_tts_engine() -> String {
 fn default_tts_voice_edge() -> String {
     "vi-VN-HoaiMyNeural".to_string()
 }
+fn default_tts_server_url() -> String {
+    crate::tts::DEFAULT_SERVER_URL.to_string()
+}
 
 fn default_proactive_minutes() -> u32 {
     60
@@ -388,6 +397,8 @@ impl Default for Settings {
             tts_engine: default_tts_engine(),
             tts_voice_windows: String::new(),
             tts_voice_edge: default_tts_voice_edge(),
+            tts_server_url: default_tts_server_url(),
+            tts_voice_server: String::new(),
             pet_name: String::new(),
             user_name: String::new(),
             vi_self: default_vi_self(),

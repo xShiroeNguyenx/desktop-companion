@@ -364,6 +364,7 @@ pub fn set(app: &AppHandle, on: bool, announce: bool) {
         let a = persona::address(&s);
         let text = lines::line(if on { Key::ClickThroughOn } else { Key::ClickThroughOff }, &a, &[]);
         let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": text }));
+        crate::tts::say(app, &text);
     }
 }
 

@@ -330,12 +330,36 @@ Tái dùng phần nhìn-theo-con-trỏ có sẵn trong frontend (`media/webview/
 
 ### 11.1 Giọng nói khớp nhân vật (nhân bản giọng)
 
-**Hiện trạng.** Khung TTS đã có nhưng đang **tắt**: `TTS_ENABLED = false` trong
-`src-tauri/src/tts.rs`, nhóm "🔊 Giọng nói" trong `app/settings.html` đang ẩn
-(`style="display:none"`). Hai engine sẵn có là giọng Windows (WinRT) và Edge Neural.
-Lý do tắt: các giọng này không khớp giọng của nhân vật. Phần dùng lại được nguyên:
-cắt câu khi stream, lọc chữ trước khi đọc, hàng đợi phát theo thứ tự, mấp máy miệng
-theo âm lượng (`app/media/webview/tts-player.js`).
+**Hiện trạng.** Các engine giọng nói vẫn **tắt và ẩn** (`TTS_ENABLED = false` trong
+`src-tauri/src/tts.rs`, nhóm "🔊 Giọng nói" trong `app/settings.html` có
+`style="display:none"`): chưa có hướng phù hợp cho máy người dùng. Thứ đang chạy là clip
+thu sẵn (đoạn dưới). Code có sẵn ba engine: giọng Windows (WinRT), Edge Neural và
+**server giọng nói tự chạy** (engine `server`: gửi từng câu tới `POST /v1/audio/speech`
+kiểu OpenAI, nhận WAV). Engine `server` là đường cho giọng nhân bản: đã thử OmniVoice
+(model trong repo VoiceStudio) nhân bản từ `app/media/audio/vi/help.mp3`, chạy được trên
+GPU 4 GB, khoảng 3 giây mỗi câu. App không nhúng model và không tự bật server.
+Việc còn lại bên dưới (quyền dùng giọng, cách phát hành server cho người dùng phổ thông)
+vẫn mở.
+
+**Clip thu sẵn cho câu mẫu.** Người dùng phổ thông không chạy nổi server (cần GPU, ~7 GB
+đĩa), nên câu mẫu tiếng Việt không có biến lúc chạy được đọc sẵn bằng giọng nhân bản và
+đóng gói ở `app/media/audio/vi/lines/<mã>.mp3` (120 trên 121 câu của cặp xưng hô em / anh, ~3,4 MB; câu `WeatherFog` "Trời sương thế
+này…" bị model chèn lời clip mẫu vào đầu ở mọi seed đã thử nên không có clip).
+`tts::say` tra clip theo mã băm của câu đã dựng (`tts::clip_file`); engine giọng nói đang
+bật thì engine đọc thay. Webview chỉ phát khi đang chọn giọng tiếng Việt. Khi sửa hay thêm
+câu mẫu trong `lines.rs`: chạy test `dump_fixed_vi_lines` (xuất danh sách câu), cho server
+giọng đọc các câu chưa có clip, xoá clip cũ (test `every_bundled_clip_belongs_to_a_current_line`
+đỏ nếu còn sót). Câu bubble phía JS (`pet.bubbles.*`) có 11 clip đặt tên theo khoá:
+`app/media/audio/vi/bubble-<key>.mp3`, phát bằng `sayBubble(key)` trong `interaction.js`
+(`playVoiceClip` của `tts-player.js`, chung hàng đợi mấp máy miệng). Chưa làm: các cặp
+xưng hô khác, tiếng Nhật / tiếng Anh.
+
+**Hai giọng tiếng Việt.** Menu Giọng nói có hai mục tiếng Việt, mỗi mục một thư mục cùng
+tên file: `vi` (OmniVoice, bản nhân bản, weights CC BY-NC nên chỉ phi thương mại) và
+`vi-el` (ElevenLabs, giọng gốc "Linh" do tác giả tự thiết kế; đủ 121 câu mẫu + 11 bubble,
+đã nén lại 24 kHz). Rust chỉ gửi tên file (`pet:tts:clip`), webview lấy thư mục theo giọng
+đang chọn. Sáu clip gốc (headpat, poke…) giống nhau ở cả hai thư mục. Nếu app chuyển sang
+thương mại: gỡ thư mục clip của `vi` (hoặc thay bằng bản ElevenLabs) trước khi bật thu tiền.
 
 **Hướng làm.** Thêm một engine thứ ba gọi tới server nhân bản giọng (model quá nặng để
 nhúng vào app, app chỉ gọi HTTP):

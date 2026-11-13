@@ -1,6 +1,7 @@
 ﻿import { state, vscode, debugLog } from './core.js';
 import { setExpression, updateExpressionTick } from './expression.js';
 import { playAudio, setAmbientPreset, setGlobalAudioMuted } from './audio.js';
+import { playVoiceClip } from './tts-player.js';
 import {
   showBubble,
   createSparkle,
@@ -441,7 +442,7 @@ export function setupModel() {
   setDizzyHandler(() => {
     showBubble(t('bubbles.followDizzy', 'Chậm lại chút đi Onii-chan~ rê nhanh vậy em chóng mặt mất! 😵‍💫'));
     setExpression('surprised', 1800);
-    playAudio('spam.mp3');
+    if (!sayBubble('followDizzy')) playAudio('spam.mp3');
     createSparkle();
   });
   if (window.__FOCUS_FOLLOW__) setFollowCursor(true);
@@ -784,6 +785,7 @@ function setupContextMenu() {
       vscode.postMessage({ command: 'poke' });
     } else if (action === 'change-model') {
       showBubble(t('bubbles.changeModel', 'Đổi model ngay trên companion luôn nha~ 🌸'));
+      sayBubble('changeModel');
       showModelPanel();
     } else if (action === 'switch-host-mode') {
       if (window.__DESKTOP_PET_MODE__) {
@@ -795,16 +797,22 @@ function setupContextMenu() {
       }
     } else if (action === 'change-voice') {
       showBubble(t('bubbles.changeVoice', 'Đổi giọng dễ thương hơn một chút nha~ 🗣️'));
+      sayBubble('changeVoice');
       showVoicePanel();
     } else if (action === 'change-message-language') {
       showBubble(t('bubbles.changeMessages', 'Đổi ngôn ngữ chữ nha~ em sẽ nói kiểu khác đó! 💬'));
+      sayBubble('changeMessages');
       showMessagePanel();
     } else if (action === 'ambient') {
       showBubble(t('bubbles.ambient', 'Bật ambient nha~'));
+      sayBubble('ambient');
       showAmbientPanel();
     } else if (action === 'toggle-mute') {
       const nextMuted = !window.__AUDIO_MUTED__;
+      // Câu "em sẽ im lặng" phải bắt đầu trước khi tắt tiếng có hiệu lực, và được nói nốt.
+      if (nextMuted) sayBubble('muteOn', { keepOnMute: true });
       setGlobalAudioMuted(nextMuted);
+      if (!nextMuted) sayBubble('muteOff');
       showBubble(nextMuted
         ? t('bubbles.muteOn', 'Em sẽ im lặng một chút nha~ 🤫')
         : t('bubbles.muteOff', 'Em ríu rít lại rồi nè~ 🎀'));
@@ -821,6 +829,7 @@ function setupContextMenu() {
       vscode.postMessage({ command: 'runCommand', action: 'animeCompanion.openSettings' });
     } else if (action === 'play-motion') {
       showBubble(t('bubbles.motion', 'Chọn motion cho em diễn nha~ 🎬'));
+      sayBubble('motion');
       showMotionPanel();
     } else if (action === 'achievements') {
       vscode.postMessage({ command: 'runCommand', action: 'animeCompanion.showAchievements' });
@@ -1090,6 +1099,7 @@ function setupCompactContextMenu() {
       vscode.postMessage({ command: 'poke' });
     } else if (action === 'change-model') {
       showBubble(t('bubbles.changeModel', 'Đổi model ngay trên companion luôn nha~ 🌸'));
+      sayBubble('changeModel');
       showModelPanel();
     } else if (action === 'switch-host-mode') {
       if (window.__DESKTOP_PET_MODE__) {
@@ -1101,16 +1111,22 @@ function setupCompactContextMenu() {
       }
     } else if (action === 'change-voice') {
       showBubble(t('bubbles.changeVoice', 'Đổi giọng dễ thương hơn một chút nha~ 🗣️'));
+      sayBubble('changeVoice');
       showVoicePanel();
     } else if (action === 'change-message-language') {
       showBubble(t('bubbles.changeMessages', 'Đổi ngôn ngữ chữ nha~ em sẽ nói kiểu khác đó! 💬'));
+      sayBubble('changeMessages');
       showMessagePanel();
     } else if (action === 'ambient') {
       showBubble(t('bubbles.ambient', 'Bật ambient nha~'));
+      sayBubble('ambient');
       showAmbientPanel();
     } else if (action === 'toggle-mute') {
       const nextMuted = !window.__AUDIO_MUTED__;
+      // Câu "em sẽ im lặng" phải bắt đầu trước khi tắt tiếng có hiệu lực, và được nói nốt.
+      if (nextMuted) sayBubble('muteOn', { keepOnMute: true });
       setGlobalAudioMuted(nextMuted);
+      if (!nextMuted) sayBubble('muteOff');
       showBubble(nextMuted
         ? t('bubbles.muteOn', 'Em sẽ im lặng một chút nha~ 🤫')
         : t('bubbles.muteOff', 'Em ríu rít lại rồi nè~ 🎀'));
@@ -1173,6 +1189,7 @@ function setupCompactContextMenu() {
       vscode.postMessage({ command: 'setDnd', value: !window.__DND__ });
     } else if (action === 'play-motion') {
       showBubble(t('bubbles.motion', 'Chọn motion cho em diễn nha~ 🎬'));
+      sayBubble('motion');
       showMotionPanel();
     } else if (action === 'achievements') {
       vscode.postMessage({ command: 'runCommand', action: 'animeCompanion.showAchievements' });
@@ -1209,6 +1226,7 @@ function setupCompactContextMenu() {
       showBubble(next
         ? t('bubbles.focusFollowOn', 'Em sẽ dõi theo con trỏ của Onii-chan nha~ 👀')
         : t('bubbles.focusFollowOff', 'Em nhìn thẳng lại đây rồi nè~ 🙂'));
+      sayBubble(next ? 'focusFollowOn' : 'focusFollowOff');
       vscode.postMessage({ command: 'setFocusFollow', value: next });
     } else if (action === 'open-background') {
       vscode.postMessage({ command: 'runCommand', action: 'animeCompanion.openBackgroundSettings' });
@@ -1444,6 +1462,7 @@ export function openQuickChatOverlay(context = '') {
       const requestId = 'qc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
       startQuickChatHistoryTurn(requestId, prompt);
       startBubbleStream(t('bubbles.quickChatThinking', 'Em đang suy nghĩ chút nha~ 💭'));
+      sayBubble('quickChatThinking');
       vscode.postMessage({
         command: 'pet:chat:request',
         requestId,
@@ -1459,6 +1478,12 @@ export function openQuickChatOverlay(context = '') {
   });
 }
 
+// Đọc câu bubble bằng clip thu sẵn (media/audio/<giọng Việt>/bubble-<key>.mp3).
+// Chỉ có clip tiếng Việt: trả false khi đang chọn giọng khác hoặc đang tắt tiếng.
+function sayBubble(key, opts) {
+  return playVoiceClip(`bubble-${key}.mp3`, opts);
+}
+
 function setupVoicePanel() {
   const wrapper = document.getElementById('characterWrapper');
   if (!wrapper) return;
@@ -1471,13 +1496,17 @@ function setupVoicePanel() {
       <span class="companion-voice-label" data-i18n="pet.panels.voiceJaLabel">${I18n.t('pet.panels.voiceJaLabel')}</span>
       <span class="companion-voice-desc">${t('panels.voiceJaDesc', 'VoiceVox anime')}</span>
     </button>
+    <button class="companion-voice-option" data-voice="vi-el">
+      <span class="companion-voice-label" data-i18n="pet.panels.voiceViLabel">${I18n.t('pet.panels.voiceViLabel')}</span>
+      <span class="companion-voice-desc">${t('panels.voiceViElDesc', 'ElevenLabs')}</span>
+    </button>
     <button class="companion-voice-option" data-voice="vi">
       <span class="companion-voice-label" data-i18n="pet.panels.voiceViLabel">${I18n.t('pet.panels.voiceViLabel')}</span>
-      <span class="companion-voice-desc">${t('panels.voiceViDesc', 'Google TTS')}</span>
+      <span class="companion-voice-desc">${t('panels.voiceViDesc', 'OmniVoice')}</span>
     </button>
     <button class="companion-voice-option" data-voice="en">
       <span class="companion-voice-label" data-i18n="pet.panels.voiceEnLabel">${I18n.t('pet.panels.voiceEnLabel')}</span>
-      <span class="companion-voice-desc">${t('panels.voiceEnDesc', 'Google TTS')}</span>
+      <span class="companion-voice-desc">${t('panels.voiceEnDesc', 'ElevenLabs')}</span>
     </button>
   `;
   wrapper.appendChild(panel);

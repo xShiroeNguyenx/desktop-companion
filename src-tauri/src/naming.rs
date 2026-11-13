@@ -50,7 +50,9 @@ fn say(app: &AppHandle, key: Key, vars: &[(&str, &str)], expression: Option<&str
     if let Some(e) = expression {
         pet(app, json!({ "command": "setExpression", "expression": e, "duration": EXPRESSION_MS }));
     }
-    pet(app, json!({ "command": "showMessage", "text": lines::line(key, &a, vars) }));
+    let text = lines::line(key, &a, vars);
+    pet(app, json!({ "command": "showMessage", "text": text }));
+    crate::tts::say(app, &text);
 }
 
 /// Làm sạch rồi lưu tên pet. Lỗi trả về là câu cho người dùng đọc.

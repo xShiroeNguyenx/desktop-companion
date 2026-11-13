@@ -139,6 +139,7 @@ fn react(app: &AppHandle, reward: Reward, source: Source, text: &str, done_today
         &[("task", task.as_str()), ("count", count.as_str())],
     );
     let _ = app.emit_to("main", "pet-message", json!({ "command": "showMessage", "text": line }));
+    crate::tts::say(app, &line);
 }
 
 #[cfg(test)]

@@ -63,6 +63,7 @@
   const TTS_NOTES = {
     windows: 'settings.tts.noteWindows',
     edge: 'settings.tts.noteEdge',
+    server: 'settings.tts.noteServer',
   };
   function ttsNote() {
     const key = TTS_NOTES[$('ttsEngine').value];
@@ -73,11 +74,17 @@
     const engine = $('ttsEngine').value;
     ttsNote();
     $('ttsVoiceBlock').style.display = engine === 'off' ? 'none' : '';
+    // Server tự chạy: giọng là tên gõ tay (app không biết server có những giọng nào).
+    const server = engine === 'server';
+    $('ttsServerBlock').style.display = server ? '' : 'none';
+    $('ttsVoiceName').style.display = server ? '' : 'none';
+    $('ttsVoice').style.display = server ? 'none' : '';
     if (engine === 'off') return;
     const sel = $('ttsVoice');
     const st = $('ttsStatus');
     st.className = 'status';
     st.textContent = '';
+    if (server) return;
     sel.innerHTML = '';
     let voices = [];
     try {
@@ -701,6 +708,8 @@
       if (!$('ttsEngine').value) $('ttsEngine').value = 'off';
       ttsVoices.windows = s.tts_voice_windows || '';
       ttsVoices.edge = s.tts_voice_edge || 'vi-VN-HoaiMyNeural';
+      $('ttsServerUrl').value = s.tts_server_url || 'http://127.0.0.1:3900';
+      $('ttsVoiceName').value = s.tts_voice_server || '';
       // Bạn đồng hành
       $('petName').value = s.pet_name || '';
       $('userName').value = s.user_name || '';
@@ -755,7 +764,8 @@
     const st = $('ttsStatus');
     const btn = $('ttsPreview');
     const engine = $('ttsEngine').value;
-    const voice = $('ttsVoice').value;
+    const voice = engine === 'server' ? $('ttsVoiceName').value.trim() : $('ttsVoice').value;
+    const server = $('ttsServerUrl').value.trim();
     const lang = (voice.match(/[a-z]{2}-[A-Z]{2}/) || ['vi-VN'])[0].slice(0, 2);
     const samples = {
       vi: 'Chào anh, em là bạn nhỏ ở góc màn hình nè.',
@@ -767,7 +777,7 @@
     btn.disabled = true;
     st.className = 'status'; st.textContent = t('settings.tts.generating');
     try {
-      const res = await invoke('tts_preview', { engine, voice, text });
+      const res = await invoke('tts_preview', { engine, voice, server, text });
       const bin = atob(res.data);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -865,6 +875,8 @@
       tts_engine: $('ttsEngine').value,
       tts_voice_windows: ttsVoices.windows,
       tts_voice_edge: ttsVoices.edge,
+      tts_server_url: $('ttsServerUrl').value.trim() || 'http://127.0.0.1:3900',
+      tts_voice_server: $('ttsVoiceName').value.trim(),
       hotkey: hotkeyValue,
       custom_models: customModels,
       pet_name: $('petName').value.trim(),

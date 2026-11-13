@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.7] - 2026-11-13
+
+### Added
+- **🔊 Two Vietnamese voices to pick from.** Pet menu → *Voice* now lists Vietnamese
+  twice: *ElevenLabs* (the original voice) and *OmniVoice* (an AI clone of it). Both speak
+  the same lines; pick the one you like.
+- **🔊 The pet says its own lines out loud in Vietnamese.** With a Vietnamese voice
+  selected (pet menu → *Voice*), greetings, break reminders, weather and calendar remarks
+  and other built-in lines are now spoken in the character's voice, with lip sync. The clips
+  ship with the app, so nothing extra is needed and nothing is sent anywhere. Lines that
+  contain your own text (task names, times) and AI answers stay silent. Covers the default
+  *em / anh* way of addressing; *Mute* silences it.
+  The short remarks when you open a menu panel, toggle mute or follow-cursor, or send a
+  quick question are spoken too, and "I'll be quiet for a bit" is finished before the
+  sound goes off.
+
 ## [0.12.6] - 2026-11-11
 
 ### Added
@@ -1191,6 +1207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   providers, and a customizable capture hotkey.
 - Landing page published to GitHub Pages.
 
+[0.12.7]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.7
 [0.12.6]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.6
 [0.12.5]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.5
 [0.12.4]: https://github.com/xShiroeNguyenx/desktop-companion/releases/tag/v0.12.4

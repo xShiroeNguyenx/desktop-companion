@@ -707,6 +707,7 @@ fn mac_can_send_keys() -> bool {
             let a = crate::persona::address(&crate::store::load_settings(app));
             let text = crate::lines::line(crate::lines::Key::MacAccessibility, &a, &[]);
             let _ = app.emit_to("main", "pet-message", serde_json::json!({ "command": "showMessage", "text": text }));
+            crate::tts::say(app, &text);
         }
     } else {
         log_sel("[selection] skip: still no Accessibility permission");
