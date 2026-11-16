@@ -288,7 +288,9 @@
   the Collection on the Models tab.
 - **Custom Live2D models** — load your own `*.model3.json` models from any folder.
 - **Sounds** — interaction SFX (poke / headpat / etc.) in Japanese / Vietnamese / English.
-- **AI providers** — Anthropic Claude or Google Gemini (bring your own API key).
+- **AI providers** — Anthropic Claude or Google Gemini (bring your own API key), or
+  **sign in with your ChatGPT account** and use the limit of the plan you already pay
+  for (no API key; runs through OpenAI's Codex CLI, which the app can install for you).
   Model lists can be fetched live from each provider.
 - **Custom hotkey** — rebind the capture shortcut (default `Ctrl+Shift+Space`).
 
@@ -330,8 +332,9 @@ else still works.
 
 ## Getting started
 
-1. **Set your API key** — tray icon → **Cài đặt / Settings** → choose a provider
-   (Anthropic or Gemini) → paste your key → **Save**.
+1. **Set up AI** — tray icon → **Cài đặt / Settings** → choose a provider: Anthropic
+   or Gemini → paste your key; or ChatGPT → **Sign in to ChatGPT** (opens your
+   browser). Then **Save**.
 2. **Translate** — select text anywhere → click the 🌸 flower.
 3. **Reply** — select a message → press-and-hold the flower → pick 💬 **Reply** →
    type in Vietnamese → **Generate**.

@@ -30,7 +30,162 @@
     const p = $('provider').value;
     $('anthropicBlock').style.display = p === 'anthropic' ? '' : 'none';
     $('geminiBlock').style.display = p === 'gemini' ? '' : 'none';
+    $('chatgptBlock').style.display = p === 'chatgpt' ? '' : 'none';
+    // Chỉ hỏi Codex khi người dùng thật sự mở khối này (hỏi là phải chạy Codex).
+    if (p === 'chatgpt' && !cg && !cgBusy) void refreshChatgpt();
   }
+
+  // ── ChatGPT: đăng nhập tài khoản, dùng hạn mức của gói (codex.rs) ──────────
+  // Trang không giữ token nào: chỉ hỏi trạng thái. Đăng nhập xong Rust báo qua
+  // sự kiện "codex-login".
+  let cg = null; // kết quả codex_status gần nhất
+  let cgBusy = ''; // '' | 'checking' | 'login' | 'install'
+  let cgNote = null; // { cls, key, vars, raw, url }: dòng dưới các nút
+
+  function cgStatusLine() {
+    if (!cg || cgBusy === 'checking') return ['status', t('settings.ai.cgChecking')];
+    if (cg.state === 'missing') return ['status err', t('settings.ai.cgMissing')];
+    if (cg.state === 'broken') return ['status err', t('settings.ai.cgBroken', { err: cg.detail })];
+    if (cg.state === 'signed_out') return ['status', t('settings.ai.cgSignedOut')];
+    const parts = [t('settings.ai.cgReady', { who: cg.email || 'ChatGPT', plan: cg.plan || '?' })];
+    if (cg.limit_reached) parts.push(t('settings.ai.cgLimitHit'));
+    else if (typeof cg.used_percent === 'number') parts.push(t('settings.ai.cgUsage', { n: cg.used_percent }));
+    if (cg.resets_at) parts.push(t('settings.ai.cgResets', { date: new Date(cg.resets_at * 1000).toLocaleDateString() }));
+    return [cg.limit_reached ? 'status err' : 'status ok', parts.join(' · ')];
+  }
+
+  function renderChatgpt() {
+    const [cls, text] = cgStatusLine();
+    $('cgStatus').className = cls;
+    $('cgStatus').textContent = text;
+    const idle = cgBusy === '';
+    const state = cg && cgBusy !== 'checking' ? cg.state : '';
+    $('cgLogin').hidden = state !== 'signed_out' || cgBusy === 'login';
+    $('cgCancel').hidden = cgBusy !== 'login';
+    $('cgLogout').hidden = state !== 'ready';
+    $('cgInstall').hidden = state !== 'missing' && state !== 'broken';
+    $('cgInstall').textContent = t(state === 'broken' ? 'settings.ai.cgUpdate' : 'settings.ai.cgInstall');
+    for (const id of ['cgLogin', 'cgLogout', 'cgInstall', 'cgRefresh']) $(id).disabled = !idle;
+    const note = $('cgNote');
+    note.className = cgNote ? cgNote.cls : 'status';
+    note.textContent = cgNote ? (cgNote.key ? t(cgNote.key, cgNote.vars) : cgNote.raw) : '';
+    $('cgUrl').hidden = !(cgNote && cgNote.url);
+    $('cgUrl').value = (cgNote && cgNote.url) || '';
+  }
+
+  async function refreshChatgpt() {
+    if (cgBusy === 'install') return;
+    if (cgBusy !== 'login') cgBusy = 'checking';
+    renderChatgpt();
+    try {
+      cg = await invoke('codex_status');
+    } catch (e) {
+      cg = { state: 'broken', detail: String(e) };
+    }
+    if (cgBusy === 'checking') cgBusy = cg.login_pending ? 'login' : '';
+    if (cgBusy === 'login' && !cgNote) cgNote = { cls: 'status', key: 'settings.ai.cgWaiting' };
+    renderChatgpt();
+  }
+
+  $('cgRefresh').addEventListener('click', () => { cgNote = null; void refreshChatgpt(); });
+
+  $('cgLogin').addEventListener('click', async () => {
+    cgBusy = 'login';
+    cgNote = { cls: 'status', key: 'settings.ai.cgWaiting' };
+    renderChatgpt();
+    try {
+      const res = await invoke('codex_login');
+      // Không mở được trình duyệt: đưa link để người dùng tự mở.
+      if (!res.opened) cgNote = { cls: 'status err', key: 'settings.ai.cgOpenManually', url: res.auth_url };
+    } catch (e) {
+      cgBusy = '';
+      cgNote = { cls: 'status err', key: 'settings.ai.cgLoginFail', vars: { err: String(e) } };
+    }
+    renderChatgpt();
+  });
+
+  $('cgCancel').addEventListener('click', async () => {
+    try { await invoke('codex_login_cancel'); } catch (e) { log('codex_login_cancel: ' + e); }
+    cgBusy = '';
+    cgNote = null;
+    renderChatgpt();
+  });
+
+  $('cgLogout').addEventListener('click', async () => {
+    cgBusy = 'checking';
+    cgNote = null;
+    renderChatgpt();
+    try {
+      await invoke('codex_logout');
+    } catch (e) {
+      cgNote = { cls: 'status err', raw: String(e) };
+    }
+    cgBusy = '';
+    await refreshChatgpt();
+  });
+
+  $('cgInstall').addEventListener('click', async () => {
+    cgBusy = 'install';
+    cgNote = { cls: 'status', key: 'settings.ai.cgInstalling' };
+    renderChatgpt();
+    try {
+      const version = await invoke('codex_install');
+      cgNote = { cls: 'status ok', key: 'settings.ai.cgInstalled', vars: { version } };
+    } catch (e) {
+      cgNote = { cls: 'status err', raw: String(e) };
+    }
+    cgBusy = '';
+    await refreshChatgpt();
+  });
+
+  if (listen) {
+    listen('codex-login', (e) => {
+      const p = (e && e.payload) || {};
+      cgBusy = '';
+      cgNote = p.ok
+        ? { cls: 'status ok', key: 'settings.ai.cgLoginOk' }
+        : { cls: 'status err', key: 'settings.ai.cgLoginFail', vars: { err: p.error || '?' } };
+      void refreshChatgpt();
+    });
+    // Dòng tiến độ của npm trong lúc cài.
+    listen('codex-install', (e) => {
+      if (cgBusy !== 'install' || !e || typeof e.payload !== 'string') return;
+      cgNote = { cls: 'status', raw: e.payload };
+      renderChatgpt();
+    });
+  }
+
+  // Ô chọn model của gói: dòng đầu (rỗng) = mặc định của Codex.
+  function fillChatgptModels(models, current) {
+    const sel = $('chatgptModel');
+    sel.innerHTML = '';
+    const def = document.createElement('option');
+    def.value = ''; def.textContent = t('settings.ai.cgModelDefault');
+    sel.appendChild(def);
+    const list = models.slice();
+    if (current && !list.some(([id]) => id === current)) list.unshift([current, current]);
+    for (const [id, name] of list) {
+      const opt = document.createElement('option');
+      opt.value = id; opt.textContent = name === id ? id : name + ' (' + id + ')';
+      sel.appendChild(opt);
+    }
+    sel.value = current || '';
+  }
+
+  $('loadChatgptModels').addEventListener('click', async () => {
+    const st = $('chatgptModelStatus');
+    st.className = 'status'; st.textContent = t('settings.ai.loadingModels');
+    try {
+      const models = await invoke('codex_models');
+      if (!models || !models.length) { st.className = 'status err'; st.textContent = t('settings.ai.noModels'); return; }
+      fillChatgptModels(models, $('chatgptModel').value);
+      st.className = 'status ok';
+      st.textContent = t('settings.ai.modelsLoaded', { n: models.length });
+    } catch (e) {
+      st.className = 'status err';
+      st.textContent = String(e);
+    }
+  });
 
   // API key nằm trong két hệ điều hành; trang chỉ biết đã lưu hay chưa. Ô nhập để
   // trống = giữ key cũ; gõ = thay; "Xoá key" rồi Lưu = xoá (field: '').
@@ -676,6 +831,7 @@
         sel.insertBefore(opt, sel.firstChild);
       }
       sel.value = gm;
+      fillChatgptModels([], s.chatgpt_model || '');
       $('target').value = s.translate_target || 'vi';
       contexts = Array.isArray(s.contexts) ? s.contexts.slice() : [];
       renderContexts();
@@ -865,6 +1021,7 @@
       provider: $('provider').value,
       model: $('model').value,
       gemini_model: $('geminiModel').value,
+      chatgpt_model: $('chatgptModel').value,
       translate_target: $('target').value,
       contexts: contexts,
       default_context: $('defaultContext').value,
@@ -995,6 +1152,9 @@
     applySubs();
     relabelMinutes();
     for (const k of Object.keys(keyFields)) keyPlaceholder(k);
+    renderChatgpt();
+    const cgDef = $('chatgptModel').querySelector('option[value=""]');
+    if (cgDef) cgDef.textContent = t('settings.ai.cgModelDefault');
     for (const id of ['remindEyes', 'remindWater', 'remindStand']) if ($(id).options.length) fillRemind(id, Number($(id).value) || 0);
     for (const id of ['cpuWarn', 'ramWarn']) if ($(id).options.length) fillWarn(id, Number($(id).value) || 90);
     labelBirthday();

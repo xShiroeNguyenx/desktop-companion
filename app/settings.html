@@ -222,6 +222,7 @@
           <select id="provider">
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="gemini">Google Gemini</option>
+            <option value="chatgpt" data-i18n="settings.ai.cgOption">ChatGPT (đăng nhập tài khoản)</option>
           </select>
         </div>
 
@@ -269,6 +270,34 @@
             </div>
             <div class="status" id="geminiModelStatus"></div>
           </div>
+        </div>
+
+        <!-- Đăng nhập tài khoản ChatGPT, dùng hạn mức của gói (codex.rs). -->
+        <div id="chatgptBlock" class="set-group">
+          <div class="set-field">
+            <label data-i18n="settings.ai.cgAccount">Tài khoản ChatGPT</label>
+            <div class="status" id="cgStatus"></div>
+            <div class="row tight">
+              <button class="ghost" id="cgLogin" type="button" hidden data-i18n="settings.ai.cgLogin">Đăng nhập ChatGPT</button>
+              <button class="ghost" id="cgCancel" type="button" hidden data-i18n="settings.ai.cgCancel">Huỷ</button>
+              <button class="ghost" id="cgLogout" type="button" hidden data-i18n="settings.ai.cgLogout">Đăng xuất</button>
+              <button class="ghost" id="cgInstall" type="button" hidden></button>
+              <button class="ghost" id="cgRefresh" style="flex:0 0 auto;" type="button">↻</button>
+            </div>
+            <div class="status" id="cgNote"></div>
+            <input type="text" id="cgUrl" readonly hidden />
+          </div>
+          <div class="set-field">
+            <label for="chatgptModel" data-i18n="settings.ai.cgModel">Model</label>
+            <div class="row tight">
+              <select id="chatgptModel" style="flex:1;">
+                <option value="" data-i18n="settings.ai.cgModelDefault">Mặc định của gói</option>
+              </select>
+              <button class="ghost" id="loadChatgptModels" style="flex:0 0 auto;" type="button">↻</button>
+            </div>
+            <div class="status" id="chatgptModelStatus"></div>
+          </div>
+          <div class="status" data-i18n="settings.ai.cgHint">Dùng hạn mức của gói ChatGPT bạn đã đăng ký, không cần API key. Câu trả lời đi qua Codex CLI của OpenAI và tính vào hạn mức Codex của gói. Đăng nhập nằm trong thư mục riêng của app, không đụng tới Codex bạn dùng ở terminal.</div>
         </div>
       </div>
 

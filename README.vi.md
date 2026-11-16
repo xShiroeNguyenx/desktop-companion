@@ -258,7 +258,9 @@ duyệt, Word…).
   Bộ sưu tập ở tab Model.
 - **Model Live2D tự thêm** — nạp model `*.model3.json` của bạn từ thư mục bất kỳ.
 - **Âm thanh** — hiệu ứng tương tác (chọc / vuốt đầu / …) bằng tiếng Nhật / Việt / Anh.
-- **Nhà cung cấp AI** — Anthropic Claude hoặc Google Gemini (tự nhập API key của bạn).
+- **Nhà cung cấp AI** — Anthropic Claude hoặc Google Gemini (tự nhập API key của bạn),
+  hoặc **đăng nhập tài khoản ChatGPT** để dùng hạn mức của gói đã đăng ký (không cần
+  API key; chạy qua Codex CLI của OpenAI, app tự cài giúp được).
   Có thể tải danh sách model trực tiếp từ nhà cung cấp.
 - **Phím tắt tùy chỉnh** — đổi phím tắt bắt văn bản (mặc định `Ctrl+Shift+Space`).
 
@@ -299,8 +301,8 @@ Companion**. Không cấp quyền thì các tính năng khác vẫn chạy bình
 
 ## Bắt đầu
 
-1. **Nhập API key** — icon tray → **Cài đặt** → chọn nhà cung cấp (Anthropic hoặc
-   Gemini) → dán key → **Lưu**.
+1. **Cài AI** — icon tray → **Cài đặt** → chọn nhà cung cấp: Anthropic hoặc Gemini →
+   dán key; hoặc ChatGPT → **Đăng nhập ChatGPT** (mở trình duyệt). Rồi bấm **Lưu**.
 2. **Dịch** — bôi đen văn bản ở đâu cũng được → click bông hoa 🌸.
 3. **Trả lời** — bôi đen tin nhắn → nhấn giữ bông hoa → chọn 💬 **Trả lời** → gõ
    tiếng Việt → **Tạo câu trả lời**.

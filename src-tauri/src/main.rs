@@ -10,6 +10,7 @@ mod clock_pin;
 mod collection;
 mod chat;
 mod click_through;
+mod codex;
 mod events;
 mod commands;
 mod companion;
@@ -786,6 +787,12 @@ fn main() {
             commands::pin_avatar,
             commands::gemini_models,
             commands::anthropic_models,
+            codex::codex_status,
+            codex::codex_login,
+            codex::codex_login_cancel,
+            codex::codex_logout,
+            codex::codex_models,
+            codex::codex_install,
             commands::add_model_folder,
             commands::remove_custom_model,
             commands::settings_get,
@@ -867,6 +874,8 @@ fn main() {
 
             // API key dạng chữ của bản cũ → két hệ điều hành (secrets.rs).
             store::migrate_secrets(&app_handle);
+            // Nhà cung cấp "chatgpt": thư mục riêng cho Codex + luồng dọn tiến trình ngồi không.
+            codex::init(&app_handle);
             let settings = store::load_settings(&app_handle);
             selection::set_auto_enabled(settings.auto_flower);
 

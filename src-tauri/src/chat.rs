@@ -863,9 +863,10 @@ pub fn touch_activity(app: &AppHandle) {
     app.state::<ChatState>().last_activity.store(now_secs(), Ordering::SeqCst);
 }
 
-/// Đã nhập API key cho nhà cung cấp đang chọn chưa.
+/// Đã nhập API key (hoặc đã đăng nhập ChatGPT) cho nhà cung cấp đang chọn chưa.
 pub fn has_key(settings: &store::Settings) -> bool {
     match settings.provider.as_str() {
+        "chatgpt" => settings.chatgpt_signed_in,
         "gemini" => !settings.gemini_key.trim().is_empty(),
         _ => !settings.api_key.trim().is_empty(),
     }

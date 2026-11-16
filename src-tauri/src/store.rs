@@ -21,6 +21,13 @@ pub struct Settings {
     pub gemini_key: String,
     #[serde(default = "default_gemini_model")]
     pub gemini_model: String,
+    /// Nhà cung cấp "chatgpt" (codex.rs): model của gói; rỗng = mặc định của Codex.
+    #[serde(default)]
+    pub chatgpt_model: String,
+    /// Đã đăng nhập tài khoản ChatGPT chưa (codex.rs ghi sau mỗi lần hỏi Codex).
+    /// Không có trên form Cài đặt: settings_set giữ nguyên giá trị cũ.
+    #[serde(default)]
+    pub chatgpt_signed_in: bool,
     #[serde(default = "default_target")]
     pub translate_target: String,
     #[serde(default = "default_contexts")]
@@ -384,6 +391,8 @@ impl Default for Settings {
             model: default_model(),
             gemini_key: String::new(),
             gemini_model: default_gemini_model(),
+            chatgpt_model: String::new(),
+            chatgpt_signed_in: false,
             translate_target: default_target(),
             contexts: default_contexts(),
             default_context: String::new(),

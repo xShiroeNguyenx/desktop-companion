@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.9] - 2026-11-16
+
+### Added
+- **🤖 Sign in with your ChatGPT account instead of an API key.** Settings → 🤖 AI has a
+  third provider, *ChatGPT (sign in with your account)*: press *Sign in to ChatGPT*,
+  finish in the browser, and chat, translation, quick reply and the pet's own lines use
+  the limit of the ChatGPT plan you already pay for. Settings shows the signed-in
+  account, the plan, how much of the limit is used and when it resets, and lets you pick
+  one of the plan's models or sign out.
+- **How it works:** replies go through OpenAI's official Codex CLI running on your
+  computer; the app never sees your password or handles the sign-in token itself. If the
+  Codex CLI is not on the machine, *Install Codex* downloads it into the app's own folder
+  (needs Node.js). The sign-in is separate from a Codex you use in a terminal, and the
+  pet's Codex cannot run commands or change files.
+
 ## [0.12.8] - 2026-11-13
 
 ### Changed

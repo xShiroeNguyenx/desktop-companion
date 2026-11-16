@@ -1,5 +1,6 @@
-// Anthropic Claude calls, server-side (Rust) so there is no browser CORS issue
-// and the API key never reaches the webview.
+// LLM calls, server-side (Rust) so there is no browser CORS issue and the API key
+// never reaches the webview. Providers: Anthropic, Gemini (API key), and "chatgpt"
+// (signed-in ChatGPT account through the Codex CLI, see codex.rs).
 
 use serde_json::{json, Value};
 
@@ -9,8 +10,8 @@ use crate::store::Settings;
 const API_URL: &str = "https://api.anthropic.com/v1/messages";
 const API_VERSION: &str = "2023-06-01";
 
-// Provider-agnostic entry point used by the command layer. Picks Anthropic or
-// Gemini based on settings.provider and routes the prompt accordingly.
+// Provider-agnostic entry point used by the command layer. Routes the prompt by
+// settings.provider. `max_tokens` does not apply to "chatgpt" (Codex has no such knob).
 pub async fn complete(
     settings: &Settings,
     system: &str,
@@ -18,6 +19,7 @@ pub async fn complete(
     max_tokens: u32,
 ) -> Result<String, String> {
     match settings.provider.as_str() {
+        "chatgpt" => crate::codex::complete(system, user, &settings.chatgpt_model).await,
         "gemini" => {
             gemini_complete(
                 &settings.gemini_key,
@@ -287,6 +289,10 @@ pub async fn stream_chat<F: FnMut(&str) -> bool>(
     max_tokens: u32,
     mut on_delta: F,
 ) -> Result<String, String> {
+    if settings.provider == "chatgpt" {
+        let input = crate::codex::flatten_history(messages);
+        return crate::codex::stream(system, &input, &settings.chatgpt_model, on_delta).await;
+    }
     let gemini = settings.provider == "gemini";
     let client = reqwest::Client::new();
     let req = if gemini {
