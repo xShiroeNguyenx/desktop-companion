@@ -56,8 +56,17 @@ button.icon { background: var(--panel); border: 1px solid var(--edge); border-ra
   100% { transform: translateY(-70px) scale(1.15); opacity: 0; }
 }
 
+/* Two pickers share the stage bar of a 440px panel: keep both narrow. */
+.lang-pick { max-width: 88px; }
+#modelPick { max-width: 124px; }
+/* With the focus timer in the status pill the bar gets tight: the pill keeps one line
+   and the pickers give way (their text is cut, the list still shows it in full). */
+.status { white-space: nowrap; flex: 0 0 auto; }
+.stage-bar .model-pick { flex: 0 1 auto; min-width: 44px; }
 .tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--edge); background: var(--panel); overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
+.tabs { user-select: none; }
+.tabs.dragging, .tabs.dragging button { cursor: grabbing; }
 .tabs button { flex: 0 0 auto; border: 0; background: none; padding: 8px 8px; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; white-space: nowrap; font-size: 13px; }
 .tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
 
@@ -159,7 +168,7 @@ button.danger { color: var(--danger); }
    from its embedder's, Chrome paints an opaque Canvas backdrop (black in dark) behind it. */
 .pet-mode { color-scheme: normal !important; }
 .pet-mode, .pet-mode body { background: transparent; }
-.pet-mode .tabs, .pet-mode .panels, .pet-mode .model-pick, .pet-mode #voiceBtn { display: none; }
+.pet-mode .tabs, .pet-mode .panels, .pet-mode .model-pick { display: none; }
 /* The see-through look comes from the host: the "pet" view declares `transparent: true`
    with `chrome: "vibrancy"` (Anna's frosted-glass window, forum changelog #176), so the
    page itself paints nothing behind the character. */

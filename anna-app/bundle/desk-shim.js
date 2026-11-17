@@ -35,14 +35,28 @@
     return Promise.resolve();
   };
   window.__TAURI__ = { window: { getCurrentWindow: () => ({ close, hide: close }) } };
-  // Sounds: the pages pick the voice folder from this key (default Japanese).
+  // Sounds: the pages pick the voice folder (en / ja / vi) from this key. Set it on
+  // every visit, not only the first: the language can change between two games, and
+  // a value kept from the first game made her keep speaking that language.
   try {
-    if (!localStorage.getItem('voiceLanguage')) localStorage.setItem('voiceLanguage', info.lang);
+    localStorage.setItem('voiceLanguage', ['en', 'ja', 'vi'].includes(info.lang) ? info.lang : 'en');
   } catch (_) { /* ignore */ }
 
-  // The pages are drawn at 900×560 and shrunk with `html { zoom }`: fit the window instead.
+  // With the app's voice on, she reads her bubble lines herself (desk-host.js sets
+  // DC_SPEAKS): the games' two recorded clips would talk over that, so they stay quiet.
+  const RealAudio = window.Audio;
+  window.Audio = function (src) {
+    const a = new RealAudio(src);
+    if (window.DC_SPEAKS && /media\/audio\//.test(String(src))) a.muted = true;
+    return a;
+  };
+
+  // The pages are drawn on a fixed canvas and scaled with `html { zoom }`: fit the
+  // window instead, with the portrait layout (desk-narrow.css) in a narrow one.
   const fit = () => {
-    document.documentElement.style.zoom = String(Math.max(0.3, Math.min(innerWidth / 900, innerHeight / 560)));
+    const f = window.deskFit(innerWidth, innerHeight);
+    document.documentElement.classList.toggle('narrow', f.narrow);
+    document.documentElement.style.zoom = String(f.zoom);
   };
   addEventListener('resize', fit);
   fit();

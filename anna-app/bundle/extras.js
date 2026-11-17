@@ -1,7 +1,7 @@
 // 🗒️ Notes, 🍅 Focus, 📅 Calendar and 🍬 Collection panels.
 // Notes search and the lunar calendar reuse the desktop app's pure modules
 // (lib/notes-core.js → window.NotesCore, lib/calendar-core.js → window.CalendarCore).
-import { bondLevel, dayOf, fmtClock, focusLeft, focusStart, isUnlocked, modelCost, unlockModel } from './core.js';
+import { bondLevel, dayOf, fmtClock, focusFinish, focusLeft, focusStart, isUnlocked, modelCost, unlockModel } from './core.js';
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -194,9 +194,10 @@ export async function mountFocus(root, ctx) {
   }
 
   setInterval(() => {
-    if (state.running && focusLeft(state) === 0) {
-      const finishedWork = state.phase === 'work';
-      state = { ...state, running: false, sessions: (state.sessions || 0) + (finishedWork ? 1 : 0) };
+    const done = focusFinish(state);
+    if (done) {
+      const { finishedWork } = done;
+      state = done.state;
       ctx.save('focus', state);
       ctx.chime();
       ctx.say(ctx.t(finishedWork ? 'focusDone' : 'focusBack'), true);

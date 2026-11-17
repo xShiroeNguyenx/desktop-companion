@@ -3,7 +3,17 @@ import assert from 'node:assert/strict';
 import {
   applyTaskTags,
   chatSystemPrompt,
+  easeToRest,
+  FACE_REST,
   parseReply,
+  shouldBlink,
+  startSize,
+  tabDrag,
+  voiceDenied,
+  focusFinish,
+  spokenText,
+  pickLang,
+  UI_LANGS,
   petMenuItems,
   replyPrompt,
   streamingText,
@@ -25,7 +35,6 @@ import {
   normalizePayload,
   pageQuery,
   pendingTab,
-  restoreSize,
   withLanguageHint,
   pickLine,
   unlockModel,
@@ -182,7 +191,21 @@ test('petMenuItems: same ring as the desktop pet, per window', () => {
   assert.equal(main[0].label, bareLabel(STRINGS.vi.tabChat));
   for (const i of [...main, ...main.flatMap((x) => x.items || [])]) assert.ok(i.label, JSON.stringify(i));
 
+  // Language ring: "same as Anna" plus each language under its own name; the pick is marked.
+  const langs = (items) => items.find((i) => i.id === 'lang').items.map((i) => [i.action, i.label, !!i.active]);
+  assert.deepEqual(langs(main), [
+    ['lang:auto', STRINGS.vi.langAuto, true],
+    ['lang:en', 'English', false],
+    ['lang:vi', 'Tiếng Việt', false],
+    ['lang:ja', '日本語', false],
+  ]);
+  assert.deepEqual(
+    langs(petMenuItems({ view: 'main', models, lang: 'ja', t })).filter((l) => l[2]).map((l) => l[0]),
+    ['lang:ja'],
+  );
+
   const pet = petMenuItems({ view: 'pet', models, current: 'a', t });
+  assert.ok(pet.some((i) => i.id === 'lang'), 'the floating pet can change language too');
   assert.equal(pet[0].action, 'open');
   assert.ok(!actions(pet).includes('voice'), 'the floating pet has no voice');
   assert.ok(pet.length <= 8, 'the ring fits a small window');
@@ -207,16 +230,6 @@ test('pageQuery keeps Anna\'s window keys across game pages, with the latest tok
   assert.equal(pageQuery(anna, {}, ''), 'wid=w1&t=old&theme=light&themeMode=light&lang=en-US');
 });
 
-test('restoreSize gives back the outer size, adding the title bar the game window measured', () => {
-  const WIDE = { w: 720, h: 580 };
-  // Anna: 720×580 outer showed a 718×542 page → 2×38 of chrome.
-  assert.deepEqual(restoreSize('438x682', WIDE, { w: 718, h: 542 }), { w: 440, h: 720 });
-  assert.equal(restoreSize('', WIDE, { w: 718, h: 542 }), null);
-  assert.equal(restoreSize('junk', WIDE, { w: 718, h: 542 }), null);
-  // A game window the user made bigger never shrinks the result.
-  assert.deepEqual(restoreSize('438x682', WIDE, { w: 900, h: 700 }), { w: 438, h: 682 });
-});
-
 test('withLanguageHint adds the reminder to a copy of the last user turn only', () => {
   const history = [
     { role: 'user', content: 'Chào' },
@@ -229,6 +242,124 @@ test('withLanguageHint adds the reminder to a copy of the last user turn only', 
   assert.equal(history[2].content, 'How are you?');
   assert.deepEqual(withLanguageHint([{ role: 'assistant', content: 'x' }]), [{ role: 'assistant', content: 'x' }]);
   assert.deepEqual(withLanguageHint(null), []);
+});
+
+test('easeToRest brings a face parameter back to neutral at any frame rate', () => {
+  const settle = (start, rest, fps, seconds = 1) => {
+    let v = start;
+    for (let i = 0; i < fps * seconds; i++) v = easeToRest(v, rest, 1000 / fps);
+    return v;
+  };
+  // The leftovers measured after a "happy" reaction: smile 0.38, eyes 0.68 open.
+  for (const fps of [15, 30, 60, 144]) {
+    assert.equal(settle(0.38, 0, fps), 0, `smile at ${fps} fps`);
+    assert.equal(settle(0.68, 1, fps), 1, `eyes at ${fps} fps`);
+    assert.equal(settle(-0.13, 0, fps), 0, `frown at ${fps} fps`);
+  }
+  // Same distance covered in the same time, whatever the frame rate.
+  assert.ok(Math.abs(settle(1, 0, 30, 0.2) - settle(1, 0, 120, 0.2)) < 1e-9);
+  // Eases, never jumps or overshoots.
+  const step = easeToRest(1, 0, 1000 / 60);
+  assert.ok(step > 0.8 && step < 1);
+  assert.equal(easeToRest(0.5, 0, 0), 0.5);
+  assert.equal(easeToRest(NaN, 1, 16), 1);
+});
+
+test('FACE_REST is the neutral face: eyes open, everything else at zero', () => {
+  for (const [id, rest] of Object.entries(FACE_REST)) {
+    assert.equal(rest, /Eye[LR]Open$/.test(id) ? 1 : 0, id);
+  }
+  // The mouth opening belongs to lip-sync, the eyeballs to the idle motion.
+  assert.ok(!('ParamMouthOpenY' in FACE_REST) && !('ParamEyeBallX' in FACE_REST));
+});
+
+test('shouldBlink: always at rest, and a reaction only lets a started blink finish', () => {
+  for (const state of [0, 1, 2, 3, 4]) assert.equal(shouldBlink(false, state), true, `rest, state ${state}`);
+  assert.equal(shouldBlink(true, 0), false);
+  assert.equal(shouldBlink(true, 1), false);
+  for (const state of [2, 3, 4]) assert.equal(shouldBlink(true, state), true, `reacting, state ${state}`);
+  assert.equal(shouldBlink(true, undefined), false);
+});
+
+test('startSize shrinks a panel Anna opened across the workspace, once', () => {
+  const declared = { w: 440, h: 720 };
+  // Measured on Anna: the 440×720 panel opens with a 1414×699 page.
+  assert.deepEqual(startSize({ w: 1414, h: 699 }, declared, false), { w: 440, h: 720 });
+  // Already at (or near) the declared size: leave it.
+  assert.equal(startSize({ w: 438, h: 682 }, declared, false), null);
+  assert.equal(startSize({ w: 600, h: 800 }, declared, false), null);
+  // A page switch inside the same window must not undo the user's own resize.
+  assert.equal(startSize({ w: 1414, h: 699 }, declared, true), null);
+  // Hosts that give no declared size.
+  assert.equal(startSize({ w: 1414, h: 699 }, null, false), null);
+  assert.equal(startSize({ w: 1414, h: 699 }, { w: 0, h: 0 }, false), null);
+});
+
+test('tabDrag scrolls the strip against the mouse and tells a drag from a click', () => {
+  const start = { x: 200, left: 40 };
+  // Mouse goes left: the strip shows what is further right.
+  assert.deepEqual(tabDrag(start, 120), { scrollLeft: 120, moved: true });
+  // Mouse goes right: back toward the first tab, never past it.
+  assert.deepEqual(tabDrag(start, 230), { scrollLeft: 10, moved: true });
+  assert.deepEqual(tabDrag(start, 400), { scrollLeft: 0, moved: true });
+  // A shaky click is still a click.
+  assert.equal(tabDrag(start, 203).moved, false);
+  assert.equal(tabDrag(start, 195).moved, false);
+});
+
+test('pickLang: the language picked in the app wins, otherwise Anna decides', () => {
+  assert.equal(pickLang('vi', 'en-US'), 'vi');
+  assert.equal(pickLang('ja', 'vi-VN'), 'ja');
+  assert.equal(pickLang('en', 'ja'), 'en');
+  // Nothing picked (or a value we do not know): follow Anna, as before.
+  assert.equal(pickLang('', 'vi-VN'), 'vi');
+  assert.equal(pickLang(undefined, 'ja-JP'), 'ja');
+  assert.equal(pickLang('auto', 'zh-CN'), 'en');
+  assert.equal(pickLang('fr', 'vi'), 'vi');
+  assert.equal(pickLang('toString', 'vi'), 'vi');
+  // Every language offered has its own strings.
+  for (const id of Object.keys(UI_LANGS)) assert.ok(STRINGS[id] && STRINGS[id].menuLang && STRINGS[id].langAuto, id);
+});
+
+test('voiceDenied tells "voice not granted" from a passing error', () => {
+  assert.equal(voiceDenied({ code: 'CAPABILITY_NOT_GRANTED', message: 'audio.speak' }), true);
+  assert.equal(voiceDenied({ message: 'Permission denied for audio' }), true);
+  assert.equal(voiceDenied({ code: 'TIMEOUT', message: 'request timed out' }), false);
+  assert.equal(voiceDenied(new Error('no audio returned')), false);
+  assert.equal(voiceDenied(null), false);
+});
+
+test('spokenText keeps the words of a bubble line and drops what a voice cannot say', () => {
+  assert.equal(spokenText('Yay! Bạn đoán đúng rồi! 🎉'), 'Yay! Bạn đoán đúng rồi!');
+  assert.equal(spokenText('Tới lượt bạn! Chọn đi~'), 'Tới lượt bạn! Chọn đi');
+  assert.equal(spokenText('Em thắng ván này~ 💕'), 'Em thắng ván này');
+  assert.equal(spokenText('Hãy đoán số nào? Em sẽ đưa gợi ý nhé! Cố lên! ♡'), 'Hãy đoán số nào? Em sẽ đưa gợi ý nhé! Cố lên!');
+  assert.equal(spokenText('やったー！ ⭐ 正解だよ～'), 'やったー！ 正解だよ');
+  assert.equal(spokenText('Số 10 thấp quá rồi, từ 1 đến 20!'), 'Số 10 thấp quá rồi, từ 1 đến 20!');
+  assert.equal(spokenText('💕 ♡ ~'), '');
+  assert.equal(spokenText(null), '');
+});
+
+test('focusFinish ends a timer once, in whichever window is open, and counts sessions per day', () => {
+  const now = new Date(2026, 10, 17, 10, 0, 0).getTime();
+  const today = '2026-11-17';
+  const running = { phase: 'work', running: true, endsAt: now + 60_000, day: today, sessions: 2 };
+  // Still counting down, stopped, or nothing saved: nothing to do.
+  assert.equal(focusFinish(running, now), null);
+  assert.equal(focusFinish({ ...running, running: false }, now + 120_000), null);
+  assert.equal(focusFinish(null, now), null);
+  // Reached the end: stopped, one more session today.
+  const done = focusFinish(running, now + 60_000);
+  assert.deepEqual(done, { state: { ...running, running: false, sessions: 3 }, finishedWork: true });
+  // The stopped state does not finish a second time (no double candy).
+  assert.equal(focusFinish(done.state, now + 61_000), null);
+  // A break ending is not a session.
+  const rest = focusFinish({ ...running, phase: 'break' }, now + 60_000);
+  assert.equal(rest.finishedWork, false);
+  assert.equal(rest.state.sessions, 2);
+  // The first session of a new day starts the count again.
+  const next = focusFinish({ ...running, day: '2026-11-16', sessions: 5 }, now + 60_000);
+  assert.deepEqual([next.state.day, next.state.sessions], [today, 1]);
 });
 
 test('pendingTab takes a fresh pet request only', () => {

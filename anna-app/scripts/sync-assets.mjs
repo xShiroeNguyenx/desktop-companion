@@ -116,11 +116,14 @@ export function deskPage(html, name) {
   const out = html
     .replace(/<style>([\s\S]*?)<\/style>/g, (_, block) => {
       css += block;
-      return css.length === block.length ? `<link rel="stylesheet" href="${name}.css" />` : '';
+      // desk-narrow.css (portrait layout for the chat panel) comes after the page's own rules.
+      return css.length === block.length
+        ? `<link rel="stylesheet" href="${name}.css" />\n  <link rel="stylesheet" href="../desk-narrow.css" />`
+        : '';
     })
     .replace(
       '<script src="js/tauri-api.js"></script>',
-      '<script src="../desk-shim.js"></script>\n  <script type="module" src="../desk-host.js"></script>'
+      '<script src="../desk-fit.js"></script>\n  <script src="../desk-shim.js"></script>\n  <script type="module" src="../desk-host.js"></script>'
     )
     .replace(/\s*<script src="js\/theme-apply\.js"><\/script>/, '')
     .replace(/\s*<link rel="stylesheet" href="theme-pages\.css" \/>/, '');
@@ -129,7 +132,8 @@ export function deskPage(html, name) {
   return { html: out, css };
 }
 
-function syncDeskGames() {
+/** Rebuild bundle/desk/ alone: `node scripts/sync-assets.mjs --desk` (no model download). */
+export function syncDeskGames() {
   const app = join(repoRoot, 'app');
   const desk = join(bundle, 'desk');
   rmSync(desk, { recursive: true, force: true });
@@ -150,7 +154,13 @@ function syncDeskGames() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch((e) => {
+  const run = process.argv.includes('--desk')
+    ? async () => {
+        syncDeskGames();
+        console.log('✓ desktop games → bundle/desk/');
+      }
+    : main;
+  run().catch((e) => {
     console.error(e.message);
     process.exit(1);
   });

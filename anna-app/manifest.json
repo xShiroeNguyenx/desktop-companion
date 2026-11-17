@@ -26,7 +26,7 @@
         "name": "main",
         "title": "Desktop Companion",
         "default": false,
-        "default_size": { "w": 440, "h": 720 },
+        "default_size": { "w": 440, "h": 570 },
         "min_size": { "w": 360, "h": 560 },
         "resizable": true,
         "single_instance": true
@@ -36,7 +36,7 @@
       "llm": ["complete", "stream"],
       "audio": ["speak"],
       "storage": ["get", "set"],
-      "window": ["set_title", "ready", "open_view", "resize"]
+      "window": ["set_title", "ready", "open_view", "resize", "close"]
     },
     "csp_overrides": {
       "script-src": ["'wasm-unsafe-eval'"]

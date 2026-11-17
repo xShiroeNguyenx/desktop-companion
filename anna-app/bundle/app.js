@@ -11,9 +11,12 @@ import {
   normalizePayload,
   PANEL_CHANNEL,
   pendingTab,
+  pickLang,
+  UI_LANGS,
   pageQuery,
   parseReply,
-  restoreSize,
+  startSize,
+  tabDrag,
   petMenuItems,
   pickLine,
   replyPrompt,
@@ -23,6 +26,7 @@ import {
   trimHistory,
   uiLang,
   unwrap,
+  voiceDenied,
 } from './core.js';
 import { STRINGS } from './i18n.js';
 import { Stage } from './stage.js';
@@ -115,13 +119,12 @@ function speak(text) {
   if (!state.settings.voice || !state.anna || !text) return;
   voice.speak(state.anna, text, state.lang).catch((e) => {
     console.warn('[companion] voice', e);
-    const code = String((e && e.code) || '');
-    if (/NOT_GRANTED|permission/i.test(code + (e && e.message))) {
+    if (voiceDenied(e)) {
       state.settings.voice = false;
       renderVoice();
       save(KEY.settings, state.settings);
     }
-    say(t('errVoice') + ((e && e.message) || code));
+    say(t('errVoice') + ((e && e.message) || String((e && e.code) || '')));
   });
 }
 
@@ -351,6 +354,39 @@ async function useModel(id) {
   }
 }
 
+// ---------------------------------------------------------------- language
+
+const hostLocale = () => (state.anna && state.anna.locale) || navigator.language;
+
+function fillLangPick() {
+  const pick = $('langPick');
+  pick.textContent = '';
+  pick.add(new Option('🌐 ' + t('langAuto'), ''));
+  for (const [id, name] of Object.entries(UI_LANGS)) pick.add(new Option(name, id));
+  pick.value = Object.hasOwn(UI_LANGS, state.settings.lang) ? state.settings.lang : '';
+  pick.title = t('menuLang');
+  pick.setAttribute('aria-label', t('menuLang'));
+}
+
+/** Redraw everything that carries text in `next`. */
+function showLang(next) {
+  if (next === state.lang) return fillLangPick();
+  state.lang = next;
+  applyI18n();
+  renderTasks();
+  Object.values(state.panels).forEach((p) => p && p.refresh && p.refresh());
+}
+
+/** The user picked a language in the app ("" = follow Anna). Kept in settings, so the floating pet uses it too. */
+async function chooseLang(choice) {
+  state.settings.lang = Object.hasOwn(UI_LANGS, choice) ? choice : '';
+  showLang(pickLang(state.settings.lang, hostLocale()));
+  fillLangPick();
+  // Her bubble still holds a line in the old language: greet in the new one.
+  say(t('greeting'));
+  await save(KEY.settings, state.settings);
+}
+
 // ---------------------------------------------------------------- tabs & Anna chat payloads
 
 function showTab(name) {
@@ -370,12 +406,11 @@ async function takeOpenTab() {
   showTab(tab);
 }
 
-// ---------------------------------------------------------------- landscape games
+// ---------------------------------------------------------------- desktop game pages
 
-// The desktop game pages (games.js → bundle/desk/) are landscape. Anna blocks
-// frames, so the window itself switches to the page: it grows to WIDE (if
-// narrower) and desk-shim.js comes back with the old size and the wins.
-const WIDE = { w: 720, h: 580 };
+// The desktop game pages (games.js → bundle/desk/) are separate pages. Anna blocks
+// frames, so the window itself switches to the page, at the size it has, and
+// desk-shim.js comes back with the wins.
 const DESK_REWARD = { rps: 'rpsWin', guess: 'guessWin' };
 
 function resizeWindow(size) {
@@ -384,22 +419,47 @@ function resizeWindow(size) {
   return win.resize(size).catch((e) => console.warn('[companion] resize', e));
 }
 
-async function playDesk(page, id) {
-  // Only a window that grew needs its size back afterwards.
-  const grow = window.innerWidth < WIDE.w;
-  const back = grow ? `${window.innerWidth}x${window.innerHeight}` : '';
-  if (grow) await resizeWindow(WIDE);
-  const q = pageQuery(location.search, { glang: state.lang, game: id, back }, state.anna && state.anna.token);
+/** Bring a panel that Anna opened across the whole workspace down to its declared size, once per window. */
+function fitStartSize(anna) {
+  if (!anna) return;
+  const key = `sized:${anna.windowUuid || ''}`;
+  let done = false;
+  try {
+    done = sessionStorage.getItem(key) === '1';
+    sessionStorage.setItem(key, '1');
+  } catch {
+    // No session storage: a page switch may size the window again, nothing worse.
+  }
+  const size = startSize({ w: window.innerWidth, h: window.innerHeight }, anna.viewMeta && anna.viewMeta.default_size, done);
+  if (size) resizeWindow(size);
+}
+
+/** The 🐾 button: show the floating pet again and close this panel. */
+async function backToPet() {
+  const win = state.anna && state.anna.window;
+  if (!win) return;
+  try {
+    await win.open_view({ view: 'pet' });
+  } catch (e) {
+    // No pet window came up: keep this one, or the app would have no window left.
+    console.warn('[companion] open_view pet', e);
+    return;
+  }
+  win.close().catch((e) => console.warn('[companion] window.close', e));
+}
+
+function playDesk(page, id) {
+  // The window keeps its size: the game page lays itself out for a narrow panel
+  // (desk-fit.js + desk-narrow.css) or a wide one.
+  const q = pageQuery(location.search, { glang: state.lang, game: id }, state.anna && state.anna.token);
   location.assign(`desk/${page}?${q}`);
 }
 
-/** Back from a desktop game page (?tab=games&game=…&wins=…&back=WxH). */
+/** Back from a desktop game page (?tab=games&game=…&wins=…). */
 async function returnFromDesk() {
   const q = new URLSearchParams(location.search);
   const game = q.get('game');
   if (!game) return;
-  const size = restoreSize(q.get('back'), WIDE, { w: window.innerWidth, h: window.innerHeight });
-  if (size) resizeWindow(size);
   const wins = Math.min(Number(q.get('wins')) || 0, 20);
   for (let i = 0; i < wins && DESK_REWARD[game]; i++) await earn(DESK_REWARD[game]);
   if (wins) stage.react('happy');
@@ -418,11 +478,13 @@ function wireMenu() {
         voice: state.settings.voice,
         models: state.models.filter((m) => isUnlocked(state.progress, m.id)),
         current: state.settings.model,
+        lang: state.settings.lang,
         t,
       }),
     onAction: (action) => {
       const [kind, arg] = action.split(':');
       if (kind === 'tab') showTab(arg);
+      else if (kind === 'lang') chooseLang(arg === 'auto' ? '' : arg);
       else if (kind === 'model') useModel(arg);
       else if (kind === 'voice') $('voiceBtn').click();
       else if (kind === 'pat') stage.pat(null);
@@ -466,10 +528,71 @@ function applyI18n() {
   tone.textContent = '';
   for (const id of TONES) tone.add(new Option(t('tone' + id[0].toUpperCase() + id.slice(1)), id));
   tone.value = toneValue;
+  if ($('petBtn')) $('petBtn').title = t('backToPet');
+  fillLangPick();
   renderVoice();
 }
 
+/**
+ * The tab strip is wider than a small panel and shows no scrollbar: let the mouse
+ * drag it sideways and the wheel scroll it. Touch already scrolls it natively.
+ */
+function wireTabScroll() {
+  const bar = document.querySelector('.tabs');
+  let start = null;
+  let dragged = false;
+  bar.addEventListener('pointerdown', (e) => {
+    dragged = false;
+    start = e.pointerType === 'mouse' && e.button === 0 ? { x: e.clientX, left: bar.scrollLeft } : null;
+  });
+  bar.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    const d = tabDrag(start, e.clientX);
+    if (!dragged && d.moved) {
+      dragged = true;
+      bar.classList.add('dragging');
+      // Keep following the mouse when it leaves the strip.
+      try {
+        bar.setPointerCapture(e.pointerId);
+      } catch {
+        // Capture is a nicety; the drag still works inside the strip.
+      }
+    }
+    if (dragged) bar.scrollLeft = d.scrollLeft;
+  });
+  const end = () => {
+    start = null;
+    bar.classList.remove('dragging');
+  };
+  bar.addEventListener('pointerup', end);
+  bar.addEventListener('pointercancel', end);
+  // The release that ends a drag must not also pick the tab under the mouse.
+  bar.addEventListener(
+    'click',
+    (e) => {
+      if (!dragged) return;
+      dragged = false;
+      e.stopPropagation();
+      e.preventDefault();
+    },
+    true,
+  );
+  bar.addEventListener(
+    'wheel',
+    (e) => {
+      if (bar.scrollWidth <= bar.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      bar.scrollLeft += e.deltaY;
+      e.preventDefault();
+    },
+    { passive: false },
+  );
+}
+
 function wire() {
+  wireTabScroll();
+  // Browsers only let audio start after a click or key press. Without this, a voice
+  // left on from last time stayed silent until the voice button was pressed again.
+  for (const type of ['pointerdown', 'keydown']) window.addEventListener(type, () => voice.unlock(), true);
   document.querySelectorAll('.tabs button').forEach((btn) => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
 
   $('chatForm').addEventListener('submit', (e) => {
@@ -508,6 +631,7 @@ function wire() {
   });
 
   $('modelPick').addEventListener('change', () => useModel($('modelPick').value));
+  $('langPick').addEventListener('change', () => chooseLang($('langPick').value));
   $('voiceBtn').addEventListener('click', () => {
     voice.unlock();
     state.settings.voice = !state.settings.voice;
@@ -523,6 +647,7 @@ async function main() {
   // The floating pet window (view "pet") shares this page but runs its own small mode.
   const view = new URLSearchParams(location.search).get('view') || (anna && anna.viewMeta && anna.viewMeta.name);
   if (view === 'pet') return runPet(anna);
+  fitStartSize(anna);
   state.lang = uiLang((anna && anna.locale) || navigator.language);
   if (anna && typeof anna.onThemeChange === 'function') {
     anna.onThemeChange(({ theme }) => (document.documentElement.dataset.theme = theme));
@@ -536,6 +661,7 @@ async function main() {
     fetch('./models/index.json').then((r) => r.json()),
   ]);
   state.settings = { ...state.settings, ...settings };
+  state.lang = pickLang(state.settings.lang, hostLocale());
   state.history = trimHistory(history);
   state.tasks = Array.isArray(tasks) ? tasks : [];
   state.progress = { ...newProgress(), ...(progress || {}) };
@@ -591,18 +717,22 @@ async function main() {
   [state.panels.notes, state.panels.focus] = await Promise.all([mountNotes($('notesPanel'), ctx), mountFocus($('focusPanel'), ctx)]);
 
   if (anna && typeof anna.onLocaleChange === 'function') {
-    anna.onLocaleChange(({ lang }) => {
-      const next = uiLang(lang);
-      if (next === state.lang) return;
-      state.lang = next;
-      applyI18n();
-      renderTasks();
-      Object.values(state.panels).forEach((p) => p && p.refresh && p.refresh());
-    });
+    // Anna's language only matters while the user has not picked one in the app.
+    anna.onLocaleChange(({ lang }) => showLang(pickLang(state.settings.lang, lang)));
   }
   if (anna) {
     anna.window.set_title({ title: 'Desktop Companion' }).catch(() => {});
     anna.on('entry_payload', applyPayload);
+    // Anna tells a window nothing when its close button is pressed, so the way back
+    // to the floating pet is this button.
+    const back = document.createElement('button');
+    back.id = 'petBtn';
+    back.type = 'button';
+    back.className = 'open-panel';
+    back.textContent = '🐾';
+    back.title = t('backToPet');
+    back.addEventListener('click', backToPet);
+    $('stage').querySelector('.stage-bar').appendChild(back);
   }
 
   renderStatus();

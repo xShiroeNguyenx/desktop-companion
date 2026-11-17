@@ -3,6 +3,44 @@
 
 export const EMOTIONS = ['happy', 'sad', 'angry', 'shy', 'surprised', 'wink', 'thinking'];
 
+/**
+ * Face parameters a reaction motion writes, and the value each one rests at (same
+ * neutral face as the desktop app). The idle motions drive none of them, so nothing
+ * else brings them back once a reaction ends.
+ */
+export const FACE_REST = {
+  ParamMouthForm: 0,
+  ParamEyeLSmile: 0,
+  ParamEyeRSmile: 0,
+  ParamCheek: 0,
+  ParamBrowLY: 0,
+  ParamBrowRY: 0,
+  ParamBrowLAngle: 0,
+  ParamBrowRAngle: 0,
+  ParamEyeLOpen: 1,
+  ParamEyeROpen: 1,
+};
+
+/**
+ * One step of easing `value` back to `rest`: closes ~63% of the gap every `tauMs`,
+ * whatever the frame rate, and lands exactly on `rest` once it is close enough.
+ */
+export function easeToRest(value, rest, dtMs, tauMs = 120) {
+  if (!Number.isFinite(value)) return rest;
+  if (!(dtMs > 0)) return value;
+  const next = rest + (value - rest) * Math.exp(-dtMs / tauMs);
+  return Math.abs(next - rest) < 0.001 ? rest : next;
+}
+
+/**
+ * Should the blink advance this frame? Always while she is resting. During a reaction
+ * its curves own the eyes, except that a blink already under way (Cubism eye states
+ * 2 closing, 3 closed, 4 opening) is finished, so the eyes are not left half shut.
+ */
+export function shouldBlink(reacting, blinkState) {
+  return !reacting || (blinkState >= 2 && blinkState <= 4);
+}
+
 /** Keep the last `maxTurns` user/assistant pairs (2 messages per turn). */
 export const HISTORY_TURNS = 10;
 
@@ -23,6 +61,37 @@ export function uiLang(locale) {
   return base === 'vi' || base === 'ja' ? base : 'en';
 }
 
+/**
+ * Did audio.speak fail because the user has not granted the app voice (so the voice
+ * switch should turn itself off), as opposed to a passing error?
+ */
+export function voiceDenied(e) {
+  return /NOT_GRANTED|permission/i.test(String((e && e.code) || '') + ' ' + String((e && e.message) || ''));
+}
+
+/**
+ * A bubble line as it should be read out: no emoji, hearts, stars or trailing "~",
+ * which a voice either skips or spells out.
+ */
+export function spokenText(text) {
+  return String(text || '')
+    .replace(/[\p{Extended_Pictographic}☀-➿️‍~～]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([!?.,…。！？])/g, '$1')
+    .trim();
+}
+
+/** The languages the app's own text exists in, by their own names. */
+export const UI_LANGS = { en: 'English', vi: 'Tiếng Việt', ja: '日本語' };
+
+/**
+ * The language to show: the one the user picked in the app (settings.lang), else
+ * Anna's. Anything that is not one of ours ("", "auto", an old value) means "follow Anna".
+ */
+export function pickLang(choice, hostLocale) {
+  return Object.hasOwn(UI_LANGS, String(choice)) ? choice : uiLang(hostLocale);
+}
+
 /** Unwrap an SDK RPC response that may be `{ok, result}` / `{ok:false, error}` or a bare result. */
 export function unwrap(res) {
   if (res && typeof res === 'object' && 'ok' in res) {
@@ -34,20 +103,30 @@ export function unwrap(res) {
   return res;
 }
 
-/**
- * Window size to restore after a game page. `back` is the page size before
- * ("WxH"); Anna's window.resize sets the outer size, title bar included. The
- * game ran at `wide` (outer), so wide − inner is that chrome. Null without `back`.
- */
-export function restoreSize(back, wide, inner) {
-  const m = /^(\d+)x(\d+)$/.exec(back || '');
-  if (!m) return null;
-  const chrome = (outer, page) => Math.min(Math.max(outer - page, 0), 80);
-  return { w: Number(m[1]) + chrome(wide.w, inner.w), h: Number(m[2]) + chrome(wide.h, inner.h) };
-}
-
 // The pet window tells an already-open full panel to pick up "openTab" now.
 export const PANEL_CHANNEL = 'desktop-companion/panel';
+
+/**
+ * Anna opens the panel fitted to the whole workspace (measured: 1416×737 for a
+ * declared 440×720), which stretches the layout. Returns the declared size to ask
+ * for when the window starts out much wider than that, else null. `done` = this
+ * window was already sized once (a page switch inside it must not undo the user's
+ * own resize).
+ */
+export function startSize(inner, declared, done) {
+  if (done || !inner || !declared || !(declared.w > 0) || !(declared.h > 0)) return null;
+  return inner.w > declared.w * 1.5 ? { w: declared.w, h: declared.h } : null;
+}
+
+/**
+ * Dragging the tab strip with the mouse: `start` is { x, left } at pointer-down
+ * (pointer x and the strip's scrollLeft). Returns where the strip should be scrolled
+ * to, and whether the pointer has moved far enough to be a drag and not a click.
+ */
+export function tabDrag(start, x, threshold = 5) {
+  const dx = x - start.x;
+  return { scrollLeft: Math.max(0, start.left - dx), moved: Math.abs(dx) > threshold };
+}
 
 /**
  * The tab in a stored "openTab" request ({ tab, at }) while it is recent enough
@@ -305,6 +384,20 @@ export function focusLeft(state, now = Date.now()) {
   return Math.max(0, state.endsAt - now);
 }
 
+/**
+ * A running timer that has reached its end: the stopped state to save, and whether a
+ * work session was completed (sessions count per day). Null while it still runs or is
+ * already stopped. Shared by the panel and the floating pet: only one of the two
+ * windows is open at a time, and whichever it is has to ring.
+ */
+export function focusFinish(state, now = Date.now()) {
+  if (!state || !state.running || focusLeft(state, now) > 0) return null;
+  const finishedWork = state.phase === 'work';
+  const day = dayOf(new Date(now));
+  const sessions = (state.day === day ? state.sessions || 0 : 0) + (finishedWork ? 1 : 0);
+  return { state: { ...state, running: false, day, sessions }, finishedWork };
+}
+
 export function fmtClock(ms) {
   const s = Math.ceil(Math.max(0, ms) / 1000);
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -374,9 +467,10 @@ const bare = (label) => String(label).replace(/^\S+\s+/, '');
  * Entries of the pet's right-click ring (radial.js), like the desktop pet's.
  * `view` "pet" (floating window: tabs open the full panel) or "main".
  * `models` = the models the user owns ({ id, name, preview }), `current` = shown one.
- * Actions: "tab:<name>", "model:<id>", "voice", "pat", "open".
+ * `lang` = the language picked in the app ("" = follow Anna).
+ * Actions: "tab:<name>", "model:<id>", "lang:<auto|en|vi|ja>", "voice", "pat", "open".
  */
-export function petMenuItems({ view = 'main', voice = false, models = [], current = '', t }) {
+export function petMenuItems({ view = 'main', voice = false, models = [], current = '', lang = '', t }) {
   const tab = (id, icon) => ({ icon, label: bare(t('tab' + id[0].toUpperCase() + id.slice(1))), action: 'tab:' + id });
   const items = [
     tab('chat', '💬'),
@@ -395,6 +489,15 @@ export function petMenuItems({ view = 'main', voice = false, models = [], curren
       items: models.map((m) => ({ icon: '👗', img: m.preview, label: m.name, action: 'model:' + m.id, active: m.id === current })),
     },
     { icon: '💗', label: t('menuPat'), action: 'pat' },
+    {
+      id: 'lang',
+      icon: '🌐',
+      label: t('menuLang'),
+      items: [
+        { icon: '🌐', label: t('langAuto'), action: 'lang:auto', active: !Object.hasOwn(UI_LANGS, lang) },
+        ...Object.entries(UI_LANGS).map(([id, name]) => ({ icon: id.toUpperCase(), label: name, action: 'lang:' + id, active: lang === id })),
+      ],
+    },
   ];
   if (view === 'pet') items.unshift({ icon: '🗂️', label: t('menuOpen'), action: 'open' });
   else items.splice(5, 0, { icon: voice ? '🔊' : '🔇', label: t(voice ? 'voiceOn' : 'voiceOff'), action: 'voice' });

@@ -15,7 +15,7 @@ where candy from using the app unlocks more models.
 |---|---|
 | `bundle/core.js` | Pure logic (prompts, reply tags, rewards, focus, payloads) — tested in `test/` |
 | `bundle/app.js` | Wiring: chat / translate / reply / tasks, tabs, Anna chat payloads; hands over to `pet.js` in the "pet" view |
-| `bundle/pet.js` | Floating pet mode (view `pet`, transparent window, default): character, bubble, 💬 opens view `main` |
+| `bundle/pet.js` | Floating pet mode (view `pet`, transparent window, default): character, bubble, 🎀 opens view `main` (and closes the pet; the panel's 🐾 brings it back) |
 | `bundle/host.js` | Anna SDK connection (once per window) and storage helpers |
 | `bundle/stage.js` | Live2D stage: framing, look-at, pats / pokes, reactions, lip-sync, particles |
 | `bundle/voice.js` | Anna TTS playback through Web Audio |

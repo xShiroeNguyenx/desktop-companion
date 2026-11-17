@@ -3,6 +3,7 @@
 export const STRINGS = {
   en: {
     openPanel: 'Open chat, tools and games',
+    backToPet: 'Back to the floating pet',
     menuTitle: 'Menu',
     menuBack: 'Back',
     menuClose: 'Close',
@@ -11,6 +12,8 @@ export const STRINGS = {
     menuModel: 'Character',
     menuPat: 'Head pat',
     menuOpen: 'Open the full panel',
+    menuLang: 'Language',
+    langAuto: 'Same as Anna',
     loading: 'Loading…',
     tabChat: '💬 Chat',
     tabTranslate: '🌐 Translate',
@@ -113,6 +116,7 @@ export const STRINGS = {
   },
   vi: {
     openPanel: 'Mở trò chuyện, công cụ và trò chơi',
+    backToPet: 'Quay lại pet nổi',
     menuTitle: 'Menu',
     menuBack: 'Quay lại',
     menuClose: 'Đóng',
@@ -121,6 +125,8 @@ export const STRINGS = {
     menuModel: 'Nhân vật',
     menuPat: 'Xoa đầu',
     menuOpen: 'Mở bảng đầy đủ',
+    menuLang: 'Ngôn ngữ',
+    langAuto: 'Theo Anna',
     loading: 'Đang tải…',
     tabChat: '💬 Trò chuyện',
     tabTranslate: '🌐 Dịch',
@@ -223,6 +229,7 @@ export const STRINGS = {
   },
   ja: {
     openPanel: 'チャット・ツール・ゲームを開く',
+    backToPet: 'フローティングペットに戻る',
     menuTitle: 'メニュー',
     menuBack: '戻る',
     menuClose: '閉じる',
@@ -231,6 +238,8 @@ export const STRINGS = {
     menuModel: 'キャラクター',
     menuPat: 'なでなで',
     menuOpen: 'フルパネルを開く',
+    menuLang: '言語',
+    langAuto: 'Annaに合わせる',
     loading: '読み込み中…',
     tabChat: '💬 チャット',
     tabTranslate: '🌐 翻訳',

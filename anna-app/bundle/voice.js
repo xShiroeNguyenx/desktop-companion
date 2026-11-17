@@ -4,12 +4,16 @@
 import { unwrap } from './core.js';
 
 const MAX_CHARS = 400;
+// Lines kept in memory: the games repeat a handful ("Your turn!", "Too low!").
+const MAX_LINES = 40;
 
 export class Voice {
   constructor(onLevel) {
     this.onLevel = onLevel || (() => {});
     this.ctx = null;
     this.current = null;
+    this.turn = 0;
+    this.lines = new Map();
   }
 
   /** Call from a click handler: browsers only allow audio after a user gesture. */
@@ -30,10 +34,11 @@ export class Voice {
     this.onLevel(0);
   }
 
-  async speak(anna, text, language) {
-    const clean = String(text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
-    if (!clean || !anna || !anna.audio || !this.ctx) return;
-    this.stop();
+  /** The decoded line, from memory when she has said it before (no second charge, no wait). */
+  async line(anna, clean, language) {
+    const key = language + '\n' + clean;
+    const hit = this.lines.get(key);
+    if (hit) return hit;
     const res = unwrap(await anna.audio.speak({ text: clean, language, format: 'mp3', delivery: 'inline' }));
     let bytes;
     if (res && res.audioBase64) {
@@ -44,6 +49,21 @@ export class Voice {
       throw new Error('no audio returned');
     }
     const buffer = await this.ctx.decodeAudioData(bytes);
+    if (this.lines.size >= MAX_LINES) this.lines.delete(this.lines.keys().next().value);
+    this.lines.set(key, buffer);
+    return buffer;
+  }
+
+  async speak(anna, text, language) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_CHARS);
+    if (!clean || !anna || !anna.audio || !this.ctx) return;
+    this.stop();
+    // Only the latest line is said: one asked for while this one was still being
+    // fetched takes its place.
+    const turn = ++this.turn;
+    const buffer = await this.line(anna, clean, language);
+    if (turn !== this.turn) return;
+    this.stop();
     const src = this.ctx.createBufferSource();
     const analyser = this.ctx.createAnalyser();
     analyser.fftSize = 512;

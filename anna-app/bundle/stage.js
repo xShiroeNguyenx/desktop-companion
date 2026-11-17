@@ -1,6 +1,8 @@
 // Live2D stage: model loading and framing, look-at-cursor, head pats / pokes,
 // emotion reactions, lip-sync from the voice level, and floating particles.
 
+import { easeToRest, FACE_REST, shouldBlink } from './core.js';
+
 // emotion tag → [expression name in model3.json, motion group]
 const EMOTION_FX = {
   happy: ['Smile', 'TapBody'],
@@ -49,6 +51,38 @@ export class Stage {
     // Lip-sync: write the mouth after motions update, so idle motions don't close it.
     model.internalModel.on('beforeModelUpdate', () => {
       if (this.mouth > 0.01) model.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', this.mouth);
+    });
+    // A reaction motion fades out before its curves are back at neutral, and Live2D
+    // keeps whatever value a motion last wrote: without this she kept a bit of every
+    // smile (squinting eyes, raised cheeks), more of it the lower the frame rate.
+    const core = model.internalModel.coreModel;
+    const ids = core._parameterIds || [];
+    // The library only blinks while no motion plays, and the idle motion never stops,
+    // so she never blinked: drive the blink here whenever a motion is playing.
+    const blink = model.internalModel.eyeBlink;
+    const blinkIds = blink ? blink.getParameterIds() : [];
+    const faceIds = Object.keys(FACE_REST).filter((id) => ids.includes(id) && !blinkIds.includes(id));
+    let last = performance.now();
+    model.internalModel.on('afterMotionUpdate', () => {
+      const now = performance.now();
+      const dt = Math.min(now - last, 100);
+      last = now;
+      const manager = model.internalModel.motionManager;
+      // Priority above 1 = a reaction is playing, and its curves own the face.
+      const reacting = manager.state.currentPriority > 1;
+      if (blink && !manager.isFinished() && shouldBlink(reacting, blink._blinkingState)) {
+        const before = blinkIds.map((id) => core.getParameterValueById(id));
+        blink.updateParameters(core, dt / 1000);
+        // Between blinks it writes "fully open" at once: ease there instead, so eyes a
+        // reaction left half shut open smoothly.
+        if (blink._blinkingState === 1) {
+          blinkIds.forEach((id, i) => core.setParameterValueById(id, easeToRest(before[i], 1, dt)));
+        }
+      }
+      if (reacting) return;
+      for (const id of faceIds) {
+        core.setParameterValueById(id, easeToRest(core.getParameterValueById(id), FACE_REST[id], dt));
+      }
     });
     this.fit();
   }
