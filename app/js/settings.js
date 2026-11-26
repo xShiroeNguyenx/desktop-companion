@@ -784,6 +784,46 @@
   }
   window.addEventListener('focus', showLauncherStatus);
   showLauncherStatus();
+
+  // 📸 Phím chụp màn hình không đăng ký được: báo ngay khi mở bảng (như ô mở nhanh).
+  async function showShotStatus() {
+    try {
+      const st = await invoke('shot_status');
+      if (st) {
+        $('shotStatus').className = 'status err';
+        $('shotStatus').textContent = st;
+      }
+    } catch (_) { /* giữ chữ hướng dẫn */ }
+  }
+  window.addEventListener('focus', showShotStatus);
+  showShotStatus();
+  $('shotNow').addEventListener('click', () => invoke('shot_start'));
+
+  // 🔎 Ngôn ngữ OCR Windows đã cài: điền ô chọn + dòng giải thích (đọc được chữ gì là do
+  // Windows cài gói nào, app không tự thêm được).
+  let ocrLangs = [];
+  function paintOcrHint() {
+    const names = ocrLangs.map(([, name]) => name).join(', ') || t('settings.shot.ocrNone');
+    $('shotOcrHint').textContent = t('settings.shot.ocrHint', { langs: names });
+  }
+  async function loadOcrLangs(selected) {
+    try {
+      ocrLangs = await invoke('shot_ocr_langs');
+    } catch (_) {
+      ocrLangs = [];
+    }
+    const sel = $('shotOcrLang');
+    sel.querySelectorAll('option:not([value=""])').forEach((o) => o.remove());
+    for (const [tag, name] of ocrLangs) {
+      const opt = document.createElement('option');
+      opt.value = tag;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    // Ngôn ngữ đã chọn mà nay bị gỡ khỏi Windows thì quay về tự chọn.
+    sel.value = ocrLangs.some(([tag]) => tag === selected) ? selected : '';
+    paintOcrHint();
+  }
   syncWidgets();
   for (const id of ['weatherMode', 'weatherKind', 'weatherIntensity', 'weatherBattery', 'weatherTalk', 'weatherLightning']) {
     $(id).addEventListener('change', applyWeather);
@@ -895,6 +935,8 @@
       $('lowWarn').checked = s.low_warn !== false;
       $('monInterval').value = String(s.monitor_interval_min || 5);
       $('launcherHotkey').value = s.launcher_hotkey ?? 'Ctrl+Alt+Space';
+      $('shotHotkey').value = s.shot_hotkey ?? 'Ctrl+Alt+X';
+      loadOcrLangs(s.shot_ocr_lang || '');
       $('searchEngine').value = s.search_engine || 'google';
       $('customBangs').value = s.custom_bangs || '';
       fillWarn('cpuWarn', s.cpu_warn_pct ?? 90);
@@ -1056,6 +1098,8 @@
       low_warn: $('lowWarn').checked,
       monitor_interval_min: Number($('monInterval').value) || 5,
       launcher_hotkey: $('launcherHotkey').value.trim(),
+      shot_hotkey: $('shotHotkey').value.trim(),
+      shot_ocr_lang: $('shotOcrLang').value,
       search_engine: $('searchEngine').value,
       custom_bangs: $('customBangs').value,
       cpu_warn_pct: Number($('cpuWarn').value) || 90,
@@ -1168,6 +1212,8 @@
     syncWeatherFields();
     showWeatherStatus();
     showLauncherStatus();
+    showShotStatus();
+    paintOcrHint();
     renderFlowerLast();
   }
   applySubs();

@@ -356,7 +356,7 @@ pub fn flower_menu_action(app: &AppHandle, action: &str) {
 }
 
 // Simple quick-translate window: just the translation + Copy.
-fn open_quick(app: &AppHandle, x: i32, y: i32) {
+pub(crate) fn open_quick(app: &AppHandle, x: i32, y: i32) {
     let pos = PhysicalPosition::new(x, y);
     if let Some(w) = app.get_webview_window("quick") {
         let _ = w.set_position(pos);

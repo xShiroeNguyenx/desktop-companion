@@ -66,7 +66,19 @@ struct SelectionPayload {
     x: i32,
     y: i32,
     source: String,
+    /// Số thứ tự lần bắt chữ: lệnh "thay đoạn đang chọn" gửi lại để chắc là thay đúng đoạn.
+    seq: u64,
 }
+
+/// Nơi dán đè bản dịch: cửa sổ đang focus lúc bắt chữ lần `seq`.
+#[derive(Clone, Copy)]
+struct ReplaceTarget {
+    seq: u64,
+    hwnd: isize,
+}
+
+static CAPTURE_SEQ: AtomicU64 = AtomicU64::new(0);
+static REPLACE_TARGET: Mutex<Option<ReplaceTarget>> = Mutex::new(None);
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 static SENDER: OnceLock<Sender<CaptureReq>> = OnceLock::new();
@@ -135,10 +147,123 @@ pub fn set_see_through(on: bool) {
     SEE_THROUGH.store(on, Ordering::SeqCst);
 }
 
+/// Đoạn bắt gần nhất, kèm `replace`: có dán đè lại được vào app nguồn hay không.
 pub fn last_selection_json() -> Option<Value> {
     let guard = LAST_SELECTION.lock().ok()?;
     let payload = guard.as_ref()?;
-    serde_json::to_value(payload).ok()
+    let mut value = serde_json::to_value(payload).ok()?;
+    let can = REPLACE_TARGET.lock().ok().and_then(|g| *g).is_some_and(|t| t.seq == payload.seq);
+    value["replace"] = Value::Bool(can);
+    Some(value)
+}
+
+/// Chữ đọc được từ ảnh chụp màn hình (shot.rs) trở thành "đoạn đã chọn" để cửa sổ dịch
+/// nhanh dùng lại nguyên luồng cũ. Không có chỗ để dán đè (`replace` = false).
+pub fn set_ocr_selection(text: String, x: i32, y: i32) {
+    let seq = CAPTURE_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+    if let Ok(mut guard) = LAST_SELECTION.lock() {
+        *guard = Some(SelectionPayload { text, x, y, source: "ocr".into(), seq });
+    }
+}
+
+/// Cửa sổ nhận lệnh dán đè, None = lần bắt này không thay được. Chỉ app chép bằng
+/// Ctrl+C thường: trong terminal "dán" là gõ chữ vào shell (có xuống dòng là chạy lệnh),
+/// không đè lên vùng tô khối. Bôi đen trong chính cửa sổ của app này cũng bỏ qua.
+fn replace_hwnd(keys: CopyKeys, foreground: Option<(isize, bool)>) -> Option<isize> {
+    match (keys, foreground) {
+        (CopyKeys::Ctrl, Some((hwnd, false))) if hwnd != 0 => Some(hwnd),
+        _ => None,
+    }
+}
+
+/// So chữ vừa ghi với chữ đọc lại từ clipboard, bỏ qua khác biệt CRLF / LF.
+fn same_text(read: Option<&str>, want: &str) -> bool {
+    read.is_some_and(|r| r.replace("\r\n", "\n") == want.replace("\r\n", "\n"))
+}
+
+/// Dán `text` đè lên đoạn đang tô khối của lần bắt `seq`: ghi clipboard, đưa focus về
+/// cửa sổ nguồn, gửi Ctrl+V, rồi trả clipboard cũ. Lỗi là mã để giao diện tự dịch
+/// (`replace.err.<mã>`): "stale" (đoạn tô không còn / không thay được), "clipboard",
+/// "focus" (không về được app nguồn; bản dịch vẫn nằm trong clipboard để tự dán).
+pub fn replace_selection(seq: u64, text: &str) -> Result<(), &'static str> {
+    #[cfg(target_os = "windows")]
+    {
+        use windows_sys::Win32::Foundation::HWND;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            GetForegroundWindow, IsIconic, IsWindow, SetForegroundWindow, ShowWindow, SW_RESTORE,
+        };
+
+        if text.is_empty() {
+            return Err("stale");
+        }
+        let target = REPLACE_TARGET
+            .lock()
+            .ok()
+            .and_then(|g| *g)
+            .filter(|t| t.seq == seq)
+            .ok_or("stale")?;
+        let hwnd = target.hwnd as HWND;
+        if unsafe { IsWindow(hwnd) } == 0 {
+            return Err("stale");
+        }
+
+        let old = read_clipboard();
+        write_clipboard(text);
+        // arboard nuốt lỗi ghi: đọc lại cho chắc, kẻo dán nhầm thứ đang nằm trong clipboard.
+        if !same_text(read_clipboard().as_deref(), text) {
+            if let Some(o) = &old {
+                write_clipboard(o);
+            }
+            return Err("clipboard");
+        }
+
+        // Người dùng vừa bấm nút trong cửa sổ của mình nên được phép đổi cửa sổ foreground.
+        unsafe {
+            if IsIconic(hwnd) != 0 {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+            SetForegroundWindow(hwnd);
+        }
+        let mut focused = false;
+        for _ in 0..20 {
+            if unsafe { GetForegroundWindow() } == hwnd {
+                focused = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+        if !focused {
+            log_sel("[selection] replace: source window did not come to the foreground");
+            return Err("focus");
+        }
+        // App nguồn cần một nhịp để trả focus về ô nhập (vùng tô khối vẫn còn đó).
+        std::thread::sleep(Duration::from_millis(80));
+        unsafe {
+            send_chord(CopyKeys::Ctrl, VK_V);
+        }
+        log_sel("[selection] replace: pasted over the selection");
+
+        // Đoạn tô đã bị thay: bấm lần nữa sẽ dán chồng thêm, nên bỏ đích đi.
+        if let Ok(mut guard) = REPLACE_TARGET.lock() {
+            *guard = None;
+        }
+        // Trả clipboard cũ sau khi app nguồn đọc xong, trừ khi người dùng đã chép thứ khác.
+        if let Some(o) = old {
+            let pasted = text.to_string();
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(600));
+                if same_text(read_clipboard().as_deref(), &pasted) {
+                    write_clipboard(&o);
+                }
+            });
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (seq, text);
+        Err("stale")
+    }
 }
 
 // Put the most-recent captured selection back onto the clipboard. The auto-
@@ -212,6 +337,7 @@ fn worker(rx: mpsc::Receiver<CaptureReq>) {
         // Phím chép giả tuỳ app đang focus (copy_plan): trong terminal Ctrl+C là ngắt
         // lệnh, trong công cụ chụp màn hình là huỷ vùng đang khoanh.
         let exe = foreground_exe();
+        let foreground = foreground_window();
         if let (Some(name), Ok(mut last)) = (&exe, LAST_APP.lock()) {
             *last = Some(name.clone());
         }
@@ -263,11 +389,18 @@ fn worker(rx: mpsc::Receiver<CaptureReq>) {
             truncate(&text, 80)
         ));
 
+        let seq = CAPTURE_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+        // Không thay được (terminal, cửa sổ của chính app) thì giữ đích cũ: cửa sổ dịch
+        // đang mở vẫn thay đúng đoạn của nó, còn lần bắt mới thì không khớp seq.
+        if let (Some(hwnd), Ok(mut guard)) = (replace_hwnd(keys, foreground), REPLACE_TARGET.lock()) {
+            *guard = Some(ReplaceTarget { seq, hwnd });
+        }
         let payload = SelectionPayload {
             text,
             x: req.x,
             y: req.y,
             source: req.source.as_str().to_string(),
+            seq,
         };
         if let Ok(mut guard) = LAST_SELECTION.lock() {
             *guard = Some(payload.clone());
@@ -303,7 +436,7 @@ fn capture_selection_text(keys: CopyKeys) -> Option<String> {
 
     #[cfg(target_os = "windows")]
     unsafe {
-        send_copy_keys(keys);
+        send_chord(keys, VK_C);
     }
     // macOS: Cmd+C là phím chép ở mọi app, terminal cũng vậy (ngắt lệnh là Ctrl+C).
     #[cfg(not(target_os = "windows"))]
@@ -426,7 +559,9 @@ unsafe extern "system" fn low_level_mouse_proc(
                 }
                 // App đang focus (chụp màn hình, terminal…) được xét ở worker (copy_plan):
                 // hook chỉ xếp hàng rồi trả về ngay.
-                if was_down && auto && dist >= DRAG_THRESHOLD_PX {
+                // 📸 Đang chụp màn hình: cú kéo là khoanh vùng, không phải bôi đen (gửi
+                // Ctrl+C vào lớp phủ sẽ bị hiểu là "chép ảnh rồi đóng").
+                if was_down && auto && dist >= DRAG_THRESHOLD_PX && !crate::shot::active() {
                     if let Some(tx) = SENDER.get() {
                         let _ = tx.send(CaptureReq {
                             x,
@@ -593,6 +728,27 @@ fn foreground_exe() -> Option<String> {
     }
 }
 
+/// Cửa sổ đang focus và nó có thuộc chính tiến trình này không. Chỉ Windows.
+fn foreground_window() -> Option<(isize, bool)> {
+    #[cfg(target_os = "windows")]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+        unsafe {
+            let hwnd = GetForegroundWindow();
+            if hwnd.is_null() {
+                return None;
+            }
+            let mut pid: u32 = 0;
+            GetWindowThreadProcessId(hwnd, &mut pid);
+            Some((hwnd as isize, pid == std::process::id()))
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        None
+    }
+}
+
 // Lower-cased file name (without path) of the process owning the foreground
 // window, e.g. "lightshot.exe".
 #[cfg(target_os = "windows")]
@@ -637,13 +793,17 @@ fn foreground_process_name() -> Option<String> {
 }
 
 #[cfg(target_os = "windows")]
-unsafe fn send_copy_keys(keys: CopyKeys) {
+const VK_C: u16 = 0x43;
+#[cfg(target_os = "windows")]
+const VK_V: u16 = 0x56;
+
+/// Gửi tổ hợp `keys` + phím `vk` (C để chép, V để dán) vào app đang focus.
+#[cfg(target_os = "windows")]
+unsafe fn send_chord(keys: CopyKeys, vk: u16) {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
         MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
         MAPVK_VK_TO_VSC, VK_CONTROL, VK_SHIFT,
     };
-
-    const VK_C: u16 = 0x43;
 
     unsafe fn key(vk: u16, up: bool) -> INPUT {
         INPUT {
@@ -666,15 +826,15 @@ unsafe fn send_copy_keys(keys: CopyKeys) {
     let mut inputs = match keys {
         CopyKeys::Ctrl => vec![
             key(VK_CONTROL, false),
-            key(VK_C, false),
-            key(VK_C, true),
+            key(vk, false),
+            key(vk, true),
             key(VK_CONTROL, true),
         ],
         CopyKeys::CtrlShift => vec![
             key(VK_CONTROL, false),
             key(VK_SHIFT, false),
-            key(VK_C, false),
-            key(VK_C, true),
+            key(vk, false),
+            key(vk, true),
             key(VK_SHIFT, true),
             key(VK_CONTROL, true),
         ],
@@ -820,6 +980,31 @@ mod tests {
         // App không có luật vẫn theo danh sách có sẵn.
         assert_eq!(copy_plan(Source::Drag, Some("putty.exe"), &rules), None);
         assert_eq!(copy_plan(Source::Drag, Some("chrome.exe"), &rules), Some(CopyKeys::Ctrl));
+    }
+
+    #[test]
+    fn only_ordinary_apps_outside_this_one_can_be_pasted_over() {
+        assert_eq!(replace_hwnd(CopyKeys::Ctrl, Some((42, false))), Some(42));
+        // Terminal: dán là gõ vào shell, không đè vùng tô khối.
+        assert_eq!(replace_hwnd(CopyKeys::CtrlShift, Some((42, false))), None);
+        // Bôi đen trong cửa sổ của chính app, hoặc không biết cửa sổ nào (macOS).
+        assert_eq!(replace_hwnd(CopyKeys::Ctrl, Some((42, true))), None);
+        assert_eq!(replace_hwnd(CopyKeys::Ctrl, Some((0, false))), None);
+        assert_eq!(replace_hwnd(CopyKeys::Ctrl, None), None);
+    }
+
+    #[test]
+    fn clipboard_check_ignores_line_ending_style() {
+        assert!(same_text(Some("a\r\nb"), "a\nb"));
+        assert!(same_text(Some("xin chào"), "xin chào"));
+        assert!(!same_text(Some("khác"), "xin chào"));
+        assert!(!same_text(None, "xin chào"));
+    }
+
+    #[test]
+    fn replacing_an_unknown_capture_is_refused() {
+        assert_eq!(replace_selection(u64::MAX, "hello"), Err("stale"));
+        assert_eq!(replace_selection(u64::MAX, ""), Err("stale"));
     }
 
     #[test]

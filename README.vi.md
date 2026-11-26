@@ -79,6 +79,15 @@ duyệt, Word…).
   Vẫn có thể nhấn **Ctrl+C** (khi bông hoa đang hiện) để sao chép đoạn vừa chọn.
   Trong terminal, bông hoa chép bằng Ctrl+Shift+C để không ngắt lệnh đang chạy; app nào bôi đen
   xong bị trục trặc thì chỉnh cách chép ở Cài đặt → *⚙️ Hệ thống* → *Cách chép theo từng app*.
+  Gõ câu trả lời bằng tiếng Việt trong khung chat, bôi đen, dịch, rồi bấm 🔁 **Thay**: bản dịch
+  đè luôn lên đoạn đang bôi đen, khỏi phải chép rồi dán (Windows).
+- **📸 Chụp màn hình (Windows)** — bấm **Ctrl+Alt+X** (hoặc khay → *📸 Chụp màn hình*, hoặc menu
+  tròn của pet → 🧩 → 📸): màn hình đang chứa con trỏ đứng hình, kéo chuột khoanh vùng, chỉnh
+  bằng các tay nắm, vẽ chú thích (bút, đường thẳng, mũi tên, khung chữ nhật, bút dạ quang, chữ, 6 màu, hoàn tác; lăn chuột để đổi độ dày nét), rồi
+  **Ctrl+C** để chép ảnh hoặc **Ctrl+S** để lưu PNG. 🌐 dịch chữ trong vùng chọn, 📄 chép chữ
+  (OCR có sẵn của Windows, chạy không cần mạng, đọc được các ngôn ngữ Windows đã cài), 📌 ghim
+  ảnh lên màn hình. Ảnh không rời khỏi máy. Đổi phím ở
+  Cài đặt → *📸 Chụp màn hình* (gõ `PrintScreen` nếu muốn dùng phím đó).
 - **Trò chuyện với pet** — chuột phải → 💬 **Chat nhanh**. Câu trả lời hiện dần
   từng chữ trong bong bóng, nét mặt pet đổi theo cảm xúc của câu nói. Pet biết giờ
   và các việc anh chưa làm xong, nhớ 10 lượt gần nhất (chỉ lưu trên máy; 🗑 để xoá),

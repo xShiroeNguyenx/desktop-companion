@@ -165,7 +165,7 @@ pub fn should_render(snap: &crate::awareness::Snapshot, desktop_covered: bool) -
 // ─── Win32 ───────────────────────────────────────────────────────────────────
 
 #[cfg(windows)]
-mod win {
+pub(crate) mod win {
     use windows_sys::Win32::Foundation::{HWND, LPARAM, RECT};
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
@@ -227,7 +227,7 @@ mod win {
             let parent = GetAncestor(hwnd, GA_PARENT);
             if parent != host {
                 return Err(format!(
-                    "Windows không cho gắn bể cá xuống dưới hình nền (SetParent {}, mã lỗi {err}).",
+                    "Windows không cho gắn cửa sổ xuống dưới hình nền (SetParent {}, mã lỗi {err}).",
                     if prev.is_null() && err != 0 { "thất bại" } else { "không đổi được cha" }
                 ));
             }
@@ -236,7 +236,7 @@ mod win {
             // lên màn hình — trang vẫn vẽ (PrintWindow thấy cá) mà desktop trống trơn
             // (thử thật 2026-11-05). Nền vẫn trong suốt nhờ WebView2 (DirectComposition).
             if !clear_layered(hwnd) {
-                return Err("Không bỏ được cờ WS_EX_LAYERED nên bể cá không hiện trên hình nền.".into());
+                return Err("Không bỏ được cờ WS_EX_LAYERED nên cửa sổ không hiện trên hình nền.".into());
             }
             // Toạ độ trong WorkerW: lấy góc trên-trái của WorkerW trên màn hình.
             let mut hr: RECT = std::mem::zeroed();
@@ -308,7 +308,7 @@ mod win {
 
 // ─── Cửa sổ ──────────────────────────────────────────────────────────────────
 
-fn primary_rect(app: &AppHandle) -> Option<Rect> {
+pub(crate) fn primary_rect(app: &AppHandle) -> Option<Rect> {
     let m = app.primary_monitor().ok().flatten()?;
     let (p, s) = (m.position(), m.size());
     Some((p.x, p.y, s.width as i32, s.height as i32))
@@ -351,7 +351,7 @@ fn create(_app: &AppHandle) -> Result<(), String> {
     Err("Bể cá full chỉ có trên Windows.".into())
 }
 
-fn on_main<R: Send + 'static>(app: &AppHandle, f: impl FnOnce(&AppHandle) -> R + Send + 'static) -> Result<R, String> {
+pub(crate) fn on_main<R: Send + 'static>(app: &AppHandle, f: impl FnOnce(&AppHandle) -> R + Send + 'static) -> Result<R, String> {
     let (tx, rx) = std::sync::mpsc::channel();
     let app2 = app.clone();
     app.run_on_main_thread(move || {
@@ -377,6 +377,10 @@ pub fn set(app: &AppHandle, on: bool) -> Result<(), String> {
         return if on { on_main(app, create)? } else { Ok(()) };
     }
     if on {
+        // 🎬 Hình nền động nằm cùng chỗ dưới icon desktop: tắt nó trước.
+        if crate::wallpaper_live::is_on(app) {
+            crate::wallpaper_live::set_video(app, None)?;
+        }
         on_main(app, create)??;
         let mut s = store::load_settings(app);
         s.aquarium_full = true;

@@ -14,6 +14,16 @@
 
 * { box-sizing: border-box; }
 
+/* Thanh cuộn mảnh cho mọi cửa sổ dùng ui.css (dịch nhanh, Trợ lý văn bản, Công việc, Cài
+   đặt…): không mũi tên, không rãnh, chỉ một vạch hồng mờ, rê chuột vào thì đậm lên. Trang
+   nào tự đặt thanh cuộn riêng (selector cụ thể hơn) thì vẫn theo trang đó. */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 150, 190, 0.35); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 150, 190, 0.7); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
 html, body {
   margin: 0;
   height: 100%;

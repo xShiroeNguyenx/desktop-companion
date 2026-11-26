@@ -2169,3 +2169,195 @@ hình chính**, bật full thì widget ẩn (tắt full thì hiện lại nếu 
 3. Cá **có vào gacha**, nhưng làm sau.
 4. Bể tối đa **8 con**, mỗi loài tối đa **3**.
 5. Phát hành ở **v0.12.0**.
+
+## 19. 🖼 Hình nền desktop (code 2026-11-23, chưa thử GUI)
+
+Người dùng chốt (2026-11-23): nguồn ảnh = file trên máy, thư mục + tự xoay vòng, bộ ảnh có sẵn,
+Google Drive, video ngắn (hình nền động). Nút đặt ở **Cài đặt** (mục 🖼 Hình nền). Chỉ bản
+Tauri, Anna App giữ nguyên (chạy trong trình duyệt, không đổi được hình nền máy).
+
+- `wallpaper.rs`: Windows dùng COM `IDesktopWallpaper` (`SetPosition` + `SetWallpaper` cho mọi
+  màn hình) trên luồng riêng, rồi **đọc lại** `GetWallpaper` của màn hình đầu: khác đường dẫn →
+  báo lỗi (máy bị khoá đổi hình nền). macOS: `osascript` System Events (bỏ qua kiểu hiển thị).
+  Hàm thuần có test: `fit_code`, `sorted_images`, `next_image` (ngẫu nhiên không lặp ảnh đang
+  đặt), `due`, `drive_link`, `folder_file_ids`, `sniff`, `parse_range`, `safe_name`.
+  Test `live_reapply_current_wallpaper` (`--ignored`) đặt lại đúng hình nền đang có rồi đọc lại.
+- Xoay vòng: luồng 30 giây, `due(last_change, now, interval_min)`; lỗi ghi `last_error` (Cài đặt
+  hiện) và chờ hết chu kỳ mới thử lại. Chọn ảnh lẻ / ảnh vẽ sẵn = tắt xoay vòng.
+- Bộ vẽ sẵn: `js/wallpaper-art.js` vẽ bằng canvas đúng độ phân giải màn hình (6 cảnh, có hạt
+  giống nên vẽ lại y hệt), gửi PNG base64 → lưu `<app_data>/wallpapers/builtin/<id>.png`. Không
+  kèm file ảnh nào nên không vướng bản quyền.
+- Google Drive (không cần API key): file → `drive.usercontent.google.com/download?id=…&confirm=t`,
+  nhận dạng loại bằng byte đầu (Drive không cho tên file); trả về HTML = link chưa công khai.
+  Thư mục → đọc `embeddedfolderview?id=…` (trang không chính thức, Google đổi là hỏng), tải tối
+  đa 40 ảnh vào `wallpapers/drive-<id>/`, xoá ảnh không còn trong thư mục, rồi xoay vòng.
+  Giới hạn: ảnh 40 MB, video 300 MB.
+- `wallpaper_live.rs` (🎬, chỉ Windows): cửa sổ `wallvid` gắn vào WorkerW như bể cá full (dùng
+  chung `aquarium_full::win`), nên **hai thứ loại trừ nhau** (bật cái này tắt cái kia). Video phát
+  qua giao thức `wallmedia://` (chỉ phục vụ đúng ảnh / video trong cài đặt, có Range 2 MB/khúc).
+  Dừng khi cửa sổ che kín desktop, toàn màn hình, khoá máy, rời máy; video mất file → tự tắt + báo.
+- **Còn phải thử GUI:** đặt ảnh / kiểu hiển thị, xoay vòng thật, ảnh vẽ sẵn ở 4K + DPI 150%,
+  link Drive file / thư mục / link riêng tư, video MP4 H.264 + WebM (loop, pause khi phóng to cửa
+  sổ), Explorer khởi động lại khi đang bật video, chuyển qua lại với bể cá full, bản macOS build.
+
+## 20. 📸 Chụp màn hình (Phase 29–30; đợt 1 code 2026-11-26, chưa thử GUI)
+
+Người dùng chốt (2026-11-26): thêm công cụ chụp vùng màn hình kiểu "đóng băng màn hình → kéo
+khoanh vùng → vẽ chú thích → chép / lưu" ngay trong app, làm hai đợt. Đợt 1 là lõi chụp + vẽ;
+đợt 2 là phần chỉ app này có (đọc chữ trong ảnh rồi dịch, ghim ảnh lên desktop).
+
+### 20.1 Nguyên tắc (chốt trước khi làm)
+
+- **Không gửi ảnh đi đâu cả.** Không có nút upload lấy link: ảnh chụp màn hình rất dễ chứa
+  thông tin nhạy cảm. Ảnh chỉ nằm trong RAM cho tới khi người dùng bấm chép hoặc lưu.
+- **Không tốn RAM khi không dùng.** Cửa sổ chụp `shot` dựng lúc bấm, đóng là huỷ (như các bảng
+  LAZY); khung hình gốc bỏ khỏi RAM ngay khi đóng. Đổi lại lớp phủ hiện chậm hơn công cụ dựng
+  sẵn khoảng nửa giây, nhưng ảnh vẫn là đúng khoảnh khắc bấm phím vì chụp **trước** khi dựng.
+- **Chỉ Windows.** macOS cần quyền Ghi màn hình và chưa có máy thử: phím tắt không đăng ký, mục
+  menu ẩn, Cài đặt ghi rõ "chỉ Windows".
+- **Phím mặc định không giẫm lên app khác:** `Ctrl+Alt+X` (KHÔNG dùng `Ctrl+Alt+A`: đó là phím chụp của Zalo, Zalo chạy trước thì giữ mất phím và người dùng tưởng công cụ của mình hỏng), đổi được trong Cài đặt (gõ
+  `PrintScreen` nếu muốn giống Lightshot; trống = tắt). Đăng ký thất bại thì Cài đặt báo, không im lặng.
+- **Logic tính toán là hàm thuần có test** (`app/js/shot-core.js`, phần thuần của `shot.rs`);
+  `shot.js` chỉ nối sự kiện chuột / phím với canvas.
+
+### 20.2 Người dùng thấy gì (đợt 1)
+
+1. Bấm `Ctrl+Alt+X`, hoặc khay → *📸 Chụp màn hình*, hoặc menu tròn của pet → 🧩 Tiện ích → 📸.
+2. Màn hình **đang chứa con trỏ** đứng hình và tối đi. Kéo chuột để khoanh vùng: vùng chọn sáng
+   lên, có nhãn kích thước `rộng × cao` (pixel thật).
+3. Chỉnh vùng: kéo 8 tay nắm để đổi cỡ, kéo bên trong để dời, kéo ra ngoài vùng để khoanh lại.
+4. Thanh công cụ bám dưới vùng chọn (hết chỗ thì lên trên, hết nữa thì vào trong):
+   ✏️ bút · ╱ đường thẳng · ➡️ mũi tên · ▭ khung chữ nhật · 🖍️ bút dạ quang · 🔤 chữ ·
+   🎨 màu (6 màu) · ↩️ hoàn tác · (giữ Shift khi kéo đường thẳng / mũi tên: ngang, dọc, chéo 45°;
+   lăn chuột lên / xuống: nét dày lên / mỏng đi qua 8 nấc, chữ to / nhỏ theo)
+   📋 chép · 💾 lưu · ✕ đóng.
+5. Phím: `Ctrl+C` chép rồi đóng · `Ctrl+S` lưu (hộp Lưu file, tên sẵn
+   `Screenshot_YYYY-MM-DD_HH-mm-ss.png`) rồi đóng · `Ctrl+Z` hoàn tác · `Esc` huỷ.
+6. Chép / lưu lỗi thì lớp phủ **không đóng** và hiện lý do ngay trên thanh công cụ.
+
+Giới hạn đợt 1 (ghi rõ để khỏi hiểu nhầm): mỗi lần chụp một màn hình (màn có con trỏ), không
+khoanh vắt qua hai màn hình; không chụp con trỏ chuột; chữ chú thích một dòng, một cỡ.
+
+### 20.3 Kiến trúc
+
+```
+phím tắt / khay / menu pet
+        │
+        ▼
+shot::start ──(luồng riêng)── GDI BitBlt màn hình có con trỏ ──► FRAME (BMP 32-bit trong RAM)
+        │
+        ▼
+dựng cửa sổ "shot" (ẩn, không viền, luôn nổi, phủ kín màn hình đó)
+        │   invoke shot_frame → byte thô của BMP → Blob → <img src="blob:…">
+        ▼
+shot.js: ảnh nạp xong → invoke shot_ready → Rust hiện + focus cửa sổ
+        │
+   kéo vùng / vẽ   (shot-core.js: hình học thuần)
+        │
+        ├─ 📋 canvas (vùng cắt + nét vẽ) → PNG base64 → shot_copy → giải PNG → arboard::set_image → đọc lại kiểm cỡ
+        ├─ 💾 PNG base64 → shot_save → hộp Lưu file (cha = cửa sổ shot) → ghi file
+        └─ ✕ / Esc → shot_close → huỷ cửa sổ, xoá FRAME
+```
+
+- **`src-tauri/src/shot.rs`** (mới)
+  - Phím tắt: `register` / `status` / `is_shortcut` theo đúng khuôn `launcher.rs`; `main.rs`
+    gọi lại `shot::register` sau `unregister_all` của phím bắt chữ.
+  - `start(app, delay_ms)`: bỏ qua nếu đang chụp (`ACTIVE`); mở từ menu thì chờ 250 ms cho menu
+    kịp đóng. Chụp bằng GDI (`BitBlt` + `GetDIBits` 32-bit top-down), ép byte alpha = 255, ghép
+    header BMP: WebView2 đọc BMP trực tiếp nên **không cần thêm crate mã hoá ảnh**.
+  - `take_frame` (lệnh `shot_frame`): trả khung hình dạng byte thô qua IPC, **một lần**, rồi
+    bỏ khỏi RAM phía Rust. Không dùng giao thức riêng kiểu `wallmedia://`: ảnh từ nguồn khác
+    làm canvas bị khoá (tainted) nên không xuất PNG được, còn Blob thì cùng nguồn với trang.
+  - Bộ canh giờ 8 giây: trang không gọi `shot_ready` (ảnh hỏng, JS lỗi) thì tự dọn, để
+    `ACTIVE` không kẹt và phím tắt không thành vô dụng.
+  - `copy(png)`: `tauri::image::Image::from_bytes` (đã có sẵn nhờ feature `image-png`) → RGBA →
+    `arboard::set_image`, rồi **đọc lại** clipboard kiểm rộng × cao (arboard nuốt lỗi).
+  - `save(png)`: `tauri-plugin-dialog` (đã có) `blocking_save_file`, ghi file, trả đường dẫn.
+  - `close`: ẩn ngay, huỷ cửa sổ ở luồng riêng (huỷ trên main thread làm treo WebView2), xoá `FRAME`.
+  - Hàm thuần có test: `bmp_header`, `opaque` (ép alpha), `png_from_data_url` (kiểm tiền tố,
+    chữ ký PNG, trần 60 MB), `monitor_at` (màn hình chứa điểm, rơi về màn đầu), `safe_name`.
+    Test `live_capture_fills_a_bmp_of_the_right_size` (`--ignored`) chụp thật 200×100 pixel.
+- **`app/shot.html` + `app/js/shot.js`** (mới): `<img>` nền + một `<canvas>` phủ (vẽ lớp tối có
+  lỗ, viền, tay nắm, nét chú thích). Mọi toạ độ lưu theo **pixel ảnh** (pixel thật của màn
+  hình), đổi từ CSS px bằng `ảnh.naturalWidth / innerWidth`, nên DPI 125% / 150% vẫn xuất đúng
+  từng pixel. Xuất: canvas ngoài màn hình cỡ vùng chọn, vẽ phần ảnh cắt rồi vẽ lại nét chú thích.
+- **`app/js/shot-core.js`** (mới, thuần, có test): `normRect`, `clampRect`, `hitTest` (tay nắm /
+  trong / ngoài), `dragRect` (dời + đổi cỡ, kẹp trong ảnh, lật khi kéo qua cạnh đối diện),
+  `toolbarPos`, `arrowHead`, `fileName`, `cursorFor`. Thêm `Ctrl+A` = chọn cả màn hình.
+- **Nối dây**
+  - `store.rs`: `shot_hotkey` (mặc định `Ctrl+Alt+X`). `commands.rs`: `settings_set` đăng ký
+    lại + trả lỗi nếu phím không nhận; lệnh `shot_start` (nút "Chụp ngay" ở Cài đặt),
+    `shot_frame`, `shot_ready`, `shot_copy`, `shot_save`, `shot_close`, `shot_status`.
+  - `selection.rs`: hook chuột **không** xếp hàng bắt chữ khi `shot::active()`; nếu không, cú
+    kéo khoanh vùng bị coi là bôi đen và app tự gửi Ctrl+C vào lớp phủ (= chép rồi đóng ngay).
+  - `main.rs`: handler phím tắt, mục khay, lệnh pet `openShot`, nhánh `CloseRequested` riêng
+    cho `shot` (Alt+F4 = huỷ chụp).
+  - `capabilities/default.json`: thêm cửa sổ `shot`. CSP không đổi (`img-src` đã có `blob:`).
+  - `Cargo.toml`: `windows-sys` thêm `Win32_Graphics_Gdi`.
+  - Chữ: `strings/misc.js` (lớp phủ), `strings/settings.js`, `strings/pet.js`, `tray_text.rs`,
+    đủ vi / ja / en. README ×3 + CHANGELOG.
+
+### 20.4 Các bước đợt 1 (Phase 29; mỗi bước `cargo test` + `npm test` xanh)
+
+1. `shot-core.js` + test (hình học, chỗ đặt thanh công cụ, tên file).
+2. `shot.rs`: chụp GDI, BMP, giao thức, phím tắt, copy / save / close + test hàm thuần.
+3. `shot.html` + `shot.js`: khoanh vùng, tay nắm, thanh công cụ, 4 công cụ vẽ, hoàn tác, phím tắt.
+4. Nối dây: store, commands, main (phím, khay, pet), selection, CSP, capability, Cài đặt.
+5. Chữ 3 ngôn ngữ, README, CHANGELOG.
+6. Thử GUI theo 20.6 rồi mới phát hành.
+
+### 20.5 Đợt 2 (Phase 30; code 2026-11-26, chưa thử GUI)
+
+Ba nút mới trên thanh công cụ của lớp phủ: 🌐 dịch chữ trong ảnh · 📄 chép chữ trong ảnh ·
+📌 ghim ảnh lên màn hình.
+
+- **`ocr.rs`** (mới): `Windows.Media.Ocr`, chạy trên máy, không gửi ảnh đi đâu.
+  - `languages()` = các gói OCR Windows đã cài; `recognize(bgra, w, h, lang)` đọc chữ. `lang`
+    rỗng = thử **mọi** bộ đọc đã cài rồi `pick_best` (điểm = số chữ / số, chữ ngoài ASCII tính
+    gấp đôi), vì bộ đọc sai ngôn ngữ trả về chữ rác chứ không báo lỗi.
+  - Tiếng Nhật / Trung: Windows tách từng chữ thành một "từ", `join_line` ghép lại không chèn
+    dấu cách.
+  - Mã lỗi cho giao diện: `noocr` (chưa cài gói nào), `notext`, `image` (quá 10000 px), `ocr`.
+  - Test thuần: `join_line`, `score`, `pick_best`, `clean_lang`. Test thật (`--ignored`):
+    `live_blank_image_has_no_text`, và `shot::live_ocr_reads_text_from_a_png` (đặt
+    `DC_OCR_PNG` + `DC_OCR_EXPECT`; đã chạy 2026-11-26 với ảnh chữ Anh, đọc đúng nguyên văn).
+- **Ảnh đưa cho OCR** là vùng cắt **không kèm nét vẽ**, phóng gấp đôi khi vùng nhỏ
+  (`ShotCore.ocrScale`): chữ giao diện ở DPI 100% chỉ cao ~10 px, để nguyên thì đọc sai nhiều.
+- **🌐 Dịch**: `shot_ocr(action = "translate")` → `selection::set_ocr_selection` đặt chữ đọc
+  được làm "đoạn đã chọn" (nguồn `ocr`, không có đích dán đè) → mở cửa sổ dịch nhanh ở chỗ
+  con trỏ. Dùng lại nguyên luồng dịch cũ, kể cả nút 👁 xem / chép chữ gốc.
+- **📄 Chép chữ**: `shot_ocr(action = "copy")` → clipboard (đọc lại để kiểm) → đóng lớp phủ.
+- **📌 Ghim** (`shot.rs`, mục "Ghim ảnh"): cửa sổ `shotpin-<n>` không viền, luôn nổi, đặt đúng
+  toạ độ vùng vừa chụp (`ORIGIN` của màn hình + vùng chọn), trang `shot-pin.html` lấy PNG qua
+  `shotpin_image`. Kéo để dời, rê chuột hiện 📋 (chép lại) / ✕, bấm đúp hoặc Esc để gỡ.
+  Tối đa 5 ảnh (mỗi ảnh một tiến trình WebView2). **Ghim như tờ note** (người dùng yêu cầu
+  2026-11-26): ảnh lưu ở `<app_data>/shot-pins/<id>.png`, vị trí trong `index.json` (ghi file
+  tạm rồi đổi tên), `restore_pins` hiện lại lúc mở app; kéo đi thì 400 ms sau ghi vị trí mới;
+  gỡ ghim mới xoá file. Ảnh nằm ngoài mọi màn hình (rút màn phụ) thì `pin_place` kéo về màn đầu.
+  Lưu ý riêng tư: ảnh ghim nằm trên đĩa dạng PNG thường cho tới khi gỡ.
+- **Cài đặt**: ô chọn "Ngôn ngữ đọc chữ trong ảnh" (tự chọn / từng gói đã cài, lệnh
+  `shot_ocr_langs`) kèm dòng ghi máy đang cài gói nào và cách thêm ngôn ngữ trong Windows.
+- **Giới hạn đã biết:** đọc được ngôn ngữ nào là do Windows cài gói OCR nào (máy dev chỉ có
+  en-US, nên chưa thử được tiếng Nhật); chữ viết tay / chữ cách điệu đọc kém.
+- **Để sau:** đọc chữ bằng chính mô hình AI đang dùng để dịch (đọc được mọi ngôn ngữ, không
+  cần gói OCR, nhưng tốn hạn mức và phải thêm đường gửi ảnh cho cả 3 nhà cung cấp); làm mờ vùng
+  nhạy cảm; đánh số bước; lưu nhanh không hỏi; khoanh vắt qua nhiều màn hình.
+
+### 20.6 Rủi ro & kiểm thử bằng tay
+
+- **Cửa sổ luôn nổi khác đè lên lớp phủ** (pet, widget ghim, hiệu ứng thời tiết): lớp phủ dựng
+  sau và được focus nên phải nằm trên; cần nhìn thật trên máy có bật đủ các widget.
+- **BMP 32-bit trong WebView2**: nếu ảnh không nạp được (`img.onerror`) thì lớp phủ tự đóng và
+  ghi log, không để màn hình đen phủ kín.
+- **Khung hình 4K đi qua IPC** (33 MB byte thô): cần đo độ trễ thật từ lúc bấm phím tới lúc lớp
+  phủ hiện; quá chậm thì cân nhắc dựng sẵn cửa sổ ẩn (đổi RAM lấy tốc độ).
+- **Phím tắt trùng app khác**: Cài đặt phải hiện câu báo, và mục khay vẫn chụp được.
+- Thử: màn hình 100% / 125% / 150%; hai màn hình khác DPI (chụp ở từng màn); màn 4K (ảnh 33 MB
+  trong RAM, kéo vùng có mượt không); app toàn màn hình; dán ảnh vào Paint / Teams / Zalo; lưu
+  file rồi mở lại xem đúng cỡ; bấm Huỷ ở hộp Lưu (lớp phủ phải còn đó); Alt+F4; bấm phím hai
+  lần liên tiếp; kéo khoanh vùng không được làm hiện bông hoa 🌸; RAM sau khi đóng.
+- Thử đợt 2: 🌐 trên một đoạn chữ Anh nhỏ (cửa sổ dịch nhanh phải mở với đúng chữ đó); 📄 rồi
+  dán ra Notepad; vùng không có chữ (phải báo, không đóng); 📌 ảnh ghim có nằm đúng chỗ vừa
+  chụp không (kể cả màn hình phụ, DPI 150%), kéo đi, 📋, bấm đúp gỡ; ghim ảnh thứ 6 phải báo;
+  thoát app rồi mở lại: ảnh ghim hiện lại đúng chỗ đã kéo tới, ảnh đã gỡ thì không;
+  Cài đặt hiện đúng danh sách gói OCR; cài thêm gói tiếng Nhật rồi thử chữ Nhật.

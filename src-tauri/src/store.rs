@@ -235,12 +235,21 @@ pub struct Settings {
     /// Lúc bật full, widget bể có đang ghim không (tắt full thì ghim lại).
     #[serde(default)]
     pub aquarium_full_widget: bool,
+    /// 🖼 Hình nền desktop (wallpaper.rs) và 🎬 hình nền động (wallpaper_live.rs).
+    #[serde(default)]
+    pub wallpaper: crate::wallpaper::WallSettings,
     /// Kiểm các site mỗi bao nhiêu phút (monitor::INTERVALS).
     #[serde(default = "default_monitor_interval")]
     pub monitor_interval_min: u32,
     /// 🔎 Ô mở nhanh (launcher.rs): phím tắt, rỗng = tắt.
     #[serde(default = "default_launcher_hotkey")]
     pub launcher_hotkey: String,
+    /// 📸 Chụp màn hình (shot.rs): phím tắt, rỗng = tắt.
+    #[serde(default = "default_shot_hotkey")]
+    pub shot_hotkey: String,
+    /// 🔎 Ngôn ngữ đọc chữ trong ảnh (ocr.rs): mã như "ja", rỗng = tự chọn trong các gói đã cài.
+    #[serde(default)]
+    pub shot_ocr_lang: String,
     /// "google" | "duckduckgo" | "bing".
     #[serde(default = "default_search_engine")]
     pub search_engine: String,
@@ -262,6 +271,10 @@ pub struct Settings {
 fn default_monitor_interval() -> u32 {
     crate::monitor::DEFAULT_INTERVAL
 }
+fn default_shot_hotkey() -> String {
+    crate::shot::DEFAULT_HOTKEY.into()
+}
+
 fn default_launcher_hotkey() -> String {
     crate::launcher::DEFAULT_HOTKEY.into()
 }
@@ -463,8 +476,11 @@ impl Default for Settings {
             aquarium_big: false,
             aquarium_full: false,
             aquarium_full_widget: false,
+            wallpaper: Default::default(),
             monitor_interval_min: default_monitor_interval(),
             launcher_hotkey: default_launcher_hotkey(),
+            shot_hotkey: default_shot_hotkey(),
+            shot_ocr_lang: String::new(),
             search_engine: default_search_engine(),
             custom_bangs: String::new(),
             widgets_over_desktop: true,

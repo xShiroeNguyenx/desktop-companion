@@ -6,6 +6,9 @@
   const T = (key, vars) => window.I18n.t(key, vars);
   let lastResult = '';
   let lastSource = '';
+  // Lần bắt chữ đang hiện (seq) và có dán đè lại được vào app nguồn không.
+  let lastSeq = 0;
+  let canReplace = false;
   // Chữ chờ đang hiện ở khung bản dịch / nội dung gốc (khoá i18n), '' = đang hiện văn bản thật.
   let resultKey = '';
   let sourceKey = '';
@@ -64,6 +67,8 @@
   async function run() {
     lastResult = '';
     lastSource = '';
+    canReplace = false;
+    paintReplace();
     $('source').textContent = '...';
     resultKey = 'quick.translating';
     sourceKey = '';
@@ -87,6 +92,8 @@
     }
     $('source').textContent = sel.text;
     lastSource = sel.text;
+    lastSeq = sel.seq || 0;
+    canReplace = !!sel.replace;
     try {
       // Empty context → Rust falls back to the default context from Settings.
       const out = await invoke('llm_translate', { text: sel.text, context: '', target: '' });
@@ -94,6 +101,7 @@
       resultKey = '';
       $('result').textContent = out;
       $('result').classList.remove('empty');
+      paintReplace();
     } catch (e) {
       resultKey = '';
       $('result').textContent = '';
@@ -115,6 +123,28 @@
 
   $('copyBtn').addEventListener('click', (e) => copyWithFeedback(e.currentTarget, lastResult));
   $('copySrcBtn').addEventListener('click', (e) => copyWithFeedback(e.currentTarget, lastSource));
+
+  // 🔁 Thay: dán bản dịch đè lên đoạn đang bôi đen ở app nguồn (Rust lo đổi focus + Ctrl+V,
+  // xong thì tự ẩn cửa sổ này). Lỗi là mã, dịch ở đây.
+  function paintReplace() {
+    $('replaceBtn').style.display = canReplace && lastResult ? '' : 'none';
+  }
+  $('replaceBtn').addEventListener('click', async () => {
+    if (!canReplace || !lastResult) return;
+    const btn = $('replaceBtn');
+    btn.disabled = true;
+    setStatus('');
+    try {
+      await invoke('replace_selection', { seq: lastSeq, text: lastResult });
+      canReplace = false; // đoạn bôi đen đã bị thay, không dán chồng lần hai
+    } catch (e) {
+      const code = String(e);
+      if (code === 'stale') canReplace = false;
+      setStatus(T(['stale', 'focus', 'clipboard'].includes(code) ? 'replace.err.' + code : 'replace.err.fail'), 'err');
+    }
+    btn.disabled = false;
+    paintReplace();
+  });
 
   // Nội dung gốc ẩn mặc định; nút 👁 bật/tắt.
   function setSourceVisible(on) {

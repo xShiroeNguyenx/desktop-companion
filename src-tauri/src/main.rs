@@ -28,6 +28,8 @@ mod monitor_pin;
 mod aquarium;
 mod aquarium_pin;
 mod aquarium_full;
+mod wallpaper;
+mod wallpaper_live;
 mod pet_render;
 mod lunar;
 mod llm;
@@ -36,6 +38,7 @@ mod macos;
 mod naming;
 mod note_pins;
 mod notes;
+mod ocr;
 mod persona;
 mod power_warn;
 mod notify;
@@ -46,6 +49,7 @@ mod reminders;
 mod rewards;
 mod secrets;
 mod selection;
+mod shot;
 mod show_desktop;
 mod sidegirl;
 mod fx;
@@ -446,6 +450,8 @@ fn pet_command(app: AppHandle, payload: Value) {
         "openSettings" => windows::open_settings(&app),
         "openTasks" => windows::open_tasks(&app),
         "openNotes" => windows::open_notes(&app),
+        // Menu tròn 📸: chờ menu đóng hẳn rồi mới chụp (shot.rs).
+        "openShot" => shot::start(&app, 250),
         // Menu chuột phải → 🗂️ Mở đầy đủ: Trợ lý văn bản, người dùng tự gõ văn bản.
         "openAssistant" => windows::open_assistant(&app),
         // Menu cũ của pet (trang tự hiện bong bóng báo). Bản desktop dùng tray.
@@ -585,6 +591,7 @@ fn register_capture_hotkey(app: &AppHandle, spec: &str) -> bool {
     // unregister_all vừa gỡ cả phím tắt thời tiết và ô mở nhanh: đăng ký lại.
     fx::register_shortcut(app);
     launcher::register(app);
+    shot::register(app);
     ok
 }
 
@@ -658,6 +665,9 @@ fn main() {
                     } else if launcher::is_shortcut(shortcut) {
                         // 🔎 Ô mở nhanh.
                         launcher::toggle(app);
+                    } else if shot::is_shortcut(shortcut) {
+                        // 📸 Chụp màn hình.
+                        shot::start(app, 0);
                     } else if shortcut.matches(COPY_MODIFIER, Code::KeyC) {
                         let ok = selection::copy_last_selection();
                         if let Some(w) = app.get_webview_window("flower") {
@@ -719,6 +729,9 @@ fn main() {
                 });
             resp
         })
+        // 🖼 Xem trước hình nền đang đặt và phát video hình nền động (chỉ đúng hai file
+        // trong cài đặt, có Range cho video). URL: wallmedia://localhost/image | /video
+        .register_uri_scheme_protocol("wallmedia", |ctx, request| wallpaper::serve(ctx.app_handle(), &request))
         .manage(chat::ChatState::default())
         .manage(companion::CompanionState::default())
         .invoke_handler(tauri::generate_handler![
@@ -741,6 +754,7 @@ fn main() {
             commands::flower_menu_action,
             commands::close_flower_menu,
             commands::copy_selection,
+            commands::replace_selection,
             commands::open_tasks,
             commands::tasks_take_focus,
             commands::ui_lang,
@@ -830,6 +844,17 @@ fn main() {
             commands::open_aquarium,
             commands::open_collection_tab,
             commands::aquarium_full_set,
+            commands::wallpaper_status,
+            commands::wallpaper_set_image,
+            commands::wallpaper_set_fit,
+            commands::wallpaper_set_folder,
+            commands::wallpaper_set_rotation,
+            commands::wallpaper_stop_rotation,
+            commands::wallpaper_next,
+            commands::wallpaper_save_generated,
+            commands::wallpaper_from_drive,
+            commands::wallpaper_live_video,
+            commands::wallpaper_live_set,
             commands::aquarium_close,
             commands::monitor_stats,
             commands::monitor_add,
@@ -844,6 +869,20 @@ fn main() {
             commands::launcher_hide,
             commands::launcher_resize,
             commands::launcher_status,
+            commands::shot_start,
+            commands::shot_frame,
+            commands::shot_ready,
+            commands::shot_close,
+            commands::shot_copy,
+            commands::shot_save,
+            commands::shot_status,
+            commands::shot_ocr,
+            commands::shot_ocr_langs,
+            commands::shot_pin,
+            commands::shotpin_image,
+            commands::shotpin_ready,
+            commands::shotpin_copy,
+            commands::shotpin_close,
             commands::open_task_manager,
             commands::widget_pin_set,
             commands::widget_pin_top,
@@ -971,12 +1010,17 @@ fn main() {
             pins::restore_all(&app_handle);
             // Ghi chú đang ghim lên desktop cũng vậy.
             note_pins::restore_all(&app_handle);
+            // 📌 Ảnh chụp màn hình đang ghim cũng hiện lại đúng chỗ (shot.rs).
+            shot::restore_pins(&app_handle);
             // Widget Thông số máy: chỉ đo khi đang hiện.
             sysmon_pin::start(app_handle.clone());
             // 🐠 Bể cá: chỉ hỏi trạng thái máy khi widget đang hiện.
             aquarium_pin::start(app_handle.clone());
             // 🐠 Bể cá full: dựng / gắn lại dưới hình nền nếu đang bật.
             aquarium_full::start(app_handle.clone());
+            // 🖼 Xoay vòng hình nền theo thư mục, 🎬 hình nền động.
+            wallpaper::start(app_handle.clone());
+            wallpaper_live::start(app_handle.clone());
             // Pet ẩn / không ai ngồi trước máy: dừng vòng vẽ Live2D.
             pet_render::start(app_handle.clone());
             // 🛰 Theo dõi website: chỉ kiểm khi danh sách có site.
@@ -1035,6 +1079,8 @@ fn main() {
             let show_item = MenuItem::with_id(app, "toggle_show", tr(Tray::ToggleShow, lang), true, None::<&str>)?;
             let tasks_item = MenuItem::with_id(app, "open_tasks", tr(Tray::Tasks, lang), true, None::<&str>)?;
             let notes_item = MenuItem::with_id(app, "open_notes", tr(Tray::Notes, lang), true, None::<&str>)?;
+            // 📸 Chỉ Windows chụp được (shot.rs): nền tảng khác thì mục này mờ đi.
+            let shot_item = MenuItem::with_id(app, "shot", tr(Tray::Shot, lang), cfg!(windows), None::<&str>)?;
             let settings_item = MenuItem::with_id(app, "open_settings", tr(Tray::Settings, lang), true, None::<&str>)?;
             // Chữ đổi theo trạng thái (đang tắt: "Bật…", đang bật: "Tắt…").
             let click_through_item = MenuItem::with_id(
@@ -1071,6 +1117,7 @@ fn main() {
                 (Tray::ToggleShow, &show_item),
                 (Tray::Tasks, &tasks_item),
                 (Tray::Notes, &notes_item),
+                (Tray::Shot, &shot_item),
                 (Tray::Settings, &settings_item),
                 (Tray::Forecast, &forecast_item),
                 (Tray::Calendar, &calendar_item),
@@ -1088,6 +1135,7 @@ fn main() {
                     &show_item,
                     &tasks_item,
                     &notes_item,
+                    &shot_item,
                     &settings_item,
                     &click_through_item,
                     &focus_item,
@@ -1125,6 +1173,7 @@ fn main() {
                     }
                     "open_tasks" => windows::open_tasks(app),
                     "open_notes" => windows::open_notes(app),
+                    "shot" => shot::start(app, 250),
                     "open_settings" => windows::open_settings(app),
                     "open_tour" => tour::open(app, false),
                     "focus" => companion::toggle_focus(app),
@@ -1201,6 +1250,16 @@ fn main() {
             WindowEvent::CloseRequested { .. } if window.label().starts_with("pin-") => {
                 pins::on_closed(window.app_handle(), window.label());
             }
+            // 📸 Lớp phủ chụp màn hình: Alt+F4 = huỷ lần chụp (shot.rs tự huỷ cửa sổ).
+            WindowEvent::CloseRequested { api, .. } if window.label() == shot::LABEL => {
+                api.prevent_close();
+                shot::close(window.app_handle());
+            }
+            // 📌 Ảnh chụp ghim trên màn hình: Alt+F4 = gỡ ghim.
+            WindowEvent::CloseRequested { api, .. } if shot::is_pin(window.label()) => {
+                api.prevent_close();
+                shot::pin_close(window.app_handle(), window.label());
+            }
             // Bảng tạo khi mở (windows::LAZY) đóng là đóng thật để trả RAM; bảng
             // dựng sẵn thì chỉ ẩn (thoát hẳn app qua tray). Cả hai đều nhả pet
             // và huỷ nhân vật bám mép. Không huỷ ngay ở đây (main thread → treo
@@ -1255,6 +1314,13 @@ fn main() {
                             (event, window.is_visible().unwrap_or(false), pin_widget::spec(label))
                         {
                             pin_widget::remember_pos(window.app_handle(), spec, pos.x, pos.y);
+                        }
+                    }
+                    label if shot::is_pin(label) => {
+                        if let (WindowEvent::Moved(pos), true) =
+                            (event, window.is_visible().unwrap_or(false))
+                        {
+                            shot::pin_moved(window.app_handle(), label, pos.x, pos.y);
                         }
                     }
                     label if note_pins::id_from_label(label).is_some() => {

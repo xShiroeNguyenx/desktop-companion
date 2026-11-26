@@ -75,6 +75,21 @@ pub fn copy_selection() -> Result<(), String> {
     }
 }
 
+/// Dán `text` (bản dịch) đè lên đoạn đang tô khối của lần bắt `seq`. Lỗi là mã
+/// (selection::replace_selection). Cửa sổ dịch nhanh xong việc thì tự ẩn.
+#[tauri::command]
+pub async fn replace_selection(window: tauri::WebviewWindow, seq: u64, text: String) -> Result<(), String> {
+    // Có chờ đổi focus (sleep) nên chạy ở luồng riêng, không chặn main thread.
+    tauri::async_runtime::spawn_blocking(move || selection::replace_selection(seq, &text))
+        .await
+        .map_err(|_| "fail".to_string())?
+        .map_err(str::to_string)?;
+    if window.label() == "quick" {
+        let _ = window.hide();
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn open_tasks(app: AppHandle) {
     windows::open_tasks(&app);
@@ -715,6 +730,8 @@ pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), S
     settings.monitor_interval_min = crate::monitor::clean_interval(settings.monitor_interval_min);
     settings.search_engine = crate::launcher::clean_engine(&settings.search_engine);
     settings.launcher_hotkey = settings.launcher_hotkey.trim().to_string();
+    settings.shot_hotkey = settings.shot_hotkey.trim().to_string();
+    settings.shot_ocr_lang = settings.shot_ocr_lang.trim().chars().take(35).collect();
     // Bang tự thêm sai thì báo đúng dòng, không lưu ngầm giá trị hỏng.
     crate::launcher::parse_bangs(&settings.custom_bangs).map_err(|e| format!("Bang tự thêm: {e}"))?;
     crate::selection::parse_app_rules(&settings.flower_apps).map_err(|e| format!("Cách chép theo từng app: {e}"))?;
@@ -762,6 +779,13 @@ pub fn settings_set(app: AppHandle, settings: serde_json::Value) -> Result<(), S
         let st = crate::launcher::status();
         if !st.is_empty() {
             return Err(format!("Đã lưu, nhưng ô mở nhanh: {st}"));
+        }
+    }
+    if settings.shot_hotkey != old.shot_hotkey {
+        crate::shot::register(&app);
+        let st = crate::shot::status();
+        if !st.is_empty() {
+            return Err(format!("Đã lưu, nhưng chụp màn hình: {st}"));
         }
     }
     if settings.monitor_interval_min != old.monitor_interval_min {
@@ -966,6 +990,153 @@ fn monitor_changed(app: &AppHandle) {
     crate::pin_widget::resize(app, &crate::monitor_pin::SPEC);
 }
 
+// ── 📸 Chụp màn hình (shot.rs) ──────────────────────────────────────────────
+
+/// Bấm nút "Chụp ngay" (Cài đặt): chờ một nhịp cho bảng kịp nhả chuột rồi chụp.
+#[tauri::command]
+pub fn shot_start(app: AppHandle) {
+    crate::shot::start(&app, 250);
+}
+
+/// Khung hình gốc (file BMP) cho trang shot.html, gửi dạng byte thô. Chỉ lấy được một lần.
+#[tauri::command]
+pub fn shot_frame() -> Result<tauri::ipc::Response, String> {
+    crate::shot::take_frame().map(tauri::ipc::Response::new).ok_or_else(|| "image".to_string())
+}
+
+/// Trang đã vẽ xong ảnh: hiện cửa sổ.
+#[tauri::command]
+pub fn shot_ready(app: AppHandle) {
+    crate::shot::ready(&app);
+}
+
+#[tauri::command]
+pub fn shot_close(app: AppHandle) {
+    crate::shot::close(&app);
+}
+
+/// Chép vùng đã cắt (`png` = data URL từ canvas) vào clipboard rồi đóng. Lỗi là mã
+/// (`shot.err.<mã>`), lớp phủ ở lại để người dùng thử cách khác.
+#[tauri::command]
+pub async fn shot_copy(app: AppHandle, png: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let bytes = crate::shot::png_from_data_url(&png)?;
+        crate::shot::copy(&bytes)
+    })
+    .await
+    .map_err(|_| "clipboard".to_string())?
+    .map_err(str::to_string)?;
+    crate::shot::close(&app);
+    Ok(())
+}
+
+/// Lưu vùng đã cắt thành file PNG qua hộp Lưu file. Trả `false` nếu người dùng bấm Huỷ
+/// (lớp phủ ở lại), `true` khi đã ghi xong (lớp phủ đóng).
+#[tauri::command]
+pub async fn shot_save(app: AppHandle, window: tauri::WebviewWindow, png: String, name: String) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let bytes = crate::shot::png_from_data_url(&png).map_err(str::to_string)?;
+    // Hộp thoại là cửa sổ con của lớp phủ nên nổi trên nó (lớp phủ luôn-nổi, phủ kín màn hình).
+    let picked = app
+        .dialog()
+        .file()
+        .add_filter("PNG", &["png"])
+        .set_file_name(crate::shot::safe_name(&name))
+        .set_parent(&window)
+        .blocking_save_file();
+    let Some(mut path) = picked.and_then(|p| p.into_path().ok()) else {
+        return Ok(false);
+    };
+    if path.extension().is_none() {
+        path.set_extension("png");
+    }
+    std::fs::write(&path, &bytes).map_err(|_| "write".to_string())?;
+    crate::shot::close(&app);
+    Ok(true)
+}
+
+/// 🔎 Đọc chữ trong vùng đã cắt (`png` = ảnh gốc không kèm nét vẽ) bằng OCR của Windows.
+/// `action` = "copy": chép chữ vào clipboard; "translate": mở cửa sổ dịch nhanh với chữ đó.
+/// Xong thì lớp phủ đóng; lỗi là mã (`shot.err.<mã>`) và lớp phủ ở lại.
+#[tauri::command]
+pub async fn shot_ocr(app: AppHandle, png: String, action: String) -> Result<(), String> {
+    let lang = store::load_settings(&app).shot_ocr_lang;
+    let translate = action == "translate";
+    let text = tauri::async_runtime::spawn_blocking(move || {
+        let bytes = crate::shot::png_from_data_url(&png)?;
+        let text = crate::shot::read_text(&bytes, &lang)?;
+        if !translate {
+            crate::shot::copy_text(&text)?;
+        }
+        Ok::<String, &'static str>(text)
+    })
+    .await
+    .map_err(|_| "ocr".to_string())?
+    .map_err(str::to_string)?;
+    crate::shot::close(&app);
+    if translate {
+        // Cửa sổ dịch nhanh hiện ở chỗ con trỏ, đọc chữ qua get_selection như khi bôi đen.
+        let app2 = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            let (x, y) = app2.cursor_position().map(|p| (p.x as i32, p.y as i32)).unwrap_or((100, 100));
+            selection::set_ocr_selection(text, x, y);
+            windows::open_quick(&app2, x, y);
+        });
+    }
+    Ok(())
+}
+
+/// Các ngôn ngữ OCR Windows đã cài, `[mã, tên]`, cho ô chọn trong Cài đặt.
+#[tauri::command]
+pub fn shot_ocr_langs() -> Vec<(String, String)> {
+    crate::ocr::languages()
+}
+
+/// 📌 Ghim vùng đã cắt (kèm nét vẽ) lên màn hình, đúng chỗ vừa chụp; (x, y, w, h) là vùng
+/// chọn tính bằng pixel ảnh. Xong thì lớp phủ đóng.
+#[tauri::command]
+pub async fn shot_pin(app: AppHandle, png: String, x: i32, y: i32, w: u32, h: u32) -> Result<(), String> {
+    let bytes = crate::shot::png_from_data_url(&png).map_err(str::to_string)?;
+    crate::shot::pin(&app, &bytes, x, y, w, h).map_err(str::to_string)?;
+    crate::shot::close(&app);
+    Ok(())
+}
+
+/// Trang ảnh ghim lấy PNG của chính nó (theo label cửa sổ), dạng byte thô.
+#[tauri::command]
+pub fn shotpin_image(app: AppHandle, window: tauri::WebviewWindow) -> Result<tauri::ipc::Response, String> {
+    crate::shot::pin_image(&app, window.label())
+        .map(tauri::ipc::Response::new)
+        .ok_or_else(|| "image".to_string())
+}
+
+/// Trang ảnh ghim đã vẽ xong: hiện cửa sổ (không lấy focus của app đang dùng).
+#[tauri::command]
+pub fn shotpin_ready(window: tauri::WebviewWindow) {
+    let _ = window.show();
+}
+
+/// Chép lại ảnh ghim vào clipboard.
+#[tauri::command]
+pub async fn shotpin_copy(app: AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
+    let png = crate::shot::pin_image(&app, window.label()).ok_or_else(|| "image".to_string())?;
+    tauri::async_runtime::spawn_blocking(move || crate::shot::copy(&png))
+        .await
+        .map_err(|_| "clipboard".to_string())?
+        .map_err(str::to_string)
+}
+
+#[tauri::command]
+pub fn shotpin_close(app: AppHandle, window: tauri::WebviewWindow) {
+    crate::shot::pin_close(&app, window.label());
+}
+
+/// Lỗi đăng ký phím chụp gần nhất, rỗng = ổn.
+#[tauri::command]
+pub fn shot_status() -> String {
+    crate::shot::status()
+}
+
 // ── 🔖 Bookmark (bookmarks.rs) & 🔎 Ô mở nhanh (launcher.rs) ────────────────
 
 #[tauri::command]
@@ -1129,6 +1300,68 @@ pub fn aquarium_set_decor(app: AppHandle, slot: usize, id: String) -> Result<Val
 #[tauri::command]
 pub async fn aquarium_full_set(app: AppHandle, on: bool) -> Result<(), String> {
     crate::aquarium_full::set(&app, on)
+}
+
+// ─── 🖼 Hình nền desktop (wallpaper.rs, wallpaper_live.rs) ───────────────────
+// Mọi lệnh đổi hình nền chạy ngay (không chờ nút Lưu), lỗi là câu đọc được.
+// async: gọi COM / dựng cửa sổ không được chặn luồng chính.
+
+#[tauri::command]
+pub fn wallpaper_status(app: AppHandle) -> Value {
+    crate::wallpaper::status(&app)
+}
+
+#[tauri::command]
+pub async fn wallpaper_set_image(app: AppHandle, path: String) -> Result<(), String> {
+    crate::wallpaper::apply_image(&app, std::path::Path::new(&path), false)
+}
+
+#[tauri::command]
+pub async fn wallpaper_set_fit(app: AppHandle, fit: String) -> Result<(), String> {
+    crate::wallpaper::set_fit(&app, &fit)
+}
+
+/// Trả số ảnh trong thư mục.
+#[tauri::command]
+pub async fn wallpaper_set_folder(app: AppHandle, folder: String, interval_min: u32, shuffle: bool) -> Result<usize, String> {
+    crate::wallpaper::set_folder(&app, &folder, interval_min, shuffle)
+}
+
+#[tauri::command]
+pub async fn wallpaper_set_rotation(app: AppHandle, interval_min: u32, shuffle: bool) -> Result<(), String> {
+    crate::wallpaper::set_rotation(&app, interval_min, shuffle)
+}
+
+#[tauri::command]
+pub async fn wallpaper_stop_rotation(app: AppHandle) -> Result<(), String> {
+    crate::wallpaper::stop_rotation(&app)
+}
+
+#[tauri::command]
+pub async fn wallpaper_next(app: AppHandle) -> Result<(), String> {
+    crate::wallpaper::next(&app)
+}
+
+/// Ảnh vẽ sẵn (js/wallpaper-art.js) gửi lên dạng PNG base64.
+#[tauri::command]
+pub async fn wallpaper_save_generated(app: AppHandle, name: String, png: String) -> Result<(), String> {
+    crate::wallpaper::save_generated(&app, &name, &png)
+}
+
+/// "image" | "video" | "folder:<số ảnh>".
+#[tauri::command]
+pub async fn wallpaper_from_drive(app: AppHandle, url: String) -> Result<String, String> {
+    crate::wallpaper::from_drive(app, url).await
+}
+
+#[tauri::command]
+pub async fn wallpaper_live_video(app: AppHandle, path: String) -> Result<(), String> {
+    crate::wallpaper_live::set_video(&app, Some(path))
+}
+
+#[tauri::command]
+pub async fn wallpaper_live_set(app: AppHandle, on: bool) -> Result<(), String> {
+    crate::wallpaper_live::set_on(&app, on)
 }
 
 /// Mở Bộ sưu tập ở một nhóm (cửa sổ Bể cá → "Đổi nền", "🍬 Bộ sưu tập"). Chỉ nhận

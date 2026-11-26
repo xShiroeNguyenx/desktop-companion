@@ -6,6 +6,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.10] - 2026-11-26
+
+### Added
+- **📸 Screenshot tool (Windows).** Press **Ctrl+Alt+X**, or pick *📸 Take a screenshot* from
+  the tray or the pet's radial menu: the screen under the cursor freezes and dims, and you drag
+  to select an area. Resize it with the eight handles or drag it around, then draw on it with
+  the pen, line, arrow, rectangle, highlighter and text tools in six colours, with undo (hold
+  Shift to keep a line or arrow horizontal, vertical or diagonal; roll the mouse wheel to make
+  the stroke thicker or thinner, and the text bigger or smaller). **Ctrl+C** copies the
+  image, **Ctrl+S** saves a PNG, **Ctrl+A** selects the whole screen, **Esc** cancels. The
+  picture is never uploaded anywhere. The shortcut can be changed or turned off in Settings →
+  *📸 Screenshot* (type `PrintScreen` to use that key), and Settings says so if another app
+  already holds the shortcut. Each capture covers one screen, the one the cursor is on.
+- **🌐 Translate or copy the text inside a screenshot (Windows).** After selecting an area,
+  🌐 reads the text in it and opens the quick-translate window with it, and 📄 copies the text.
+  Reading uses Windows' built-in OCR on your computer, so it works offline and the picture is
+  not sent anywhere, but it only reads the languages Windows has OCR installed for. Settings →
+  *📸 Screenshot* lists them, lets you pick one, and says how to add another.
+- **📌 Pin a screenshot on the screen (Windows).** 📌 leaves the selected area floating above
+  other windows, exactly where it was captured. Drag it anywhere, hover for 📋 copy and ✕, or
+  double-click / Esc to remove it. Up to five at once. Like pinned notes, a pinned image stays
+  until you remove it: it comes back in the same place the next time the app starts.
+- **🔁 Replace the selected text with its translation (Windows).** Type a reply in your own
+  language, select it, translate, then press 🔁 in the quick-translate window (or *Replace the
+  selection with the translation* in the Text assistant): the translation is pasted over the
+  text you selected, and your clipboard is put back afterwards. The button only shows where a
+  paste can replace the selection, so not for text selected in a terminal. If the app cannot be
+  brought back to the front, the translation stays on the clipboard ready for Ctrl+V.
+- **🖼 Change the desktop wallpaper from Settings.** A new *🖼 Wallpaper* section sets any
+  JPG / PNG / BMP as the wallpaper, with the usual fit choices (Fill, Fit, Stretch, Center, Tile,
+  Span). Pick a folder to rotate through its images every 5 minutes to once a day, in order or
+  shuffled, or press *Next* yourself.
+- **Six built-in wallpapers** (dawn, starry night, sakura, evening sea, misty forest, aurora),
+  drawn by the app at your screen's full resolution.
+- **Wallpapers from Google Drive.** Paste a link shared with "Anyone with the link": an image
+  becomes the wallpaper, a video becomes a live wallpaper, and a folder downloads up to 40
+  images and rotates through them.
+- **🎬 Live wallpaper (Windows).** A muted MP4 / WebM video loops on the main screen under the
+  desktop icons. It pauses when a window covers the desktop, during full-screen apps and when
+  you are away. It shares its spot with the 🐠 full-screen aquarium, so turning one on turns
+  the other off.
+
+### Changed
+- **Slimmer scrollbars** in the quick-translate window, the Text assistant, Tasks, Notes and
+  Settings: a thin pink line with no arrows or track, brighter while the mouse is on it.
+
 ## [0.12.9] - 2026-11-16
 
 ### Added

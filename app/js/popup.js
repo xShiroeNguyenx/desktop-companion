@@ -9,6 +9,13 @@
   let manual = false;
   // Tab đang mở (null = chưa mở lần nào: nhãn chung "Văn bản đã chọn").
   let currentTab = null;
+  // Đã có bản dịch của đoạn đang hiện (để biết lúc nào cho bấm "Thay").
+  let translated = '';
+
+  // Nút "Thay": chỉ khi đoạn bôi đen dán đè lại được (selection.replace) và đã dịch xong.
+  function paintReplace() {
+    $('trReplace').style.display = !manual && selection.replace && translated ? '' : 'none';
+  }
 
   /** Văn bản nguồn cho cả 3 tab: ô tự gõ (chế độ tự nhập) hoặc đoạn đã bôi đen. */
   function sourceText() {
@@ -97,6 +104,8 @@
       });
       $('trResult').textContent = out;
       $('trResult').classList.remove('empty');
+      translated = out;
+      paintReplace();
       setStatus('trStatus', '');
     } catch (e) {
       setStatus('trStatus', String(e), 'err');
@@ -104,7 +113,23 @@
     btn.disabled = false;
   }
   $('trGo').addEventListener('click', runTranslate);
-  $('trCopy').addEventListener('click', () => copy($('trResult').textContent, 'trStatus'));
+  $('trCopy').addEventListener('click', () => copy(translated, 'trStatus'));
+  // Thay: Rust đưa focus về app nguồn rồi dán bản dịch đè lên đoạn đang bôi đen.
+  $('trReplace').addEventListener('click', async () => {
+    if (!translated) return;
+    const btn = $('trReplace'); btn.disabled = true;
+    try {
+      await invoke('replace_selection', { seq: selection.seq || 0, text: translated });
+      selection.replace = false; // đoạn bôi đen đã bị thay, không dán chồng lần hai
+      setStatus('trStatus', T('replace.ok'), 'ok');
+    } catch (e) {
+      const code = String(e);
+      if (code === 'stale') selection.replace = false;
+      setStatus('trStatus', T(['stale', 'focus', 'clipboard'].includes(code) ? 'replace.err.' + code : 'replace.err.fail'), 'err');
+    }
+    btn.disabled = false;
+    paintReplace();
+  });
 
   // Reply
   $('rpGo').addEventListener('click', async () => {
@@ -173,6 +198,8 @@
 
   function resetResults() {
     $('trResult').textContent = T('popup.trEmpty'); $('trResult').classList.add('empty');
+    translated = '';
+    paintReplace();
     $('rpResult').textContent = T('popup.rpEmpty'); $('rpResult').classList.add('empty');
     $('rpInput').value = '';
     setStatus('trStatus', ''); setStatus('rpStatus', ''); setStatus('tkStatus', '');

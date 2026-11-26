@@ -155,7 +155,26 @@
       background: rgba(255, 150, 190, 0.24);
       border-color: rgba(255, 150, 190, 0.5);
     }
-    .set-col label { font-size: 11.5px; }
+    /* 🖼 Hình nền: ảnh đang đặt + lưới hình nền vẽ sẵn. */
+    .wall-now { display: flex; gap: 8px; align-items: center; }
+    .wall-now img, .wall-now .wall-empty {
+      width: 96px; height: 54px; flex: 0 0 auto; border-radius: 6px; object-fit: cover;
+      border: 1px solid rgba(255, 150, 190, 0.28); background: rgba(255, 255, 255, 0.05);
+    }
+    .wall-now .wall-name { flex: 1; min-width: 0; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+    .wall-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .wall-grid button {
+      padding: 0; border-radius: 6px; overflow: hidden; cursor: pointer; position: relative;
+      border: 1px solid rgba(255, 150, 190, 0.28); background: none; aspect-ratio: 16 / 9;
+    }
+    .wall-grid button:hover { border-color: rgba(255, 150, 190, 0.7); }
+    .wall-grid button:disabled { opacity: 0.5; cursor: wait; }
+    .wall-grid canvas { width: 100%; height: 100%; display: block; }
+    .wall-grid span {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 4px; font-size: 10px;
+      color: #fff; background: rgba(0, 0, 0, 0.45); text-align: left;
+    }
+    .set-col label, .set-col .wall-label { font-size: 11.5px; }
     .set-col .status { font-size: 11px; }
 
     /* Chân cửa sổ: nút Lưu luôn nhìn thấy, không bị cuộn mất. */
@@ -423,6 +442,70 @@
       </div>
 
       <div class="set-group">
+        <h3 data-sub="Ảnh, thư mục xoay vòng, Google Drive, video" data-i18n-sub="settings.wall.sub" data-i18n="settings.wall.title">🖼 Hình nền</h3>
+        <div class="wall-now">
+          <img id="wallPreview" alt="" hidden />
+          <div class="wall-empty" id="wallPreviewEmpty"></div>
+          <div class="wall-name" id="wallName"></div>
+        </div>
+        <div class="set-field">
+          <label for="wallFit" data-i18n="settings.wall.fit">Kiểu hiển thị</label>
+          <select id="wallFit">
+            <option value="fill" data-i18n="settings.wall.fitFill">Lấp đầy</option>
+            <option value="fit" data-i18n="settings.wall.fitFit">Vừa khung</option>
+            <option value="stretch" data-i18n="settings.wall.fitStretch">Kéo giãn</option>
+            <option value="center" data-i18n="settings.wall.fitCenter">Ở giữa</option>
+            <option value="tile" data-i18n="settings.wall.fitTile">Lát gạch</option>
+            <option value="span" data-i18n="settings.wall.fitSpan">Trải qua các màn hình</option>
+          </select>
+        </div>
+        <div class="set-field">
+          <div class="row tight">
+            <button class="ghost" id="wallPickImage" data-i18n="settings.wall.pickImage" type="button" style="flex:1;">🖼 Chọn ảnh…</button>
+            <button class="ghost" id="wallPickFolder" data-i18n="settings.wall.pickFolder" type="button" style="flex:1;">📁 Chọn thư mục…</button>
+          </div>
+        </div>
+        <div class="set-field" id="wallFolderBlock" hidden>
+          <label for="wallInterval" data-i18n="settings.wall.interval">Đổi ảnh trong thư mục</label>
+          <div class="wall-name" id="wallFolderName"></div>
+          <div class="row tight">
+            <select id="wallInterval" style="flex:1;"></select>
+            <button class="ghost" id="wallNext" data-i18n="settings.wall.next" type="button">⏭ Ảnh kế</button>
+            <button class="ghost" id="wallStop" data-i18n="settings.wall.stop" type="button">⏹ Dừng</button>
+          </div>
+          <div class="set-toggle">
+            <label for="wallShuffle" data-i18n="settings.wall.shuffle">Thứ tự ngẫu nhiên</label>
+            <input type="checkbox" id="wallShuffle" />
+          </div>
+        </div>
+        <div class="set-field">
+          <div class="wall-label" data-i18n="settings.wall.builtin">Hình nền vẽ sẵn (vẽ đúng độ phân giải màn hình)</div>
+          <div class="wall-grid" id="wallGrid"></div>
+        </div>
+        <div class="set-field">
+          <label for="wallDrive" data-i18n="settings.wall.drive">Link Google Drive (ảnh, video hoặc thư mục)</label>
+          <div class="row tight">
+            <input type="text" id="wallDrive" placeholder="https://drive.google.com/…" spellcheck="false" style="flex:1;" />
+            <button class="ghost" id="wallDriveGo" data-i18n="settings.wall.driveGo" type="button">⬇ Tải</button>
+          </div>
+          <div class="status" data-i18n="settings.wall.driveHint">Link phải chia sẻ "Bất kỳ ai có đường liên kết". Thư mục: tải tối đa 40 ảnh rồi xoay vòng.</div>
+        </div>
+        <div class="set-field" id="wallLiveBlock">
+          <div class="wall-label" data-i18n="settings.wall.live">🎬 Hình nền động (video MP4 / WebM, không tiếng)</div>
+          <div class="wall-name" id="wallVideoName"></div>
+          <div class="row tight">
+            <button class="ghost" id="wallPickVideo" data-i18n="settings.wall.pickVideo" type="button" style="flex:1;">🎬 Chọn video…</button>
+          </div>
+          <div class="set-toggle">
+            <label for="wallLive" data-i18n="settings.wall.liveOn">Bật hình nền động</label>
+            <input type="checkbox" id="wallLive" />
+          </div>
+          <div class="status" data-i18n="settings.wall.liveHint">Chỉ ở màn hình chính, nằm dưới icon desktop. Tự dừng khi cửa sổ che kín desktop, khi xem toàn màn hình hoặc rời máy. Bật cái này thì 🐠 Bể cá full tắt (cùng một chỗ).</div>
+        </div>
+        <div class="status" id="wallStatus"></div>
+      </div>
+
+      <div class="set-group">
         <h3 data-sub="Em báo khi website sập và khi chạy lại" data-i18n-sub="settings.mon.sub" data-i18n="settings.mon.title">🛰 Theo dõi website</h3>
         <div class="mon-list" id="monList"></div>
         <div class="set-field">
@@ -448,6 +531,25 @@
             <option value="10">10 phút</option>
           </select>
           <div class="status" data-i18n="settings.mon.intervalHint">Sập = lỗi 2 lần liên tiếp. Mọi site cùng lỗi mạng thì em coi là máy mất mạng và chỉ báo một câu. Áp dụng khi Lưu.</div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3 data-sub="Khoanh vùng, vẽ chú thích, chép hoặc lưu (chỉ Windows)" data-i18n-sub="settings.shot.sub" data-i18n="settings.shot.title">📸 Chụp màn hình</h3>
+        <div class="set-field">
+          <label for="shotHotkey" data-i18n="settings.shot.hotkey">Phím tắt (trống = tắt)</label>
+          <input type="text" id="shotHotkey" placeholder="Ctrl+Alt+X" spellcheck="false" />
+          <div class="status" id="shotStatus" data-i18n="settings.shot.hint">Bấm phím tắt, kéo chuột khoanh vùng, rồi Ctrl+C để chép hoặc Ctrl+S để lưu. Gõ PrintScreen nếu muốn dùng phím Print Screen. Ảnh không được gửi đi đâu cả.</div>
+        </div>
+        <div class="set-field">
+          <label for="shotOcrLang" data-i18n="settings.shot.ocrLang">Ngôn ngữ đọc chữ trong ảnh (nút 🌐 / 📄)</label>
+          <select id="shotOcrLang">
+            <option value="" data-i18n="settings.shot.ocrAuto">Tự chọn trong các ngôn ngữ đã cài</option>
+          </select>
+          <div class="status" id="shotOcrHint"></div>
+        </div>
+        <div class="set-field">
+          <button class="ghost" id="shotNow" type="button" data-i18n="settings.shot.now">Chụp ngay</button>
         </div>
       </div>
 
@@ -768,6 +870,8 @@
   <script src="js/clock-core.js"></script>
   <script src="js/monitor-core.js"></script>
   <script src="js/flower-apps.js"></script>
+  <script src="js/wallpaper-art.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/settings-wallpaper.js"></script>
 </body>
 </html>

@@ -14,6 +14,7 @@ pub enum Tray {
     ToggleShow,
     Tasks,
     Notes,
+    Shot,
     Settings,
     ClickThroughOn,
     ClickThroughOff,
@@ -34,10 +35,11 @@ pub enum Tray {
 
 impl Tray {
     #[cfg(test)]
-    const ALL: [Tray; 19] = [
+    const ALL: [Tray; 20] = [
         Tray::ToggleShow,
         Tray::Tasks,
         Tray::Notes,
+        Tray::Shot,
         Tray::Settings,
         Tray::ClickThroughOn,
         Tray::ClickThroughOff,
@@ -70,6 +72,9 @@ pub fn text(t: Tray, lang: Lang) -> &'static str {
         (Notes, Vi) => "🗒️ Ghi chú",
         (Notes, Ja) => "🗒️ メモ",
         (Notes, En) => "🗒️ Notes",
+        (Shot, Vi) => "📸 Chụp màn hình",
+        (Shot, Ja) => "📸 スクリーンショット",
+        (Shot, En) => "📸 Take a screenshot",
         (Settings, Vi) => "Cài đặt",
         (Settings, Ja) => "設定",
         (Settings, En) => "Settings",

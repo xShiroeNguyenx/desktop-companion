@@ -77,6 +77,15 @@
   🗒️ save as note · 🗂️ full panel. **Ctrl+C** (while the flower is up) still copies the selected text.
   In terminals it copies with Ctrl+Shift+C so a running command is not interrupted; if some app
   misbehaves when you select text, set how to copy there in Settings → *⚙️ System* → *Copy method per app*.
+  Wrote your message in the wrong language? Select what you typed, translate it, then press
+  🔁 **Replace** to put the translation over the selected text instead of copying it (Windows).
+- **📸 Screenshot (Windows)** — press **Ctrl+Alt+X** (or tray → *📸 Take a screenshot*, or the
+  pet's radial menu → 🧩 → 📸): the screen under the cursor freezes, drag to select an area,
+  adjust it with the handles, draw on it (pen, line, arrow, rectangle, highlighter, text, 6 colours, undo; mouse wheel changes the stroke width), then
+  **Ctrl+C** to copy the image or **Ctrl+S** to save a PNG. 🌐 translates the text inside the
+  selection and 📄 copies it (Windows' offline OCR, for the languages Windows has installed),
+  and 📌 pins the image on the screen. The picture never leaves your
+  computer. Change the shortcut in Settings → *📸 Screenshot* (type `PrintScreen` to use that key).
 - **Chat with the pet** — right-click → 💬 **Quick Chat**. The reply streams into
   the bubble word by word and the pet's face changes with the mood of what it
   says. It knows the time and your unfinished tasks, remembers the last 10 turns

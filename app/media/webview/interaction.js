@@ -1148,6 +1148,9 @@ function setupCompactContextMenu() {
     } else if (action === 'open-notes') {
       // Bảng 🗒️ Ghi chú (windows.rs → open_notes).
       vscode.postMessage({ command: 'openNotes' });
+    } else if (action === 'open-shot') {
+      // 📸 Chụp màn hình (shot.rs; Rust chờ menu đóng rồi mới chụp).
+      vscode.postMessage({ command: 'openShot' });
     } else if (action === 'open-assistant') {
       // Trợ lý văn bản ở chế độ tự gõ (windows.rs → open_assistant).
       vscode.postMessage({ command: 'openAssistant' });
@@ -1297,6 +1300,10 @@ function setupCompactContextMenu() {
         label: I18n.t('pet.ring.tools'),
         items: [
           { icon: '🗒️', label: I18n.t('pet.ring.notes'), action: 'open-notes' },
+          // 📸 Chụp màn hình chỉ có trên Windows (shot.rs).
+          ...(/Windows/.test(navigator.userAgent)
+            ? [{ icon: '📸', label: I18n.t('pet.ring.shot'), action: 'open-shot' }]
+            : []),
           { icon: '📅', label: I18n.t('pet.ring.calendar'), action: 'toggle-calendar-pin' },
           { icon: '📊', label: I18n.t('pet.ring.sysmon'), action: 'toggle-sysmon-pin' },
           { icon: '🛰', label: I18n.t('pet.ring.monitor'), action: 'toggle-monitor-pin' },

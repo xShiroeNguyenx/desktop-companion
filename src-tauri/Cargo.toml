@@ -1,6 +1,6 @@
 [package]
 name = "desktop-companion"
-version = "0.12.9"
+version = "0.12.10"
 edition = "2021"
 description = "Standalone Live2D desktop pet"
 license = "MIT"
@@ -73,6 +73,8 @@ windows-sys = { version = "0.61", features = [
     # Bảng "ngốn máy nhất" (top_procs.rs): danh sách tiến trình, RAM từng tiến trình.
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_ProcessStatus",
+    # 📸 Chụp màn hình (shot.rs): BitBlt + GetDIBits.
+    "Win32_Graphics_Gdi",
 ] }
 # WinRT SpeechSynthesizer (giọng có sẵn của Windows, kể cả giọng OneCore).
 # Toast bấm được (notify.rs): plugin thông báo không báo sự kiện bấm. Cùng bản
@@ -86,6 +88,12 @@ windows = { version = "0.61", features = [
     "Win32_UI_Accessibility",
     "Win32_System_Com",
     "Win32_System_Variant",
+    # 🖼 Đổi hình nền (wallpaper.rs): IDesktopWallpaper đặt + đọc lại hình nền.
+    "Win32_UI_Shell",
+    # 🔎 Đọc chữ trong ảnh chụp màn hình (ocr.rs): bộ OCR có sẵn của Windows.
+    "Media_Ocr",
+    "Graphics_Imaging",
+    "Globalization",
     "Foundation",
     "Foundation_Collections",
     "Media_Core",
